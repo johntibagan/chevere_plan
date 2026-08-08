@@ -7,6 +7,8 @@ import '../../admin/presentation/admin_page.dart';
 import '../../auth/data/auth_repository.dart';
 import '../../auth/data/profile.dart';
 import '../../auth/data/profile_repository.dart';
+import '../../proximity/data/geofence_sync_service.dart';
+import '../../proximity/presentation/proximity_prefs_sheet.dart';
 import '../../saves/data/draft_reminder_service.dart';
 import '../../saves/data/save_models.dart';
 import '../../saves/data/saves_repository.dart';
@@ -29,6 +31,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   final _profileRepo = ProfileRepository();
   final _savesRepo = SavesRepository();
+  final _geofenceSync = GeofenceSyncService();
   Profile? _profile;
   List<UserSave> _saves = [];
   String? _error;
@@ -68,12 +71,29 @@ class _HomePageState extends State<HomePage> {
           ),
         );
       }
+      if (profile != null) {
+        await _geofenceSync.syncFromProfile(profile: profile);
+      }
     } catch (e) {
       if (!mounted) return;
       setState(() {
         _error = userFacingError(e);
         _loading = false;
       });
+    }
+  }
+
+  Future<void> _openProximityPrefs() async {
+    final profile = _profile;
+    if (profile == null) return;
+    final updated = await showProximityPrefsSheet(
+      context: context,
+      profile: profile,
+      profileRepository: _profileRepo,
+      geofenceSync: _geofenceSync,
+    );
+    if (updated != null && mounted) {
+      setState(() => _profile = updated);
     }
   }
 
@@ -127,6 +147,11 @@ class _HomePageState extends State<HomePage> {
       appBar: AppBar(
         title: const Text('Chevere Plan'),
         actions: [
+          IconButton(
+            tooltip: 'Recuerdos cercanos',
+            onPressed: _profile == null ? null : _openProximityPrefs,
+            icon: const Icon(Icons.near_me_outlined),
+          ),
           if (isStaff)
             IconButton(
               tooltip: 'Administración',
@@ -167,6 +192,11 @@ class _HomePageState extends State<HomePage> {
             if (_profile != null) ...[
               const SizedBox(height: 4),
               Text('Rol: ${_profile!.role.name}'),
+              Text(
+                'Radio de recuerdos: ${_profile!.proximityRadiusM} m'
+                '${_profile!.remindPublicSites ? ' · incluye públicos' : ''}',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
             ],
             const SizedBox(height: 20),
             Text(

@@ -27,6 +27,8 @@ class Profile {
     this.avatarUrl,
     this.preferredLocale = 'es',
     this.preferredCurrency = 'COP',
+    this.proximityRadiusM = 200,
+    this.remindPublicSites = false,
   });
 
   final String id;
@@ -35,8 +37,11 @@ class Profile {
   final String? avatarUrl;
   final String preferredLocale;
   final String preferredCurrency;
+  final int proximityRadiusM;
+  final bool remindPublicSites;
 
   factory Profile.fromJson(Map<String, dynamic> json) {
+    final radius = json['proximity_radius_m'];
     return Profile(
       id: json['id'] as String,
       role: AppRole.fromDb(json['role'] as String?),
@@ -44,6 +49,26 @@ class Profile {
       avatarUrl: json['avatar_url'] as String?,
       preferredLocale: (json['preferred_locale'] as String?) ?? 'es',
       preferredCurrency: (json['preferred_currency'] as String?) ?? 'COP',
+      proximityRadiusM: radius is int
+          ? radius
+          : (radius is num ? radius.toInt() : 200),
+      remindPublicSites: json['remind_public_sites'] as bool? ?? false,
+    );
+  }
+
+  Profile copyWith({
+    int? proximityRadiusM,
+    bool? remindPublicSites,
+  }) {
+    return Profile(
+      id: id,
+      role: role,
+      displayName: displayName,
+      avatarUrl: avatarUrl,
+      preferredLocale: preferredLocale,
+      preferredCurrency: preferredCurrency,
+      proximityRadiusM: proximityRadiusM ?? this.proximityRadiusM,
+      remindPublicSites: remindPublicSites ?? this.remindPublicSites,
     );
   }
 }

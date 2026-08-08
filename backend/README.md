@@ -24,6 +24,14 @@ Ejecuta:
 
 - `supabase/migrations/20260808000004_ciclo3_duplicates.sql`
 
+## Ciclo 4 — Proximidad / geofencing
+
+Ejecuta:
+
+- `supabase/migrations/20260808000005_ciclo4_proximity.sql`
+
+(añade `profiles.proximity_radius_m`, `profiles.remind_public_sites` y RPC `list_proximity_sites`).
+
 ## Bootstrap root (obligatorio una vez)
 
 Tras iniciar sesión en la app con tu Google, ejecuta **todo este bloque** en SQL Editor:
