@@ -44,6 +44,29 @@ Estás ayudando a construir el MVP de una aplicación móvil (nombre a definir) 
 
 ---
 
+## Diseño UI (Figma Make) — referencia visual
+
+**Archivo:** [Guardados app diseño](https://www.figma.com/make/HhANLxoeQuTr5YJZnTAfG7/Guardados-app-dise%C3%B1o)  
+**fileKey:** `HhANLxoeQuTr5YJZnTAfG7` (Figma Make; node raíz `0:1`)  
+**Nota de marca:** el prototipo usa el nombre *Chebre Plan*; el producto en código/package es **Chevere Plan** (`com.chevere.plan`). Preferir Chevere Plan salvo que se decida renombrar.
+
+Al implementar UI de cada ciclo, **adaptar** este prototipo a Flutter (no copiar React/shadcn tal cual). Pantallas del Make → ciclo:
+
+| Pantalla Figma | Ciclo | Notas |
+|---|---|---|
+| Shell login / sesión | 0 | Ya entregado (Material 3 mínimo; alinear look Figma en pulido) |
+| **Panel Administrador** (`admin`: General, Usuarios, Categorías, Reportes) | **1** (mínimo) + 7 | Ciclo 1: **Categorías + Vehículos/transporte** (especificación §12). Tabs Overview/Usuarios/Reportes del mock: placeholders o Ciclo 7 |
+| Inicio, detalle de lugar, **Guardar** (FAB) | **2** | Captura/share sheet, borrador, fotos |
+| Privado / público en cards y detalle | **3** | Capa social y anti-duplicados |
+| Banner “cerca de mí” / recuerdos | **4** | Geofencing |
+| Planes, detalle plan, crear plan, Abrir en Maps | **5** | Planes + transporte |
+| Explorar + búsqueda/filtros | **6** | Búsqueda general y avanzada |
+| Rutas / historial visitados; reportes en admin | **7** | Mis rutas + moderación |
+
+Tokens útiles del prototipo (orientativos): fondo `#0B0D15`, superficie `#141A24`, acento `#FFBB33`, OK `#00D68F`, alerta `#FF5252`.
+
+---
+
 ## Plan de ciclos del MVP (Fase 1, según sección 15 de la especificación)
 
 ### Ciclo 0 — Setup base
@@ -56,7 +79,7 @@ Estás ayudando a construir el MVP de una aplicación móvil (nombre a definir) 
 ### Ciclo 1 — Modelo de datos y panel de administración base
 - Diseñar y migrar el esquema de base de datos: usuarios, roles (root/admin/usuario), árbol de categorías (sección 4.1), tipos de transporte (sección 7.2), sitios, fotos, guardados.
 - Implementar el árbol de categorías fijo y parametrizable desde base de datos.
-- Implementar panel de administración mínimo (sección 12): gestión de categorías y vehículos.
+- Implementar panel de administración mínimo (sección 12): gestión de categorías y vehículos — UI alineada al tab **Categorías** (y sección vehículos) del Figma Make anterior.
 - Entregable: base de datos poblada con el árbol de categorías inicial y tipos de transporte; panel de admin accesible solo para root/admin.
 
 ### Ciclo 2 — Captura y guardado de sitios

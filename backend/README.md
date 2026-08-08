@@ -1,8 +1,56 @@
-# Backend (Supabase)
+# Backend Supabase — Ciclo 1
 
-Aquí vivirán:
+## Aplicar migraciones (SQL Editor)
 
-- `supabase/migrations/` — esquema SQL (Ciclo 1+)
-- `supabase/functions/` — Edge Functions por dominio
+1. Abre el proyecto en [Supabase Dashboard](https://supabase.com/dashboard) → **SQL Editor**.
+2. Ejecuta en orden el contenido actualizado de:
+   - `supabase/migrations/20260808000001_ciclo1_schema.sql`
+   - `supabase/migrations/20260808000002_ciclo1_seed.sql`
+3. Verifica: Table Editor debe mostrar `profiles`, `categories`, `transport_types`, `sites`, etc.
 
-En Ciclo 0 solo dejamos la carpeta lista. El esquema de negocio empieza en Ciclo 1.
+> **Nota:** si un intento anterior falló a mitad, vuelve a pegar el schema completo (es idempotente con `if not exists` / `create or replace`). No hace falta borrar el proyecto.
+
+## Bootstrap root (obligatorio una vez)
+
+Tras iniciar sesión en la app con tu Google, ejecuta **todo este bloque** en SQL Editor:
+
+```sql
+-- 1) Permitir bootstrap desde el SQL Editor (auth.uid() es null ahí)
+create or replace function public.prevent_role_escalation()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if new.role is distinct from old.role then
+    if auth.uid() is null then
+      return new;
+    end if;
+    if not public.is_staff() then
+      raise exception 'Solo admin/root pueden cambiar roles';
+    end if;
+  end if;
+  return new;
+end;
+$$;
+
+-- 2) Backfill si tu usuario ya existía antes del trigger
+insert into public.profiles (id, display_name, role)
+select id, coalesce(raw_user_meta_data->>'full_name', email), 'user'
+from auth.users
+on conflict (id) do nothing;
+
+-- 3) Conviértete en root
+update public.profiles
+set role = 'root'
+where id = (select id from auth.users where email = 'johnftmovil@gmail.com');
+```
+
+## Designar admin (solo root/staff vía SQL por ahora)
+
+```sql
+update public.profiles
+set role = 'admin'
+where id = (select id from auth.users where email = 'otro@gmail.com');
+```
