@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../core/errors/user_facing_error.dart';
 import '../../admin/data/admin_repository.dart';
 import '../../admin/presentation/admin_page.dart';
 import '../../auth/data/auth_repository.dart';
@@ -70,7 +71,7 @@ class _HomePageState extends State<HomePage> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _error = e.toString();
+        _error = userFacingError(e);
         _loading = false;
       });
     }
@@ -199,10 +200,13 @@ class _HomePageState extends State<HomePage> {
                     subtitle: Text(
                       [
                         s.status.labelEs,
+                        if (s.isPossibleDuplicate) 'Posible duplicado',
                         if (s.city != null && s.city!.isNotEmpty) s.city!,
                         if (s.categoryNames.isNotEmpty)
                           s.categoryNames.join(', '),
                         s.isPublic ? 'Público' : 'Privado',
+                        if (s.alsoSharedBy.isNotEmpty)
+                          'También por: ${s.alsoSharedBy.join(', ')}',
                       ].join(' · '),
                     ),
                     isThreeLine: true,

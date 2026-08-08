@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/errors/user_facing_error.dart';
 import '../data/auth_repository.dart';
 
 class LoginPage extends StatefulWidget {
@@ -24,7 +25,7 @@ class _LoginPageState extends State<LoginPage> {
       await widget.authRepository.signInWithGoogle();
     } catch (error) {
       if (!mounted) return;
-      setState(() => _error = error.toString());
+      setState(() => _error = userFacingError(error));
     } finally {
       if (mounted) setState(() => _loading = false);
     }

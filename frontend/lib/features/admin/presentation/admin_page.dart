@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/errors/user_facing_error.dart';
 import '../data/admin_models.dart';
 import '../data/admin_repository.dart';
 
@@ -51,7 +52,7 @@ class _AdminPageState extends State<AdminPage>
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _error = e.toString();
+        _error = userFacingError(e);
         _loading = false;
       });
     }
@@ -118,7 +119,7 @@ class _AdminPageState extends State<AdminPage>
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e')),
+        SnackBar(content: Text(userFacingError(e))),
       );
     }
   }
@@ -201,7 +202,7 @@ class _AdminPageState extends State<AdminPage>
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e')),
+        SnackBar(content: Text(userFacingError(e))),
       );
     }
   }

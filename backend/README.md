@@ -18,6 +18,12 @@ Ejecuta también:
 
 (crea/asegura bucket `site-photos` + policies + columnas `draft_remind_at`).
 
+## Ciclo 3 — Anti-duplicados
+
+Ejecuta:
+
+- `supabase/migrations/20260808000004_ciclo3_duplicates.sql`
+
 ## Bootstrap root (obligatorio una vez)
 
 Tras iniciar sesión en la app con tu Google, ejecuta **todo este bloque** en SQL Editor:

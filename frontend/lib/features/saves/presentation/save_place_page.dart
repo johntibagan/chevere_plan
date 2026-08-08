@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../../core/errors/user_facing_error.dart';
 import '../../admin/data/admin_models.dart';
 import '../../admin/data/admin_repository.dart';
 import '../data/draft_reminder_service.dart';
@@ -77,7 +78,7 @@ class _SavePlacePageState extends State<SavePlacePage> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _error = e.toString();
+        _error = userFacingError(e);
         _loadingCats = false;
       });
     }
@@ -124,6 +125,34 @@ class _SavePlacePageState extends State<SavePlacePage> {
     try {
       final lat = double.tryParse(_latCtrl.text.replaceAll(',', '.'));
       final lng = double.tryParse(_lngCtrl.text.replaceAll(',', '.'));
+      final name = _nameCtrl.text.trim().isEmpty ? 'Sin nombre' : _nameCtrl.text.trim();
+
+      String? linkToExisting;
+      final shouldCheckDuplicates = _isPhysical &&
+          name != 'Sin nombre' &&
+          ((_isPublic) ||
+              (lat != null && lng != null) ||
+              _cityCtrl.text.trim().isNotEmpty);
+
+      if (shouldCheckDuplicates) {
+        final dupes = await widget.savesRepository.findPossibleDuplicates(
+          name: name,
+          city: _cityCtrl.text,
+          latitude: lat,
+          longitude: lng,
+        );
+        if (dupes.isNotEmpty && mounted) {
+          final chosen = await _askDuplicate(dupes.first);
+          if (chosen == null) {
+            setState(() => _saving = false);
+            return; // canceló
+          }
+          if (chosen) {
+            linkToExisting = dupes.first.siteId;
+          }
+        }
+      }
+
       final saved = await widget.savesRepository.createSave(
         SaveDraftInput(
           name: _nameCtrl.text,
@@ -137,10 +166,11 @@ class _SavePlacePageState extends State<SavePlacePage> {
           categoryIds: _selectedCategoryIds.toList(),
           isPublic: _isPublic,
           isPhysicalPlace: _isPhysical,
+          linkToExistingSiteId: linkToExisting,
         ),
       );
 
-      if (_pendingPhoto != null) {
+      if (_pendingPhoto != null && linkToExisting == null) {
         await widget.savesRepository.uploadPhoto(
           siteId: saved.siteId,
           file: _pendingPhoto!,
@@ -160,9 +190,15 @@ class _SavePlacePageState extends State<SavePlacePage> {
         builder: (context) => AlertDialog(
           title: const Text('¡Lugar guardado!'),
           content: Text(
-            saved.status == SiteStatus.complete
-                ? 'Quedó completo en tu lista.'
-                : 'Estado: ${saved.status.labelEs}. Puedes completarlo después.',
+            [
+              if (saved.isPossibleDuplicate)
+                'Quedó vinculado a un sitio público existente (posible duplicado).'
+              else if (saved.status == SiteStatus.complete)
+                'Quedó completo en tu lista.'
+              else
+                'Estado: ${saved.status.labelEs}. Puedes completarlo después.',
+              if (!saved.isPublic) ' Privado por defecto.',
+            ].join(),
           ),
           actions: [
             FilledButton(
@@ -177,10 +213,43 @@ class _SavePlacePageState extends State<SavePlacePage> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _error = e.toString();
+        _error = userFacingError(e);
         _saving = false;
       });
     }
+  }
+
+  /// `true` = mismo sitio, `false` = uno nuevo, `null` = cancelar
+  Future<bool?> _askDuplicate(PossibleDuplicate d) {
+    final dist = d.distanceM == null
+        ? ''
+        : ' · ~${d.distanceM!.round()} m';
+    return showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('¿Es el mismo sitio?'),
+        content: Text(
+          'Encontramos un sitio público parecido:\n\n'
+          '«${d.siteName}»'
+          '${d.city != null ? ' — ${d.city}' : ''}$dist\n\n'
+          'No se fusiona solo: tú decides.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Es uno nuevo'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Sí, es el mismo'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override

@@ -37,6 +37,49 @@ enum SiteStatus {
   }
 }
 
+class PossibleDuplicate {
+  const PossibleDuplicate({
+    required this.siteId,
+    required this.siteName,
+    this.city,
+    this.distanceM,
+    this.nameScore,
+    this.contributorCount = 0,
+  });
+
+  final String siteId;
+  final String siteName;
+  final String? city;
+  final double? distanceM;
+  final double? nameScore;
+  final int contributorCount;
+
+  factory PossibleDuplicate.fromJson(Map<String, dynamic> json) {
+    return PossibleDuplicate(
+      siteId: json['site_id'] as String,
+      siteName: json['site_name'] as String? ?? 'Sitio',
+      city: json['city'] as String?,
+      distanceM: json['distance_m'] == null
+          ? null
+          : (json['distance_m'] as num).toDouble(),
+      nameScore: json['name_score'] == null
+          ? null
+          : (json['name_score'] as num).toDouble(),
+      contributorCount: (json['contributor_count'] as num?)?.toInt() ?? 0,
+    );
+  }
+}
+
+class SiteContributor {
+  const SiteContributor({
+    required this.userId,
+    this.displayName,
+  });
+
+  final String userId;
+  final String? displayName;
+}
+
 class UserSave {
   const UserSave({
     required this.id,
@@ -53,6 +96,9 @@ class UserSave {
     this.addressLine,
     this.categoryNames = const [],
     this.createdAt,
+    this.isPossibleDuplicate = false,
+    this.possibleDuplicateOfSiteId,
+    this.alsoSharedBy = const [],
   });
 
   final String id;
@@ -69,6 +115,9 @@ class UserSave {
   final String? addressLine;
   final List<String> categoryNames;
   final DateTime? createdAt;
+  final bool isPossibleDuplicate;
+  final String? possibleDuplicateOfSiteId;
+  final List<String> alsoSharedBy;
 
   factory UserSave.fromJoinedJson(Map<String, dynamic> json) {
     final site = Map<String, dynamic>.from(json['sites'] as Map? ?? {});
@@ -82,6 +131,16 @@ class UserSave {
         if (i18n is Map && i18n['es'] is String) {
           names.add(i18n['es'] as String);
         }
+      }
+    }
+    final contribs = <String>[];
+    final contribRaw = site['site_contributors'] as List? ?? const [];
+    for (final row in contribRaw) {
+      if (row is! Map) continue;
+      final profile = row['profiles'];
+      if (profile is Map) {
+        final n = profile['display_name'] as String?;
+        if (n != null && n.isNotEmpty) contribs.add(n);
       }
     }
     return UserSave(
@@ -101,6 +160,10 @@ class UserSave {
       createdAt: json['created_at'] != null
           ? DateTime.tryParse(json['created_at'] as String)
           : null,
+      isPossibleDuplicate: json['is_possible_duplicate'] as bool? ?? false,
+      possibleDuplicateOfSiteId:
+          json['possible_duplicate_of_site_id'] as String?,
+      alsoSharedBy: contribs,
     );
   }
 }
@@ -119,6 +182,7 @@ class SaveDraftInput {
     this.isPublic = false,
     this.isPhysicalPlace = true,
     this.notes,
+    this.linkToExistingSiteId,
   });
 
   final String name;
@@ -133,4 +197,6 @@ class SaveDraftInput {
   final bool isPublic;
   final bool isPhysicalPlace;
   final String? notes;
+  /// Si el usuario confirma duplicado = mismo sitio público existente.
+  final String? linkToExistingSiteId;
 }

@@ -41,6 +41,7 @@ Estás ayudando a construir el MVP de una aplicación móvil (nombre a definir) 
 5. **Mantén el modelo de datos preparado para multi-moneda y multi-idioma** desde el inicio, aunque el MVP solo use COP/español (sección 16.3).
 6. **No implementes lógica de pagos reales todavía** — solo dejar la estructura lista para pasarela externa (Wompi/PSE) en modo sandbox/demo (secciones 13 y 15, Fase 1 vs Fase 2).
 7. **Cualquier decisión de arquitectura no trivial** (ej. cómo modelar el árbol de categorías, cómo estructurar el estado "borrador") debe proponerse primero en texto antes de escribir código, para validarla conmigo.
+8. **Errores visibles al usuario (obligatorio en todos los ciclos):** nunca mostrar en la UI mensajes técnicos (PostgREST/SQL, stack traces, nombres de tablas/FK, códigos PGRST*, paths, tokens, keys, SDKs, Gradle, etc.). Solo mensajes de **negocio** claros (ej. “Máximo 15 fotos por sitio”). Ante cualquier fallo técnico/infraestructura, mostrar únicamente algo genérico como **“Error en la app. Intenta de nuevo.”** y registrar el detalle técnico en logs de depuración (`developer.log` / consola), nunca en pantalla.
 
 ---
 
@@ -68,6 +69,8 @@ Tokens útiles del prototipo (orientativos): fondo `#0B0D15`, superficie `#141A2
 ---
 
 ## Plan de ciclos del MVP (Fase 1, según sección 15 de la especificación)
+
+> **Errores en UI (todos los ciclos):** aplicar la regla 8. Al usuario solo mensajes de negocio; ante fallo técnico → **“Error en la app. Intenta de nuevo.”** Sin filtrar SQL, PostgREST, credenciales, paths ni nombres de herramientas.
 
 ### Ciclo 0 — Setup base
 - Inicializar estructura del monorepo (`frontend/`, `backend/`, `docs/`).
