@@ -10,6 +10,14 @@
 
 > **Nota:** si un intento anterior falló a mitad, vuelve a pegar el schema completo (es idempotente con `if not exists` / `create or replace`). No hace falta borrar el proyecto.
 
+## Ciclo 2 — Storage + columnas borrador
+
+Ejecuta también:
+
+- `supabase/migrations/20260808000003_ciclo2_draft_storage.sql`
+
+(crea/asegura bucket `site-photos` + policies + columnas `draft_remind_at`).
+
 ## Bootstrap root (obligatorio una vez)
 
 Tras iniciar sesión en la app con tu Google, ejecuta **todo este bloque** en SQL Editor:

@@ -7,6 +7,7 @@ import 'app.dart';
 import 'core/config/env.dart';
 import 'core/notifications/fcm_bootstrap.dart';
 import 'features/auth/data/auth_repository.dart';
+import 'features/saves/data/draft_reminder_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -25,6 +26,7 @@ Future<void> main() async {
 
   await Firebase.initializeApp();
   await bootstrapFcm();
+  await DraftReminderService.instance.init();
 
   await Supabase.initialize(
     url: Env.supabaseUrl,

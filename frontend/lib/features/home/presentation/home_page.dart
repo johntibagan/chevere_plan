@@ -6,8 +6,11 @@ import '../../admin/presentation/admin_page.dart';
 import '../../auth/data/auth_repository.dart';
 import '../../auth/data/profile.dart';
 import '../../auth/data/profile_repository.dart';
+import '../../saves/data/draft_reminder_service.dart';
+import '../../saves/data/save_models.dart';
+import '../../saves/data/saves_repository.dart';
+import '../../saves/presentation/save_place_page.dart';
 
-/// Home del Ciclo 0/1: sesión + acceso admin si staff.
 class HomePage extends StatefulWidget {
   const HomePage({
     super.key,
@@ -24,31 +27,89 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   final _profileRepo = ProfileRepository();
+  final _savesRepo = SavesRepository();
   Profile? _profile;
-  String? _profileError;
-  bool _loadingProfile = true;
+  List<UserSave> _saves = [];
+  String? _error;
+  bool _loading = true;
 
   @override
   void initState() {
     super.initState();
-    _loadProfile();
+    _bootstrap();
   }
 
-  Future<void> _loadProfile() async {
+  Future<void> _bootstrap() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
     try {
       final profile = await _profileRepo.fetchCurrent();
+      final saves = await _savesRepo.listMine();
+      final stale = await _savesRepo.listStaleDrafts();
       if (!mounted) return;
       setState(() {
         _profile = profile;
-        _loadingProfile = false;
+        _saves = saves;
+        _loading = false;
       });
+      if (stale.isNotEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Tienes ${stale.length} borrador(es) por completar.',
+            ),
+            action: SnackBarAction(
+              label: 'Ver',
+              onPressed: () {},
+            ),
+          ),
+        );
+      }
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _profileError = e.toString();
-        _loadingProfile = false;
+        _error = e.toString();
+        _loading = false;
       });
     }
+  }
+
+  Future<void> _openSave({String? shared}) async {
+    final result = await Navigator.of(context).push<UserSave>(
+      MaterialPageRoute(
+        builder: (_) => SavePlacePage(
+          initialSharedText: shared,
+          savesRepository: _savesRepo,
+        ),
+      ),
+    );
+    if (result != null) await _bootstrap();
+  }
+
+  Future<void> _discard(UserSave save) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Descartar guardado'),
+        content: Text('¿Eliminar "${save.siteName}" de tu lista?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Descartar'),
+          ),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    await DraftReminderService.instance.cancelForSave(save.id);
+    await _savesRepo.discardSave(save.id);
+    await _bootstrap();
   }
 
   @override
@@ -84,61 +145,75 @@ class _HomePageState extends State<HomePage> {
           ),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => _openSave(),
+        icon: const Icon(Icons.add),
+        label: const Text('Guardar'),
+      ),
+      body: RefreshIndicator(
+        onRefresh: _bootstrap,
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 88),
           children: [
-            Text(
-              'Hola, $name',
-              style: Theme.of(context).textTheme.headlineSmall,
-            ),
-            const SizedBox(height: 8),
+            Text('Hola, $name', style: Theme.of(context).textTheme.headlineSmall),
+            const SizedBox(height: 4),
             Text(
               email,
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
             ),
-            const SizedBox(height: 16),
-            if (_loadingProfile)
-              const LinearProgressIndicator()
-            else if (_profileError != null)
+            if (_profile != null) ...[
+              const SizedBox(height: 4),
+              Text('Rol: ${_profile!.role.name}'),
+            ],
+            const SizedBox(height: 20),
+            Text(
+              'Mis guardados',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 8),
+            if (_loading)
+              const Padding(
+                padding: EdgeInsets.all(24),
+                child: Center(child: CircularProgressIndicator()),
+              )
+            else if (_error != null)
               Text(
-                'No se pudo cargar el perfil. ¿Aplicaste las migraciones SQL?\n$_profileError',
+                _error!,
                 style: TextStyle(color: Theme.of(context).colorScheme.error),
               )
-            else if (_profile == null)
-              Text(
-                'Sin fila en profiles. Ejecuta el backfill SQL del backend/README.',
-                style: TextStyle(color: Theme.of(context).colorScheme.error),
+            else if (_saves.isEmpty)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 32),
+                child: Text(
+                  'Aún no tienes lugares. Usa Guardar o comparte un link desde IG/TikTok/FB hacia Chevere Plan.',
+                ),
               )
             else
-              Text(
-                'Rol: ${_profile!.role.name}',
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-            const SizedBox(height: 24),
-            Text(
-              'Ciclo 1: esquema y panel admin (categorías / vehículos). '
-              'Guardados y planes llegan en ciclos siguientes.',
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-            if (isStaff) ...[
-              const SizedBox(height: 24),
-              FilledButton.icon(
-                onPressed: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute<void>(
-                      builder: (_) =>
-                          AdminPage(repository: AdminRepository()),
+              ..._saves.map(
+                (s) => Card(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  child: ListTile(
+                    title: Text(s.siteName),
+                    subtitle: Text(
+                      [
+                        s.status.labelEs,
+                        if (s.city != null && s.city!.isNotEmpty) s.city!,
+                        if (s.categoryNames.isNotEmpty)
+                          s.categoryNames.join(', '),
+                        s.isPublic ? 'Público' : 'Privado',
+                      ].join(' · '),
                     ),
-                  );
-                },
-                icon: const Icon(Icons.admin_panel_settings),
-                label: const Text('Abrir panel administrador'),
+                    isThreeLine: true,
+                    trailing: IconButton(
+                      tooltip: 'Descartar',
+                      onPressed: () => _discard(s),
+                      icon: const Icon(Icons.delete_outline),
+                    ),
+                  ),
+                ),
               ),
-            ],
           ],
         ),
       ),
