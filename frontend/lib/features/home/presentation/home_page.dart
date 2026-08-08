@@ -9,6 +9,8 @@ import '../../auth/data/profile.dart';
 import '../../auth/data/profile_repository.dart';
 import '../../proximity/data/geofence_sync_service.dart';
 import '../../proximity/presentation/proximity_prefs_sheet.dart';
+import '../../plans/data/plans_repository.dart';
+import '../../plans/presentation/plans_list_page.dart';
 import '../../saves/data/draft_reminder_service.dart';
 import '../../saves/data/save_models.dart';
 import '../../saves/data/saves_repository.dart';
@@ -147,6 +149,19 @@ class _HomePageState extends State<HomePage> {
       appBar: AppBar(
         title: const Text('Chevere Plan'),
         actions: [
+          IconButton(
+            tooltip: 'Mis planes',
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => PlansListPage(
+                    repository: PlansRepository(),
+                  ),
+                ),
+              );
+            },
+            icon: const Icon(Icons.route_outlined),
+          ),
           IconButton(
             tooltip: 'Recuerdos cercanos',
             onPressed: _profile == null ? null : _openProximityPrefs,

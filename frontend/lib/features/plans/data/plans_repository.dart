@@ -1,0 +1,204 @@
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+import '../../../core/errors/user_facing_error.dart';
+import 'plan_builder.dart';
+import 'plan_hours_policy.dart';
+import 'plan_models.dart';
+
+class PlansRepository {
+  PlansRepository({SupabaseClient? client})
+      : _client = client ?? Supabase.instance.client;
+
+  final SupabaseClient _client;
+
+  String? get _uid => _client.auth.currentUser?.id;
+
+  static const _planSelect =
+      'id, user_id, title, location_query, start_lat, start_lng, '
+      'include_public, max_budget_amount, currency_code, status, '
+      'plan_stops(id, plan_id, site_id, sort_order, visited_at, '
+      'estimated_price_amount, lat, lng, '
+      'sites(name, city, estimated_price_amount))';
+
+  Future<List<PlanCandidate>> listCandidates({
+    required String locationQuery,
+    required bool includePublic,
+    double? maxBudget,
+  }) async {
+    final rows = await _client.rpc(
+      'list_plan_candidates',
+      params: {
+        'p_location_query': locationQuery.trim(),
+        'p_include_public': includePublic,
+        'p_max_budget': maxBudget,
+      },
+    );
+    return (rows as List<dynamic>)
+        .map((e) => PlanCandidate.fromJson(Map<String, dynamic>.from(e as Map)))
+        .where((c) => PlanHoursPolicy.isOpenInWindow(siteId: c.siteId))
+        .toList();
+  }
+
+  Future<List<Plan>> listMine() async {
+    final uid = _uid;
+    if (uid == null) return const [];
+    final rows = await _client
+        .from('plans')
+        .select(_planSelect)
+        .eq('user_id', uid)
+        .order('created_at', ascending: false);
+    return (rows as List<dynamic>)
+        .map((e) => _planFromJson(Map<String, dynamic>.from(e as Map)))
+        .toList();
+  }
+
+  Future<Plan> fetchById(String planId) async {
+    final row = await _client
+        .from('plans')
+        .select(_planSelect)
+        .eq('id', planId)
+        .single();
+    return _planFromJson(Map<String, dynamic>.from(row));
+  }
+
+  Future<Plan> createPlan({
+    required String title,
+    required String locationQuery,
+    required bool includePublic,
+    double? maxBudget,
+    double? startLat,
+    double? startLng,
+    required List<PlanCandidate> orderedStops,
+  }) async {
+    final uid = _uid;
+    if (uid == null) {
+      throw const AppUserError('Debes iniciar sesión.');
+    }
+    if (orderedStops.isEmpty) {
+      throw const AppUserError(
+        'No hay lugares para ese destino. Revisa ciudad/departamento o presupuesto.',
+      );
+    }
+
+    final planRow = await _client
+        .from('plans')
+        .insert({
+          'user_id': uid,
+          'title': title.trim().isEmpty
+              ? 'Plan en ${locationQuery.trim()}'
+              : title.trim(),
+          'location_query': locationQuery.trim(),
+          'start_lat': startLat,
+          'start_lng': startLng,
+          'include_public': includePublic,
+          'max_budget_amount': maxBudget,
+          'status': 'active',
+        })
+        .select()
+        .single();
+
+    final planId = planRow['id'] as String;
+    final stopRows = <Map<String, dynamic>>[];
+    for (var i = 0; i < orderedStops.length; i++) {
+      final c = orderedStops[i];
+      stopRows.add({
+        'plan_id': planId,
+        'site_id': c.siteId,
+        'sort_order': i,
+        'estimated_price_amount': c.estimatedPriceAmount,
+        'lat': c.lat,
+        'lng': c.lng,
+      });
+    }
+    await _client.from('plan_stops').insert(stopRows);
+    return fetchById(planId);
+  }
+
+  Future<void> reorderStops({
+    required String planId,
+    required List<PlanStop> ordered,
+  }) async {
+    for (var i = 0; i < ordered.length; i++) {
+      await _client
+          .from('plan_stops')
+          .update({'sort_order': i})
+          .eq('id', ordered[i].id)
+          .eq('plan_id', planId);
+    }
+  }
+
+  Future<void> setVisited({
+    required String stopId,
+    required bool visited,
+  }) async {
+    await _client.from('plan_stops').update({
+      'visited_at': visited ? DateTime.now().toUtc().toIso8601String() : null,
+    }).eq('id', stopId);
+  }
+
+  Future<void> setStopEstimatedPrice({
+    required String stopId,
+    required double? amount,
+  }) async {
+    await _client.from('plan_stops').update({
+      'estimated_price_amount': amount,
+    }).eq('id', stopId);
+  }
+
+  Future<void> deletePlan(String planId) async {
+    await _client.from('plans').delete().eq('id', planId);
+  }
+
+  Plan _planFromJson(Map<String, dynamic> json) {
+    final stopsRaw = json['plan_stops'];
+    final stops = <PlanStop>[];
+    if (stopsRaw is List) {
+      for (final raw in stopsRaw) {
+        final m = Map<String, dynamic>.from(raw as Map);
+        final sites = m['sites'];
+        Map<String, dynamic>? siteMap;
+        if (sites is Map) {
+          siteMap = Map<String, dynamic>.from(sites);
+        }
+        final visited = m['visited_at'];
+        final est = m['estimated_price_amount'];
+        final siteEst = siteMap?['estimated_price_amount'];
+        stops.add(
+          PlanStop(
+            id: m['id'] as String,
+            planId: m['plan_id'] as String,
+            siteId: m['site_id'] as String,
+            sortOrder: m['sort_order'] as int? ?? 0,
+            siteName: (siteMap?['name'] as String?) ?? 'Sitio',
+            city: siteMap?['city'] as String?,
+            lat: (m['lat'] as num?)?.toDouble(),
+            lng: (m['lng'] as num?)?.toDouble(),
+            visitedAt: visited == null
+                ? null
+                : DateTime.tryParse(visited as String),
+            estimatedPriceAmount:
+                est == null ? null : (est as num).toDouble(),
+            siteEstimatedPriceAmount:
+                siteEst == null ? null : (siteEst as num).toDouble(),
+          ),
+        );
+      }
+      stops.sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
+    }
+
+    final budget = json['max_budget_amount'];
+    return Plan(
+      id: json['id'] as String,
+      userId: json['user_id'] as String,
+      title: json['title'] as String,
+      locationQuery: json['location_query'] as String,
+      startLat: (json['start_lat'] as num?)?.toDouble(),
+      startLng: (json['start_lng'] as num?)?.toDouble(),
+      includePublic: json['include_public'] as bool? ?? false,
+      maxBudgetAmount: budget == null ? null : (budget as num).toDouble(),
+      currencyCode: (json['currency_code'] as String?) ?? 'COP',
+      status: json['status'] as String? ?? 'active',
+      stops: stops,
+    );
+  }
+}

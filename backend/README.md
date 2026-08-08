@@ -32,6 +32,14 @@ Ejecuta:
 
 (añade `profiles.proximity_radius_m`, `profiles.remind_public_sites` y RPC `list_proximity_sites`).
 
+## Ciclo 5 — Planes inteligentes
+
+Ejecuta:
+
+- `supabase/migrations/20260808000006_ciclo5_plans.sql`
+
+(tablas `plans` / `plan_stops`, `profiles.transport_max_km`, RPC `list_plan_candidates`).
+
 ## Bootstrap root (obligatorio una vez)
 
 Tras iniciar sesión en la app con tu Google, ejecuta **todo este bloque** en SQL Editor:

@@ -1,0 +1,126 @@
+import 'package:flutter/material.dart';
+
+import '../../../core/errors/user_facing_error.dart';
+import '../data/plan_models.dart';
+import '../data/plans_repository.dart';
+import 'create_plan_page.dart';
+import 'plan_detail_page.dart';
+
+class PlansListPage extends StatefulWidget {
+  const PlansListPage({super.key, required this.repository});
+
+  final PlansRepository repository;
+
+  @override
+  State<PlansListPage> createState() => _PlansListPageState();
+}
+
+class _PlansListPageState extends State<PlansListPage> {
+  bool _loading = true;
+  String? _error;
+  List<Plan> _plans = const [];
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final plans = await widget.repository.listMine();
+      if (!mounted) return;
+      setState(() {
+        _plans = plans;
+        _loading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _error = userFacingError(e);
+        _loading = false;
+      });
+    }
+  }
+
+  Future<void> _openCreate() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => CreatePlanPage(repository: widget.repository),
+      ),
+    );
+    await _load();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Mis planes')),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _openCreate,
+        icon: const Icon(Icons.route),
+        label: const Text('Armar plan'),
+      ),
+      body: RefreshIndicator(
+        onRefresh: _load,
+        child: _loading
+            ? ListView(
+                children: const [
+                  SizedBox(height: 120),
+                  Center(child: CircularProgressIndicator()),
+                ],
+              )
+            : _error != null
+                ? ListView(
+                    padding: const EdgeInsets.all(24),
+                    children: [
+                      Text(_error!, textAlign: TextAlign.center),
+                    ],
+                  )
+                : _plans.isEmpty
+                    ? ListView(
+                        padding: const EdgeInsets.all(24),
+                        children: const [
+                          SizedBox(height: 48),
+                          Text(
+                            'Aún no tienes planes. Arma uno a partir de tus guardados por ciudad o departamento.',
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      )
+                    : ListView.builder(
+                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 88),
+                        itemCount: _plans.length,
+                        itemBuilder: (context, index) {
+                          final plan = _plans[index];
+                          return Card(
+                            margin: const EdgeInsets.only(bottom: 8),
+                            child: ListTile(
+                              title: Text(plan.title),
+                              subtitle: Text(
+                                '${plan.locationQuery} · ${plan.stops.length} paradas',
+                              ),
+                              trailing: const Icon(Icons.chevron_right),
+                              onTap: () async {
+                                await Navigator.of(context).push(
+                                  MaterialPageRoute<void>(
+                                    builder: (_) => PlanDetailPage(
+                                      planId: plan.id,
+                                      repository: widget.repository,
+                                    ),
+                                  ),
+                                );
+                                await _load();
+                              },
+                            ),
+                          );
+                        },
+                      ),
+      ),
+    );
+  }
+}
