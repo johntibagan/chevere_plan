@@ -40,6 +40,14 @@ Ejecuta:
 
 (tablas `plans` / `plan_stops`, `profiles.transport_max_km`, RPC `list_plan_candidates`).
 
+## Ciclo 6 — Búsqueda
+
+Ejecuta:
+
+- `supabase/migrations/20260808000007_ciclo6_search.sql`
+
+(RPC `search_sites` general + filtros avanzados).
+
 ## Bootstrap root (obligatorio una vez)
 
 Tras iniciar sesión en la app con tu Google, ejecuta **todo este bloque** en SQL Editor:

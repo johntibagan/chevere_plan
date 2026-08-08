@@ -123,6 +123,7 @@ Tokens útiles del prototipo (orientativos): fondo `#0B0D15`, superficie `#141A2
 ### Ciclo 8 — Pulido y cierre de Fase 1
 - Revisión de rendimiento (batería, tiempos de carga).
 - Revisión de textos legales mínimos (aviso de privacidad, Términos de Uso básicos) integrados en el flujo de registro.
+- Revisar y aplicar ítems de `docs/observaciones-refinar.md`.
 - Entregable: MVP navegable de punta a punta para el círculo cerrado de prueba.
 
 ---
