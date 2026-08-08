@@ -1,0 +1,25 @@
+# OS
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# Secrets
+.env
+.env.*
+!**/.env.example
+**/.env
+**/google-services.json
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# Flutter / Dart (también en frontend/.gitignore)
+**/build/
+**/.dart_tool/
+**/.flutter-plugins-dependencies
+
+# Node / Supabase CLI caches
+node_modules/
+.supabase/
