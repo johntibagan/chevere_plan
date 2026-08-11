@@ -2,8 +2,6 @@
 .env
 .env.*
 !.env.example
-env/env.json
-!env/env.json.example
 google-services.json
 
 # Miscellaneous

@@ -1,8 +1,9 @@
 import 'package:flutter/foundation.dart';
 
 /// Configuración de cliente. **Solo** valores inyectados en compile-time
-/// (`--dart-define` / `--dart-define-from-file`).
+/// (`--dart-define` / `--dart-define-from-file=.env`).
 ///
+/// Plantilla: `.env.example` → copia a `.env` (gitignored).
 /// No empaquetar `.env` como asset: acaba en el APK/IPA y es trivial de extraer.
 ///
 /// Claves de cliente esperadas (públicas por diseño, protegidas por RLS / cuotas):

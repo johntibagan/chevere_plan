@@ -37,8 +37,11 @@ class _HomePageState extends ConsumerState<HomePage> {
   String? _error;
   bool _loading = true;
   int _tab = 0; // 0 inicio, 1 explorar, 2 planes, 3 rutas
-  /// Tabs ya visitados (R4: no montar Explorar/Planes/Rutas hasta el primer toque).
-  final Set<int> _activatedTabs = {0};
+
+  /// Instancias cacheadas: se crean al primer toque (lazy) y se reutilizan.
+  Widget? _exploreTab;
+  Widget? _plansTab;
+  Widget? _routesTab;
 
   @override
   void initState() {
@@ -49,8 +52,33 @@ class _HomePageState extends ConsumerState<HomePage> {
   void _selectTab(int i) {
     setState(() {
       _tab = i;
-      _activatedTabs.add(i);
+      switch (i) {
+        case 1:
+          _exploreTab ??= SearchPage(
+            repository: ref.read(searchRepositoryProvider),
+          );
+        case 2:
+          _plansTab ??= PlansListPage(
+            repository: ref.read(plansRepositoryProvider),
+          );
+        case 3:
+          _routesTab ??= MyRoutesPage(
+            repository: ref.read(routesRepositoryProvider),
+          );
+      }
     });
+  }
+
+  Widget _tabSlot({required int slot, required Widget? page}) {
+    // Placeholder a tamaño completo: SizedBox.shrink() colapsaba el IndexedStack
+    // y dejaba el body vacío / la barra “flotando” al centro.
+    if (page == null) {
+      return const ColoredBox(
+        color: AppColors.background,
+        child: SizedBox.expand(),
+      );
+    }
+    return KeyedSubtree(key: ValueKey('tab-$slot'), child: page);
   }
 
   Future<void> _bootstrap() async {
@@ -180,18 +208,17 @@ class _HomePageState extends ConsumerState<HomePage> {
     final isStaff = _profile?.role.isStaff ?? false;
     final initial = name.trim().isNotEmpty ? name.trim()[0].toUpperCase() : 'U';
 
-    final searchRepo = ref.read(searchRepositoryProvider);
-    final plansRepo = ref.read(plansRepositoryProvider);
-    final routesRepo = ref.read(routesRepositoryProvider);
     final adminRepo = ref.read(adminRepositoryProvider);
     final moderationRepo = ref.read(moderationRepositoryProvider);
 
     return Scaffold(
       backgroundColor: AppColors.background,
+      extendBody: true,
       body: SafeArea(
         bottom: false,
         child: IndexedStack(
           index: _tab,
+          sizing: StackFit.expand,
           children: [
             _InicioTab(
               greeting: _greeting(l10n),
@@ -225,15 +252,9 @@ class _HomePageState extends ConsumerState<HomePage> {
               onExplore: () => _selectTab(1),
               moderationRepository: moderationRepo,
             ),
-            _activatedTabs.contains(1)
-                ? SearchPage(repository: searchRepo)
-                : const SizedBox.shrink(),
-            _activatedTabs.contains(2)
-                ? PlansListPage(repository: plansRepo)
-                : const SizedBox.shrink(),
-            _activatedTabs.contains(3)
-                ? MyRoutesPage(repository: routesRepo)
-                : const SizedBox.shrink(),
+            _tabSlot(slot: 1, page: _exploreTab),
+            _tabSlot(slot: 2, page: _plansTab),
+            _tabSlot(slot: 3, page: _routesTab),
           ],
         ),
       ),
@@ -260,48 +281,58 @@ class _ChevereBottomNav extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    return Container(
-      decoration: const BoxDecoration(
-        color: AppColors.sidebar,
-        border: Border(top: BorderSide(color: AppColors.border)),
-      ),
-      padding: EdgeInsets.only(
-        left: 8,
-        right: 8,
-        top: 8,
-        bottom: MediaQuery.paddingOf(context).bottom + 8,
-      ),
-      child: Row(
-        children: [
-          _navItem(0, Icons.home_rounded, l10n.navHome),
-          _navItem(1, Icons.explore_outlined, l10n.navExplore),
-          Expanded(
-            child: Center(
-              child: GestureDetector(
-                onTap: onGuardar,
-                child: Container(
-                  width: 56,
-                  height: 56,
-                  margin: const EdgeInsets.only(bottom: 12),
-                  decoration: BoxDecoration(
-                    gradient: AppTheme.primaryGradient,
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.primary.withValues(alpha: 0.45),
-                        blurRadius: 22,
-                        offset: const Offset(0, 4),
+    return Material(
+      color: AppColors.sidebar,
+      elevation: 0,
+      child: DecoratedBox(
+        decoration: const BoxDecoration(
+          border: Border(top: BorderSide(color: AppColors.border)),
+        ),
+        child: SafeArea(
+          top: false,
+          child: SizedBox(
+            height: 64,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: Row(
+                children: [
+                  _navItem(0, Icons.home_rounded, l10n.navHome),
+                  _navItem(1, Icons.explore_outlined, l10n.navExplore),
+                  Expanded(
+                    child: Center(
+                      child: GestureDetector(
+                        onTap: onGuardar,
+                        child: Container(
+                          width: 56,
+                          height: 56,
+                          decoration: BoxDecoration(
+                            gradient: AppTheme.primaryGradient,
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color:
+                                    AppColors.primary.withValues(alpha: 0.45),
+                                blurRadius: 22,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: const Icon(
+                            Icons.add,
+                            color: Colors.black,
+                            size: 28,
+                          ),
+                        ),
                       ),
-                    ],
+                    ),
                   ),
-                  child: const Icon(Icons.add, color: Colors.black, size: 28),
-                ),
+                  _navItem(2, Icons.map_outlined, l10n.navPlans),
+                  _navItem(3, Icons.route_outlined, l10n.navRoutes),
+                ],
               ),
             ),
           ),
-          _navItem(2, Icons.map_outlined, l10n.navPlans),
-          _navItem(3, Icons.route_outlined, l10n.navRoutes),
-        ],
+        ),
       ),
     );
   }
@@ -313,23 +344,22 @@ class _ChevereBottomNav extends StatelessWidget {
       child: InkWell(
         onTap: () => onChanged(i),
         borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 4),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, size: 22, color: color),
-              const SizedBox(height: 2),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w600,
-                  color: color,
-                ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 22, color: color),
+            const SizedBox(height: 2),
+            Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+                color: color,
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

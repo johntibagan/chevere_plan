@@ -8,8 +8,8 @@ prácticas de cliente móvil con RLS en backend.
 
 ## Decisiones
 
-1. **Config por `--dart-define-from-file`** (`env/env.json`). Se elimina `.env` como
-   asset de Flutter (antes iba dentro del APK).
+1. **Config por `--dart-define-from-file=.env`**. Se elimina `.env` como
+   asset de Flutter (antes iba dentro del APK). La plantilla es `.env.example`.
 2. **Solo claves de cliente:** `SUPABASE_ANON_KEY` / publishable, Google Web Client ID,
    Geoapify. **Prohibido** `SUPABASE_SERVICE_ROLE*` en el binario
    (`Env.assertNoServerSecrets()` en debug).
@@ -22,7 +22,7 @@ prácticas de cliente móvil con RLS en backend.
 
 ## Cómo correr
 
-Ver `frontend/README.md` y `frontend/env/env.json.example`.
+Ver `frontend/README.md` y `frontend/.env.example`.
 
 ## Fuera de alcance
 
