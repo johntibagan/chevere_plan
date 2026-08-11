@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/di/providers.dart';
 import '../../../core/errors/user_facing_error.dart';
+import '../../../core/l10n/context_l10n.dart';
 import '../../moderation/presentation/admin_reports_page.dart';
 import '../data/admin_models.dart';
 import '../data/admin_repository.dart';
@@ -230,12 +231,13 @@ class _AdminPageState extends ConsumerState<AdminPage>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Panel administrador'),
+        title: Text(l10n.adminTitle),
         actions: [
           IconButton(
-            tooltip: 'Reportes de contenido',
+            tooltip: l10n.reportsTitle,
             onPressed: () {
               Navigator.of(context).push(
                 MaterialPageRoute<void>(
@@ -250,9 +252,9 @@ class _AdminPageState extends ConsumerState<AdminPage>
         ],
         bottom: TabBar(
           controller: _tabs,
-          tabs: const [
-            Tab(text: 'Categorías'),
-            Tab(text: 'Vehículos'),
+          tabs: [
+            Tab(text: l10n.adminTabCategories),
+            Tab(text: l10n.adminTabVehicles),
           ],
         ),
       ),
@@ -269,7 +271,7 @@ class _AdminPageState extends ConsumerState<AdminPage>
                         const SizedBox(height: 12),
                         FilledButton(
                           onPressed: _load,
-                          child: const Text('Reintentar'),
+                          child: Text(l10n.actionRetry),
                         ),
                       ],
                     ),

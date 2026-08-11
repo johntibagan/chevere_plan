@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/errors/user_facing_error.dart';
+import '../../../core/l10n/context_l10n.dart';
 import '../../../core/widgets/app_async_body.dart';
 import '../../../core/widgets/app_list_card.dart';
 import '../data/plan_models.dart';
@@ -60,23 +61,23 @@ class _PlansListPageState extends State<PlansListPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return Scaffold(
-      appBar: AppBar(title: const Text('Planes')),
+      appBar: AppBar(title: Text(l10n.plansTitle)),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       floatingActionButton: Padding(
         padding: const EdgeInsets.only(bottom: 8),
         child: FloatingActionButton.extended(
           onPressed: _openCreate,
           icon: const Icon(Icons.auto_awesome),
-          label: const Text('Armar plan'),
+          label: Text(l10n.plansCreateFab),
         ),
       ),
       body: AppAsyncBody(
         loading: _loading,
         error: _error,
         isEmpty: _plans.isEmpty,
-        emptyMessage:
-            'Aún no tienes planes. Arma uno a partir de tus guardados por ciudad o departamento.',
+        emptyMessage: l10n.plansEmpty,
         onRefresh: _load,
         child: ListView.builder(
           physics: const AlwaysScrollableScrollPhysics(),

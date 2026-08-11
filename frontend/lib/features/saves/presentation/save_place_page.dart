@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../../core/di/providers.dart';
 import '../../../core/errors/user_facing_error.dart';
+import '../../../core/l10n/context_l10n.dart';
 import '../../admin/data/admin_models.dart';
 import '../data/geo_place.dart';
 import '../data/save_models.dart';
@@ -13,6 +14,7 @@ import '../data/saves_repository.dart';
 import '../data/share_parser.dart';
 import 'category_picker_sheet.dart';
 import 'location_picker_page.dart';
+import 'site_status_l10n.dart';
 
 const _kRequiredStar = Color(0xFFFF8C00);
 
@@ -379,6 +381,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
       }
 
       if (!mounted) return;
+      final l10n = context.l10n;
       await showDialog<void>(
         context: context,
         builder: (context) => AlertDialog(
@@ -390,7 +393,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
               else if (saved.status == SiteStatus.complete)
                 'Quedó completo en tu lista.'
               else
-                'Estado: ${saved.status.labelEs}. Puedes completarlo después.',
+                l10n.saveStatusAfterSave(saved.status.label(l10n)),
               if (!saved.isPublic) ' Privado por defecto.',
             ].join(),
           ),
@@ -490,9 +493,12 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return Scaffold(
       appBar: AppBar(
-        title: Text(_isEditing ? 'Completar / editar lugar' : 'Guardar lugar'),
+        title: Text(
+          _isEditing ? l10n.savePlaceEditTitle : l10n.savePlaceTitle,
+        ),
       ),
       body: _loadingCats
           ? const Center(child: CircularProgressIndicator())
@@ -733,7 +739,11 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
                           width: 22,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : Text(_isEditing ? 'Guardar cambios' : 'Guardar'),
+                      : Text(
+                          _isEditing
+                              ? l10n.savePlaceSubmitEdit
+                              : l10n.savePlaceSubmit,
+                        ),
                 ),
                 const SizedBox(height: 8),
                 const Text(

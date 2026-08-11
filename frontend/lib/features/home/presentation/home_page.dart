@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/di/providers.dart';
 import '../../../core/errors/user_facing_error.dart';
+import '../../../core/l10n/context_l10n.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../admin/presentation/admin_page.dart';
 import '../../auth/data/profile.dart';
@@ -17,6 +18,7 @@ import '../../routes/presentation/my_routes_page.dart';
 import '../../search/presentation/search_page.dart';
 import '../../saves/data/save_models.dart';
 import '../../saves/presentation/save_place_page.dart';
+import '../../saves/presentation/site_status_l10n.dart';
 
 /// Shell Figma: Inicio | Explorar | [+] Guardar | Planes | Rutas
 class HomePage extends ConsumerStatefulWidget {
@@ -61,13 +63,12 @@ class _HomePageState extends ConsumerState<HomePage> {
         _loading = false;
       });
       if (stale.isNotEmpty) {
+        final l10n = context.l10n;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              'Tienes ${stale.length} borrador(es) por completar.',
-            ),
+            content: Text(l10n.homeStaleDraftsSnack(stale.length)),
             action: SnackBarAction(
-              label: 'Completar',
+              label: l10n.actionComplete,
               onPressed: () {
                 final drafts = _saves
                     .where((s) => s.status == SiteStatus.draft)
@@ -118,19 +119,20 @@ class _HomePageState extends ConsumerState<HomePage> {
   }
 
   Future<void> _discard(UserSave save) async {
+    final l10n = context.l10n;
     final ok = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Descartar guardado'),
-        content: Text('¿Eliminar "${save.siteName}" de tu lista?'),
+        title: Text(l10n.homeDiscardTitle),
+        content: Text(l10n.homeDiscardConfirm(save.siteName)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancelar'),
+            child: Text(l10n.actionCancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Descartar'),
+            child: Text(l10n.actionDiscard),
           ),
         ],
       ),
@@ -141,15 +143,16 @@ class _HomePageState extends ConsumerState<HomePage> {
     await _bootstrap();
   }
 
-  String get _greeting {
+  String _greeting(AppLocalizations l10n) {
     final h = DateTime.now().hour;
-    if (h < 12) return 'Buenos días';
-    if (h < 19) return 'Buenas tardes';
-    return 'Buenas noches';
+    if (h < 12) return l10n.greetingMorning;
+    if (h < 19) return l10n.greetingAfternoon;
+    return l10n.greetingEvening;
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final user = widget.session.user;
     final name = _profile?.displayName ??
         user.userMetadata?['full_name'] as String? ??
@@ -172,7 +175,7 @@ class _HomePageState extends ConsumerState<HomePage> {
           index: _tab,
           children: [
             _InicioTab(
-              greeting: _greeting,
+              greeting: _greeting(l10n),
               name: name,
               initial: initial,
               isStaff: isStaff,
@@ -231,6 +234,7 @@ class _ChevereBottomNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return Container(
       decoration: const BoxDecoration(
         color: AppColors.sidebar,
@@ -244,8 +248,8 @@ class _ChevereBottomNav extends StatelessWidget {
       ),
       child: Row(
         children: [
-          _navItem(0, Icons.home_rounded, 'Inicio'),
-          _navItem(1, Icons.explore_outlined, 'Explorar'),
+          _navItem(0, Icons.home_rounded, l10n.navHome),
+          _navItem(1, Icons.explore_outlined, l10n.navExplore),
           Expanded(
             child: Center(
               child: GestureDetector(
@@ -270,8 +274,8 @@ class _ChevereBottomNav extends StatelessWidget {
               ),
             ),
           ),
-          _navItem(2, Icons.map_outlined, 'Planes'),
-          _navItem(3, Icons.route_outlined, 'Rutas'),
+          _navItem(2, Icons.map_outlined, l10n.navPlans),
+          _navItem(3, Icons.route_outlined, l10n.navRoutes),
         ],
       ),
     );
@@ -348,6 +352,7 @@ class _InicioTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final drafts = saves.where((s) => s.isIncomplete).toList();
     final recent = saves.take(8).toList();
 
@@ -375,7 +380,7 @@ class _InicioTab extends StatelessWidget {
                           ),
                         ),
                         Text(
-                          'Chevere Plan',
+                          l10n.appTitle,
                           style: GoogleFonts.plusJakartaSans(
                             fontSize: 22,
                             fontWeight: FontWeight.w800,
@@ -459,7 +464,7 @@ class _InicioTab extends StatelessWidget {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'PENDIENTE',
+                                  l10n.homePendingBadge,
                                   style: TextStyle(
                                     fontSize: 10,
                                     fontWeight: FontWeight.w800,
@@ -468,7 +473,7 @@ class _InicioTab extends StatelessWidget {
                                   ),
                                 ),
                                 Text(
-                                  '${drafts.length} guardado(s) por completar',
+                                  l10n.homeDraftsToComplete(drafts.length),
                                   style: const TextStyle(
                                     fontSize: 13,
                                     fontWeight: FontWeight.w800,
@@ -502,8 +507,8 @@ class _InicioTab extends StatelessWidget {
                     ),
                     const SizedBox(width: 6),
                     Text(
-                      'Radio ${profile!.proximityRadiusM} m'
-                      '${profile!.remindPublicSites ? ' · públicos' : ''}',
+                      '${l10n.homeProximityRadius(profile!.proximityRadiusM)}'
+                      '${profile!.remindPublicSites ? l10n.homeProximityPublicSuffix : ''}',
                       style: const TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
@@ -513,7 +518,7 @@ class _InicioTab extends StatelessWidget {
                     const Spacer(),
                     TextButton(
                       onPressed: onProximity,
-                      child: const Text('Ajustar'),
+                      child: Text(l10n.actionAdjust),
                     ),
                   ],
                 ),
@@ -526,7 +531,7 @@ class _InicioTab extends StatelessWidget {
                 child: OutlinedButton.icon(
                   onPressed: onReports,
                   icon: const Icon(Icons.flag_outlined),
-                  label: const Text('Reportes abiertos'),
+                  label: Text(l10n.homeOpenReports),
                 ),
               ),
             ),
@@ -536,7 +541,7 @@ class _InicioTab extends StatelessWidget {
               child: Row(
                 children: [
                   Text(
-                    'Mis guardados',
+                    l10n.homeMySaves,
                     style: GoogleFonts.plusJakartaSans(
                       fontSize: 14,
                       fontWeight: FontWeight.w800,
@@ -546,11 +551,11 @@ class _InicioTab extends StatelessWidget {
                   const Spacer(),
                   TextButton(
                     onPressed: onExplore,
-                    child: const Row(
+                    child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text('Explorar'),
-                        Icon(Icons.chevron_right, size: 16),
+                        Text(l10n.navExplore),
+                        const Icon(Icons.chevron_right, size: 16),
                       ],
                     ),
                   ),
@@ -573,12 +578,12 @@ class _InicioTab extends StatelessWidget {
               ),
             )
           else if (saves.isEmpty)
-            const SliverToBoxAdapter(
+            SliverToBoxAdapter(
               child: Padding(
-                padding: EdgeInsets.fromLTRB(16, 24, 16, 80),
+                padding: const EdgeInsets.fromLTRB(16, 24, 16, 80),
                 child: Text(
-                  'Aún no tienes lugares. Usa el botón + o comparte un link desde IG/TikTok/FB.',
-                  style: TextStyle(color: AppColors.muted),
+                  l10n.homeEmptySaves,
+                  style: const TextStyle(color: AppColors.muted),
                 ),
               ),
             )
@@ -642,6 +647,7 @@ class _SaveCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return Material(
       color: AppColors.surface,
       shape: RoundedRectangleBorder(
@@ -687,12 +693,14 @@ class _SaveCard extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       [
-                        save.status.labelEs,
+                        save.status.label(l10n),
                         if (save.city != null && save.city!.isNotEmpty)
                           save.city!,
                         if (save.categoryNames.isNotEmpty)
                           save.categoryNames.first,
-                        save.isPublic ? 'Público' : 'Privado',
+                        save.isPublic
+                            ? l10n.visibilityPublic
+                            : l10n.visibilityPrivate,
                       ].join(' · '),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/di/providers.dart';
 import '../../../core/errors/user_facing_error.dart';
 import '../../../core/formatters/date_format.dart';
+import '../../../core/l10n/context_l10n.dart';
 import '../../../core/widgets/app_async_body.dart';
 import '../../../core/widgets/app_list_card.dart';
 import '../../plans/presentation/plan_detail_page.dart';
@@ -53,14 +54,14 @@ class _MyRoutesPageState extends ConsumerState<MyRoutesPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return Scaffold(
-      appBar: AppBar(title: const Text('Rutas')),
+      appBar: AppBar(title: Text(l10n.routesTitle)),
       body: AppAsyncBody(
         loading: _loading,
         error: _error,
         isEmpty: _entries.isEmpty,
-        emptyMessage:
-            'Aún no hay lugares visitados. En un plan, marca paradas como visitadas para verlas aquí.',
+        emptyMessage: l10n.routesEmpty,
         onRefresh: _load,
         child: ListView.builder(
           physics: const AlwaysScrollableScrollPhysics(),

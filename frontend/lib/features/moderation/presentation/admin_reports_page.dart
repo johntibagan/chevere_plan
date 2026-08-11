@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/errors/user_facing_error.dart';
 import '../../../core/formatters/date_format.dart';
+import '../../../core/l10n/context_l10n.dart';
 import '../../../core/widgets/app_async_body.dart';
 import '../../../core/widgets/app_list_card.dart';
 import '../data/moderation_models.dart';
@@ -66,13 +67,14 @@ class _AdminReportsPageState extends State<AdminReportsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return Scaffold(
-      appBar: AppBar(title: const Text('Reportes de contenido')),
+      appBar: AppBar(title: Text(l10n.reportsTitle)),
       body: AppAsyncBody(
         loading: _loading,
         error: _error,
         isEmpty: _reports.isEmpty,
-        emptyMessage: 'No hay reportes abiertos.',
+        emptyMessage: l10n.reportsEmpty,
         onRefresh: _load,
         child: ListView.builder(
           physics: const AlwaysScrollableScrollPhysics(),
@@ -96,28 +98,28 @@ class _AdminReportsPageState extends State<AdminReportsPage> {
                         ),
                       )
                     : const Icon(Icons.flag_outlined),
-                title: Text(r.siteName ?? 'Foto reportada'),
+                title: Text(r.siteName ?? l10n.reportsPhotoFallback),
                 subtitle: Text(
                   [
-                    'Por ${r.reporterName}',
+                    l10n.reportsBy(r.reporterName),
                     formatDateDmY(r.createdAt),
                     if (r.reason != null && r.reason!.isNotEmpty) r.reason!,
                   ].join(' · '),
                 ),
                 trailing: PopupMenuButton<String>(
                   onSelected: (v) => _setStatus(r, v),
-                  itemBuilder: (context) => const [
+                  itemBuilder: (context) => [
                     PopupMenuItem(
                       value: 'reviewed',
-                      child: Text('Marcar revisado'),
+                      child: Text(l10n.reportsMarkReviewed),
                     ),
                     PopupMenuItem(
                       value: 'dismissed',
-                      child: Text('Descartar'),
+                      child: Text(l10n.reportsDismiss),
                     ),
                     PopupMenuItem(
                       value: 'actioned',
-                      child: Text('Acción tomada'),
+                      child: Text(l10n.reportsActioned),
                     ),
                   ],
                 ),

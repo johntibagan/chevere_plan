@@ -9,6 +9,7 @@ import '../features/auth/presentation/login_page.dart';
 import '../features/home/presentation/home_page.dart';
 import '../features/saves/presentation/save_place_page.dart';
 import 'core/di/providers.dart';
+import 'core/l10n/context_l10n.dart';
 import 'core/theme/app_theme.dart';
 
 final GlobalKey<NavigatorState> appNavigatorKey = GlobalKey<NavigatorState>();
@@ -80,6 +81,9 @@ class _CheverePlanAppState extends ConsumerState<CheverePlanApp> {
       theme: AppTheme.dark(),
       darkTheme: AppTheme.dark(),
       themeMode: ThemeMode.dark,
+      locale: const Locale('es'),
+      supportedLocales: AppLocalizations.supportedLocales,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
       home: const AuthGate(),
     );
   }

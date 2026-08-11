@@ -24,17 +24,6 @@ enum SiteStatus {
         return 'draft';
     }
   }
-
-  String get labelEs {
-    switch (this) {
-      case SiteStatus.pendingLocation:
-        return 'Pendiente de ubicación';
-      case SiteStatus.complete:
-        return 'Completo';
-      case SiteStatus.draft:
-        return 'Borrador';
-    }
-  }
 }
 
 class PossibleDuplicate {

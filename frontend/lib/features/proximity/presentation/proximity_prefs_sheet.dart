@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/errors/user_facing_error.dart';
+import '../../../core/l10n/context_l10n.dart';
 import '../../auth/data/profile.dart';
 import '../../auth/data/profile_repository.dart';
 import '../data/geofence_sync_service.dart';
@@ -69,11 +70,7 @@ class _ProximityPrefsSheetState extends State<_ProximityPrefsSheet> {
       if (!mounted) return;
       if (sync == GeofenceSyncResult.needsLocationPermission) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Activa la ubicación (siempre) para recibir recuerdos cercanos.',
-            ),
-          ),
+          SnackBar(content: Text(context.l10n.proximityNeedsLocation)),
         );
       } else if (sync == GeofenceSyncResult.failed) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -92,6 +89,7 @@ class _ProximityPrefsSheetState extends State<_ProximityPrefsSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final bottom = MediaQuery.viewInsetsOf(context).bottom;
     return Padding(
       padding: EdgeInsets.fromLTRB(24, 8, 24, 24 + bottom),
@@ -100,12 +98,12 @@ class _ProximityPrefsSheetState extends State<_ProximityPrefsSheet> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            'Recuerdos cercanos',
+            l10n.proximityTitle,
             style: Theme.of(context).textTheme.titleLarge,
           ),
           const SizedBox(height: 8),
           Text(
-            'Te avisamos al acercarte a un lugar guardado.',
+            l10n.proximitySubtitle,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
@@ -113,10 +111,8 @@ class _ProximityPrefsSheetState extends State<_ProximityPrefsSheet> {
           const SizedBox(height: 20),
           SwitchListTile(
             contentPadding: EdgeInsets.zero,
-            title: const Text('Incluir sitios públicos'),
-            subtitle: const Text(
-              'También recordarme lugares públicos de otros usuarios',
-            ),
+            title: Text(l10n.proximityIncludePublic),
+            subtitle: Text(l10n.proximityIncludePublicSubtitle),
             value: _remindPublic,
             onChanged: _saving
                 ? null
@@ -124,7 +120,7 @@ class _ProximityPrefsSheetState extends State<_ProximityPrefsSheet> {
           ),
           const SizedBox(height: 12),
           Text(
-            'Radio: ${_radius.round()} m',
+            l10n.proximityRadiusLabel(_radius.round()),
             style: Theme.of(context).textTheme.titleSmall,
           ),
           Slider(
@@ -153,7 +149,7 @@ class _ProximityPrefsSheetState extends State<_ProximityPrefsSheet> {
                     width: 20,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
-                : const Text('Guardar'),
+                : Text(l10n.actionSave),
           ),
         ],
       ),

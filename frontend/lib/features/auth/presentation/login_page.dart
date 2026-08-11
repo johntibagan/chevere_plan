@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../core/di/providers.dart';
 import '../../../core/errors/user_facing_error.dart';
+import '../../../core/l10n/context_l10n.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../legal/legal_texts.dart';
 import '../../legal/presentation/legal_document_page.dart';
@@ -41,10 +42,10 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   }
 
   Future<void> _onGooglePressed() async {
+    final l10n = context.l10n;
     if (!_acceptedLegal) {
       setState(() {
-        _error =
-            'Debes aceptar los Términos de Uso y el Aviso de privacidad para continuar.';
+        _error = l10n.loginMustAcceptLegal;
       });
       return;
     }
@@ -66,6 +67,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
@@ -99,7 +101,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
               ),
               const SizedBox(height: 24),
               Text(
-                'Chevere Plan',
+                l10n.appTitle,
                 textAlign: TextAlign.center,
                 style: GoogleFonts.plusJakartaSans(
                   fontSize: 32,
@@ -108,10 +110,10 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 ),
               ),
               const SizedBox(height: 10),
-              const Text(
-                'Guarda lugares y arma planes\nen Colombia.',
+              Text(
+                l10n.appTagline,
                 textAlign: TextAlign.center,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 15,
                   height: 1.4,
                   color: AppColors.muted,
@@ -153,9 +155,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            'Acepto los documentos legales del MVP.',
-                            style: TextStyle(
+                          Text(
+                            l10n.loginAcceptLegal,
+                            style: const TextStyle(
                               fontSize: 12,
                               color: AppColors.muted,
                             ),
@@ -166,12 +168,12 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                               TextButton(
                                 onPressed: () =>
                                     LegalDocumentPage.openTerms(context),
-                                child: const Text('Términos de Uso'),
+                                child: Text(l10n.loginTerms),
                               ),
                               TextButton(
                                 onPressed: () =>
                                     LegalDocumentPage.openPrivacy(context),
-                                child: const Text('Aviso de privacidad'),
+                                child: Text(l10n.loginPrivacy),
                               ),
                             ],
                           ),
@@ -195,7 +197,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       )
                     : const Icon(Icons.login),
                 label: Text(
-                  _loading ? 'Conectando…' : 'Continuar con Google',
+                  _loading ? l10n.loginConnecting : l10n.loginContinueGoogle,
                 ),
               ),
               const SizedBox(height: 28),

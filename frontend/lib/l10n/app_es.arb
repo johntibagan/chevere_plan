@@ -1,0 +1,108 @@
+{
+  "@@locale": "es",
+  "appTitle": "Chevere Plan",
+  "appTagline": "Guarda lugares y arma planes\nen Colombia.",
+  "navHome": "Inicio",
+  "navExplore": "Explorar",
+  "navPlans": "Planes",
+  "navRoutes": "Rutas",
+  "actionCancel": "Cancelar",
+  "actionDiscard": "Descartar",
+  "actionSave": "Guardar",
+  "actionRetry": "Reintentar",
+  "actionComplete": "Completar",
+  "actionAdjust": "Ajustar",
+  "actionSearch": "Buscar",
+  "greetingMorning": "Buenos días",
+  "greetingAfternoon": "Buenas tardes",
+  "greetingEvening": "Buenas noches",
+  "loginAcceptLegal": "Acepto los documentos legales del MVP.",
+  "loginTerms": "Términos de Uso",
+  "loginPrivacy": "Aviso de privacidad",
+  "loginContinueGoogle": "Continuar con Google",
+  "loginConnecting": "Conectando…",
+  "loginMustAcceptLegal": "Debes aceptar los Términos de Uso y el Aviso de privacidad para continuar.",
+  "statusDraft": "Borrador",
+  "statusPendingLocation": "Pendiente de ubicación",
+  "statusComplete": "Completo",
+  "visibilityPublic": "Público",
+  "visibilityPrivate": "Privado",
+  "labelOwn": "Tuyo",
+  "homePendingBadge": "PENDIENTE",
+  "homeDraftsToComplete": "{count} guardado(s) por completar",
+  "@homeDraftsToComplete": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "homeProximityRadius": "Radio {meters} m",
+  "@homeProximityRadius": {
+    "placeholders": {
+      "meters": {"type": "int"}
+    }
+  },
+  "homeProximityPublicSuffix": " · públicos",
+  "homeOpenReports": "Reportes abiertos",
+  "homeMySaves": "Mis guardados",
+  "homeEmptySaves": "Aún no tienes lugares. Usa el botón + o comparte un link desde IG/TikTok/FB.",
+  "homeAdminBadge": "A",
+  "homeDiscardTitle": "Descartar guardado",
+  "homeDiscardConfirm": "¿Eliminar \"{name}\" de tu lista?",
+  "@homeDiscardConfirm": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "homeStaleDraftsSnack": "Tienes {count} borrador(es) por completar.",
+  "@homeStaleDraftsSnack": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "plansTitle": "Planes",
+  "plansEmpty": "Aún no tienes planes. Arma uno a partir de tus guardados por ciudad o departamento.",
+  "plansCreateFab": "Armar plan",
+  "routesTitle": "Rutas",
+  "routesEmpty": "Aún no hay lugares visitados. En un plan, marca paradas como visitadas para verlas aquí.",
+  "reportsTitle": "Reportes de contenido",
+  "reportsEmpty": "No hay reportes abiertos.",
+  "reportsPhotoFallback": "Foto reportada",
+  "reportsBy": "Por {name}",
+  "@reportsBy": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "reportsMarkReviewed": "Marcar revisado",
+  "reportsDismiss": "Descartar",
+  "reportsActioned": "Acción tomada",
+  "searchTitle": "Explorar",
+  "searchEmptyHint": "Escribe y pulsa Buscar.",
+  "searchNoResults": "Sin resultados.",
+  "searchQueryRequired": "Escribe algo para buscar.",
+  "searchSearching": "Buscando…",
+  "proximityTitle": "Recuerdos cercanos",
+  "proximitySubtitle": "Te avisamos al acercarte a un lugar guardado.",
+  "proximityIncludePublic": "Incluir sitios públicos",
+  "proximityIncludePublicSubtitle": "También recordarme lugares públicos de otros usuarios",
+  "proximityRadiusLabel": "Radio: {meters} m",
+  "@proximityRadiusLabel": {
+    "placeholders": {
+      "meters": {"type": "int"}
+    }
+  },
+  "proximityNeedsLocation": "Activa la ubicación (siempre) para recibir recuerdos cercanos.",
+  "savePlaceTitle": "Guardar lugar",
+  "savePlaceEditTitle": "Completar / editar lugar",
+  "savePlaceSubmit": "Guardar",
+  "savePlaceSubmitEdit": "Guardar cambios",
+  "saveStatusAfterSave": "Estado: {status}. Puedes completarlo después.",
+  "@saveStatusAfterSave": {
+    "placeholders": {
+      "status": {"type": "String"}
+    }
+  },
+  "adminTitle": "Panel administrador",
+  "adminTabCategories": "Categorías",
+  "adminTabVehicles": "Vehículos"
+}

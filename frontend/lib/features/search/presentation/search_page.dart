@@ -6,6 +6,7 @@ import 'package:geolocator/geolocator.dart';
 import '../../../core/di/providers.dart';
 import '../../../core/errors/user_facing_error.dart';
 import '../../../core/formatters/money_format.dart';
+import '../../../core/l10n/context_l10n.dart';
 import '../../../core/widgets/app_list_card.dart';
 import '../../admin/data/admin_models.dart';
 import '../data/search_models.dart';
@@ -105,7 +106,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
     final text = _queryCtrl.text.trim();
     if (!_advanced && text.isEmpty) {
       setState(() {
-        _error = 'Escribe algo para buscar.';
+        _error = context.l10n.searchQueryRequired;
         _hits = const [];
         _searched = true;
       });
@@ -161,12 +162,13 @@ class _SearchPageState extends ConsumerState<SearchPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final roots = _categories.where((c) => c.isRoot).toList();
     final children = _categories.where((c) => !c.isRoot).toList();
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Explorar'),
+        title: Text(l10n.searchTitle),
         actions: [
           TextButton(
             onPressed: () {
@@ -192,7 +194,8 @@ class _SearchPageState extends ConsumerState<SearchPage> {
           TextField(
             controller: _queryCtrl,
             decoration: InputDecoration(
-              labelText: _advanced ? 'Texto (nombre o ciudad)' : 'Buscar',
+              labelText:
+                  _advanced ? 'Texto (nombre o ciudad)' : l10n.actionSearch,
               hintText: 'Ej. Tunja',
               border: const OutlineInputBorder(),
               prefixIcon: const Icon(Icons.search),
@@ -377,7 +380,9 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
                       : const Icon(Icons.search),
-                  label: Text(_loading ? 'Buscando…' : 'Buscar'),
+                  label: Text(
+                    _loading ? l10n.searchSearching : l10n.actionSearch,
+                  ),
                 ),
               ),
             ],
@@ -393,14 +398,14 @@ class _SearchPageState extends ConsumerState<SearchPage> {
               ),
             )
           else if (!_searched)
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 12),
-              child: Text('Escribe y pulsa Buscar.'),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              child: Text(l10n.searchEmptyHint),
             )
           else if (_hits.isEmpty)
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 12),
-              child: Text('Sin resultados.'),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              child: Text(l10n.searchNoResults),
             )
           else
             ..._hits.map(
@@ -419,7 +424,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                         ),
                       if (h.distanceKm != null)
                         '${h.distanceKm!.toStringAsFixed(1)} km',
-                      h.isOwn ? 'Tuyo' : 'Público',
+                      h.isOwn ? l10n.labelOwn : l10n.visibilityPublic,
                     ].join(' · '),
                   ),
                 ),
