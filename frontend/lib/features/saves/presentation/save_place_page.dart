@@ -19,6 +19,7 @@ import '../data/save_models.dart';
 import '../data/saves_repository.dart';
 import '../data/share_parser.dart';
 import '../data/social_link_models.dart';
+import '../domain/category_suggester.dart';
 import 'category_picker_sheet.dart';
 import 'location_picker_page.dart';
 import 'site_status_l10n.dart';
@@ -75,6 +76,9 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
   final List<SocialLinkDraft> _socialLinks = [];
   final _previewFetcher = LinkPreviewFetcher();
   final _mapsImporter = GoogleMapsLinkImporter();
+  /// Si el usuario eligió/quitó categorías a mano, no sobrescribir la sugerencia.
+  bool _categoriesUserTouched = false;
+  bool _categoryWasAutoSuggested = false;
 
   bool get _isEditing => _editSaveId != null;
 
@@ -123,6 +127,8 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
           _selectedCategoryIds
             ..clear()
             ..addAll(data.categoryIds);
+          _categoriesUserTouched = data.categoryIds.isNotEmpty;
+          _categoryWasAutoSuggested = false;
           _socialLinks
             ..clear()
             ..addAll(
@@ -156,6 +162,8 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
         }
         if (_mapsCtrl.text.trim().isNotEmpty) {
           await _importFromGoogleMaps();
+        } else {
+          _maybeSuggestCategories();
         }
         if (mounted) setState(() => _loadingCats = false);
       }
@@ -219,13 +227,15 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
         _locationPanelEpoch++;
         _importingMaps = false;
       });
+      _maybeSuggestCategories(force: true);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
             result.hasCoords
                 ? 'Datos de Google Maps aplicados (nombre, ubicación'
-                    '${result.staticMapUrl != null ? ', mapa' : ''}).'
+                    '${result.staticMapUrl != null ? ', mapa' : ''}'
+                    ', categoría).'
                 : 'Se leyó el enlace; completa ciudad o elige en el mapa.',
           ),
         ),
@@ -279,6 +289,52 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
     if (c.parentId == null) return '';
     final parent = _categories.where((p) => p.id == c.parentId);
     return parent.isEmpty ? '' : parent.first.nameEs;
+  }
+
+  String get _categoryHaystack => [
+        _nameCtrl.text,
+        _cityCtrl.text,
+        _deptCtrl.text,
+        _addressCtrl.text,
+        _mapsCtrl.text,
+      ].join(' ');
+
+  /// Sugiere y marca categoría según nombre / Maps; si no hay match → Otros.
+  void _maybeSuggestCategories({bool force = false}) {
+    if (_categories.isEmpty) return;
+    if (!force && _categoriesUserTouched) return;
+
+    final suggestion = CategorySuggester.suggest(
+      categories: _categories,
+      haystack: _categoryHaystack,
+    );
+    if (suggestion.categories.isEmpty) return;
+
+    setState(() {
+      _selectedCategoryIds
+        ..clear()
+        ..addAll(suggestion.categories.map((c) => c.id));
+      _categoryWasAutoSuggested = true;
+      if (force) _categoriesUserTouched = false;
+    });
+  }
+
+  List<String> _resolvedCategoryIds() {
+    if (_selectedCategoryIds.isNotEmpty) {
+      return _selectedCategoryIds.toList();
+    }
+    final fallback = CategorySuggester.defaultCategory(_categories);
+    if (fallback != null) return [fallback.id];
+    final suggestion = CategorySuggester.suggest(
+      categories: _categories,
+      haystack: _categoryHaystack,
+    );
+    return suggestion.categories.map((c) => c.id).toList();
+  }
+
+  void _markCategoriesTouched() {
+    _categoriesUserTouched = true;
+    _categoryWasAutoSuggested = false;
   }
 
   List<Category> get _filteredCategories {
@@ -349,6 +405,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
     );
     if (result == null || !mounted) return;
     setState(() {
+      _markCategoriesTouched();
       _selectedCategoryIds
         ..clear()
         ..addAll(result);
@@ -392,6 +449,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
       _locationDetailsExpanded = false;
       _locationPanelEpoch++;
     });
+    _maybeSuggestCategories();
   }
 
   String get _locationSummary {
@@ -453,10 +511,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
         return false;
       }
     }
-    if (_selectedCategoryIds.isEmpty) {
-      setState(() => _error = 'Selecciona al menos una categoría.');
-      return false;
-    }
+    // Categoría: no requerida en UI; se resuelve por sugerencia / Otros al guardar.
     return true;
   }
 
@@ -475,6 +530,22 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
       final primaryLink =
           _socialLinks.isNotEmpty ? _socialLinks.first : null;
 
+      final categoryIds = _resolvedCategoryIds();
+      if (categoryIds.isEmpty) {
+        setState(() {
+          _saving = false;
+          _error =
+              'No hay categorías en la base. Aplica el seed / reseed de categorías.';
+        });
+        return;
+      }
+      if (_selectedCategoryIds.isEmpty) {
+        setState(() {
+          _selectedCategoryIds.addAll(categoryIds);
+          _categoryWasAutoSuggested = true;
+        });
+      }
+
       final input = SaveDraftInput(
         name: name,
         sourceUrl: primaryLink?.url,
@@ -484,7 +555,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
         addressLine: _addressCtrl.text,
         latitude: lat,
         longitude: lng,
-        categoryIds: _selectedCategoryIds.toList(),
+        categoryIds: categoryIds,
         isPublic: _isPublic,
         isPhysicalPlace: _isPhysical,
       );
@@ -867,6 +938,11 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
                             ),
                             textCapitalization: TextCapitalization.words,
                             onChanged: (_) => setState(() {}),
+                            onEditingComplete: () {
+                              _maybeSuggestCategories();
+                              FocusScope.of(context).unfocus();
+                            },
+                            onSubmitted: (_) => _maybeSuggestCategories(),
                           ),
                           const SizedBox(height: 10),
                           TextField(
@@ -946,10 +1022,27 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
                   ],
                 ),
 
-                // 3) Categorías
+                // 3) Categorías (sugeridas; default Otros si no hay match)
                 _sectionCard(
-                  title: '3. Categorías *',
+                  title: '3. Categorías',
                   children: [
+                    if (_categoryWasAutoSuggested &&
+                        _selectedCategories.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 6),
+                        child: Text(
+                          _selectedCategories.any(
+                                (c) =>
+                                    c.slug ==
+                                        CategorySuggester.defaultChildSlug ||
+                                    c.slug ==
+                                        CategorySuggester.defaultParentSlug,
+                              )
+                              ? 'Sin coincidencia clara → Otros (puedes cambiarla)'
+                              : 'Sugerida según el nombre / Maps (puedes cambiarla)',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ),
                     if (_selectedCategories.isNotEmpty)
                       Wrap(
                         spacing: 6,
@@ -965,9 +1058,10 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
                             ),
                             onDeleted: _saving
                                 ? null
-                                : () => setState(
-                                      () => _selectedCategoryIds.remove(c.id),
-                                    ),
+                                : () => setState(() {
+                                      _markCategoriesTouched();
+                                      _selectedCategoryIds.remove(c.id);
+                                    }),
                           );
                         }).toList(),
                       ),
@@ -1004,6 +1098,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
                           value: selected,
                           onChanged: (v) {
                             setState(() {
+                              _markCategoriesTouched();
                               if (v == true) {
                                 _selectedCategoryIds.add(c.id);
                               } else {
@@ -1025,7 +1120,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
                           children: [
                             const Expanded(
                               child: Text(
-                                'Escribe una palabra clave o abre el árbol.',
+                                'Se sugiere sola; o busca / abre el árbol.',
                                 style: TextStyle(fontSize: 12),
                               ),
                             ),
@@ -1105,7 +1200,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
                 ),
                 const SizedBox(height: 8),
                 const Text(
-                  '* Ubicación (si es físico) y al menos una categoría',
+                  '* Ubicación (si es físico). La categoría se sugiere o queda en Otros.',
                   style: TextStyle(color: _kRequiredStar, fontSize: 12),
                 ),
               ],
