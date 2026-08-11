@@ -335,16 +335,11 @@ class SavesRepository {
         'get_site_coords',
         params: {'p_site_id': save.siteId},
       );
-      if (coords is List && coords.isNotEmpty) {
-        final c = Map<String, dynamic>.from(coords.first as Map);
-        lat = (c['lat'] as num?)?.toDouble();
-        lng = (c['lng'] as num?)?.toDouble();
-      } else if (coords is Map) {
-        lat = (coords['lat'] as num?)?.toDouble();
-        lng = (coords['lng'] as num?)?.toDouble();
-      }
+      final parsed = _parseSiteCoords(coords);
+      lat = parsed.$1;
+      lng = parsed.$2;
     } catch (_) {
-      // RPC opcional (migración C8); editar sin coords prellenadas.
+      // Sin coords prellenadas; ciudad/dirección bastan para editar.
     }
 
     return SaveEditData(
@@ -353,6 +348,23 @@ class SavesRepository {
       latitude: lat,
       longitude: lng,
     );
+  }
+
+  /// Normaliza la respuesta de `get_site_coords` (lista u objeto).
+  static (double?, double?) _parseSiteCoords(Object? coords) {
+    Map<String, dynamic>? row;
+    if (coords is List && coords.isNotEmpty) {
+      final first = coords.first;
+      if (first is Map) {
+        row = Map<String, dynamic>.from(first);
+      }
+    } else if (coords is Map) {
+      row = Map<String, dynamic>.from(coords);
+    }
+    if (row == null) return (null, null);
+    final lat = (row['lat'] as num?)?.toDouble();
+    final lng = (row['lng'] as num?)?.toDouble();
+    return (lat, lng);
   }
 
   Future<UserSave> updateSave({

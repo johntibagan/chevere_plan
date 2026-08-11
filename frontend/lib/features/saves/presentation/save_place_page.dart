@@ -275,9 +275,18 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
   }
 
   bool _validate() {
-    if (_isPhysical && (_lat == null || _lng == null)) {
-      setState(() => _error = 'Elige la ubicación en el mapa.');
-      return false;
+    // Misma regla que SavePolicies: ubicación = ciudad, dirección o coords.
+    if (_isPhysical) {
+      final hasCoords = _lat != null && _lng != null;
+      final hasCity = _cityCtrl.text.trim().isNotEmpty;
+      final hasAddress = _addressCtrl.text.trim().isNotEmpty;
+      if (!hasCoords && !hasCity && !hasAddress) {
+        setState(() {
+          _error =
+              'Indica la ubicación: elige en el mapa, o escribe ciudad/dirección.';
+        });
+        return false;
+      }
     }
     if (_nameCtrl.text.trim().isEmpty) {
       setState(() => _error = 'Escribe el nombre del lugar.');
