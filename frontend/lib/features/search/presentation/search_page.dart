@@ -92,6 +92,12 @@ class _SearchPageState extends State<SearchPage> {
     return double.tryParse(t.replaceAll(',', '.'));
   }
 
+  void _invalidateResults() {
+    _hits = const [];
+    _searched = false;
+    _error = null;
+  }
+
   Future<void> _runSearch() async {
     final text = _queryCtrl.text.trim();
     if (!_advanced && text.isEmpty) {
@@ -107,6 +113,7 @@ class _SearchPageState extends State<SearchPage> {
       _loading = true;
       _error = null;
       _searched = true;
+      _hits = const []; // no mostrar resultados viejos mientras busca
     });
 
     try {
@@ -163,6 +170,8 @@ class _SearchPageState extends State<SearchPage> {
               setState(() {
                 _advanced = !_advanced;
                 _error = null;
+                _hits = const [];
+                _searched = false;
               });
             },
             child: Text(_advanced ? 'Simple' : 'Avanzada'),
@@ -226,7 +235,10 @@ class _SearchPageState extends State<SearchPage> {
                       ),
                     ),
                   ],
-                  onChanged: (v) => setState(() => _categoryId = v),
+                  onChanged: (v) => setState(() {
+                    _categoryId = v;
+                    _invalidateResults();
+                  }),
                 ),
               ),
             ),
@@ -253,7 +265,10 @@ class _SearchPageState extends State<SearchPage> {
                     ),
                     DropdownMenuItem(value: 'otro', child: Text('Otro')),
                   ],
-                  onChanged: (v) => setState(() => _transportGroup = v),
+                  onChanged: (v) => setState(() {
+                    _transportGroup = v;
+                    _invalidateResults();
+                  }),
                 ),
               ),
             ),
@@ -291,7 +306,10 @@ class _SearchPageState extends State<SearchPage> {
               contentPadding: EdgeInsets.zero,
               title: const Text('Usar mi ubicación + radio'),
               value: _useMyLocation,
-              onChanged: (v) => setState(() => _useMyLocation = v),
+              onChanged: (v) => setState(() {
+                _useMyLocation = v;
+                _invalidateResults();
+              }),
             ),
             if (_useMyLocation)
               TextField(
@@ -313,22 +331,53 @@ class _SearchPageState extends State<SearchPage> {
             contentPadding: EdgeInsets.zero,
             title: const Text('Incluir sitios públicos'),
             value: _includePublic,
-            onChanged: (v) => setState(() => _includePublic = v),
+            onChanged: (v) => setState(() {
+              _includePublic = v;
+              _invalidateResults();
+            }),
           ),
           const SizedBox(height: 8),
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton.icon(
-              onPressed: _loading ? null : _runSearch,
-              icon: _loading
-                  ? const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.search),
-              label: Text(_loading ? 'Buscando…' : 'Buscar'),
-            ),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: _loading
+                      ? null
+                      : () {
+                          _queryCtrl.clear();
+                          _locationCtrl.clear();
+                          _budgetMinCtrl.clear();
+                          _budgetMaxCtrl.clear();
+                          _radiusCtrl.text = '10';
+                          setState(() {
+                            _categoryId = null;
+                            _transportGroup = null;
+                            _useMyLocation = false;
+                            _includePublic = true;
+                            _hits = const [];
+                            _searched = false;
+                            _error = null;
+                          });
+                        },
+                  child: const Text('Limpiar'),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                flex: 2,
+                child: FilledButton.icon(
+                  onPressed: _loading ? null : _runSearch,
+                  icon: _loading
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.search),
+                  label: Text(_loading ? 'Buscando…' : 'Buscar'),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 16),
           const Divider(),

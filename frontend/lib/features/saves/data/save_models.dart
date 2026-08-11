@@ -99,6 +99,7 @@ class UserSave {
     this.isPossibleDuplicate = false,
     this.possibleDuplicateOfSiteId,
     this.alsoSharedBy = const [],
+    this.isPhysicalPlace = true,
   });
 
   final String id;
@@ -118,6 +119,9 @@ class UserSave {
   final bool isPossibleDuplicate;
   final String? possibleDuplicateOfSiteId;
   final List<String> alsoSharedBy;
+  final bool isPhysicalPlace;
+
+  bool get isIncomplete => status != SiteStatus.complete;
 
   factory UserSave.fromJoinedJson(Map<String, dynamic> json) {
     final site = Map<String, dynamic>.from(json['sites'] as Map? ?? {});
@@ -164,8 +168,24 @@ class UserSave {
       possibleDuplicateOfSiteId:
           json['possible_duplicate_of_site_id'] as String?,
       alsoSharedBy: contribs,
+      isPhysicalPlace: site['is_physical_place'] as bool? ?? true,
     );
   }
+}
+
+/// Datos para editar un guardado existente.
+class SaveEditData {
+  const SaveEditData({
+    required this.save,
+    required this.categoryIds,
+    this.latitude,
+    this.longitude,
+  });
+
+  final UserSave save;
+  final List<String> categoryIds;
+  final double? latitude;
+  final double? longitude;
 }
 
 class SaveDraftInput {

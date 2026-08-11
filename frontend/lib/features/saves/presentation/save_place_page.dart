@@ -19,10 +19,13 @@ class SavePlacePage extends StatefulWidget {
   const SavePlacePage({
     super.key,
     this.initialSharedText,
+    this.existingSaveId,
     required this.savesRepository,
   });
 
   final String? initialSharedText;
+  /// Si viene, carga y actualiza ese guardado (completar borrador / editar).
+  final String? existingSaveId;
   final SavesRepository savesRepository;
 
   @override
@@ -50,6 +53,10 @@ class _SavePlacePageState extends State<SavePlacePage> {
   String? _network;
   String? _error;
   File? _pendingPhoto;
+  String? _editSaveId;
+  String? _editSiteId;
+
+  bool get _isEditing => _editSaveId != null;
 
   @override
   void initState() {
@@ -58,7 +65,50 @@ class _SavePlacePageState extends State<SavePlacePage> {
     if (parsed.url != null) _urlCtrl.text = parsed.url!;
     if (parsed.suggestedName != null) _nameCtrl.text = parsed.suggestedName!;
     _network = parsed.network;
-    _loadCategories();
+    _bootstrapForm();
+  }
+
+  Future<void> _bootstrapForm() async {
+    try {
+      final cats = await _adminRepo.fetchCategories();
+      if (!mounted) return;
+      setState(() {
+        _categories = cats.where((c) => c.isActive).toList();
+      });
+
+      final saveId = widget.existingSaveId;
+      if (saveId != null) {
+        final data = await widget.savesRepository.loadForEdit(saveId);
+        if (!mounted) return;
+        final s = data.save;
+        _nameCtrl.text = s.siteName == 'Sin nombre' ? '' : s.siteName;
+        _urlCtrl.text = s.sourceUrl ?? '';
+        _cityCtrl.text = s.city ?? '';
+        _deptCtrl.text = s.department ?? '';
+        _addressCtrl.text = s.addressLine ?? '';
+        _network = s.sourceNetwork;
+        setState(() {
+          _editSaveId = s.id;
+          _editSiteId = s.siteId;
+          _isPublic = s.isPublic;
+          _isPhysical = s.isPhysicalPlace;
+          _lat = data.latitude;
+          _lng = data.longitude;
+          _selectedCategoryIds
+            ..clear()
+            ..addAll(data.categoryIds);
+          _loadingCats = false;
+        });
+      } else {
+        setState(() => _loadingCats = false);
+      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _error = userFacingError(e);
+        _loadingCats = false;
+      });
+    }
   }
 
   @override
@@ -70,23 +120,6 @@ class _SavePlacePageState extends State<SavePlacePage> {
     _addressCtrl.dispose();
     _categorySearchCtrl.dispose();
     super.dispose();
-  }
-
-  Future<void> _loadCategories() async {
-    try {
-      final cats = await _adminRepo.fetchCategories();
-      if (!mounted) return;
-      setState(() {
-        _categories = cats.where((c) => c.isActive).toList();
-        _loadingCats = false;
-      });
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _error = userFacingError(e);
-        _loadingCats = false;
-      });
-    }
   }
 
   String _parentName(Category c) {
@@ -201,54 +234,89 @@ class _SavePlacePageState extends State<SavePlacePage> {
       final lng = _lng;
       final name = _nameCtrl.text.trim();
 
-      String? linkToExisting;
-      final shouldCheckDuplicates = _isPhysical &&
-          ((_isPublic) ||
-              (lat != null && lng != null) ||
-              _cityCtrl.text.trim().isNotEmpty);
+      final input = SaveDraftInput(
+        name: name,
+        sourceUrl: _urlCtrl.text.trim().isEmpty ? null : _urlCtrl.text.trim(),
+        sourceNetwork: _network,
+        city: _cityCtrl.text,
+        department: _deptCtrl.text,
+        addressLine: _addressCtrl.text,
+        latitude: lat,
+        longitude: lng,
+        categoryIds: _selectedCategoryIds.toList(),
+        isPublic: _isPublic,
+        isPhysicalPlace: _isPhysical,
+      );
 
-      if (shouldCheckDuplicates) {
-        final dupes = await widget.savesRepository.findPossibleDuplicates(
-          name: name,
-          city: _cityCtrl.text,
-          latitude: lat,
-          longitude: lng,
+      final UserSave saved;
+      final editSaveId = _editSaveId;
+      final editSiteId = _editSiteId;
+
+      if (editSaveId != null && editSiteId != null) {
+        saved = await widget.savesRepository.updateSave(
+          saveId: editSaveId,
+          siteId: editSiteId,
+          input: input,
         );
-        if (dupes.isNotEmpty && mounted) {
-          final chosen = await _askDuplicate(dupes.first);
-          if (chosen == null) {
-            setState(() => _saving = false);
-            return;
+      } else {
+        String? linkToExisting;
+        final shouldCheckDuplicates = _isPhysical &&
+            ((_isPublic) ||
+                (lat != null && lng != null) ||
+                _cityCtrl.text.trim().isNotEmpty);
+
+        if (shouldCheckDuplicates) {
+          final dupes = await widget.savesRepository.findPossibleDuplicates(
+            name: name,
+            city: _cityCtrl.text,
+            latitude: lat,
+            longitude: lng,
+          );
+          if (dupes.isNotEmpty && mounted) {
+            final chosen = await _askDuplicate(dupes.first);
+            if (chosen == null) {
+              setState(() => _saving = false);
+              return;
+            }
+            if (chosen) linkToExisting = dupes.first.siteId;
           }
-          if (chosen) linkToExisting = dupes.first.siteId;
+        }
+
+        saved = await widget.savesRepository.createSave(
+          SaveDraftInput(
+            name: name,
+            sourceUrl: input.sourceUrl,
+            sourceNetwork: input.sourceNetwork,
+            city: input.city,
+            department: input.department,
+            addressLine: input.addressLine,
+            latitude: lat,
+            longitude: lng,
+            categoryIds: input.categoryIds,
+            isPublic: _isPublic,
+            isPhysicalPlace: _isPhysical,
+            linkToExistingSiteId: linkToExisting,
+          ),
+        );
+
+        if (_pendingPhoto != null && linkToExisting == null) {
+          await widget.savesRepository.uploadPhoto(
+            siteId: saved.siteId,
+            file: _pendingPhoto!,
+          );
         }
       }
 
-      final saved = await widget.savesRepository.createSave(
-        SaveDraftInput(
-          name: name,
-          sourceUrl: _urlCtrl.text.trim().isEmpty ? null : _urlCtrl.text.trim(),
-          sourceNetwork: _network,
-          city: _cityCtrl.text,
-          department: _deptCtrl.text,
-          addressLine: _addressCtrl.text,
-          latitude: lat,
-          longitude: lng,
-          categoryIds: _selectedCategoryIds.toList(),
-          isPublic: _isPublic,
-          isPhysicalPlace: _isPhysical,
-          linkToExistingSiteId: linkToExisting,
-        ),
-      );
-
-      if (_pendingPhoto != null && linkToExisting == null) {
+      if (_pendingPhoto != null && editSaveId != null) {
         await widget.savesRepository.uploadPhoto(
           siteId: saved.siteId,
           file: _pendingPhoto!,
         );
       }
 
-      if (saved.status == SiteStatus.draft) {
+      if (saved.status == SiteStatus.complete) {
+        await DraftReminderService.instance.cancelForSave(saved.id);
+      } else if (saved.status == SiteStatus.draft) {
         await DraftReminderService.instance.scheduleForSave(
           saveId: saved.id,
           title: saved.siteName,
@@ -259,7 +327,7 @@ class _SavePlacePageState extends State<SavePlacePage> {
       await showDialog<void>(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text('¡Lugar guardado!'),
+          title: Text(_isEditing ? '¡Actualizado!' : '¡Lugar guardado!'),
           content: Text(
             [
               if (saved.isPossibleDuplicate)
@@ -368,7 +436,9 @@ class _SavePlacePageState extends State<SavePlacePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Guardar lugar')),
+      appBar: AppBar(
+        title: Text(_isEditing ? 'Completar / editar lugar' : 'Guardar lugar'),
+      ),
       body: _loadingCats
           ? const Center(child: CircularProgressIndicator())
           : ListView(
@@ -592,7 +662,7 @@ class _SavePlacePageState extends State<SavePlacePage> {
                           width: 22,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : const Text('Guardar'),
+                      : Text(_isEditing ? 'Guardar cambios' : 'Guardar'),
                 ),
                 const SizedBox(height: 8),
                 const Text(

@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../core/errors/user_facing_error.dart';
+import '../../legal/legal_texts.dart';
+import '../../legal/presentation/legal_document_page.dart';
 import '../data/auth_repository.dart';
 
 class LoginPage extends StatefulWidget {
@@ -14,14 +17,43 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   bool _loading = false;
+  bool _acceptedLegal = false;
   String? _error;
 
+  static const _prefsKey = 'legal_accepted_${LegalTexts.tosVersion}';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadAccepted();
+  }
+
+  Future<void> _loadAccepted() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
+    setState(() => _acceptedLegal = prefs.getBool(_prefsKey) ?? false);
+  }
+
+  Future<void> _persistAccepted() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_prefsKey, true);
+  }
+
   Future<void> _onGooglePressed() async {
+    if (!_acceptedLegal) {
+      setState(() {
+        _error =
+            'Debes aceptar los Términos de Uso y el Aviso de privacidad para continuar.';
+      });
+      return;
+    }
+
     setState(() {
       _loading = true;
       _error = null;
     });
     try {
+      await _persistAccepted();
       await widget.authRepository.signInWithGoogle();
     } catch (error) {
       if (!mounted) return;
@@ -51,7 +83,7 @@ class _LoginPageState extends State<LoginPage> {
               ),
               const SizedBox(height: 12),
               Text(
-                'Guarda lugares y arma planes. Ciclo 0: solo acceso.',
+                'Guarda lugares y arma planes.',
                 textAlign: TextAlign.center,
                 style: theme.textTheme.bodyLarge?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
@@ -74,6 +106,47 @@ class _LoginPageState extends State<LoginPage> {
                 ),
                 const SizedBox(height: 16),
               ],
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Checkbox(
+                    value: _acceptedLegal,
+                    onChanged: _loading
+                        ? null
+                        : (v) => setState(() => _acceptedLegal = v ?? false),
+                  ),
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Acepto los documentos legales del MVP.',
+                            style: theme.textTheme.bodySmall,
+                          ),
+                          Wrap(
+                            spacing: 4,
+                            children: [
+                              TextButton(
+                                onPressed: () =>
+                                    LegalDocumentPage.openTerms(context),
+                                child: const Text('Términos de Uso'),
+                              ),
+                              TextButton(
+                                onPressed: () =>
+                                    LegalDocumentPage.openPrivacy(context),
+                                child: const Text('Aviso de privacidad'),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
               FilledButton.icon(
                 onPressed: _loading ? null : _onGooglePressed,
                 icon: _loading

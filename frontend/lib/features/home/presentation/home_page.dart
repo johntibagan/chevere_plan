@@ -74,8 +74,15 @@ class _HomePageState extends State<HomePage> {
               'Tienes ${stale.length} borrador(es) por completar.',
             ),
             action: SnackBarAction(
-              label: 'Ver',
-              onPressed: () {},
+              label: 'Completar',
+              onPressed: () {
+                final drafts = _saves
+                    .where((s) => s.status == SiteStatus.draft)
+                    .toList();
+                if (drafts.isNotEmpty) {
+                  _openSave(existing: drafts.first);
+                }
+              },
             ),
           ),
         );
@@ -106,11 +113,12 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  Future<void> _openSave({String? shared}) async {
+  Future<void> _openSave({String? shared, UserSave? existing}) async {
     final result = await Navigator.of(context).push<UserSave>(
       MaterialPageRoute(
         builder: (_) => SavePlacePage(
           initialSharedText: shared,
+          existingSaveId: existing?.id,
           savesRepository: _savesRepo,
         ),
       ),
@@ -288,10 +296,12 @@ class _HomePageState extends State<HomePage> {
                 (s) => Card(
                   margin: const EdgeInsets.only(bottom: 8),
                   child: ListTile(
+                    onTap: () => _openSave(existing: s),
                     title: Text(s.siteName),
                     subtitle: Text(
                       [
                         s.status.labelEs,
+                        if (s.isIncomplete) 'Toca para completar',
                         if (s.isPossibleDuplicate) 'Posible duplicado',
                         if (s.city != null && s.city!.isNotEmpty) s.city!,
                         if (s.categoryNames.isNotEmpty)
@@ -305,6 +315,12 @@ class _HomePageState extends State<HomePage> {
                     trailing: Wrap(
                       spacing: 0,
                       children: [
+                        if (s.isIncomplete)
+                          IconButton(
+                            tooltip: 'Completar',
+                            onPressed: () => _openSave(existing: s),
+                            icon: const Icon(Icons.edit_outlined),
+                          ),
                         IconButton(
                           tooltip: 'Fotos / reportar',
                           onPressed: () {
