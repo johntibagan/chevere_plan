@@ -137,6 +137,7 @@ class _AdminPageState extends ConsumerState<AdminPage>
         ageRestricted: ageRestricted,
         keywords: keywords,
       );
+      ref.invalidate(categoriesProvider);
       await _load();
     } catch (e) {
       if (!mounted) return;
@@ -220,6 +221,7 @@ class _AdminPageState extends ConsumerState<AdminPage>
         defaultMaxKm: km,
         clearMaxKm: clearKm,
       );
+      ref.invalidate(transportTypesProvider);
       await _load();
     } catch (e) {
       if (!mounted) return;

@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../features/admin/data/admin_models.dart';
 import '../../features/admin/data/admin_repository.dart';
 import '../../features/auth/data/auth_repository.dart';
 import '../../features/auth/data/profile_repository.dart';
@@ -69,4 +70,14 @@ final placeGeocoderProvider = Provider<PlaceGeocoder>((ref) {
 /// Servicios singleton existentes (R1: se exponen vía Riverpod sin reescribirlos).
 final draftReminderServiceProvider = Provider<DraftReminderService>((ref) {
   return DraftReminderService.instance;
+});
+
+/// Cache en memoria de catálogo admin (R4: evita refetch por pantalla).
+final categoriesProvider = FutureProvider<List<Category>>((ref) async {
+  return ref.watch(adminRepositoryProvider).fetchCategories();
+});
+
+final transportTypesProvider =
+    FutureProvider<List<TransportType>>((ref) async {
+  return ref.watch(adminRepositoryProvider).fetchTransportTypes();
 });

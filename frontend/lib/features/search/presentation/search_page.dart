@@ -8,7 +8,6 @@ import '../../../core/errors/user_facing_error.dart';
 import '../../../core/formatters/money_format.dart';
 import '../../../core/l10n/context_l10n.dart';
 import '../../../core/widgets/app_list_card.dart';
-import '../../admin/data/admin_models.dart';
 import '../data/search_models.dart';
 import '../data/search_repository.dart';
 
@@ -29,7 +28,6 @@ class _SearchPageState extends ConsumerState<SearchPage> {
   final _budgetMaxCtrl = TextEditingController();
 
   bool _advanced = false;
-  List<Category> _categories = const [];
   String? _categoryId;
   String? _transportGroup;
   bool _includePublic = true;
@@ -40,12 +38,6 @@ class _SearchPageState extends ConsumerState<SearchPage> {
   bool _searched = false;
 
   @override
-  void initState() {
-    super.initState();
-    _loadMeta();
-  }
-
-  @override
   void dispose() {
     _queryCtrl.dispose();
     _locationCtrl.dispose();
@@ -53,19 +45,6 @@ class _SearchPageState extends ConsumerState<SearchPage> {
     _budgetMinCtrl.dispose();
     _budgetMaxCtrl.dispose();
     super.dispose();
-  }
-
-  Future<void> _loadMeta() async {
-    try {
-      final cats =
-          await ref.read(adminRepositoryProvider).fetchCategories();
-      if (!mounted) return;
-      setState(() => _categories = cats);
-    } catch (e) {
-      if (kDebugMode) {
-        debugPrint('search categories: $e');
-      }
-    }
   }
 
   Future<(double?, double?)> _maybeLocation() async {
@@ -163,8 +142,9 @@ class _SearchPageState extends ConsumerState<SearchPage> {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final roots = _categories.where((c) => c.isRoot).toList();
-    final children = _categories.where((c) => !c.isRoot).toList();
+    final categories = ref.watch(categoriesProvider).valueOrNull ?? const [];
+    final roots = categories.where((c) => c.isRoot).toList();
+    final children = categories.where((c) => !c.isRoot).toList();
 
     return Scaffold(
       appBar: AppBar(

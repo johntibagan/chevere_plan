@@ -17,6 +17,7 @@ import '../../proximity/presentation/proximity_prefs_sheet.dart';
 import '../../routes/presentation/my_routes_page.dart';
 import '../../search/presentation/search_page.dart';
 import '../../saves/data/save_models.dart';
+import '../../saves/domain/save_policies.dart';
 import '../../saves/presentation/save_place_page.dart';
 import '../../saves/presentation/site_status_l10n.dart';
 
@@ -36,11 +37,20 @@ class _HomePageState extends ConsumerState<HomePage> {
   String? _error;
   bool _loading = true;
   int _tab = 0; // 0 inicio, 1 explorar, 2 planes, 3 rutas
+  /// Tabs ya visitados (R4: no montar Explorar/Planes/Rutas hasta el primer toque).
+  final Set<int> _activatedTabs = {0};
 
   @override
   void initState() {
     super.initState();
     _bootstrap();
+  }
+
+  void _selectTab(int i) {
+    setState(() {
+      _tab = i;
+      _activatedTabs.add(i);
+    });
   }
 
   Future<void> _bootstrap() async {
@@ -55,7 +65,16 @@ class _HomePageState extends ConsumerState<HomePage> {
 
       final profile = await profileRepo.fetchCurrent();
       final saves = await savesRepo.listMine();
-      final stale = await savesRepo.listStaleDrafts();
+      final cutoff =
+          DateTime.now().toUtc().subtract(SavePolicies.draftRemindAfter);
+      final stale = saves
+          .where(
+            (s) =>
+                s.status == SiteStatus.draft &&
+                s.createdAt != null &&
+                s.createdAt!.toUtc().isBefore(cutoff),
+          )
+          .toList();
       if (!mounted) return;
       setState(() {
         _profile = profile;
@@ -161,11 +180,11 @@ class _HomePageState extends ConsumerState<HomePage> {
     final isStaff = _profile?.role.isStaff ?? false;
     final initial = name.trim().isNotEmpty ? name.trim()[0].toUpperCase() : 'U';
 
-    final searchRepo = ref.watch(searchRepositoryProvider);
-    final plansRepo = ref.watch(plansRepositoryProvider);
-    final routesRepo = ref.watch(routesRepositoryProvider);
-    final adminRepo = ref.watch(adminRepositoryProvider);
-    final moderationRepo = ref.watch(moderationRepositoryProvider);
+    final searchRepo = ref.read(searchRepositoryProvider);
+    final plansRepo = ref.read(plansRepositoryProvider);
+    final routesRepo = ref.read(routesRepositoryProvider);
+    final adminRepo = ref.read(adminRepositoryProvider);
+    final moderationRepo = ref.read(moderationRepositoryProvider);
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -203,18 +222,24 @@ class _HomePageState extends ConsumerState<HomePage> {
                 );
               },
               onSignOut: () => ref.read(authRepositoryProvider).signOut(),
-              onExplore: () => setState(() => _tab = 1),
+              onExplore: () => _selectTab(1),
               moderationRepository: moderationRepo,
             ),
-            SearchPage(repository: searchRepo),
-            PlansListPage(repository: plansRepo),
-            MyRoutesPage(repository: routesRepo),
+            _activatedTabs.contains(1)
+                ? SearchPage(repository: searchRepo)
+                : const SizedBox.shrink(),
+            _activatedTabs.contains(2)
+                ? PlansListPage(repository: plansRepo)
+                : const SizedBox.shrink(),
+            _activatedTabs.contains(3)
+                ? MyRoutesPage(repository: routesRepo)
+                : const SizedBox.shrink(),
           ],
         ),
       ),
       bottomNavigationBar: _ChevereBottomNav(
         index: _tab,
-        onChanged: (i) => setState(() => _tab = i),
+        onChanged: _selectTab,
         onGuardar: () => _openSave(),
       ),
     );

@@ -29,17 +29,20 @@ class _PlansListPageState extends State<PlansListPage> {
     _load();
   }
 
-  Future<void> _load() async {
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
+  Future<void> _load({bool silent = false}) async {
+    if (!silent) {
+      setState(() {
+        _loading = true;
+        _error = null;
+      });
+    }
     try {
       final plans = await widget.repository.listMine();
       if (!mounted) return;
       setState(() {
         _plans = plans;
         _loading = false;
+        _error = null;
       });
     } catch (e) {
       if (!mounted) return;
@@ -56,7 +59,7 @@ class _PlansListPageState extends State<PlansListPage> {
         builder: (_) => CreatePlanPage(repository: widget.repository),
       ),
     );
-    await _load();
+    await _load(silent: _plans.isNotEmpty);
   }
 
   @override
@@ -78,7 +81,7 @@ class _PlansListPageState extends State<PlansListPage> {
         error: _error,
         isEmpty: _plans.isEmpty,
         emptyMessage: l10n.plansEmpty,
-        onRefresh: _load,
+        onRefresh: () => _load(),
         child: ListView.builder(
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 88),
@@ -101,7 +104,7 @@ class _PlansListPageState extends State<PlansListPage> {
                       ),
                     ),
                   );
-                  await _load();
+                  await _load(silent: true);
                 },
               ),
             );

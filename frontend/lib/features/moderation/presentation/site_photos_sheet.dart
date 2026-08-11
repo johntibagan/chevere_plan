@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/errors/user_facing_error.dart';
+import '../../../core/widgets/app_network_image.dart';
 import '../data/moderation_models.dart';
 import '../data/moderation_repository.dart';
 
@@ -148,23 +149,11 @@ class _SitePhotosSheetState extends State<_SitePhotosSheet> {
                                 return Row(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    ClipRRect(
+                                    AppNetworkImage(
+                                      url: url,
+                                      width: 96,
+                                      height: 96,
                                       borderRadius: BorderRadius.circular(8),
-                                      child: Image.network(
-                                        url,
-                                        width: 96,
-                                        height: 96,
-                                        fit: BoxFit.cover,
-                                        errorBuilder: (context, error, stack) =>
-                                            Container(
-                                          width: 96,
-                                          height: 96,
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .surfaceContainerHighest,
-                                          child: const Icon(Icons.broken_image),
-                                        ),
-                                      ),
                                     ),
                                     const SizedBox(width: 12),
                                     Expanded(

@@ -47,8 +47,7 @@ class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
     });
     try {
       final plan = await widget.repository.fetchById(widget.planId);
-      final transports =
-          await ref.read(adminRepositoryProvider).fetchTransportTypes();
+      final transports = await ref.read(transportTypesProvider.future);
       if (!mounted) return;
       setState(() {
         _plan = plan;

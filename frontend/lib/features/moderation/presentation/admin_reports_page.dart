@@ -5,6 +5,7 @@ import '../../../core/formatters/date_format.dart';
 import '../../../core/l10n/context_l10n.dart';
 import '../../../core/widgets/app_async_body.dart';
 import '../../../core/widgets/app_list_card.dart';
+import '../../../core/widgets/app_network_image.dart';
 import '../data/moderation_models.dart';
 import '../data/moderation_repository.dart';
 
@@ -86,16 +87,11 @@ class _AdminReportsPageState extends State<AdminReportsPage> {
               child: ListTile(
                 isThreeLine: true,
                 leading: r.photoPath != null
-                    ? ClipRRect(
+                    ? AppNetworkImage(
+                        url: widget.repository.publicPhotoUrl(r.photoPath!),
+                        width: 56,
+                        height: 56,
                         borderRadius: BorderRadius.circular(6),
-                        child: Image.network(
-                          widget.repository.publicPhotoUrl(r.photoPath!),
-                          width: 56,
-                          height: 56,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stack) =>
-                              const Icon(Icons.photo),
-                        ),
                       )
                     : const Icon(Icons.flag_outlined),
                 title: Text(r.siteName ?? l10n.reportsPhotoFallback),

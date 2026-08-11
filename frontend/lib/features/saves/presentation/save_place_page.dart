@@ -72,8 +72,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
 
   Future<void> _bootstrapForm() async {
     try {
-      final cats =
-          await ref.read(adminRepositoryProvider).fetchCategories();
+      final cats = await ref.read(categoriesProvider.future);
       if (!mounted) return;
       setState(() {
         _categories = cats.where((c) => c.isActive).toList();
@@ -154,8 +153,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
     // Refetch por si el form quedó sin datos o el seed se aplicó después.
     if (_categories.isEmpty) {
       try {
-        final cats =
-            await ref.read(adminRepositoryProvider).fetchCategories();
+        final cats = await ref.read(categoriesProvider.future);
         if (!mounted) return;
         setState(() {
           _categories = cats.where((c) => c.isActive).toList();
@@ -167,6 +165,18 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
         );
         return;
       }
+    }
+
+    if (_categories.isEmpty) {
+      // Reintento forzado si el seed se aplicó después del primer fetch cacheado.
+      ref.invalidate(categoriesProvider);
+      try {
+        final cats = await ref.read(categoriesProvider.future);
+        if (!mounted) return;
+        setState(() {
+          _categories = cats.where((c) => c.isActive).toList();
+        });
+      } catch (_) {}
     }
 
     if (_categories.isEmpty) {
