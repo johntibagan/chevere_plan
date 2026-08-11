@@ -23,6 +23,7 @@ class _AdminReportsPageState extends State<AdminReportsPage> {
   bool _loading = true;
   String? _error;
   List<ContentReport> _reports = const [];
+  final Map<String, String> _photoUrls = {};
 
   @override
   void initState() {
@@ -37,9 +38,20 @@ class _AdminReportsPageState extends State<AdminReportsPage> {
     });
     try {
       final reports = await widget.repository.listOpenReports();
+      final urls = <String, String>{};
+      for (final r in reports) {
+        final path = r.photoPath;
+        if (path == null || path.isEmpty) continue;
+        try {
+          urls[r.id] = await widget.repository.signedPhotoUrl(path);
+        } catch (_) {}
+      }
       if (!mounted) return;
       setState(() {
         _reports = reports;
+        _photoUrls
+          ..clear()
+          ..addAll(urls);
         _loading = false;
       });
     } catch (e) {
@@ -86,9 +98,9 @@ class _AdminReportsPageState extends State<AdminReportsPage> {
             return AppListCard(
               child: ListTile(
                 isThreeLine: true,
-                leading: r.photoPath != null
+                leading: _photoUrls[r.id] != null
                     ? AppNetworkImage(
-                        url: widget.repository.publicPhotoUrl(r.photoPath!),
+                        url: _photoUrls[r.id]!,
                         width: 56,
                         height: 56,
                         borderRadius: BorderRadius.circular(6),

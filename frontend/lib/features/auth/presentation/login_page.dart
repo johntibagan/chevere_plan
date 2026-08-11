@@ -185,6 +185,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
               ),
               const SizedBox(height: 8),
               FilledButton.icon(
+                key: const Key('login_google_button'),
                 onPressed: _loading ? null : _onGooglePressed,
                 icon: _loading
                     ? const SizedBox(

@@ -6,6 +6,7 @@ import 'package:uuid/uuid.dart';
 import '../../../core/errors/user_facing_error.dart';
 import '../domain/save_policies.dart';
 import 'save_models.dart';
+import 'site_ficha.dart';
 
 class SavesRepository {
   SavesRepository({SupabaseClient? client})
@@ -225,22 +226,62 @@ class SavesRepository {
       );
     }
 
-    final ext = file.path.split('.').last.toLowerCase();
+    final rawExt = file.path.split('.').last.toLowerCase();
+    final ext = (rawExt == 'jpg' ||
+            rawExt == 'jpeg' ||
+            rawExt == 'png' ||
+            rawExt == 'webp' ||
+            rawExt == 'heic')
+        ? rawExt
+        : 'jpg';
     final objectPath = '$uid/$siteId/${_uuid.v4()}.$ext';
+    final contentType = switch (ext) {
+      'png' => 'image/png',
+      'webp' => 'image/webp',
+      'heic' => 'image/heic',
+      _ => 'image/jpeg',
+    };
 
-    await _client.storage.from('site-photos').upload(
-          objectPath,
-          file,
-          fileOptions: const FileOptions(upsert: false),
+    try {
+      await _client.storage.from('site-photos').upload(
+            objectPath,
+            file,
+            fileOptions: FileOptions(
+              upsert: false,
+              contentType: contentType,
+            ),
+          );
+    } on StorageException catch (e) {
+      throw AppUserError(
+        e.message.isNotEmpty
+            ? e.message
+            : 'No se pudo subir la foto. Intenta de nuevo.',
+      );
+    }
+
+    try {
+      await _client.from('site_photos').insert({
+        'site_id': siteId,
+        'storage_path': objectPath,
+        'source': 'user',
+        'uploaded_by': uid,
+        'sort_order': current,
+      });
+    } on PostgrestException catch (e) {
+      try {
+        await _client.storage.from('site-photos').remove([objectPath]);
+      } catch (_) {}
+      if (e.code == '42501' || (e.message.toLowerCase().contains('policy'))) {
+        throw const AppUserError(
+          'No puedes añadir fotos a este sitio (solo el creador).',
         );
-
-    await _client.from('site_photos').insert({
-      'site_id': siteId,
-      'storage_path': objectPath,
-      'source': 'user',
-      'uploaded_by': uid,
-      'sort_order': current,
-    });
+      }
+      throw AppUserError(
+        e.message.isNotEmpty
+            ? e.message
+            : 'No se pudo guardar la foto. Intenta de nuevo.',
+      );
+    }
   }
 
   Future<List<UserSave>> listStaleDrafts() async {
@@ -398,5 +439,43 @@ class SavesRepository {
         .single();
 
     return UserSave.fromJoinedJson(Map<String, dynamic>.from(save));
+  }
+
+  /// Guardado propio ligado a un sitio, si existe.
+  Future<UserSave?> findMineBySiteId(String siteId) async {
+    final uid = _uid;
+    if (uid == null) return null;
+
+    final row = await _client
+        .from('user_saves')
+        .select(_saveSelect)
+        .eq('user_id', uid)
+        .eq('site_id', siteId)
+        .maybeSingle();
+
+    if (row == null) return null;
+    return UserSave.fromJoinedJson(Map<String, dynamic>.from(row));
+  }
+
+  static const _siteSelect =
+      'id, name, city, department, address_line, is_public, is_physical_place, '
+      'site_categories(categories(name_i18n)), '
+      'site_contributors(user_id, profiles(display_name))';
+
+  /// Ficha de sitio (propia o pública visible por RLS).
+  Future<SiteFicha> loadSiteFicha(String siteId) async {
+    final mine = await findMineBySiteId(siteId);
+    if (mine != null) return SiteFicha.fromSave(mine);
+
+    final row = await _client
+        .from('sites')
+        .select(_siteSelect)
+        .eq('id', siteId)
+        .maybeSingle();
+
+    if (row == null) {
+      throw const AppUserError('No se encontró el sitio.');
+    }
+    return SiteFicha.fromSiteRow(Map<String, dynamic>.from(row));
   }
 }

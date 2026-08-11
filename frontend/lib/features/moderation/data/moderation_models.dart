@@ -3,17 +3,20 @@ class SitePhoto {
     required this.id,
     required this.siteId,
     required this.storagePath,
+    this.uploadedBy,
   });
 
   final String id;
   final String siteId;
   final String storagePath;
+  final String? uploadedBy;
 
   factory SitePhoto.fromJson(Map<String, dynamic> json) {
     return SitePhoto(
       id: json['id'] as String,
       siteId: json['site_id'] as String,
       storagePath: json['storage_path'] as String,
+      uploadedBy: json['uploaded_by'] as String?,
     );
   }
 }

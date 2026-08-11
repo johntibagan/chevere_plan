@@ -365,20 +365,24 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
             linkToExistingSiteId: linkToExisting,
           ),
         );
+      }
 
-        if (_pendingPhoto != null && linkToExisting == null) {
+      if (_pendingPhoto != null) {
+        try {
           await widget.savesRepository.uploadPhoto(
             siteId: saved.siteId,
             file: _pendingPhoto!,
           );
+        } catch (e) {
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Lugar guardado, pero la foto no se subió: ${userFacingError(e)}',
+              ),
+            ),
+          );
         }
-      }
-
-      if (_pendingPhoto != null && editSaveId != null) {
-        await widget.savesRepository.uploadPhoto(
-          siteId: saved.siteId,
-          file: _pendingPhoto!,
-        );
       }
 
       if (saved.status == SiteStatus.complete) {

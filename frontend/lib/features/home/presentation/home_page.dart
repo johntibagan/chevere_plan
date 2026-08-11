@@ -9,15 +9,15 @@ import '../../../core/l10n/context_l10n.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../admin/presentation/admin_page.dart';
 import '../../auth/data/profile.dart';
-import '../../moderation/data/moderation_repository.dart';
 import '../../moderation/presentation/admin_reports_page.dart';
-import '../../moderation/presentation/site_photos_sheet.dart';
 import '../../plans/presentation/plans_list_page.dart';
 import '../../proximity/presentation/proximity_prefs_sheet.dart';
 import '../../routes/presentation/my_routes_page.dart';
 import '../../search/presentation/search_page.dart';
 import '../../saves/data/save_models.dart';
+import '../../saves/data/site_ficha.dart';
 import '../../saves/domain/save_policies.dart';
+import '../../saves/presentation/open_site_detail.dart';
 import '../../saves/presentation/save_place_page.dart';
 import '../../saves/presentation/site_status_l10n.dart';
 
@@ -152,6 +152,12 @@ class _HomePageState extends ConsumerState<HomePage> {
     }
   }
 
+  Future<void> _openSite({UserSave? existing}) async {
+    if (existing == null) return;
+    final outcome = await openSiteDetail(context, save: existing);
+    if (outcome != SiteDetailOutcome.none) await _bootstrap();
+  }
+
   Future<void> _openSave({String? shared, UserSave? existing}) async {
     final result = await Navigator.of(context).push<UserSave>(
       MaterialPageRoute(
@@ -163,31 +169,6 @@ class _HomePageState extends ConsumerState<HomePage> {
       ),
     );
     if (result != null) await _bootstrap();
-  }
-
-  Future<void> _discard(UserSave save) async {
-    final l10n = context.l10n;
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(l10n.homeDiscardTitle),
-        content: Text(l10n.homeDiscardConfirm(save.siteName)),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(l10n.actionCancel),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text(l10n.actionDiscard),
-          ),
-        ],
-      ),
-    );
-    if (ok != true) return;
-    await ref.read(draftReminderServiceProvider).cancelForSave(save.id);
-    await ref.read(savesRepositoryProvider).discardSave(save.id);
-    await _bootstrap();
   }
 
   String _greeting(AppLocalizations l10n) {
@@ -212,6 +193,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     final moderationRepo = ref.read(moderationRepositoryProvider);
 
     return Scaffold(
+      key: const Key('home_shell'),
       backgroundColor: AppColors.background,
       extendBody: true,
       body: SafeArea(
@@ -231,7 +213,7 @@ class _HomePageState extends ConsumerState<HomePage> {
               profile: _profile,
               onRefresh: _bootstrap,
               onOpenSave: _openSave,
-              onDiscard: _discard,
+              onOpenSite: _openSite,
               onProximity: _openProximityPrefs,
               onAdmin: () {
                 Navigator.of(context).push(
@@ -250,7 +232,6 @@ class _HomePageState extends ConsumerState<HomePage> {
               },
               onSignOut: () => ref.read(authRepositoryProvider).signOut(),
               onExplore: () => _selectTab(1),
-              moderationRepository: moderationRepo,
             ),
             _tabSlot(slot: 1, page: _exploreTab),
             _tabSlot(slot: 2, page: _plansTab),
@@ -378,13 +359,12 @@ class _InicioTab extends StatelessWidget {
     required this.profile,
     required this.onRefresh,
     required this.onOpenSave,
-    required this.onDiscard,
+    required this.onOpenSite,
     required this.onProximity,
     required this.onAdmin,
     required this.onReports,
     required this.onSignOut,
     required this.onExplore,
-    required this.moderationRepository,
   });
 
   final String greeting;
@@ -397,13 +377,12 @@ class _InicioTab extends StatelessWidget {
   final Profile? profile;
   final Future<void> Function() onRefresh;
   final Future<void> Function({String? shared, UserSave? existing}) onOpenSave;
-  final Future<void> Function(UserSave) onDiscard;
+  final Future<void> Function({UserSave? existing}) onOpenSite;
   final VoidCallback onProximity;
   final VoidCallback onAdmin;
   final VoidCallback onReports;
   final VoidCallback onSignOut;
   final VoidCallback onExplore;
-  final ModerationRepository moderationRepository;
 
   @override
   Widget build(BuildContext context) {
@@ -652,16 +631,7 @@ class _InicioTab extends StatelessWidget {
                   final s = recent[i];
                   return _SaveCard(
                     save: s,
-                    onTap: () => onOpenSave(existing: s),
-                    onPhotos: () {
-                      showSitePhotosSheet(
-                        context: context,
-                        siteId: s.siteId,
-                        siteName: s.siteName,
-                        repository: moderationRepository,
-                      );
-                    },
-                    onDiscard: () => onDiscard(s),
+                    onTap: () => onOpenSite(existing: s),
                   );
                 },
               ),
@@ -691,14 +661,10 @@ class _SaveCard extends StatelessWidget {
   const _SaveCard({
     required this.save,
     required this.onTap,
-    required this.onPhotos,
-    required this.onDiscard,
   });
 
   final UserSave save;
   final VoidCallback onTap;
-  final VoidCallback onPhotos;
-  final VoidCallback onDiscard;
 
   @override
   Widget build(BuildContext context) {
@@ -767,16 +733,7 @@ class _SaveCard extends StatelessWidget {
                   ],
                 ),
               ),
-              IconButton(
-                onPressed: onPhotos,
-                icon: const Icon(Icons.photo_library_outlined, size: 20),
-                color: AppColors.muted,
-              ),
-              IconButton(
-                onPressed: onDiscard,
-                icon: const Icon(Icons.delete_outline, size: 20),
-                color: AppColors.muted,
-              ),
+              const Icon(Icons.chevron_right, color: AppColors.muted),
             ],
           ),
         ),

@@ -430,6 +430,114 @@ abstract class AppLocalizations {
   /// **'Buscando…'**
   String get searchSearching;
 
+  /// No description provided for @actionEdit.
+  ///
+  /// In es, this message translates to:
+  /// **'Editar'**
+  String get actionEdit;
+
+  /// No description provided for @siteDetailTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Sitio'**
+  String get siteDetailTitle;
+
+  /// No description provided for @siteDetailTabInfo.
+  ///
+  /// In es, this message translates to:
+  /// **'Info'**
+  String get siteDetailTabInfo;
+
+  /// No description provided for @siteDetailTabReviews.
+  ///
+  /// In es, this message translates to:
+  /// **'Reseñas'**
+  String get siteDetailTabReviews;
+
+  /// No description provided for @siteDetailTabMore.
+  ///
+  /// In es, this message translates to:
+  /// **'Más'**
+  String get siteDetailTabMore;
+
+  /// No description provided for @siteDetailLocation.
+  ///
+  /// In es, this message translates to:
+  /// **'Ubicación'**
+  String get siteDetailLocation;
+
+  /// No description provided for @siteDetailCategories.
+  ///
+  /// In es, this message translates to:
+  /// **'Categorías'**
+  String get siteDetailCategories;
+
+  /// No description provided for @siteDetailPrice.
+  ///
+  /// In es, this message translates to:
+  /// **'Precio estimado'**
+  String get siteDetailPrice;
+
+  /// No description provided for @siteDetailDistance.
+  ///
+  /// In es, this message translates to:
+  /// **'Distancia'**
+  String get siteDetailDistance;
+
+  /// No description provided for @siteDetailNotes.
+  ///
+  /// In es, this message translates to:
+  /// **'Notas'**
+  String get siteDetailNotes;
+
+  /// No description provided for @siteDetailAlsoShared.
+  ///
+  /// In es, this message translates to:
+  /// **'También guardado por'**
+  String get siteDetailAlsoShared;
+
+  /// No description provided for @siteDetailPhotos.
+  ///
+  /// In es, this message translates to:
+  /// **'Fotos'**
+  String get siteDetailPhotos;
+
+  /// No description provided for @siteDetailSource.
+  ///
+  /// In es, this message translates to:
+  /// **'Origen'**
+  String get siteDetailSource;
+
+  /// No description provided for @siteDetailNotPhysical.
+  ///
+  /// In es, this message translates to:
+  /// **'No es lugar físico'**
+  String get siteDetailNotPhysical;
+
+  /// No description provided for @siteDetailReviewsSoonTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Reseñas próximamente'**
+  String get siteDetailReviewsSoonTitle;
+
+  /// No description provided for @siteDetailReviewsSoonBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Las calificaciones y comentarios de la comunidad llegarán en una fase posterior (especificación §8 / Fase 3).'**
+  String get siteDetailReviewsSoonBody;
+
+  /// No description provided for @siteDetailMoreSoonTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Más opciones próximamente'**
+  String get siteDetailMoreSoonTitle;
+
+  /// No description provided for @siteDetailMoreSoonBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Aquí irán horario, ficha de negocio, reportes de precio y otras acciones del sitio.'**
+  String get siteDetailMoreSoonBody;
+
   /// No description provided for @proximityTitle.
   ///
   /// In es, this message translates to:

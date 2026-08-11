@@ -191,6 +191,62 @@ class AppLocalizationsEs extends AppLocalizations {
   String get searchSearching => 'Buscando…';
 
   @override
+  String get actionEdit => 'Editar';
+
+  @override
+  String get siteDetailTitle => 'Sitio';
+
+  @override
+  String get siteDetailTabInfo => 'Info';
+
+  @override
+  String get siteDetailTabReviews => 'Reseñas';
+
+  @override
+  String get siteDetailTabMore => 'Más';
+
+  @override
+  String get siteDetailLocation => 'Ubicación';
+
+  @override
+  String get siteDetailCategories => 'Categorías';
+
+  @override
+  String get siteDetailPrice => 'Precio estimado';
+
+  @override
+  String get siteDetailDistance => 'Distancia';
+
+  @override
+  String get siteDetailNotes => 'Notas';
+
+  @override
+  String get siteDetailAlsoShared => 'También guardado por';
+
+  @override
+  String get siteDetailPhotos => 'Fotos';
+
+  @override
+  String get siteDetailSource => 'Origen';
+
+  @override
+  String get siteDetailNotPhysical => 'No es lugar físico';
+
+  @override
+  String get siteDetailReviewsSoonTitle => 'Reseñas próximamente';
+
+  @override
+  String get siteDetailReviewsSoonBody =>
+      'Las calificaciones y comentarios de la comunidad llegarán en una fase posterior (especificación §8 / Fase 3).';
+
+  @override
+  String get siteDetailMoreSoonTitle => 'Más opciones próximamente';
+
+  @override
+  String get siteDetailMoreSoonBody =>
+      'Aquí irán horario, ficha de negocio, reportes de precio y otras acciones del sitio.';
+
+  @override
   String get proximityTitle => 'Recuerdos cercanos';
 
   @override

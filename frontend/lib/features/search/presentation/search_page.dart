@@ -7,6 +7,8 @@ import '../../../core/errors/user_facing_error.dart';
 import '../../../core/formatters/money_format.dart';
 import '../../../core/l10n/context_l10n.dart';
 import '../../../core/widgets/app_list_card.dart';
+import '../../saves/data/site_ficha.dart';
+import '../../saves/presentation/open_site_detail.dart';
 import '../data/search_models.dart';
 import '../data/search_repository.dart';
 
@@ -403,6 +405,17 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                       h.isOwn ? l10n.labelOwn : l10n.visibilityPublic,
                     ].join(' · '),
                   ),
+                  onTap: () async {
+                    final outcome = await openSiteDetail(
+                      context,
+                      hit: h,
+                      siteId: h.siteId,
+                    );
+                    if (outcome != SiteDetailOutcome.none && mounted) {
+                      await _runSearch();
+                    }
+                  },
+                  trailing: const Icon(Icons.chevron_right),
                 ),
               ),
             ),

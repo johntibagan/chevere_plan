@@ -14,7 +14,7 @@ class ModerationRepository {
   Future<List<SitePhoto>> listSitePhotos(String siteId) async {
     final rows = await _client
         .from('site_photos')
-        .select('id, site_id, storage_path')
+        .select('id, site_id, storage_path, uploaded_by')
         .eq('site_id', siteId)
         .order('sort_order');
     return (rows as List<dynamic>)
@@ -22,8 +22,32 @@ class ModerationRepository {
         .toList();
   }
 
+  /// URL firmada (bucket privado). Preferir esto sobre [publicPhotoUrl].
+  Future<String> signedPhotoUrl(
+    String storagePath, {
+    int expiresInSeconds = 3600,
+  }) async {
+    return _client.storage
+        .from('site-photos')
+        .createSignedUrl(storagePath, expiresInSeconds);
+  }
+
+  @Deprecated('Usar signedPhotoUrl — el bucket site-photos es privado.')
   String publicPhotoUrl(String storagePath) {
     return _client.storage.from('site-photos').getPublicUrl(storagePath);
+  }
+
+  Future<void> deletePhoto(SitePhoto photo) async {
+    final uid = _uid;
+    if (uid == null) {
+      throw const AppUserError('Debes iniciar sesión.');
+    }
+    await _client.from('site_photos').delete().eq('id', photo.id);
+    try {
+      await _client.storage.from('site-photos').remove([photo.storagePath]);
+    } catch (_) {
+      // La fila ya se borró; el archivo huérfano lo puede limpiar staff/cron.
+    }
   }
 
   Future<void> reportPhoto({
