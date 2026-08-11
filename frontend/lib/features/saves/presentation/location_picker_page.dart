@@ -5,9 +5,12 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 
-import '../data/nominatim_geocoder.dart';
+import '../../../core/config/env.dart';
+import '../../../core/errors/user_facing_error.dart';
+import '../data/geo_place.dart';
+import '../data/place_geocoder.dart';
 
-/// Mapa OSM + búsqueda Nominatim (gratis). Devuelve [GeoPlace] al confirmar.
+/// Mapa OSM + búsqueda Geoapify (autocomplete). Devuelve [GeoPlace] al confirmar.
 class LocationPickerPage extends StatefulWidget {
   const LocationPickerPage({
     super.key,
@@ -25,7 +28,7 @@ class LocationPickerPage extends StatefulWidget {
 class _LocationPickerPageState extends State<LocationPickerPage> {
   static const _colombiaCenter = LatLng(4.5709, -74.2973);
 
-  final _geocoder = NominatimGeocoder();
+  final _geocoder = PlaceGeocoder();
   final _searchCtrl = TextEditingController();
   late final MapController _mapController;
 
@@ -46,6 +49,10 @@ class _LocationPickerPageState extends State<LocationPickerPage> {
       _reverse(_pin);
     } else {
       _pin = _colombiaCenter;
+    }
+    if (!Env.hasGeoapifyKey) {
+      _hint =
+          'Falta GEOAPIFY_API_KEY en .env — la búsqueda usará un fallback limitado.';
     }
   }
 
@@ -69,30 +76,48 @@ class _LocationPickerPageState extends State<LocationPickerPage> {
             GeoPlace(lat: point.latitude, lng: point.longitude);
         _busy = false;
       });
-    } catch (_) {
+    } catch (e) {
       if (!mounted) return;
       setState(() {
         _place = GeoPlace(lat: point.latitude, lng: point.longitude);
         _busy = false;
-        _hint = 'No se pudo leer la dirección; igual puedes confirmar el punto.';
+        _hint = userFacingError(e);
       });
     }
   }
 
   void _onSearchChanged(String value) {
     _debounce?.cancel();
-    _debounce = Timer(const Duration(milliseconds: 450), () async {
+    _debounce = Timer(const Duration(milliseconds: 400), () async {
       if (value.trim().length < 2) {
         if (mounted) setState(() => _suggestions = const []);
         return;
       }
+      setState(() {
+        _busy = true;
+        _hint = null;
+      });
       try {
-        final hits = await _geocoder.search(value);
+        final hits = await _geocoder.search(
+          value,
+          biasLat: _pin.latitude,
+          biasLng: _pin.longitude,
+        );
         if (!mounted) return;
-        setState(() => _suggestions = hits);
-      } catch (_) {
+        setState(() {
+          _suggestions = hits;
+          _busy = false;
+          if (hits.isEmpty) {
+            _hint = 'Sin coincidencias. Prueba otro nombre o toca el mapa.';
+          }
+        });
+      } catch (e) {
         if (!mounted) return;
-        setState(() => _suggestions = const []);
+        setState(() {
+          _suggestions = const [];
+          _busy = false;
+          _hint = userFacingError(e);
+        });
       }
     });
   }
@@ -291,28 +316,43 @@ class _LocationPickerPageState extends State<LocationPickerPage> {
             top: false,
             child: Padding(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-              child: Row(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: _locating ? null : _useMyLocation,
-                      icon: _locating
-                          ? const SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Icon(Icons.my_location),
-                      label: const Text('Mi ubicación'),
-                    ),
+                  Text(
+                    _geocoder.usingGeoapify
+                        ? 'Búsqueda: Geoapify · mapa: OpenStreetMap'
+                        : 'Búsqueda: fallback · configura GEOAPIFY_API_KEY',
+                    style: Theme.of(context).textTheme.labelSmall,
+                    textAlign: TextAlign.center,
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: FilledButton.icon(
-                      onPressed: _confirm,
-                      icon: const Icon(Icons.check),
-                      label: const Text('Confirmar'),
-                    ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: _locating ? null : _useMyLocation,
+                          icon: _locating
+                              ? const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Icon(Icons.my_location),
+                          label: const Text('Mi ubicación'),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: FilledButton.icon(
+                          onPressed: _confirm,
+                          icon: const Icon(Icons.check),
+                          label: const Text('Confirmar'),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),

@@ -7,7 +7,7 @@ import '../../../core/errors/user_facing_error.dart';
 import '../../admin/data/admin_models.dart';
 import '../../admin/data/admin_repository.dart';
 import '../data/draft_reminder_service.dart';
-import '../data/nominatim_geocoder.dart';
+import '../data/geo_place.dart';
 import '../data/save_models.dart';
 import '../data/saves_repository.dart';
 import '../data/share_parser.dart';
@@ -470,7 +470,7 @@ class _SavePlacePageState extends State<SavePlacePage> {
                     subtitle: Text(
                       _lat != null && _lng != null
                           ? '${_lat!.toStringAsFixed(5)}, ${_lng!.toStringAsFixed(5)}'
-                          : 'Busca o toca el mapa (OpenStreetMap + Nominatim)',
+                          : 'Busca o toca el mapa (Geoapify + OpenStreetMap)',
                     ),
                     trailing: const Icon(Icons.chevron_right),
                     onTap: _saving ? null : _openMap,

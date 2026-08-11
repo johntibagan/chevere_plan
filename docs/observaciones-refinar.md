@@ -11,9 +11,9 @@ Notas de usabilidad y deuda suave. No bloquean el MVP funcional; se revisan al p
 
 ## Ciclo 2 — Captura / guardados
 
-- Google Places API / geocoding automático pendiente (hoy OSM + Nominatim).
+- Google Places API pendiente (exige facturación). En MVP usamos **Geoapify** (autocomplete + reverse, sin tarjeta).
 - Autocomplete/categorías: ya hay búsqueda textual; refinar cuando llegue Figma.
-- **Ubicación:** picker OSM + Nominatim OK para MVP.
+- **Ubicación:** mapa OSM + Geoapify (`GEOAPIFY_API_KEY`, tope local `GEOAPIFY_DAILY_LIMIT=100`); fallback Nominatim si no hay key.
 
 ## Ciclo 3 — Privacidad / duplicados
 

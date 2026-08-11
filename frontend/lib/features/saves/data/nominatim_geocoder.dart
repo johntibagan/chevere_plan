@@ -2,28 +2,9 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
-/// Resultado de búsqueda / reverse geocode (Nominatim / OSM, gratis).
-class GeoPlace {
-  const GeoPlace({
-    required this.lat,
-    required this.lng,
-    this.displayName,
-    this.name,
-    this.city,
-    this.department,
-    this.addressLine,
-  });
+import 'geo_place.dart';
 
-  final double lat;
-  final double lng;
-  final String? displayName;
-  final String? name;
-  final String? city;
-  final String? department;
-  final String? addressLine;
-}
-
-/// Nominatim (OpenStreetMap) — sin API key.
+/// Nominatim (OpenStreetMap) — fallback sin API key.
 /// Política: User-Agent identificable + uso moderado.
 class NominatimGeocoder {
   NominatimGeocoder({http.Client? client}) : _client = client ?? http.Client();

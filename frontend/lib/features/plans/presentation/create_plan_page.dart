@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 
 import '../../../core/errors/user_facing_error.dart';
-import '../../saves/data/nominatim_geocoder.dart';
+import '../../saves/data/geo_place.dart';
 import '../../saves/presentation/location_picker_page.dart';
 import '../data/plan_builder.dart';
 import '../data/plans_repository.dart';
