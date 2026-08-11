@@ -1,11 +1,10 @@
 import 'dart:convert';
-import 'dart:developer' as developer;
 
-import 'package:flutter/foundation.dart';
 import 'package:native_geofence/native_geofence.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../../core/logging/app_log.dart';
 import '../../auth/data/profile.dart';
 import '../../auth/data/profile_repository.dart';
 import 'proximity_reminder_service.dart';
@@ -99,7 +98,7 @@ class GeofenceSyncService {
       }
       return GeofenceSyncResult.ok;
     } catch (e, st) {
-      developer.log(
+      AppLog.error(
         'Geofence sync failed',
         name: 'proximity',
         error: e,
@@ -114,7 +113,7 @@ class GeofenceSyncService {
       await _ensurePlugin();
       await NativeGeofenceManager.instance.removeAllGeofences();
     } catch (e, st) {
-      developer.log(
+      AppLog.error(
         'Clear geofences failed',
         name: 'proximity',
         error: e,
@@ -139,13 +138,11 @@ Future<void> geofenceTriggered(GeofenceCallbackParams params) async {
       await ProximityReminderService.instance.showNearby(siteName: name);
     }
   } catch (e, st) {
-    if (kDebugMode) {
-      developer.log(
-        'Geofence callback failed',
-        name: 'proximity',
-        error: e,
-        stackTrace: st,
-      );
-    }
+    AppLog.debug(
+      'Geofence callback failed',
+      name: 'proximity',
+      error: e,
+      stackTrace: st,
+    );
   }
 }

@@ -1,10 +1,9 @@
-import 'dart:developer' as developer;
-
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/config/env.dart';
 import '../../../core/errors/user_facing_error.dart';
+import '../../../core/logging/app_log.dart';
 
 class AuthRepository {
   AuthRepository({
@@ -24,9 +23,8 @@ class AuthRepository {
   Future<void> ensureGoogleInitialized() async {
     if (_googleReady) return;
     if (!Env.hasGoogleWebClientId) {
-      developer.log(
-        'Falta GOOGLE_WEB_CLIENT_ID en frontend/.env '
-        '(Client ID del OAuth tipo Web en Google Cloud).',
+      AppLog.error(
+        'Falta GOOGLE_WEB_CLIENT_ID en .env (dart-define-from-file)',
         name: 'auth',
       );
       throw const AppUserError(kGenericAppError);
@@ -41,9 +39,8 @@ class AuthRepository {
     final account = await _googleSignIn.authenticate();
     final idToken = account.authentication.idToken;
     if (idToken == null || idToken.isEmpty) {
-      developer.log(
-        'Google no devolvió idToken. Revisa SHA-1, package com.chevere.plan '
-        'y GOOGLE_WEB_CLIENT_ID (OAuth Web).',
+      AppLog.error(
+        'Google no devolvió idToken. Revisa SHA-1, package y GOOGLE_WEB_CLIENT_ID.',
         name: 'auth',
       );
       throw const AppUserError(kGenericAppError);

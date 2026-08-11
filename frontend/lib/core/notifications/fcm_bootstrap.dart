@@ -1,7 +1,6 @@
-import 'dart:developer' as developer;
-
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:flutter/foundation.dart';
+
+import '../logging/app_log.dart';
 
 /// Inicialización mínima de FCM (Ciclo 0). Sin topics ni geofencing.
 Future<void> bootstrapFcm() async {
@@ -13,20 +12,22 @@ Future<void> bootstrapFcm() async {
     sound: true,
   );
 
-  if (kDebugMode) {
-    developer.log(
-      'FCM permission: ${settings.authorizationStatus}',
-      name: 'fcm',
-    );
-  }
+  AppLog.debug(
+    'FCM permission: ${settings.authorizationStatus}',
+    name: 'fcm',
+  );
 
   try {
     final token = await messaging.getToken();
-    if (kDebugMode) {
-      developer.log('FCM token: $token', name: 'fcm');
-    }
+    // Nunca loguear el token completo (identificador de dispositivo / push).
+    AppLog.debug(
+      token == null || token.isEmpty
+          ? 'FCM token vacío'
+          : 'FCM token obtenido (len=${token.length})',
+      name: 'fcm',
+    );
   } catch (error, stack) {
-    developer.log(
+    AppLog.debug(
       'No se pudo obtener FCM token (normal en emulador sin Play Services)',
       name: 'fcm',
       error: error,

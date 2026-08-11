@@ -1,4 +1,4 @@
-import 'dart:developer' as developer;
+import '../logging/app_log.dart';
 
 /// Errores seguros para mostrar en UI (regla 8 del prompt MVP).
 class AppUserError implements Exception {
@@ -14,11 +14,11 @@ const String kGenericAppError = 'Error en la app. Intenta de nuevo.';
 
 /// Convierte cualquier excepción en mensaje de usuario.
 /// - [AppUserError] → mensaje de negocio (o genérico si así se lanzó).
-/// - Resto (PostgREST, red, config, etc.) → genérico; detalle solo en log.
+/// - Resto (PostgREST, red, config, etc.) → genérico; detalle solo en log seguro.
 String userFacingError(Object error, {StackTrace? stackTrace, String? context}) {
   if (error is AppUserError) return error.message;
 
-  developer.log(
+  AppLog.error(
     context ?? 'Error técnico',
     name: 'app',
     error: error,

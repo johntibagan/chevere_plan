@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart' show debugPrint, kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
@@ -128,9 +127,6 @@ class _SearchPageState extends ConsumerState<SearchPage> {
         _loading = false;
       });
     } catch (e, st) {
-      if (kDebugMode) {
-        debugPrint('search error: $e\n$st');
-      }
       if (!mounted) return;
       setState(() {
         _error = userFacingError(e, stackTrace: st, context: 'search');

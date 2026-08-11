@@ -9,6 +9,8 @@ Desktop.ini
 !**/.env.example
 **/.env
 **/google-services.json
+**/env/env.json
+!**/env/env.json.example
 
 # IDE
 .idea/

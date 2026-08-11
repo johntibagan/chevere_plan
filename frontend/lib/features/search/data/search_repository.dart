@@ -1,8 +1,6 @@
-import 'dart:developer' as developer;
-
-import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../core/logging/app_log.dart';
 import '../../plans/data/plan_hours_policy.dart';
 import 'search_models.dart';
 
@@ -16,15 +14,12 @@ class SearchRepository {
     try {
       return await _searchRpc(filters);
     } catch (e, st) {
-      developer.log(
+      AppLog.error(
         'search_sites RPC failed — using local fallback',
         name: 'search',
         error: e,
         stackTrace: st,
       );
-      if (kDebugMode) {
-        debugPrint('search_sites RPC error: $e');
-      }
       return _searchLocalFallback(filters);
     }
   }

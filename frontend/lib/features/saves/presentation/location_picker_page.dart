@@ -52,7 +52,7 @@ class _LocationPickerPageState extends State<LocationPickerPage> {
     }
     if (!Env.hasGeoapifyKey) {
       _hint =
-          'Falta GEOAPIFY_API_KEY en .env — la búsqueda usará un fallback limitado.';
+          'Falta GEOAPIFY_API_KEY en dart-define / env.json — búsqueda limitada.';
     }
   }
 

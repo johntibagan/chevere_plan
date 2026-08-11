@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/logging/app_log.dart';
 import '../../admin/data/admin_models.dart';
 
 /// Pantalla/popup para elegir categorías (árbol + filtro por keywords).
@@ -43,8 +44,9 @@ class _CategoryPickerPageState extends State<CategoryPickerPage> {
     _selected = {...widget.initialSelected};
     assert(() {
       final roots = widget.categories.where((c) => c.parentId == null).length;
-      debugPrint(
+      AppLog.debug(
         'CategoryPicker: total=${widget.categories.length} roots=$roots',
+        name: 'categories',
       );
       return true;
     }());
