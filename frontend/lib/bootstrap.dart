@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'app.dart';
+import 'core/cache/app_image_cache.dart';
 import 'core/cache/entity_cache_store.dart';
 import 'core/config/env.dart';
 import 'core/notifications/fcm_bootstrap.dart';
@@ -28,6 +29,10 @@ Future<Widget> createRootApp({
   // Caché disco (Hive CE) — fallos no bloquean el arranque.
   try {
     await EntityCacheStore.instance.init();
+  } catch (_) {}
+
+  try {
+    AppImageCacheManager.configurePaintingCache();
   } catch (_) {}
 
   if (initFirebase) {

@@ -10,6 +10,7 @@ import '../../../core/cache/cache_ttl.dart';
 import '../../../core/di/providers.dart';
 import '../../../core/errors/user_facing_error.dart';
 import '../../../core/l10n/context_l10n.dart';
+import '../../../core/widgets/app_network_image.dart';
 import '../../admin/data/admin_models.dart';
 import '../data/geo_place.dart';
 import '../data/google_maps_link_importer.dart';
@@ -828,15 +829,13 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
                   ),
                   if (_pendingMapImageUrl != null) ...[
                     const SizedBox(height: 8),
-                    ClipRRect(
+                    AppNetworkImage(
+                      url: _pendingMapImageUrl!,
+                      cacheKey: 'map:${_pendingMapImageUrl!}',
+                      height: 120,
+                      width: double.infinity,
+                      fit: BoxFit.cover,
                       borderRadius: BorderRadius.circular(12),
-                      child: Image.network(
-                        _pendingMapImageUrl!,
-                        height: 120,
-                        width: double.infinity,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, _, _) => const SizedBox.shrink(),
-                      ),
                     ),
                   ],
                 ],

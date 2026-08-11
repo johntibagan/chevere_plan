@@ -42,6 +42,31 @@ class ModerationRepository {
     return url;
   }
 
+  /// Firma varias fotos en paralelo (usa [SignedUrlCache] por path).
+  ///
+  /// Clave del mapa = [id] de cada ítem; paths que fallen se omiten.
+  Future<Map<String, String>> signedPhotoUrlsParallel(
+    Iterable<({String id, String storagePath})> items, {
+    int expiresInSeconds = 3600,
+  }) async {
+    final entries = await Future.wait(
+      items.map((item) async {
+        try {
+          final url = await signedPhotoUrl(
+            item.storagePath,
+            expiresInSeconds: expiresInSeconds,
+          );
+          return MapEntry(item.id, url);
+        } catch (_) {
+          return null;
+        }
+      }),
+    );
+    return Map<String, String>.fromEntries(
+      entries.whereType<MapEntry<String, String>>(),
+    );
+  }
+
   @Deprecated('Usar signedPhotoUrl — el bucket site-photos es privado.')
   String publicPhotoUrl(String storagePath) {
     return _client.storage.from('site-photos').getPublicUrl(storagePath);

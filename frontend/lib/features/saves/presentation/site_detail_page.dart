@@ -112,16 +112,11 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
   Future<void> _loadPhotos() async {
     setState(() => _photosLoading = true);
     try {
-      final photos = await ref
-          .read(moderationRepositoryProvider)
-          .listSitePhotos(widget.siteId);
-      final urls = <String, String>{};
       final moderation = ref.read(moderationRepositoryProvider);
-      for (final p in photos) {
-        try {
-          urls[p.id] = await moderation.signedPhotoUrl(p.storagePath);
-        } catch (_) {}
-      }
+      final photos = await moderation.listSitePhotos(widget.siteId);
+      final urls = await moderation.signedPhotoUrlsParallel(
+        photos.map((p) => (id: p.id, storagePath: p.storagePath)),
+      );
       if (!mounted) return;
       setState(() {
         _photos = photos;
@@ -822,6 +817,8 @@ class _PhotoTile extends StatelessWidget {
                   ? AppNetworkImage(
                       url: url!,
                       cacheKey: cacheKey,
+                      width: 140,
+                      height: 148,
                       fit: BoxFit.cover,
                     )
                   : ColoredBox(

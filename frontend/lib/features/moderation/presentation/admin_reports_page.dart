@@ -38,14 +38,11 @@ class _AdminReportsPageState extends State<AdminReportsPage> {
     });
     try {
       final reports = await widget.repository.listOpenReports();
-      final urls = <String, String>{};
-      for (final r in reports) {
-        final path = r.photoPath;
-        if (path == null || path.isEmpty) continue;
-        try {
-          urls[r.id] = await widget.repository.signedPhotoUrl(path);
-        } catch (_) {}
-      }
+      final withPath = reports
+          .where((r) => r.photoPath != null && r.photoPath!.isNotEmpty)
+          .map((r) => (id: r.id, storagePath: r.photoPath!));
+      final urls =
+          await widget.repository.signedPhotoUrlsParallel(withPath);
       if (!mounted) return;
       setState(() {
         _reports = reports;
@@ -101,6 +98,7 @@ class _AdminReportsPageState extends State<AdminReportsPage> {
                 leading: _photoUrls[r.id] != null
                     ? AppNetworkImage(
                         url: _photoUrls[r.id]!,
+                        cacheKey: r.photoPath ?? r.id,
                         width: 56,
                         height: 56,
                         borderRadius: BorderRadius.circular(6),

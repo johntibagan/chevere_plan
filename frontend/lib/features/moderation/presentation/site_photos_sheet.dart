@@ -97,12 +97,9 @@ class _SitePhotosPageState extends State<SitePhotosPage> {
     });
     try {
       final photos = await widget.repository.listSitePhotos(widget.siteId);
-      final urls = <String, String>{};
-      for (final p in photos) {
-        try {
-          urls[p.id] = await widget.repository.signedPhotoUrl(p.storagePath);
-        } catch (_) {}
-      }
+      final urls = await widget.repository.signedPhotoUrlsParallel(
+        photos.map((p) => (id: p.id, storagePath: p.storagePath)),
+      );
       if (!mounted) return;
       setState(() {
         _photos = photos;
@@ -337,6 +334,7 @@ class _SitePhotosPageState extends State<SitePhotosPage> {
                                 if (url != null && url.isNotEmpty)
                                   AppNetworkImage(
                                     url: url,
+                                    cacheKey: photo.id,
                                     width: 96,
                                     height: 96,
                                     borderRadius: BorderRadius.circular(8),
