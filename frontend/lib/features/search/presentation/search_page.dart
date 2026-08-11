@@ -5,6 +5,8 @@ import 'package:geolocator/geolocator.dart';
 
 import '../../../core/di/providers.dart';
 import '../../../core/errors/user_facing_error.dart';
+import '../../../core/formatters/money_format.dart';
+import '../../../core/widgets/app_list_card.dart';
 import '../../admin/data/admin_models.dart';
 import '../data/search_models.dart';
 import '../data/search_repository.dart';
@@ -402,8 +404,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
             )
           else
             ..._hits.map(
-              (h) => Card(
-                margin: const EdgeInsets.only(bottom: 8),
+              (h) => AppListCard(
                 child: ListTile(
                   title: Text(h.name),
                   subtitle: Text(
@@ -412,7 +413,10 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                       if (h.department != null && h.department!.isNotEmpty)
                         h.department!,
                       if (h.estimatedPriceAmount != null)
-                        '${h.estimatedPriceAmount!.toStringAsFixed(0)} ${h.currencyCode}',
+                        formatMoney(
+                          h.estimatedPriceAmount!,
+                          currencyCode: h.currencyCode,
+                        ),
                       if (h.distanceKm != null)
                         '${h.distanceKm!.toStringAsFixed(1)} km',
                       h.isOwn ? 'Tuyo' : 'Público',

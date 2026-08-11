@@ -3,6 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/di/providers.dart';
 import '../../../core/errors/user_facing_error.dart';
+import '../../../core/formatters/date_format.dart';
+import '../../../core/widgets/app_async_body.dart';
+import '../../../core/widgets/app_list_card.dart';
 import '../../plans/presentation/plan_detail_page.dart';
 import '../data/route_models.dart';
 import '../data/routes_repository.dart';
@@ -52,71 +55,44 @@ class _MyRoutesPageState extends ConsumerState<MyRoutesPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Rutas')),
-      body: RefreshIndicator(
+      body: AppAsyncBody(
+        loading: _loading,
+        error: _error,
+        isEmpty: _entries.isEmpty,
+        emptyMessage:
+            'Aún no hay lugares visitados. En un plan, marca paradas como visitadas para verlas aquí.',
         onRefresh: _load,
-        child: _loading
-            ? ListView(
-                children: const [
-                  SizedBox(height: 120),
-                  Center(child: CircularProgressIndicator()),
-                ],
-              )
-            : _error != null
-                ? ListView(
-                    padding: const EdgeInsets.all(24),
-                    children: [
-                      Text(_error!, textAlign: TextAlign.center),
-                    ],
-                  )
-                : _entries.isEmpty
-                    ? ListView(
-                        padding: const EdgeInsets.all(24),
-                        children: const [
-                          SizedBox(height: 48),
-                          Text(
-                            'Aún no hay lugares visitados. En un plan, marca paradas como visitadas para verlas aquí.',
-                            textAlign: TextAlign.center,
-                          ),
-                        ],
-                      )
-                    : ListView.builder(
-                        padding: const EdgeInsets.all(16),
-                        itemCount: _entries.length,
-                        itemBuilder: (context, index) {
-                          final e = _entries[index];
-                          final when = e.visitedAt.toLocal();
-                          final date =
-                              '${when.day.toString().padLeft(2, '0')}/'
-                              '${when.month.toString().padLeft(2, '0')}/'
-                              '${when.year}';
-                          return Card(
-                            margin: const EdgeInsets.only(bottom: 8),
-                            child: ListTile(
-                              title: Text(e.siteName),
-                              subtitle: Text(
-                                [
-                                  e.planTitle,
-                                  if (e.city != null && e.city!.isNotEmpty)
-                                    e.city!,
-                                  date,
-                                ].join(' · '),
-                              ),
-                              trailing: const Icon(Icons.chevron_right),
-                              onTap: () {
-                                Navigator.of(context).push(
-                                  MaterialPageRoute<void>(
-                                    builder: (_) => PlanDetailPage(
-                                      planId: e.planId,
-                                      repository:
-                                          ref.read(plansRepositoryProvider),
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                          );
-                        },
+        child: ListView.builder(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(16),
+          itemCount: _entries.length,
+          itemBuilder: (context, index) {
+            final e = _entries[index];
+            return AppListCard(
+              child: ListTile(
+                title: Text(e.siteName),
+                subtitle: Text(
+                  [
+                    e.planTitle,
+                    if (e.city != null && e.city!.isNotEmpty) e.city!,
+                    formatDateDmY(e.visitedAt),
+                  ].join(' · '),
+                ),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => PlanDetailPage(
+                        planId: e.planId,
+                        repository: ref.read(plansRepositoryProvider),
                       ),
+                    ),
+                  );
+                },
+              ),
+            );
+          },
+        ),
       ),
     );
   }

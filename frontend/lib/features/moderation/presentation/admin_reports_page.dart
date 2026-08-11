@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/errors/user_facing_error.dart';
+import '../../../core/formatters/date_format.dart';
+import '../../../core/widgets/app_async_body.dart';
+import '../../../core/widgets/app_list_card.dart';
 import '../data/moderation_models.dart';
 import '../data/moderation_repository.dart';
 
@@ -65,93 +68,63 @@ class _AdminReportsPageState extends State<AdminReportsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Reportes de contenido')),
-      body: RefreshIndicator(
+      body: AppAsyncBody(
+        loading: _loading,
+        error: _error,
+        isEmpty: _reports.isEmpty,
+        emptyMessage: 'No hay reportes abiertos.',
         onRefresh: _load,
-        child: _loading
-            ? ListView(
-                children: const [
-                  SizedBox(height: 120),
-                  Center(child: CircularProgressIndicator()),
-                ],
-              )
-            : _error != null
-                ? ListView(
-                    padding: const EdgeInsets.all(24),
-                    children: [
-                      Text(_error!, textAlign: TextAlign.center),
-                    ],
-                  )
-                : _reports.isEmpty
-                    ? ListView(
-                        padding: const EdgeInsets.all(24),
-                        children: const [
-                          SizedBox(height: 48),
-                          Text(
-                            'No hay reportes abiertos.',
-                            textAlign: TextAlign.center,
-                          ),
-                        ],
+        child: ListView.builder(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(16),
+          itemCount: _reports.length,
+          itemBuilder: (context, index) {
+            final r = _reports[index];
+            return AppListCard(
+              child: ListTile(
+                isThreeLine: true,
+                leading: r.photoPath != null
+                    ? ClipRRect(
+                        borderRadius: BorderRadius.circular(6),
+                        child: Image.network(
+                          widget.repository.publicPhotoUrl(r.photoPath!),
+                          width: 56,
+                          height: 56,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stack) =>
+                              const Icon(Icons.photo),
+                        ),
                       )
-                    : ListView.builder(
-                        padding: const EdgeInsets.all(16),
-                        itemCount: _reports.length,
-                        itemBuilder: (context, index) {
-                          final r = _reports[index];
-                          final when = r.createdAt.toLocal();
-                          final date =
-                              '${when.day.toString().padLeft(2, '0')}/'
-                              '${when.month.toString().padLeft(2, '0')}/'
-                              '${when.year}';
-                          return Card(
-                            margin: const EdgeInsets.only(bottom: 8),
-                            child: ListTile(
-                              isThreeLine: true,
-                              leading: r.photoPath != null
-                                  ? ClipRRect(
-                                      borderRadius: BorderRadius.circular(6),
-                                      child: Image.network(
-                                        widget.repository
-                                            .publicPhotoUrl(r.photoPath!),
-                                        width: 56,
-                                        height: 56,
-                                        fit: BoxFit.cover,
-                                        errorBuilder: (context, error, stack) =>
-                                            const Icon(Icons.photo),
-                                      ),
-                                    )
-                                  : const Icon(Icons.flag_outlined),
-                              title: Text(
-                                r.siteName ?? 'Foto reportada',
-                              ),
-                              subtitle: Text(
-                                [
-                                  'Por ${r.reporterName}',
-                                  date,
-                                  if (r.reason != null && r.reason!.isNotEmpty)
-                                    r.reason!,
-                                ].join(' · '),
-                              ),
-                              trailing: PopupMenuButton<String>(
-                                onSelected: (v) => _setStatus(r, v),
-                                itemBuilder: (context) => const [
-                                  PopupMenuItem(
-                                    value: 'reviewed',
-                                    child: Text('Marcar revisado'),
-                                  ),
-                                  PopupMenuItem(
-                                    value: 'dismissed',
-                                    child: Text('Descartar'),
-                                  ),
-                                  PopupMenuItem(
-                                    value: 'actioned',
-                                    child: Text('Acción tomada'),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
-                      ),
+                    : const Icon(Icons.flag_outlined),
+                title: Text(r.siteName ?? 'Foto reportada'),
+                subtitle: Text(
+                  [
+                    'Por ${r.reporterName}',
+                    formatDateDmY(r.createdAt),
+                    if (r.reason != null && r.reason!.isNotEmpty) r.reason!,
+                  ].join(' · '),
+                ),
+                trailing: PopupMenuButton<String>(
+                  onSelected: (v) => _setStatus(r, v),
+                  itemBuilder: (context) => const [
+                    PopupMenuItem(
+                      value: 'reviewed',
+                      child: Text('Marcar revisado'),
+                    ),
+                    PopupMenuItem(
+                      value: 'dismissed',
+                      child: Text('Descartar'),
+                    ),
+                    PopupMenuItem(
+                      value: 'actioned',
+                      child: Text('Acción tomada'),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
       ),
     );
   }

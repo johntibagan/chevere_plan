@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/errors/user_facing_error.dart';
+import '../../../core/widgets/app_async_body.dart';
+import '../../../core/widgets/app_list_card.dart';
 import '../data/plan_models.dart';
 import '../data/plans_repository.dart';
 import 'create_plan_page.dart';
@@ -69,61 +71,41 @@ class _PlansListPageState extends State<PlansListPage> {
           label: const Text('Armar plan'),
         ),
       ),
-      body: RefreshIndicator(
+      body: AppAsyncBody(
+        loading: _loading,
+        error: _error,
+        isEmpty: _plans.isEmpty,
+        emptyMessage:
+            'Aún no tienes planes. Arma uno a partir de tus guardados por ciudad o departamento.',
         onRefresh: _load,
-        child: _loading
-            ? ListView(
-                children: const [
-                  SizedBox(height: 120),
-                  Center(child: CircularProgressIndicator()),
-                ],
-              )
-            : _error != null
-                ? ListView(
-                    padding: const EdgeInsets.all(24),
-                    children: [
-                      Text(_error!, textAlign: TextAlign.center),
-                    ],
-                  )
-                : _plans.isEmpty
-                    ? ListView(
-                        padding: const EdgeInsets.all(24),
-                        children: const [
-                          SizedBox(height: 48),
-                          Text(
-                            'Aún no tienes planes. Arma uno a partir de tus guardados por ciudad o departamento.',
-                            textAlign: TextAlign.center,
-                          ),
-                        ],
-                      )
-                    : ListView.builder(
-                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 88),
-                        itemCount: _plans.length,
-                        itemBuilder: (context, index) {
-                          final plan = _plans[index];
-                          return Card(
-                            margin: const EdgeInsets.only(bottom: 8),
-                            child: ListTile(
-                              title: Text(plan.title),
-                              subtitle: Text(
-                                '${plan.locationQuery} · ${plan.stops.length} paradas',
-                              ),
-                              trailing: const Icon(Icons.chevron_right),
-                              onTap: () async {
-                                await Navigator.of(context).push(
-                                  MaterialPageRoute<void>(
-                                    builder: (_) => PlanDetailPage(
-                                      planId: plan.id,
-                                      repository: widget.repository,
-                                    ),
-                                  ),
-                                );
-                                await _load();
-                              },
-                            ),
-                          );
-                        },
+        child: ListView.builder(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 88),
+          itemCount: _plans.length,
+          itemBuilder: (context, index) {
+            final plan = _plans[index];
+            return AppListCard(
+              child: ListTile(
+                title: Text(plan.title),
+                subtitle: Text(
+                  '${plan.locationQuery} · ${plan.stops.length} paradas',
+                ),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () async {
+                  await Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => PlanDetailPage(
+                        planId: plan.id,
+                        repository: widget.repository,
                       ),
+                    ),
+                  );
+                  await _load();
+                },
+              ),
+            );
+          },
+        ),
       ),
     );
   }

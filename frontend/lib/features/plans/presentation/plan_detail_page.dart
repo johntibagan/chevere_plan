@@ -4,6 +4,7 @@ import 'package:geolocator/geolocator.dart';
 
 import '../../../core/di/providers.dart';
 import '../../../core/errors/user_facing_error.dart';
+import '../../../core/formatters/money_format.dart';
 import '../data/maps_export.dart';
 import '../data/plan_builder.dart';
 import '../data/plan_models.dart';
@@ -401,7 +402,7 @@ class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
                                           if (plan.includePublic)
                                             'Incluye públicos',
                                           if (plan.maxBudgetAmount != null)
-                                            'Tope ${plan.maxBudgetAmount!.toStringAsFixed(0)} ${plan.currencyCode}',
+                                            'Tope ${formatMoney(plan.maxBudgetAmount!, currencyCode: plan.currencyCode)}',
                                           '${plan.stops.length} paradas',
                                           'Marca el check para incluir en Maps',
                                         ].join(' · '),
@@ -445,7 +446,7 @@ class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
                                         if (stop.city != null) stop.city!,
                                         if (leg.isNotEmpty) leg,
                                         if (stop.displayPrice != null)
-                                          'Estimado: ${stop.displayPrice!.toStringAsFixed(0)} COP',
+                                          'Estimado: ${formatMoney(stop.displayPrice!, currencyCode: plan.currencyCode)}',
                                         if (stop.isVisited) 'Visitado',
                                         if (stop.lat == null ||
                                             stop.lng == null)
