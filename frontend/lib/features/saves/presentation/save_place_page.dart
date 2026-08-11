@@ -395,13 +395,14 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
   }
 
   String get _locationSummary {
+    final name = _nameCtrl.text.trim();
     final parts = <String>[
+      if (name.isNotEmpty) name else 'Sin nombre',
       if (_cityCtrl.text.trim().isNotEmpty) _cityCtrl.text.trim(),
       if (_deptCtrl.text.trim().isNotEmpty) _deptCtrl.text.trim(),
       if (_addressCtrl.text.trim().isNotEmpty) _addressCtrl.text.trim(),
       if (_lat != null && _lng != null) 'Punto en mapa',
     ];
-    if (parts.isEmpty) return 'Sin datos aún';
     return parts.join(' · ');
   }
 
@@ -452,10 +453,6 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
         return false;
       }
     }
-    if (_nameCtrl.text.trim().isEmpty) {
-      setState(() => _error = 'Escribe el nombre del lugar.');
-      return false;
-    }
     if (_selectedCategoryIds.isEmpty) {
       setState(() => _error = 'Selecciona al menos una categoría.');
       return false;
@@ -472,7 +469,9 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
     try {
       final lat = _lat;
       final lng = _lng;
-      final name = _nameCtrl.text.trim();
+      final name = _nameCtrl.text.trim().isEmpty
+          ? 'Sin nombre'
+          : _nameCtrl.text.trim();
       final primaryLink =
           _socialLinks.isNotEmpty ? _socialLinks.first : null;
 
@@ -677,23 +676,24 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
     );
   }
 
-  Widget _label(String text, {bool required = false}) {
-    return Text.rich(
-      TextSpan(
-        children: [
-          TextSpan(
-            text: text,
-            style: Theme.of(context).textTheme.titleSmall,
-          ),
-          if (required)
-            const TextSpan(
-              text: ' *',
-              style: TextStyle(
-                color: _kRequiredStar,
-                fontWeight: FontWeight.bold,
-              ),
+  Widget _sectionCard({required String title, required List<Widget> children}) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              title,
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
             ),
-        ],
+            const SizedBox(height: 10),
+            ...children,
+          ],
+        ),
       ),
     );
   }
@@ -733,332 +733,354 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
       body: _loadingCats
           ? const Center(child: CircularProgressIndicator())
           : ListView(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
               children: [
-                TextField(
-                  controller: _nameCtrl,
-                  decoration: _dec('Nombre del lugar', required: true),
-                  textCapitalization: TextCapitalization.words,
-                ),
-                const SizedBox(height: 16),
-
-                _label(
-                  _isPhysical ? 'Ubicación' : 'Ubicación (opcional)',
-                  required: _isPhysical,
-                ),
-                const SizedBox(height: 8),
-                SegmentedButton<bool>(
-                  segments: const [
-                    ButtonSegment<bool>(
-                      value: false,
-                      label: Text('Mapa'),
-                      icon: Icon(Icons.map_outlined, size: 18),
-                    ),
-                    ButtonSegment<bool>(
-                      value: true,
-                      label: Text('Enlace Google'),
-                      icon: Icon(Icons.link, size: 18),
-                    ),
-                  ],
-                  selected: {_useGoogleLink},
-                  onSelectionChanged: _saving
-                      ? null
-                      : (s) => setState(() => _useGoogleLink = s.first),
-                ),
-                const SizedBox(height: 12),
-                if (!_useGoogleLink) ...[
-                  Card(
-                    child: ListTile(
-                      leading: Icon(
-                        Icons.touch_app_outlined,
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
-                      title: Text(
-                        _lat != null && _lng != null
-                            ? 'Punto listo'
-                            : 'Elegir en el mapa',
-                      ),
-                      subtitle: Text(
-                        _lat != null && _lng != null
-                            ? '${_lat!.toStringAsFixed(5)}, ${_lng!.toStringAsFixed(5)}'
-                            : 'Toca el mapa o busca el lugar',
-                      ),
-                      trailing: const Icon(Icons.chevron_right),
-                      onTap: _saving ? null : _openMap,
-                    ),
-                  ),
-                  if (_lat != null)
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: TextButton(
-                        onPressed: _saving
-                            ? null
-                            : () => setState(() {
-                                  _lat = null;
-                                  _lng = null;
-                                }),
-                        child: const Text('Quitar ubicación'),
-                      ),
-                    ),
-                ] else ...[
-                  TextField(
-                    controller: _mapsCtrl,
-                    decoration: _dec(
-                      'Pegar enlace de Google Maps',
-                      helper: 'maps.app.goo.gl o google.com/maps',
-                    ),
-                    keyboardType: TextInputType.url,
-                  ),
-                  const SizedBox(height: 8),
-                  OutlinedButton.icon(
-                    onPressed: (_saving || _importingMaps)
-                        ? null
-                        : _importFromGoogleMaps,
-                    icon: _importingMaps
-                        ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Icon(Icons.download_outlined),
-                    label: Text(
-                      _importingMaps
-                          ? 'Importando…'
-                          : 'Importar del enlace',
-                    ),
-                  ),
-                  if (_pendingMapImageUrl != null) ...[
-                    const SizedBox(height: 8),
-                    AppNetworkImage(
-                      url: _pendingMapImageUrl!,
-                      cacheKey: 'map:${_pendingMapImageUrl!}',
-                      height: 120,
-                      width: double.infinity,
-                      fit: BoxFit.cover,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ],
-                ],
-
-                const SizedBox(height: 8),
-                Theme(
-                  data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
-                  child: ExpansionTile(
-                    key: ValueKey('loc-$_locationPanelEpoch'),
-                    initiallyExpanded: _locationDetailsExpanded,
-                    maintainState: true,
-                    tilePadding: EdgeInsets.zero,
-                    childrenPadding: const EdgeInsets.only(bottom: 8),
-                    onExpansionChanged: (v) =>
-                        setState(() => _locationDetailsExpanded = v),
-                    title: Text(
-                      'Datos del lugar',
-                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.w700,
-                          ),
-                    ),
-                    subtitle: Text(
-                      _locationSummary,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontSize: 12, color: Colors.white54),
-                    ),
-                    children: [
-                      TextField(
-                        controller: _cityCtrl,
-                        decoration: _dec('Ciudad'),
-                        textCapitalization: TextCapitalization.words,
-                      ),
-                      const SizedBox(height: 12),
-                      TextField(
-                        controller: _deptCtrl,
-                        decoration: _dec('Departamento'),
-                        textCapitalization: TextCapitalization.words,
-                      ),
-                      const SizedBox(height: 12),
-                      TextField(
-                        controller: _addressCtrl,
-                        decoration: _dec('Dirección'),
-                        textCapitalization: TextCapitalization.sentences,
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 8),
-                // Enlaces redes
-                _label('Enlaces de redes / web'),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: _socialCtrl,
-                  decoration: _dec(
-                    'Pegar enlace (IG, TikTok, FB…)',
-                  ),
-                  keyboardType: TextInputType.url,
-                  onSubmitted: (v) async {
-                    await _addSocialLink(v);
-                    _socialCtrl.clear();
-                  },
-                ),
-                const SizedBox(height: 8),
-                OutlinedButton.icon(
-                  onPressed: (_saving || _addingSocial)
-                      ? null
-                      : () async {
-                          await _addSocialLink(_socialCtrl.text);
-                          _socialCtrl.clear();
-                        },
-                  icon: _addingSocial
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.add_link),
-                  label: const Text('Añadir enlace'),
-                ),
-                if (_socialLinks.isNotEmpty) ...[
-                  const SizedBox(height: 10),
-                  ..._socialLinks.map(
-                    (d) => Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: SocialLinkPreviewCard(
-                        draft: d,
-                        loading: _addingSocial &&
-                            d.title == null &&
-                            d.imageUrl == null,
-                        onRemove: _saving
-                            ? null
-                            : () => setState(() => _socialLinks.remove(d)),
-                      ),
-                    ),
-                  ),
-                ],
-
-                const SizedBox(height: 16),
-                // Categorías
-                _label('Categorías', required: true),
-                const SizedBox(height: 8),
-                if (_selectedCategories.isNotEmpty)
-                  Wrap(
-                    spacing: 6,
-                    runSpacing: 6,
-                    children: _selectedCategories.map((c) {
-                      final parent = _parentName(c);
-                      final label = parent.isEmpty
-                          ? c.nameEs
-                          : '$parent › ${c.nameEs}';
-                      return InputChip(
-                        label: Text(
-                          c.ageRestricted ? '$label (+18)' : label,
+                // 1) Ubicación primero
+                _sectionCard(
+                  title: _isPhysical
+                      ? '1. Ubicación *'
+                      : '1. Ubicación (opcional)',
+                  children: [
+                    SegmentedButton<bool>(
+                      segments: const [
+                        ButtonSegment<bool>(
+                          value: false,
+                          label: Text('Mapa'),
+                          icon: Icon(Icons.map_outlined, size: 18),
                         ),
-                        onDeleted: _saving
-                            ? null
-                            : () => setState(
-                                  () => _selectedCategoryIds.remove(c.id),
-                                ),
-                      );
-                    }).toList(),
-                  ),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: _categorySearchCtrl,
-                  decoration: InputDecoration(
-                    hintText: 'Ej. nadar, tejo, plaza, bar…',
-                    prefixIcon: const Icon(Icons.search),
-                    border: const OutlineInputBorder(),
-                    isDense: true,
-                    suffixIcon: IconButton(
-                      tooltip: 'Ver árbol de categorías',
-                      onPressed: _saving ? null : _openCategoryTree,
-                      icon: const Icon(Icons.account_tree_outlined),
-                    ),
-                  ),
-                  onChanged: (_) => setState(() {}),
-                ),
-                if (_categorySearchCtrl.text.trim().isNotEmpty) ...[
-                  const SizedBox(height: 4),
-                  ..._filteredCategories.map((c) {
-                    final parent = _parentName(c);
-                    final label = parent.isEmpty
-                        ? c.nameEs
-                        : '$parent › ${c.nameEs}';
-                    final selected = _selectedCategoryIds.contains(c.id);
-                    return CheckboxListTile(
-                      dense: true,
-                      contentPadding: EdgeInsets.zero,
-                      title: Text(
-                        c.ageRestricted ? '$label (+18)' : label,
-                      ),
-                      value: selected,
-                      onChanged: (v) {
-                        setState(() {
-                          if (v == true) {
-                            _selectedCategoryIds.add(c.id);
-                          } else {
-                            _selectedCategoryIds.remove(c.id);
-                          }
-                        });
-                      },
-                    );
-                  }),
-                  if (_filteredCategories.isEmpty)
-                    const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 8),
-                      child: Text('Sin coincidencias'),
-                    ),
-                ] else
-                  Padding(
-                    padding: const EdgeInsets.only(top: 6),
-                    child: Row(
-                      children: [
-                        const Expanded(
-                          child: Text(
-                            'Escribe una palabra clave o abre el árbol.',
-                            style: TextStyle(fontSize: 12),
-                          ),
-                        ),
-                        TextButton.icon(
-                          onPressed: _saving ? null : _openCategoryTree,
-                          icon: const Icon(Icons.account_tree_outlined, size: 18),
-                          label: const Text('Árbol'),
+                        ButtonSegment<bool>(
+                          value: true,
+                          label: Text('Enlace Google'),
+                          icon: Icon(Icons.link, size: 18),
                         ),
                       ],
+                      selected: {_useGoogleLink},
+                      onSelectionChanged: _saving
+                          ? null
+                          : (s) => setState(() => _useGoogleLink = s.first),
                     ),
-                  ),
+                    const SizedBox(height: 10),
+                    if (!_useGoogleLink) ...[
+                      ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: Icon(
+                          Icons.touch_app_outlined,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                        title: Text(
+                          _lat != null && _lng != null
+                              ? 'Punto listo'
+                              : 'Elegir en el mapa',
+                        ),
+                        subtitle: Text(
+                          _lat != null && _lng != null
+                              ? '${_lat!.toStringAsFixed(5)}, ${_lng!.toStringAsFixed(5)}'
+                              : 'Toca el mapa o busca el lugar',
+                        ),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: _saving ? null : _openMap,
+                      ),
+                      if (_lat != null)
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: TextButton(
+                            onPressed: _saving
+                                ? null
+                                : () => setState(() {
+                                      _lat = null;
+                                      _lng = null;
+                                    }),
+                            child: const Text('Quitar ubicación'),
+                          ),
+                        ),
+                    ] else ...[
+                      TextField(
+                        controller: _mapsCtrl,
+                        decoration: _dec(
+                          'Pegar enlace de Google Maps',
+                          helper: 'maps.app.goo.gl o google.com/maps',
+                        ),
+                        keyboardType: TextInputType.url,
+                      ),
+                      const SizedBox(height: 8),
+                      OutlinedButton.icon(
+                        onPressed: (_saving || _importingMaps)
+                            ? null
+                            : _importFromGoogleMaps,
+                        icon: _importingMaps
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child:
+                                    CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : const Icon(Icons.download_outlined),
+                        label: Text(
+                          _importingMaps
+                              ? 'Importando…'
+                              : 'Importar del enlace',
+                        ),
+                      ),
+                      if (_pendingMapImageUrl != null) ...[
+                        const SizedBox(height: 8),
+                        AppNetworkImage(
+                          url: _pendingMapImageUrl!,
+                          cacheKey: 'map:${_pendingMapImageUrl!}',
+                          height: 100,
+                          width: double.infinity,
+                          fit: BoxFit.cover,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ],
+                    ],
+                    Theme(
+                      data: Theme.of(context)
+                          .copyWith(dividerColor: Colors.transparent),
+                      child: ExpansionTile(
+                        key: ValueKey('loc-$_locationPanelEpoch'),
+                        initiallyExpanded: _locationDetailsExpanded,
+                        maintainState: true,
+                        tilePadding: EdgeInsets.zero,
+                        childrenPadding: const EdgeInsets.only(bottom: 4),
+                        onExpansionChanged: (v) =>
+                            setState(() => _locationDetailsExpanded = v),
+                        title: const Text(
+                          'Nombre y detalles',
+                          style: TextStyle(fontWeight: FontWeight.w700),
+                        ),
+                        subtitle: Text(
+                          _locationSummary,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Colors.white54,
+                          ),
+                        ),
+                        children: [
+                          TextField(
+                            controller: _nameCtrl,
+                            decoration: _dec(
+                              'Nombre del lugar',
+                              helper:
+                                  'Opcional. Se completa del mapa o queda “Sin nombre”',
+                            ),
+                            textCapitalization: TextCapitalization.words,
+                            onChanged: (_) => setState(() {}),
+                          ),
+                          const SizedBox(height: 10),
+                          TextField(
+                            controller: _cityCtrl,
+                            decoration: _dec('Ciudad'),
+                            textCapitalization: TextCapitalization.words,
+                            onChanged: (_) => setState(() {}),
+                          ),
+                          const SizedBox(height: 10),
+                          TextField(
+                            controller: _deptCtrl,
+                            decoration: _dec('Departamento'),
+                            textCapitalization: TextCapitalization.words,
+                            onChanged: (_) => setState(() {}),
+                          ),
+                          const SizedBox(height: 10),
+                          TextField(
+                            controller: _addressCtrl,
+                            decoration: _dec('Dirección'),
+                            textCapitalization: TextCapitalization.sentences,
+                            onChanged: (_) => setState(() {}),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
 
-                const SizedBox(height: 8),
-                SwitchListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: const Text('Es un lugar físico'),
-                  subtitle: const Text(
-                    'Si no lo es (receta, tip…), quedará siempre privado',
-                  ),
-                  value: _isPhysical,
-                  onChanged: (v) => setState(() {
-                    _isPhysical = v;
-                    if (!v) _isPublic = false;
-                  }),
+                // 2) Enlaces
+                _sectionCard(
+                  title: '2. Enlaces (opcional)',
+                  children: [
+                    TextField(
+                      controller: _socialCtrl,
+                      decoration: _dec('Pegar enlace (IG, TikTok, FB…)'),
+                      keyboardType: TextInputType.url,
+                      onSubmitted: (v) async {
+                        await _addSocialLink(v);
+                        _socialCtrl.clear();
+                      },
+                    ),
+                    const SizedBox(height: 8),
+                    OutlinedButton.icon(
+                      onPressed: (_saving || _addingSocial)
+                          ? null
+                          : () async {
+                              await _addSocialLink(_socialCtrl.text);
+                              _socialCtrl.clear();
+                            },
+                      icon: _addingSocial
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.add_link),
+                      label: const Text('Añadir enlace'),
+                    ),
+                    if (_socialLinks.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      ..._socialLinks.map(
+                        (d) => Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: SocialLinkPreviewCard(
+                            draft: d,
+                            loading: _addingSocial &&
+                                d.title == null &&
+                                d.imageUrl == null,
+                            onRemove: _saving
+                                ? null
+                                : () =>
+                                    setState(() => _socialLinks.remove(d)),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
-                SwitchListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: const Text('Hacer público'),
-                  value: _isPublic,
-                  onChanged: _isPhysical
-                      ? (v) => setState(() => _isPublic = v)
-                      : null,
+
+                // 3) Categorías
+                _sectionCard(
+                  title: '3. Categorías *',
+                  children: [
+                    if (_selectedCategories.isNotEmpty)
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 6,
+                        children: _selectedCategories.map((c) {
+                          final parent = _parentName(c);
+                          final label = parent.isEmpty
+                              ? c.nameEs
+                              : '$parent › ${c.nameEs}';
+                          return InputChip(
+                            label: Text(
+                              c.ageRestricted ? '$label (+18)' : label,
+                            ),
+                            onDeleted: _saving
+                                ? null
+                                : () => setState(
+                                      () => _selectedCategoryIds.remove(c.id),
+                                    ),
+                          );
+                        }).toList(),
+                      ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: _categorySearchCtrl,
+                      decoration: InputDecoration(
+                        hintText: 'Ej. nadar, tejo, plaza, bar…',
+                        prefixIcon: const Icon(Icons.search),
+                        border: const OutlineInputBorder(),
+                        isDense: true,
+                        suffixIcon: IconButton(
+                          tooltip: 'Ver árbol de categorías',
+                          onPressed: _saving ? null : _openCategoryTree,
+                          icon: const Icon(Icons.account_tree_outlined),
+                        ),
+                      ),
+                      onChanged: (_) => setState(() {}),
+                    ),
+                    if (_categorySearchCtrl.text.trim().isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      ..._filteredCategories.map((c) {
+                        final parent = _parentName(c);
+                        final label = parent.isEmpty
+                            ? c.nameEs
+                            : '$parent › ${c.nameEs}';
+                        final selected = _selectedCategoryIds.contains(c.id);
+                        return CheckboxListTile(
+                          dense: true,
+                          contentPadding: EdgeInsets.zero,
+                          title: Text(
+                            c.ageRestricted ? '$label (+18)' : label,
+                          ),
+                          value: selected,
+                          onChanged: (v) {
+                            setState(() {
+                              if (v == true) {
+                                _selectedCategoryIds.add(c.id);
+                              } else {
+                                _selectedCategoryIds.remove(c.id);
+                              }
+                            });
+                          },
+                        );
+                      }),
+                      if (_filteredCategories.isEmpty)
+                        const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 8),
+                          child: Text('Sin coincidencias'),
+                        ),
+                    ] else
+                      Padding(
+                        padding: const EdgeInsets.only(top: 6),
+                        child: Row(
+                          children: [
+                            const Expanded(
+                              child: Text(
+                                'Escribe una palabra clave o abre el árbol.',
+                                style: TextStyle(fontSize: 12),
+                              ),
+                            ),
+                            TextButton.icon(
+                              onPressed: _saving ? null : _openCategoryTree,
+                              icon: const Icon(
+                                Icons.account_tree_outlined,
+                                size: 18,
+                              ),
+                              label: const Text('Árbol'),
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],
                 ),
-                OutlinedButton.icon(
-                  onPressed: _saving ? null : _pickPhoto,
-                  icon: const Icon(Icons.photo_outlined),
-                  label: Text(
-                    _pendingPhoto == null
-                        ? 'Añadir foto (máx. 15)'
-                        : 'Foto lista para subir',
-                  ),
+
+                // 4) Opciones
+                _sectionCard(
+                  title: '4. Visibilidad y foto',
+                  children: [
+                    SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('Es un lugar físico'),
+                      subtitle: const Text(
+                        'Si no lo es (receta, tip…), quedará siempre privado',
+                      ),
+                      value: _isPhysical,
+                      onChanged: (v) => setState(() {
+                        _isPhysical = v;
+                        if (!v) _isPublic = false;
+                      }),
+                    ),
+                    SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('Hacer público'),
+                      value: _isPublic,
+                      onChanged: _isPhysical
+                          ? (v) => setState(() => _isPublic = v)
+                          : null,
+                    ),
+                    OutlinedButton.icon(
+                      onPressed: _saving ? null : _pickPhoto,
+                      icon: const Icon(Icons.photo_outlined),
+                      label: Text(
+                        _pendingPhoto == null
+                            ? 'Añadir foto (máx. 15)'
+                            : 'Foto lista para subir',
+                      ),
+                    ),
+                  ],
                 ),
+
                 if (_error != null) ...[
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 4),
                   Text(
                     _error!,
                     style: TextStyle(
@@ -1066,7 +1088,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
                     ),
                   ),
                 ],
-                const SizedBox(height: 20),
+                const SizedBox(height: 12),
                 FilledButton(
                   onPressed: _saving ? null : _submit,
                   child: _saving
@@ -1083,7 +1105,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
                 ),
                 const SizedBox(height: 8),
                 const Text(
-                  '* Campos obligatorios',
+                  '* Ubicación (si es físico) y al menos una categoría',
                   style: TextStyle(color: _kRequiredStar, fontSize: 12),
                 ),
               ],

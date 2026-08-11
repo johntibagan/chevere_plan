@@ -8,6 +8,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../features/auth/presentation/login_page.dart';
 import '../features/home/presentation/home_page.dart';
 import '../features/saves/presentation/save_place_page.dart';
+import 'core/cache/session_cache_cleanup.dart';
 import 'core/di/providers.dart';
 import 'core/l10n/context_l10n.dart';
 import 'core/theme/app_theme.dart';
@@ -89,11 +90,18 @@ class _CheverePlanAppState extends ConsumerState<CheverePlanApp> {
   }
 }
 
-class AuthGate extends ConsumerWidget {
+class AuthGate extends ConsumerStatefulWidget {
   const AuthGate({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<AuthGate> createState() => _AuthGateState();
+}
+
+class _AuthGateState extends ConsumerState<AuthGate> {
+  Session? _lastSession;
+
+  @override
+  Widget build(BuildContext context) {
     final authRepository = ref.watch(authRepositoryProvider);
 
     return StreamBuilder<AuthState>(
@@ -101,6 +109,18 @@ class AuthGate extends ConsumerWidget {
       builder: (context, snapshot) {
         final session =
             snapshot.data?.session ?? authRepository.currentSession;
+
+        if (_lastSession != null && session == null) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            unawaited(
+              clearSessionCaches(
+                invalidate: ref.invalidate,
+                read: ref.read,
+              ),
+            );
+          });
+        }
+        _lastSession = session;
 
         if (snapshot.connectionState == ConnectionState.waiting &&
             session == null) {

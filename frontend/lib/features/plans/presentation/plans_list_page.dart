@@ -27,7 +27,6 @@ class _PlansListPageState extends ConsumerState<PlansListPage> {
   @override
   void initState() {
     super.initState();
-    // Touch provider (SWR) sin forzar spinner si hay caché.
     unawaited(ref.read(plansProvider.future));
   }
 
@@ -61,12 +60,16 @@ class _PlansListPageState extends ConsumerState<PlansListPage> {
         ? userFacingError(async.error!)
         : null;
 
+    // FAB por encima de la bottom nav del shell (extendBody).
+    const fabBottomClearance = 72.0;
+
     return Scaffold(
       appBar: AppBar(title: Text(l10n.plansTitle)),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       floatingActionButton: Padding(
-        padding: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.only(bottom: fabBottomClearance),
         child: FloatingActionButton.extended(
+          heroTag: 'plans_create_fab',
           onPressed: _openCreate,
           icon: const Icon(Icons.auto_awesome),
           label: Text(l10n.plansCreateFab),
@@ -77,10 +80,15 @@ class _PlansListPageState extends ConsumerState<PlansListPage> {
         error: error,
         isEmpty: plans.isEmpty,
         emptyMessage: l10n.plansEmpty,
+        emptyAction: FilledButton.icon(
+          onPressed: _openCreate,
+          icon: const Icon(Icons.auto_awesome),
+          label: Text(l10n.plansCreateFab),
+        ),
         onRefresh: _refresh,
         child: ListView.builder(
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 88),
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
           itemCount: plans.length + ((page?.hasMore ?? false) ? 1 : 0),
           itemBuilder: (context, index) {
             if (index >= plans.length) {

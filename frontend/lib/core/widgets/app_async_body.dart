@@ -13,6 +13,7 @@ class AppAsyncBody extends StatelessWidget {
     required this.emptyMessage,
     required this.child,
     this.error,
+    this.emptyAction,
   });
 
   final bool loading;
@@ -21,6 +22,8 @@ class AppAsyncBody extends StatelessWidget {
   final String emptyMessage;
   final Future<void> Function() onRefresh;
   final Widget child;
+  /// CTA opcional bajo el mensaje vacío (p. ej. "Crear plan").
+  final Widget? emptyAction;
 
   @override
   Widget build(BuildContext context) {
@@ -45,10 +48,14 @@ class AppAsyncBody extends StatelessWidget {
               : isEmpty
                   ? ListView(
                       physics: const AlwaysScrollableScrollPhysics(),
-                      padding: const EdgeInsets.all(24),
+                      padding: const EdgeInsets.fromLTRB(24, 24, 24, 100),
                       children: [
                         const SizedBox(height: 48),
                         Text(emptyMessage, textAlign: TextAlign.center),
+                        if (emptyAction != null) ...[
+                          const SizedBox(height: 24),
+                          Center(child: emptyAction!),
+                        ],
                       ],
                     )
                   : child,

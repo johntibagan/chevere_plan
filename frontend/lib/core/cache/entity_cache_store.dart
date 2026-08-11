@@ -105,4 +105,12 @@ class EntityCacheStore {
       await invalidate(k);
     }
   }
+
+  /// Borra toda la caché de entidad (p. ej. al cerrar sesión / cambiar de cuenta).
+  Future<void> clearAll() async {
+    _memory.clear();
+    try {
+      await _box?.clear();
+    } catch (_) {}
+  }
 }

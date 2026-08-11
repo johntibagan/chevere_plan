@@ -7,6 +7,7 @@ import '../../../core/di/providers.dart';
 import '../../../core/errors/user_facing_error.dart';
 import '../../../core/formatters/money_format.dart';
 import '../../../core/l10n/context_l10n.dart';
+import '../../../core/prefetch/site_prefetch.dart';
 import '../../../core/widgets/app_list_card.dart';
 import '../../../core/widgets/visibility_badge.dart';
 import '../../saves/data/site_ficha.dart';
@@ -133,6 +134,9 @@ class _SearchPageState extends ConsumerState<SearchPage> {
         _hits = hits;
         _loading = false;
       });
+      ref.read(sitePrefetchProvider).scheduleVisibleSites(
+            hits.map((h) => h.siteId),
+          );
     } catch (e, st) {
       if (!mounted) return;
       setState(() {

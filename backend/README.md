@@ -1,15 +1,14 @@
 # Backend Supabase — reset y aplicación ordenada
 
-## 0. Borrar todo lo de la app (opcional)
+## 0. Vaciar datos de la app (opcional)
 
-Si vas a **empezar de cero** el schema de la app (tablas, funciones, enums, vistas):
+Si quieres **borrar el contenido** (sitios, planes, reportes, fotos en Storage) **sin** tocar el schema ni volver a correr migraciones:
 
 1. SQL Editor → pega y ejecuta [`scripts/00_reset_public.sql`](supabase/scripts/00_reset_public.sql)
-2. Luego aplica las migraciones **1→10** abajo.
 
-Ese reset **no** borra usuarios de Auth (`auth.users`). Sí borra `profiles` y todo el resto en `public`.
+Ese reset **no** borra usuarios de Auth (`auth.users`), ni `profiles`, ni el seed de `categories` / `transport_types`. Tampoco borra tablas, funciones ni policies.
 
-Si vas a **borrar todo y empezar de cero**, en el Dashboard: Project Settings → puede bastar con un proyecto nuevo, o borrar tablas/schemas según tu flujo. Luego aplica los scripts **en este orden**.
+Si el schema aún no está aplicado, salta al paso 1 y aplica las migraciones **en este orden**.
 
 ## 1. Migraciones (SQL Editor, una tras otra)
 

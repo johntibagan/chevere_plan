@@ -3,9 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../core/cache/session_cache_cleanup.dart';
 import '../../../core/di/providers.dart';
 import '../../../core/errors/user_facing_error.dart';
 import '../../../core/l10n/context_l10n.dart';
+import '../../../core/prefetch/site_prefetch.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/visibility_badge.dart';
 import '../../admin/presentation/admin_page.dart';
@@ -122,6 +124,9 @@ class _HomePageState extends ConsumerState<HomePage> {
         _loadingMoreSaves = page.loadingMore;
         _loading = false;
       });
+      ref.read(sitePrefetchProvider).scheduleVisibleSites(
+            saves.map((s) => s.siteId),
+          );
       if (stale.isNotEmpty) {
         final l10n = context.l10n;
         ScaffoldMessenger.of(context).showSnackBar(
@@ -205,6 +210,9 @@ class _HomePageState extends ConsumerState<HomePage> {
           _loadingMoreSaves = page.loadingMore;
           _loading = false;
         });
+        ref.read(sitePrefetchProvider).scheduleVisibleSites(
+              page.items.map((s) => s.siteId),
+            );
       });
     });
 
@@ -262,7 +270,13 @@ class _HomePageState extends ConsumerState<HomePage> {
                   ),
                 );
               },
-              onSignOut: () => ref.read(authRepositoryProvider).signOut(),
+              onSignOut: () async {
+                await clearSessionCaches(
+                  invalidate: ref.invalidate,
+                  read: ref.read,
+                );
+                await ref.read(authRepositoryProvider).signOut();
+              },
               onExplore: () => _selectTab(1),
             ),
             _tabSlot(slot: 1, page: _exploreTab),

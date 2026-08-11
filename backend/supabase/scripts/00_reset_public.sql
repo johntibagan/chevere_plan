@@ -1,41 +1,31 @@
 -- =============================================================================
--- RESET TOTAL del schema public (+ policies Storage de site-photos)
+-- RESET DE DATOS (solo filas) — no toca estructura
 -- =============================================================================
--- Borra tablas, vistas, funciones, triggers, tipos y enums de public.
--- NO borra auth.users (sesiones Google). SÍ borra profiles y datos de la app.
+-- Vacía el contenido de la app creado vía migraciones 000001 … 000012.
+-- Conserva tablas, funciones, triggers, enums, RLS, bucket y policies.
+-- NO hace falta volver a ejecutar las migraciones.
 --
--- Orden después:
---   1) migrations 20260808000001 … 000008 (ver backend/README.md)
---   2) login en la app
---   3) scripts/01_bootstrap_root.sql
+-- Borra: sitios y relacionados, planes, reportes, fotos en Storage.
+-- Conserva: categories, transport_types (seed), profiles (roles / prefs),
+--           auth.users, bucket site-photos + policies.
+--
+-- Después (si hace falta root de nuevo): scripts/01_bootstrap_root.sql
 -- =============================================================================
 
--- Policies del bucket de fotos de la app
-drop policy if exists site_photos_storage_select on storage.objects;
-drop policy if exists site_photos_storage_insert on storage.objects;
-drop policy if exists site_photos_storage_update on storage.objects;
-drop policy if exists site_photos_storage_delete on storage.objects;
+-- Fotos en Storage (el bucket y las policies se quedan).
+-- Supabase bloquea DELETE directo salvo con este flag de sesión.
+set storage.allow_delete_query = 'true';
+delete from storage.objects where bucket_id = 'site-photos';
 
--- (Opcional) borrar también archivos del bucket:
--- delete from storage.objects where bucket_id = 'site-photos';
--- delete from storage.buckets where id = 'site-photos';
-
-drop schema if exists public cascade;
-create schema public;
-comment on schema public is 'standard public schema';
-
--- Grants mínimos para que Supabase/PostgREST vuelvan a ver public
-grant usage on schema public to postgres, anon, authenticated, service_role;
-grant all on schema public to postgres, service_role;
-
-alter default privileges for role postgres in schema public
-  grant all on tables to postgres, anon, authenticated, service_role;
-
-alter default privileges for role postgres in schema public
-  grant all on sequences to postgres, anon, authenticated, service_role;
-
-alter default privileges for role postgres in schema public
-  grant all on functions to postgres, anon, authenticated, service_role;
-
--- Extensiones las vuelve a asegurar la migración 01 (postgis, pgcrypto).
--- Si al correr la 01 falla error de PostGIS: Dashboard → Database → Extensions → PostGIS ON.
+-- Contenido de la app (orden libre: truncate multi-tabla respeta FKs entre ellas)
+truncate table
+  public.site_social_links,
+  public.content_reports,
+  public.plan_stops,
+  public.plans,
+  public.site_contributors,
+  public.user_saves,
+  public.site_photos,
+  public.site_categories,
+  public.sites
+restart identity cascade;
