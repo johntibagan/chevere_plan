@@ -7,7 +7,9 @@ Desktop.ini
 .env
 .env.*
 !**/.env.example
+!**/.env.e2e.example
 **/.env
+**/.patrol.env
 **/google-services.json
 
 # IDE

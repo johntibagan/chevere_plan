@@ -12,10 +12,8 @@ pluginManagement {
 
     repositories {
         google()
-        maven {
-            name = "mavenCentralGoogleMirror"
-            url = uri("https://maven-central.storage-download.googleapis.com/maven2/")
-        }
+        // mavenCentral() → repo1.maven.org (el mirror storage-download.googleapis.com
+        // falla con "Host desconocido" en varias redes / DNS).
         mavenCentral()
         gradlePluginPortal()
     }

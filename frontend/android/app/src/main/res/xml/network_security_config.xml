@@ -1,5 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Solo HTTPS: deniega cleartext (HTTP) en toda la app. -->
+<!--
+  Por defecto solo HTTPS (R5).
+  Excepción: loopback para Patrol (comunicación nativa ↔ Dart por HTTP local).
+  No abre cleartext hacia internet.
+-->
 <network-security-config>
     <base-config cleartextTrafficPermitted="false" />
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">localhost</domain>
+        <domain includeSubdomains="true">127.0.0.1</domain>
+        <!-- Emulador Android → host machine (por si se usa más adelante). -->
+        <domain includeSubdomains="true">10.0.2.2</domain>
+    </domain-config>
 </network-security-config>

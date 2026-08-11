@@ -1,10 +1,8 @@
 allprojects {
     repositories {
         google()
-        maven {
-            name = "mavenCentralGoogleMirror"
-            url = uri("https://maven-central.storage-download.googleapis.com/maven2/")
-        }
+        // Preferir Maven Central directo; el mirror de Google Storage no resuelve
+        // en esta red (Host desconocido → connectedDebugAndroidTest con Total: 0).
         mavenCentral()
     }
 }

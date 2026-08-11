@@ -2,7 +2,12 @@
 .env
 .env.*
 !.env.example
+!.env.e2e.example
 google-services.json
+.patrol.env
+
+# Patrol generated
+**/test_bundle.dart
 
 # Miscellaneous
 *.class

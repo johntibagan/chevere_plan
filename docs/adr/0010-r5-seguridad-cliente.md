@@ -16,7 +16,9 @@ prácticas de cliente móvil con RLS en backend.
 3. **Logs:** `AppLog` redacta JWT / Bearer / `apiKey=` en query; en release no se
    vuelca el `toString` de excepciones (solo tipo). FCM nunca loguea el token completo.
 4. **UI de errores:** `userFacingError` sigue la regla 8 (mensaje genérico al usuario).
-5. **Red Android:** `usesCleartextTraffic=false` + `network_security_config` sin HTTP.
+5. **Red Android:** `usesCleartextTraffic=false` + `network_security_config` sin HTTP
+   hacia internet. Se permite cleartext **solo** a `localhost` / `127.0.0.1` /
+   `10.0.2.2` para que Patrol pueda hablar entre instrumentación y Dart.
 6. **Staff/admin en UI:** el badge/panel es UX; la autorización real sigue siendo RLS
    en Supabase (sin bypass en cliente).
 

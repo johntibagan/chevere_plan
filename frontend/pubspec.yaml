@@ -67,6 +67,15 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
+  patrol: ^4.8.0
+  integration_test:
+    sdk: flutter
+
+patrol:
+  app_name: Chevere Plan
+  test_directory: patrol_test
+  android:
+    package_name: com.chevere.plan
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
