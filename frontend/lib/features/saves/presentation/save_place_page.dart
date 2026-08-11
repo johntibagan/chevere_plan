@@ -60,6 +60,10 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
   bool _saving = false;
   bool _importingMaps = false;
   bool _addingSocial = false;
+  /// true = pegar enlace Google Maps; false = mapa interactivo.
+  bool _useGoogleLink = false;
+  bool _locationDetailsExpanded = false;
+  int _locationPanelEpoch = 0;
   String? _error;
   File? _pendingPhoto;
   String? _pendingMapImageUrl;
@@ -78,6 +82,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
     if (parsed.url != null) {
       if (GoogleMapsLinkImporter.looksLikeMapsUrl(parsed.url)) {
         _mapsCtrl.text = parsed.url!;
+        _useGoogleLink = true;
       } else {
         _socialCtrl.text = parsed.url!;
       }
@@ -207,6 +212,8 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
         _lat = result.lat ?? _lat;
         _lng = result.lng ?? _lng;
         _pendingMapImageUrl = result.staticMapUrl;
+        _locationDetailsExpanded = false;
+        _locationPanelEpoch++;
         _importingMaps = false;
       });
       if (!mounted) return;
@@ -379,7 +386,20 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
           place.name!.isNotEmpty) {
         _nameCtrl.text = place.name!;
       }
+      _locationDetailsExpanded = false;
+      _locationPanelEpoch++;
     });
+  }
+
+  String get _locationSummary {
+    final parts = <String>[
+      if (_cityCtrl.text.trim().isNotEmpty) _cityCtrl.text.trim(),
+      if (_deptCtrl.text.trim().isNotEmpty) _deptCtrl.text.trim(),
+      if (_addressCtrl.text.trim().isNotEmpty) _addressCtrl.text.trim(),
+      if (_lat != null && _lng != null) 'Punto en mapa',
+    ];
+    if (parts.isEmpty) return 'Sin datos aún';
+    return parts.join(' · ');
   }
 
   Future<void> _pickPhoto() async {
@@ -696,139 +716,166 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
           : ListView(
               padding: const EdgeInsets.all(16),
               children: [
-                Text(
-                  'Primero ubica el lugar; el mapa rellena ciudad y departamento.',
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-                const SizedBox(height: 12),
-
-                // 1) Mapa primero
-                _label(
-                  _isPhysical ? 'Ubicación en el mapa' : 'Ubicación (opcional)',
-                  required: _isPhysical,
-                ),
-                const SizedBox(height: 8),
-                Card(
-                  child: ListTile(
-                    leading: Icon(
-                      Icons.map_outlined,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                    title: Text(
-                      _lat != null && _lng != null
-                          ? 'Punto listo'
-                          : 'Elegir en el mapa',
-                    ),
-                    subtitle: Text(
-                      _lat != null && _lng != null
-                          ? '${_lat!.toStringAsFixed(5)}, ${_lng!.toStringAsFixed(5)}'
-                          : 'Busca o toca el mapa (Geoapify + OpenStreetMap)',
-                    ),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: _saving ? null : _openMap,
-                  ),
-                ),
-                if (_lat != null)
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: TextButton(
-                      onPressed: _saving
-                          ? null
-                          : () => setState(() {
-                                _lat = null;
-                                _lng = null;
-                              }),
-                      child: const Text('Quitar ubicación'),
-                    ),
-                  ),
-
-                const SizedBox(height: 16),
-                // 2) Campos auto / editables
                 TextField(
                   controller: _nameCtrl,
                   decoration: _dec('Nombre del lugar', required: true),
                   textCapitalization: TextCapitalization.words,
                 ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: _cityCtrl,
-                  decoration: _dec('Ciudad', helper: 'Se completa desde el mapa'),
-                  textCapitalization: TextCapitalization.words,
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: _deptCtrl,
-                  decoration: _dec(
-                    'Departamento',
-                    helper: 'Se completa desde el mapa',
-                  ),
-                  textCapitalization: TextCapitalization.words,
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: _addressCtrl,
-                  decoration: _dec('Dirección'),
-                  textCapitalization: TextCapitalization.sentences,
-                ),
-
                 const SizedBox(height: 16),
-                // Google Maps
-                _label('Desde Google Maps'),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: _mapsCtrl,
-                  decoration: _dec(
-                    'Pegar enlace de Google Maps',
-                    helper: 'Extrae nombre, ciudad, departamento y un mapa',
-                  ),
-                  keyboardType: TextInputType.url,
+
+                _label(
+                  _isPhysical ? 'Ubicación' : 'Ubicación (opcional)',
+                  required: _isPhysical,
                 ),
                 const SizedBox(height: 8),
-                OutlinedButton.icon(
-                  onPressed: (_saving || _importingMaps)
+                SegmentedButton<bool>(
+                  segments: const [
+                    ButtonSegment<bool>(
+                      value: false,
+                      label: Text('Mapa'),
+                      icon: Icon(Icons.map_outlined, size: 18),
+                    ),
+                    ButtonSegment<bool>(
+                      value: true,
+                      label: Text('Enlace Google'),
+                      icon: Icon(Icons.link, size: 18),
+                    ),
+                  ],
+                  selected: {_useGoogleLink},
+                  onSelectionChanged: _saving
                       ? null
-                      : _importFromGoogleMaps,
-                  icon: _importingMaps
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.map_outlined),
-                  label: Text(
-                    _importingMaps
-                        ? 'Importando…'
-                        : 'Importar datos del enlace',
-                  ),
+                      : (s) => setState(() => _useGoogleLink = s.first),
                 ),
-                if (_pendingMapImageUrl != null) ...[
-                  const SizedBox(height: 8),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: Image.network(
-                      _pendingMapImageUrl!,
-                      height: 140,
-                      width: double.infinity,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, _, _) => const SizedBox.shrink(),
+                const SizedBox(height: 12),
+                if (!_useGoogleLink) ...[
+                  Card(
+                    child: ListTile(
+                      leading: Icon(
+                        Icons.touch_app_outlined,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                      title: Text(
+                        _lat != null && _lng != null
+                            ? 'Punto listo'
+                            : 'Elegir en el mapa',
+                      ),
+                      subtitle: Text(
+                        _lat != null && _lng != null
+                            ? '${_lat!.toStringAsFixed(5)}, ${_lng!.toStringAsFixed(5)}'
+                            : 'Toca el mapa o busca el lugar',
+                      ),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: _saving ? null : _openMap,
                     ),
                   ),
-                  const SizedBox(height: 4),
-                  const Text(
-                    'Se guardará este mapa como foto del sitio (si hay cuota Geoapify).',
-                    style: TextStyle(fontSize: 12, color: Colors.white54),
+                  if (_lat != null)
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: TextButton(
+                        onPressed: _saving
+                            ? null
+                            : () => setState(() {
+                                  _lat = null;
+                                  _lng = null;
+                                }),
+                        child: const Text('Quitar ubicación'),
+                      ),
+                    ),
+                ] else ...[
+                  TextField(
+                    controller: _mapsCtrl,
+                    decoration: _dec(
+                      'Pegar enlace de Google Maps',
+                      helper: 'maps.app.goo.gl o google.com/maps',
+                    ),
+                    keyboardType: TextInputType.url,
                   ),
+                  const SizedBox(height: 8),
+                  OutlinedButton.icon(
+                    onPressed: (_saving || _importingMaps)
+                        ? null
+                        : _importFromGoogleMaps,
+                    icon: _importingMaps
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.download_outlined),
+                    label: Text(
+                      _importingMaps
+                          ? 'Importando…'
+                          : 'Importar del enlace',
+                    ),
+                  ),
+                  if (_pendingMapImageUrl != null) ...[
+                    const SizedBox(height: 8),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: Image.network(
+                        _pendingMapImageUrl!,
+                        height: 120,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, _, _) => const SizedBox.shrink(),
+                      ),
+                    ),
+                  ],
                 ],
 
-                const SizedBox(height: 16),
+                const SizedBox(height: 8),
+                Theme(
+                  data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                  child: ExpansionTile(
+                    key: ValueKey('loc-$_locationPanelEpoch'),
+                    initiallyExpanded: _locationDetailsExpanded,
+                    maintainState: true,
+                    tilePadding: EdgeInsets.zero,
+                    childrenPadding: const EdgeInsets.only(bottom: 8),
+                    onExpansionChanged: (v) =>
+                        setState(() => _locationDetailsExpanded = v),
+                    title: Text(
+                      'Datos del lugar',
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                    ),
+                    subtitle: Text(
+                      _locationSummary,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontSize: 12, color: Colors.white54),
+                    ),
+                    children: [
+                      TextField(
+                        controller: _cityCtrl,
+                        decoration: _dec('Ciudad'),
+                        textCapitalization: TextCapitalization.words,
+                      ),
+                      const SizedBox(height: 12),
+                      TextField(
+                        controller: _deptCtrl,
+                        decoration: _dec('Departamento'),
+                        textCapitalization: TextCapitalization.words,
+                      ),
+                      const SizedBox(height: 12),
+                      TextField(
+                        controller: _addressCtrl,
+                        decoration: _dec('Dirección'),
+                        textCapitalization: TextCapitalization.sentences,
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 8),
                 // Enlaces redes
                 _label('Enlaces de redes / web'),
                 const SizedBox(height: 8),
                 TextField(
                   controller: _socialCtrl,
                   decoration: _dec(
-                    'Pegar enlace (IG, TikTok, FB, YouTube…)',
-                    helper: 'Puedes añadir varios; se muestra vista previa',
+                    'Pegar enlace (IG, TikTok, FB…)',
                   ),
                   keyboardType: TextInputType.url,
                   onSubmitted: (v) async {
@@ -872,7 +919,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
                 ],
 
                 const SizedBox(height: 16),
-                // 4) Categorías por búsqueda
+                // Categorías
                 _label('Categorías', required: true),
                 const SizedBox(height: 8),
                 if (_selectedCategories.isNotEmpty)

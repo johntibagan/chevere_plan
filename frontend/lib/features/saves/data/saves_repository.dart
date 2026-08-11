@@ -477,19 +477,33 @@ class SavesRepository {
 
   /// Ficha de sitio (propia o pública visible por RLS).
   Future<SiteFicha> loadSiteFicha(String siteId) async {
+    SiteFicha ficha;
     final mine = await findMineBySiteId(siteId);
-    if (mine != null) return SiteFicha.fromSave(mine);
+    if (mine != null) {
+      ficha = SiteFicha.fromSave(mine);
+    } else {
+      final row = await _client
+          .from('sites')
+          .select(_siteSelect)
+          .eq('id', siteId)
+          .maybeSingle();
 
-    final row = await _client
-        .from('sites')
-        .select(_siteSelect)
-        .eq('id', siteId)
-        .maybeSingle();
-
-    if (row == null) {
-      throw const AppUserError('No se encontró el sitio.');
+      if (row == null) {
+        throw const AppUserError('No se encontró el sitio.');
+      }
+      ficha = SiteFicha.fromSiteRow(Map<String, dynamic>.from(row));
     }
-    return SiteFicha.fromSiteRow(Map<String, dynamic>.from(row));
+
+    try {
+      final coords = await _client.rpc(
+        'get_site_coords',
+        params: {'p_site_id': siteId},
+      );
+      final parsed = _parseSiteCoords(coords);
+      return ficha.copyWithMeta(lat: parsed.$1, lng: parsed.$2);
+    } catch (_) {
+      return ficha;
+    }
   }
 
   Future<List<SiteSocialLink>> listSocialLinks(String siteId) async {

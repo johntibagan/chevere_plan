@@ -12,6 +12,7 @@ import '../../../core/formatters/money_format.dart';
 import '../../../core/l10n/context_l10n.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_network_image.dart';
+import '../../../core/widgets/visibility_badge.dart';
 import '../../moderation/data/moderation_models.dart';
 import '../../search/data/search_models.dart';
 import '../data/save_models.dart';
@@ -231,6 +232,13 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
     if (url == null || url.isEmpty) return;
     final uri = Uri.tryParse(url);
     if (uri == null) return;
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
+  }
+
+  Future<void> _openInGoogleMaps(double lat, double lng) async {
+    final uri = Uri.parse(
+      'https://www.google.com/maps/search/?api=1&query=$lat,$lng',
+    );
     await launchUrl(uri, mode: LaunchMode.externalApplication);
   }
 
@@ -477,6 +485,9 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
                         onAddPhoto: ficha.isOwn ? _addPhoto : null,
                         onPhotoMenu: _onPhotoMenu,
                         onOpenLink: _openUrl,
+                        onOpenInGoogleMaps: (ficha.lat != null && ficha.lng != null)
+                            ? () => _openInGoogleMaps(ficha.lat!, ficha.lng!)
+                            : null,
                       ),
                       _PlaceholderTab(
                         title: l10n.siteDetailReviewsSoonTitle,
@@ -504,6 +515,7 @@ class _InfoTab extends StatelessWidget {
     required this.onPhotoMenu,
     required this.onOpenLink,
     this.onAddPhoto,
+    this.onOpenInGoogleMaps,
   });
 
   final SiteFicha ficha;
@@ -515,6 +527,7 @@ class _InfoTab extends StatelessWidget {
   final void Function(SitePhoto photo, String action) onPhotoMenu;
   final void Function(String? url) onOpenLink;
   final VoidCallback? onAddPhoto;
+  final VoidCallback? onOpenInGoogleMaps;
 
   @override
   Widget build(BuildContext context) {
@@ -541,15 +554,11 @@ class _InfoTab extends StatelessWidget {
           spacing: 8,
           runSpacing: 8,
           children: [
+            VisibilityBadge(
+              isPublic: ficha.isOwn ? ficha.isPublic : true,
+            ),
             if (ficha.isOwn && ficha.ownSave != null)
               _Chip(label: ficha.ownSave!.status.label(l10n)),
-            _Chip(
-              label: ficha.isOwn
-                  ? (ficha.isPublic
-                      ? l10n.visibilityPublic
-                      : l10n.visibilityPrivate)
-                  : l10n.visibilityPublic,
-            ),
             if (ficha.isOwn) _Chip(label: l10n.labelOwn),
             if (!ficha.isPhysicalPlace)
               _Chip(label: l10n.siteDetailNotPhysical),
@@ -565,12 +574,26 @@ class _InfoTab extends StatelessWidget {
           onAddPhoto: onAddPhoto,
           onPhotoMenu: onPhotoMenu,
         ),
-        if (location.isNotEmpty) ...[
+        if (location.isNotEmpty || onOpenInGoogleMaps != null) ...[
           const SizedBox(height: 20),
           _Section(
             icon: Icons.place_outlined,
             title: l10n.siteDetailLocation,
-            child: Text(location, style: const TextStyle(color: AppColors.muted)),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (location.isNotEmpty)
+                  Text(location, style: const TextStyle(color: AppColors.muted)),
+                if (onOpenInGoogleMaps != null) ...[
+                  if (location.isNotEmpty) const SizedBox(height: 10),
+                  OutlinedButton.icon(
+                    onPressed: onOpenInGoogleMaps,
+                    icon: const Icon(Icons.map_outlined),
+                    label: const Text('Abrir en Google Maps'),
+                  ),
+                ],
+              ],
+            ),
           ),
         ],
         if (ficha.categoryNames.isNotEmpty) ...[

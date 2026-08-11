@@ -7,6 +7,7 @@ import '../../../core/di/providers.dart';
 import '../../../core/errors/user_facing_error.dart';
 import '../../../core/l10n/context_l10n.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/visibility_badge.dart';
 import '../../admin/presentation/admin_page.dart';
 import '../../auth/data/profile.dart';
 import '../../moderation/presentation/admin_reports_page.dart';
@@ -674,71 +675,93 @@ class _SaveCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
+    final accent = save.isPublic ? AppColors.success : AppColors.purple;
     return Material(
       color: AppColors.surface,
+      clipBehavior: Clip.antiAlias,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: const BorderSide(color: AppColors.border),
+        side: BorderSide(color: accent.withValues(alpha: 0.4)),
       ),
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
         onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(12),
+        child: IntrinsicHeight(
           child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Container(
-                width: 52,
-                height: 52,
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceElevated,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  save.isIncomplete
-                      ? Icons.edit_note_rounded
-                      : Icons.place_outlined,
-                  color:
-                      save.isIncomplete ? AppColors.primary : AppColors.muted,
-                ),
-              ),
-              const SizedBox(width: 12),
+              Container(width: 4, color: accent),
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      save.siteName,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 14,
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 52,
+                        height: 52,
+                        decoration: BoxDecoration(
+                          color: AppColors.surfaceElevated,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(
+                          save.isIncomplete
+                              ? Icons.edit_note_rounded
+                              : Icons.place_outlined,
+                          color: save.isIncomplete
+                              ? AppColors.primary
+                              : AppColors.muted,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      [
-                        save.status.label(l10n),
-                        if (save.city != null && save.city!.isNotEmpty)
-                          save.city!,
-                        if (save.categoryNames.isNotEmpty)
-                          save.categoryNames.first,
-                        save.isPublic
-                            ? l10n.visibilityPublic
-                            : l10n.visibilityPrivate,
-                      ].join(' · '),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 11,
-                        color: AppColors.muted,
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              save.siteName,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 14,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Wrap(
+                              spacing: 6,
+                              runSpacing: 4,
+                              crossAxisAlignment: WrapCrossAlignment.center,
+                              children: [
+                                VisibilityBadge(
+                                  isPublic: save.isPublic,
+                                  compact: true,
+                                ),
+                                Text(
+                                  [
+                                    save.status.label(l10n),
+                                    if (save.city != null &&
+                                        save.city!.isNotEmpty)
+                                      save.city!,
+                                    if (save.categoryNames.isNotEmpty)
+                                      save.categoryNames.first,
+                                  ].join(' · '),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    color: AppColors.muted,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
+                      const Icon(Icons.chevron_right, color: AppColors.muted),
+                    ],
+                  ),
                 ),
               ),
-              const Icon(Icons.chevron_right, color: AppColors.muted),
             ],
           ),
         ),

@@ -7,6 +7,7 @@ import '../../../core/errors/user_facing_error.dart';
 import '../../../core/formatters/money_format.dart';
 import '../../../core/l10n/context_l10n.dart';
 import '../../../core/widgets/app_list_card.dart';
+import '../../../core/widgets/visibility_badge.dart';
 import '../../saves/data/site_ficha.dart';
 import '../../saves/presentation/open_site_detail.dart';
 import '../data/search_models.dart';
@@ -402,8 +403,16 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                         ),
                       if (h.distanceKm != null)
                         '${h.distanceKm!.toStringAsFixed(1)} km',
-                      h.isOwn ? l10n.labelOwn : l10n.visibilityPublic,
+                      if (h.isOwn) l10n.labelOwn,
                     ].join(' · '),
+                  ),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (!h.isOwn)
+                        const VisibilityBadge(isPublic: true, compact: true),
+                      const Icon(Icons.chevron_right),
+                    ],
                   ),
                   onTap: () async {
                     final outcome = await openSiteDetail(
@@ -415,7 +424,6 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                       await _runSearch();
                     }
                   },
-                  trailing: const Icon(Icons.chevron_right),
                 ),
               ),
             ),
