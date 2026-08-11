@@ -2,25 +2,26 @@ import 'package:flutter/material.dart';
 
 import '../../admin/data/admin_models.dart';
 
-/// Bottom sheet: árbol completo de categorías + buscador (keywords / nombre).
+/// Pantalla/popup para elegir categorías (árbol + filtro por keywords).
 Future<Set<String>?> showCategoryPickerSheet({
   required BuildContext context,
   required List<Category> categories,
   required Set<String> selectedIds,
 }) {
-  return showModalBottomSheet<Set<String>>(
-    context: context,
-    isScrollControlled: true,
-    useSafeArea: true,
-    builder: (context) => _CategoryPickerSheet(
-      categories: categories,
-      initialSelected: selectedIds,
+  return Navigator.of(context).push<Set<String>>(
+    MaterialPageRoute(
+      fullscreenDialog: true,
+      builder: (_) => CategoryPickerPage(
+        categories: categories,
+        initialSelected: selectedIds,
+      ),
     ),
   );
 }
 
-class _CategoryPickerSheet extends StatefulWidget {
-  const _CategoryPickerSheet({
+class CategoryPickerPage extends StatefulWidget {
+  const CategoryPickerPage({
+    super.key,
     required this.categories,
     required this.initialSelected,
   });
@@ -29,24 +30,24 @@ class _CategoryPickerSheet extends StatefulWidget {
   final Set<String> initialSelected;
 
   @override
-  State<_CategoryPickerSheet> createState() => _CategoryPickerSheetState();
+  State<CategoryPickerPage> createState() => _CategoryPickerPageState();
 }
 
-class _CategoryPickerSheetState extends State<_CategoryPickerSheet> {
+class _CategoryPickerPageState extends State<CategoryPickerPage> {
   late final Set<String> _selected;
   final _searchCtrl = TextEditingController();
-  final Set<String> _expanded = {};
 
   @override
   void initState() {
     super.initState();
     _selected = {...widget.initialSelected};
-    // Expandir raíces que tienen algo seleccionado.
-    for (final c in widget.categories) {
-      if (c.parentId != null && _selected.contains(c.id)) {
-        _expanded.add(c.parentId!);
-      }
-    }
+    assert(() {
+      final roots = widget.categories.where((c) => c.parentId == null).length;
+      debugPrint(
+        'CategoryPicker: total=${widget.categories.length} roots=$roots',
+      );
+      return true;
+    }());
   }
 
   @override
@@ -55,42 +56,48 @@ class _CategoryPickerSheetState extends State<_CategoryPickerSheet> {
     super.dispose();
   }
 
-  List<Category> get _roots => widget.categories
-      .where((c) => c.isRoot && c.isActive)
-      .toList()
-    ..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
+  List<Category> get _roots {
+    final list = widget.categories
+        .where((c) => c.parentId == null && c.isActive)
+        .toList();
+    list.sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
+    return list;
+  }
 
   List<Category> _childrenOf(String parentId) {
-    return widget.categories
+    final list = widget.categories
         .where((c) => c.parentId == parentId && c.isActive)
-        .toList()
-      ..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
+        .toList();
+    list.sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
+    return list;
   }
 
   String _parentName(Category c) {
     if (c.parentId == null) return '';
-    final parent = widget.categories.where((p) => p.id == c.parentId);
-    return parent.isEmpty ? '' : parent.first.nameEs;
+    for (final p in widget.categories) {
+      if (p.id == c.parentId) return p.nameEs;
+    }
+    return '';
   }
 
   bool _matches(Category c, String q) {
     if (q.isEmpty) return true;
     if (c.matchesQuery(q)) return true;
-    final parent = widget.categories.where((p) => p.id == c.parentId);
-    if (parent.isNotEmpty && parent.first.matchesQuery(q)) return true;
-    final parentName = _parentName(c).toLowerCase();
-    return parentName.contains(q);
+    for (final p in widget.categories) {
+      if (p.id == c.parentId && p.matchesQuery(q)) return true;
+    }
+    return _parentName(c).toLowerCase().contains(q);
   }
 
   List<Category> get _filteredFlat {
     final q = _searchCtrl.text.trim().toLowerCase();
-    if (q.isEmpty) return const [];
     final hits = widget.categories
         .where((c) => c.isActive && _matches(c, q))
         .toList();
     hits.sort((a, b) {
-      // Preferir hojas sobre raíces.
-      if (a.isRoot != b.isRoot) return a.isRoot ? 1 : -1;
+      final aRoot = a.parentId == null;
+      final bRoot = b.parentId == null;
+      if (aRoot != bRoot) return aRoot ? 1 : -1;
       return a.nameEs.compareTo(b.nameEs);
     });
     return hits;
@@ -108,49 +115,27 @@ class _CategoryPickerSheetState extends State<_CategoryPickerSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final height = MediaQuery.sizeOf(context).height * 0.88;
     final filtering = _searchCtrl.text.trim().isNotEmpty;
+    final roots = _roots;
 
-    return SizedBox(
-      height: height,
-      child: Column(
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Categorías'),
+        actions: [
+          TextButton(
+            onPressed: () =>
+                Navigator.pop(context, Set<String>.from(_selected)),
+            child: Text('Listo (${_selected.length})'),
+          ),
+        ],
+      ),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const SizedBox(height: 8),
-          Container(
-            width: 40,
-            height: 4,
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.outlineVariant,
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 8, 0),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    'Categorías',
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                ),
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('Cancelar'),
-                ),
-                FilledButton(
-                  onPressed: () =>
-                      Navigator.pop(context, Set<String>.from(_selected)),
-                  child: Text('Listo (${_selected.length})'),
-                ),
-              ],
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
             child: TextField(
               controller: _searchCtrl,
-              autofocus: false,
               decoration: InputDecoration(
                 hintText: 'Filtrar: nadar, tejo, plaza, bar…',
                 prefixIcon: const Icon(Icons.search),
@@ -159,7 +144,6 @@ class _CategoryPickerSheetState extends State<_CategoryPickerSheet> {
                 suffixIcon: _searchCtrl.text.isEmpty
                     ? null
                     : IconButton(
-                        tooltip: 'Limpiar',
                         icon: const Icon(Icons.clear),
                         onPressed: () {
                           _searchCtrl.clear();
@@ -170,22 +154,19 @@ class _CategoryPickerSheetState extends State<_CategoryPickerSheet> {
               onChanged: (_) => setState(() {}),
             ),
           ),
-          if (_selected.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  '${_selected.length} seleccionada(s)',
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-              ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Text(
+              filtering
+                  ? '${_filteredFlat.length} resultado(s)'
+                  : '${widget.categories.length} categorías · ${roots.length} grupos',
+              style: Theme.of(context).textTheme.bodySmall,
             ),
+          ),
+          const SizedBox(height: 4),
           const Divider(height: 1),
           Expanded(
-            child: filtering
-                ? _buildFilteredList()
-                : _buildTree(),
+            child: filtering ? _buildFilteredList() : _buildTree(roots),
           ),
         ],
       ),
@@ -207,83 +188,94 @@ class _CategoryPickerSheetState extends State<_CategoryPickerSheet> {
           value: _selected.contains(c.id),
           onChanged: (v) => _toggle(c.id, v),
           title: Text(c.ageRestricted ? '$label (+18)' : label),
-          dense: true,
         );
       },
     );
   }
 
-  Widget _buildTree() {
-    return ListView.builder(
-      itemCount: _roots.length,
-      itemBuilder: (context, index) {
-        final root = _roots[index];
-        final children = _childrenOf(root.id);
-        final expanded = _expanded.contains(root.id);
-        final selectedCount =
-            children.where((c) => _selected.contains(c.id)).length;
+  Widget _buildTree(List<Category> roots) {
+    if (widget.categories.isEmpty) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(24),
+          child: Text(
+            'No hay categorías cargadas.\n'
+            'Cierra, vuelve a abrir Guardar, o aplica el seed SQL en Supabase.',
+            textAlign: TextAlign.center,
+          ),
+        ),
+      );
+    }
 
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            ListTile(
-              leading: Icon(
-                expanded ? Icons.expand_more : Icons.chevron_right,
-              ),
-              title: Text(
-                root.nameEs,
-                style: const TextStyle(fontWeight: FontWeight.w600),
-              ),
-              subtitle: selectedCount > 0
-                  ? Text('$selectedCount seleccionada(s)')
-                  : Text('${children.length} opciones'),
-              trailing: Checkbox(
-                tristate: true,
-                value: selectedCount == 0
-                    ? false
-                    : (selectedCount == children.length ? true : null),
-                onChanged: children.isEmpty
-                    ? null
-                    : (v) {
-                        setState(() {
-                          if (v == true) {
-                            for (final c in children) {
-                              _selected.add(c.id);
-                            }
-                            _expanded.add(root.id);
-                          } else {
-                            for (final c in children) {
-                              _selected.remove(c.id);
-                            }
-                          }
-                        });
-                      },
-              ),
-              onTap: () {
-                setState(() {
-                  if (expanded) {
-                    _expanded.remove(root.id);
-                  } else {
-                    _expanded.add(root.id);
-                  }
-                });
-              },
+    if (roots.isEmpty) {
+      // Fallback: si no hay raíces detectadas, listar todo plano.
+      return ListView.builder(
+        itemCount: widget.categories.length,
+        itemBuilder: (context, index) {
+          final c = widget.categories[index];
+          final parent = _parentName(c);
+          final label = parent.isEmpty ? c.nameEs : '$parent › ${c.nameEs}';
+          return CheckboxListTile(
+            value: _selected.contains(c.id),
+            onChanged: (v) => _toggle(c.id, v),
+            title: Text(c.ageRestricted ? '$label (+18)' : label),
+            subtitle: Text('slug: ${c.slug} · parent: ${c.parentId ?? "null"}'),
+          );
+        },
+      );
+    }
+
+    final tiles = <Widget>[];
+    for (final root in roots) {
+      final children = _childrenOf(root.id);
+      tiles.add(
+        Material(
+          color: Theme.of(context).colorScheme.surfaceContainerHighest,
+          child: ListTile(
+            dense: true,
+            title: Text(
+              root.nameEs,
+              style: const TextStyle(fontWeight: FontWeight.w700),
             ),
-            if (expanded)
-              ...children.map(
-                (c) => CheckboxListTile(
-                  contentPadding: const EdgeInsets.only(left: 48, right: 16),
-                  dense: true,
-                  value: _selected.contains(c.id),
-                  onChanged: (v) => _toggle(c.id, v),
-                  title: Text(
-                    c.ageRestricted ? '${c.nameEs} (+18)' : c.nameEs,
+            subtitle: Text('${children.length} opciones'),
+            trailing: children.isEmpty
+                ? null
+                : IconButton(
+                    tooltip: 'Seleccionar todo el grupo',
+                    icon: const Icon(Icons.done_all),
+                    onPressed: () {
+                      setState(() {
+                        for (final c in children) {
+                          _selected.add(c.id);
+                        }
+                      });
+                    },
                   ),
-                ),
-              ),
-          ],
+          ),
+        ),
+      );
+      if (children.isEmpty) {
+        tiles.add(
+          const ListTile(
+            dense: true,
+            title: Text('Sin subcategorías'),
+          ),
         );
-      },
-    );
+      } else {
+        for (final c in children) {
+          tiles.add(
+            CheckboxListTile(
+              value: _selected.contains(c.id),
+              onChanged: (v) => _toggle(c.id, v),
+              title: Text(
+                c.ageRestricted ? '${c.nameEs} (+18)' : c.nameEs,
+              ),
+            ),
+          );
+        }
+      }
+    }
+
+    return ListView(children: tiles);
   }
 }

@@ -149,10 +149,39 @@ class _SavePlacePageState extends State<SavePlacePage> {
   }
 
   Future<void> _openCategoryTree() async {
+    // Refetch por si el form quedó sin datos o el seed se aplicó después.
+    if (_categories.isEmpty) {
+      try {
+        final cats = await _adminRepo.fetchCategories();
+        if (!mounted) return;
+        setState(() {
+          _categories = cats.where((c) => c.isActive).toList();
+        });
+      } catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(userFacingError(e))),
+        );
+        return;
+      }
+    }
+
+    if (_categories.isEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'No hay categorías. Aplica el seed SQL (migración 2 y 10) en Supabase.',
+          ),
+        ),
+      );
+      return;
+    }
+
     final result = await showCategoryPickerSheet(
       context: context,
-      categories: _categories,
-      selectedIds: _selectedCategoryIds,
+      categories: List<Category>.from(_categories),
+      selectedIds: Set<String>.from(_selectedCategoryIds),
     );
     if (result == null || !mounted) return;
     setState(() {

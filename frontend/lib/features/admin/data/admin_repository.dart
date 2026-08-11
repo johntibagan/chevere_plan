@@ -9,13 +9,30 @@ class AdminRepository {
   final SupabaseClient _client;
 
   Future<List<Category>> fetchCategories() async {
-    final rows = await _client
-        .from('categories')
-        .select()
-        .order('sort_order');
-    return (rows as List)
-        .map((e) => Category.fromJson(Map<String, dynamic>.from(e as Map)))
-        .toList();
+    try {
+      final rows = await _client
+          .from('categories')
+          .select(
+            'id, parent_id, slug, name_i18n, is_active, age_restricted, '
+            'sort_order, icon_key, color_hex, keywords',
+          )
+          .order('sort_order');
+      return (rows as List)
+          .map((e) => Category.fromJson(Map<String, dynamic>.from(e as Map)))
+          .toList();
+    } catch (_) {
+      // DB sin columna keywords aún (migración 10 pendiente).
+      final rows = await _client
+          .from('categories')
+          .select(
+            'id, parent_id, slug, name_i18n, is_active, age_restricted, '
+            'sort_order, icon_key, color_hex',
+          )
+          .order('sort_order');
+      return (rows as List)
+          .map((e) => Category.fromJson(Map<String, dynamic>.from(e as Map)))
+          .toList();
+    }
   }
 
   Future<void> updateCategory(

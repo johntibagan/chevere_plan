@@ -44,22 +44,42 @@ class Category {
     String nameEs = json['slug'] as String? ?? '';
     if (nameI18n is Map) {
       nameEs = (nameI18n['es'] as String?) ?? nameEs;
+    } else if (nameI18n is String) {
+      // Por si llega serializado como texto JSON.
+      try {
+        final decoded = nameI18n;
+        if (decoded.contains('"es"')) {
+          final match = RegExp(r'"es"\s*:\s*"([^"]*)"').firstMatch(decoded);
+          if (match != null) nameEs = match.group(1) ?? nameEs;
+        }
+      } catch (_) {}
     }
     final rawKeywords = json['keywords'];
     final keywords = <String>[];
     if (rawKeywords is List) {
       for (final e in rawKeywords) {
-        if (e is String && e.trim().isNotEmpty) keywords.add(e.trim());
+        if (e != null && '$e'.trim().isNotEmpty) {
+          keywords.add('$e'.trim());
+        }
       }
     }
+    final rawParent = json['parent_id'];
+    String? parentId;
+    if (rawParent != null) {
+      final s = '$rawParent'.trim();
+      if (s.isNotEmpty && s.toLowerCase() != 'null') {
+        parentId = s;
+      }
+    }
+
     return Category(
-      id: json['id'] as String,
-      parentId: json['parent_id'] as String?,
-      slug: json['slug'] as String,
+      id: '${json['id']}',
+      parentId: parentId,
+      slug: json['slug'] as String? ?? '',
       nameEs: nameEs,
       isActive: json['is_active'] as bool? ?? true,
       ageRestricted: json['age_restricted'] as bool? ?? false,
-      sortOrder: json['sort_order'] as int? ?? 0,
+      sortOrder: (json['sort_order'] as num?)?.toInt() ?? 0,
       iconKey: json['icon_key'] as String?,
       colorHex: json['color_hex'] as String?,
       keywords: keywords,
