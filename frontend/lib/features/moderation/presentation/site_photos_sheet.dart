@@ -1,59 +1,88 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 
-import '../../../core/di/providers.dart';
 import '../../../core/errors/user_facing_error.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_network_image.dart';
 import '../../saves/data/saves_repository.dart';
 import '../data/moderation_models.dart';
 import '../data/moderation_repository.dart';
 
+/// Abre la galería de fotos del sitio como **página** (no bottom sheet).
+///
+/// Preferir página completa: en tema oscuro los `showModalBottomSheet` con
+/// listas altas suelen verse como “pantalla oscurecida sin contenido”.
+Future<void> openSitePhotos({
+  required BuildContext context,
+  required String siteId,
+  required String siteName,
+  required ModerationRepository repository,
+  SavesRepository? savesRepository,
+  bool canManage = false,
+}) {
+  return Navigator.of(context).push<void>(
+    MaterialPageRoute<void>(
+      builder: (_) => SitePhotosPage(
+        siteId: siteId,
+        siteName: siteName,
+        repository: repository,
+        savesRepository: savesRepository,
+        canManage: canManage,
+      ),
+    ),
+  );
+}
+
+/// @deprecated Usar [openSitePhotos].
 Future<void> showSitePhotosSheet({
   required BuildContext context,
   required String siteId,
   required String siteName,
   required ModerationRepository repository,
+  SavesRepository? savesRepository,
   bool canManage = false,
 }) {
-  return showModalBottomSheet<void>(
+  return openSitePhotos(
     context: context,
-    isScrollControlled: true,
-    showDragHandle: true,
-    builder: (context) => _SitePhotosSheet(
-      siteId: siteId,
-      siteName: siteName,
-      repository: repository,
-      canManage: canManage,
-    ),
+    siteId: siteId,
+    siteName: siteName,
+    repository: repository,
+    savesRepository: savesRepository,
+    canManage: canManage,
   );
 }
 
-class _SitePhotosSheet extends ConsumerStatefulWidget {
-  const _SitePhotosSheet({
+class SitePhotosPage extends StatefulWidget {
+  const SitePhotosPage({
+    super.key,
     required this.siteId,
     required this.siteName,
     required this.repository,
-    required this.canManage,
+    this.savesRepository,
+    this.canManage = false,
   });
 
   final String siteId;
   final String siteName;
   final ModerationRepository repository;
+  final SavesRepository? savesRepository;
   final bool canManage;
 
   @override
-  ConsumerState<_SitePhotosSheet> createState() => _SitePhotosSheetState();
+  State<SitePhotosPage> createState() => _SitePhotosPageState();
 }
 
-class _SitePhotosSheetState extends ConsumerState<_SitePhotosSheet> {
+class _SitePhotosPageState extends State<SitePhotosPage> {
   bool _loading = true;
   bool _busy = false;
   String? _error;
   List<SitePhoto> _photos = const [];
   final Map<String, String> _urls = {};
+
+  bool get _canManage =>
+      widget.canManage && widget.savesRepository != null;
 
   @override
   void initState() {
@@ -72,9 +101,7 @@ class _SitePhotosSheetState extends ConsumerState<_SitePhotosSheet> {
       for (final p in photos) {
         try {
           urls[p.id] = await widget.repository.signedPhotoUrl(p.storagePath);
-        } catch (_) {
-          // Deja sin URL; se muestra broken_image.
-        }
+        } catch (_) {}
       }
       if (!mounted) return;
       setState(() {
@@ -93,9 +120,10 @@ class _SitePhotosSheetState extends ConsumerState<_SitePhotosSheet> {
     }
   }
 
-  bool _canDelete(SitePhoto photo) => widget.canManage;
+  Future<void> _addPhoto() async {
+    final savesRepo = widget.savesRepository;
+    if (savesRepo == null) return;
 
-  Future<void> _addPhoto(SavesRepository savesRepo) async {
     final accepted = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -233,114 +261,135 @@ class _SitePhotosSheetState extends ConsumerState<_SitePhotosSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final height = MediaQuery.sizeOf(context).height * 0.65;
-    final savesRepo = ref.read(savesRepositoryProvider);
-
-    return SizedBox(
-      height: height,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    'Fotos · ${widget.siteName}',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                ),
-                if (widget.canManage)
-                  FilledButton.tonalIcon(
-                    onPressed: _busy ? null : () => _addPhoto(savesRepo),
-                    icon: const Icon(Icons.add_a_photo_outlined, size: 18),
-                    label: const Text('Añadir'),
-                  ),
-              ],
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      appBar: AppBar(
+        title: Text('Fotos · ${widget.siteName}'),
+        actions: [
+          if (_canManage)
+            IconButton(
+              tooltip: 'Añadir foto',
+              onPressed: _busy ? null : _addPhoto,
+              icon: const Icon(Icons.add_a_photo_outlined),
             ),
-            const SizedBox(height: 8),
-            Expanded(
-              child: _loading
-                  ? const Center(child: CircularProgressIndicator())
-                  : _error != null
-                      ? Center(child: Text(_error!))
-                      : _photos.isEmpty
-                          ? Center(
-                              child: Text(
-                                widget.canManage
-                                    ? 'Sin fotos. Usa «Añadir» para subir una.'
-                                    : 'Este sitio no tiene fotos.',
-                              ),
-                            )
-                          : ListView.separated(
-                              itemCount: _photos.length,
-                              separatorBuilder: (_, _) =>
-                                  const SizedBox(height: 12),
-                              itemBuilder: (context, index) {
-                                final photo = _photos[index];
-                                final url = _urls[photo.id];
-                                return Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    if (url != null && url.isNotEmpty)
-                                      AppNetworkImage(
-                                        url: url,
-                                        width: 96,
-                                        height: 96,
-                                        borderRadius: BorderRadius.circular(8),
-                                      )
-                                    else
-                                      Container(
-                                        width: 96,
-                                        height: 96,
-                                        decoration: BoxDecoration(
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .surfaceContainerHighest,
-                                          borderRadius:
-                                              BorderRadius.circular(8),
-                                        ),
-                                        child: const Icon(Icons.broken_image),
-                                      ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: Wrap(
-                                        spacing: 8,
-                                        runSpacing: 8,
-                                        children: [
-                                          if (_canDelete(photo))
-                                            OutlinedButton.icon(
-                                              onPressed: _busy
-                                                  ? null
-                                                  : () => _delete(photo),
-                                              icon: const Icon(
-                                                Icons.delete_outline,
-                                                size: 18,
-                                              ),
-                                              label: const Text('Eliminar'),
-                                            ),
-                                          OutlinedButton.icon(
-                                            onPressed: _busy
-                                                ? null
-                                                : () => _report(photo),
-                                            icon: const Icon(
-                                              Icons.flag_outlined,
-                                              size: 18,
-                                            ),
-                                            label: const Text('Reportar'),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                );
-                              },
-                            ),
-            ),
-          ],
-        ),
+        ],
       ),
+      body: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : _error != null
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(_error!, textAlign: TextAlign.center),
+                        const SizedBox(height: 16),
+                        FilledButton(
+                          onPressed: _load,
+                          child: const Text('Reintentar'),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              : _photos.isEmpty
+                  ? Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              _canManage
+                                  ? 'Sin fotos. Pulsa el icono de cámara para añadir.'
+                                  : 'Este sitio no tiene fotos.',
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(color: AppColors.muted),
+                            ),
+                            if (_canManage) ...[
+                              const SizedBox(height: 16),
+                              FilledButton.icon(
+                                onPressed: _busy ? null : _addPhoto,
+                                icon: const Icon(Icons.add_a_photo_outlined),
+                                label: const Text('Añadir foto'),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    )
+                  : ListView.separated(
+                      padding: const EdgeInsets.all(16),
+                      itemCount: _photos.length,
+                      separatorBuilder: (_, _) => const SizedBox(height: 12),
+                      itemBuilder: (context, index) {
+                        final photo = _photos[index];
+                        final url = _urls[photo.id];
+                        return Material(
+                          color: AppColors.surface,
+                          borderRadius: BorderRadius.circular(12),
+                          child: Padding(
+                            padding: const EdgeInsets.all(12),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                if (url != null && url.isNotEmpty)
+                                  AppNetworkImage(
+                                    url: url,
+                                    width: 96,
+                                    height: 96,
+                                    borderRadius: BorderRadius.circular(8),
+                                  )
+                                else
+                                  Container(
+                                    width: 96,
+                                    height: 96,
+                                    decoration: BoxDecoration(
+                                      color: AppColors.surfaceElevated,
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: const Icon(
+                                      Icons.broken_image,
+                                      color: AppColors.muted,
+                                    ),
+                                  ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Wrap(
+                                    spacing: 8,
+                                    runSpacing: 8,
+                                    children: [
+                                      if (_canManage)
+                                        OutlinedButton.icon(
+                                          onPressed: _busy
+                                              ? null
+                                              : () => _delete(photo),
+                                          icon: const Icon(
+                                            Icons.delete_outline,
+                                            size: 18,
+                                          ),
+                                          label: const Text('Eliminar'),
+                                        ),
+                                      OutlinedButton.icon(
+                                        onPressed: _busy
+                                            ? null
+                                            : () => _report(photo),
+                                        icon: const Icon(
+                                          Icons.flag_outlined,
+                                          size: 18,
+                                        ),
+                                        label: const Text('Reportar'),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
     );
   }
 }

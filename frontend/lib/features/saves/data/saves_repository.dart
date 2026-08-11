@@ -7,6 +7,7 @@ import '../../../core/errors/user_facing_error.dart';
 import '../domain/save_policies.dart';
 import 'save_models.dart';
 import 'site_ficha.dart';
+import 'social_link_models.dart';
 
 class SavesRepository {
   SavesRepository({SupabaseClient? client})
@@ -489,5 +490,54 @@ class SavesRepository {
       throw const AppUserError('No se encontró el sitio.');
     }
     return SiteFicha.fromSiteRow(Map<String, dynamic>.from(row));
+  }
+
+  Future<List<SiteSocialLink>> listSocialLinks(String siteId) async {
+    final rows = await _client
+        .from('site_social_links')
+        .select(
+          'id, site_id, url, network, title, description, image_url, sort_order',
+        )
+        .eq('site_id', siteId)
+        .order('sort_order');
+    return (rows as List)
+        .map(
+          (e) => SiteSocialLink.fromJson(Map<String, dynamic>.from(e as Map)),
+        )
+        .toList();
+  }
+
+  /// Reemplaza los enlaces del sitio (creador). Mantiene unique (site_id, url).
+  Future<void> replaceSocialLinks({
+    required String siteId,
+    required List<SocialLinkDraft> links,
+  }) async {
+    final uid = _uid;
+    if (uid == null) throw const AppUserError('Sin sesión');
+
+    await _client.from('site_social_links').delete().eq('site_id', siteId);
+    if (links.isEmpty) return;
+
+    final rows = <Map<String, dynamic>>[];
+    for (var i = 0; i < links.length; i++) {
+      final l = links[i];
+      final url = l.url.trim();
+      if (url.isEmpty) continue;
+      rows.add({
+        'site_id': siteId,
+        'url': url,
+        'network': l.network,
+        'title': l.title,
+        'description': l.description,
+        'image_url': l.imageUrl,
+        'sort_order': i,
+        'added_by': uid,
+      });
+    }
+    if (rows.isEmpty) return;
+    await _client.from('site_social_links').upsert(
+          rows,
+          onConflict: 'site_id,url',
+        );
   }
 }

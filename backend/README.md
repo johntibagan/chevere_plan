@@ -25,6 +25,8 @@ Si vas a **borrar todo y empezar de cero**, en el Dashboard: Project Settings â†
 | 8 | [`migrations/20260808000008_ciclo7_routes_reports.sql`](supabase/migrations/20260808000008_ciclo7_routes_reports.sql) | Mis rutas + `content_reports` |
 | 9 | [`migrations/20260808000009_ciclo8_get_site_coords.sql`](supabase/migrations/20260808000009_ciclo8_get_site_coords.sql) | `get_site_coords` (editar guardado) |
 | 10 | [`migrations/20260808000010_ciclo8_categories_keywords.sql`](supabase/migrations/20260808000010_ciclo8_categories_keywords.sql) | Keywords + categorÃ­as ampliadas |
+| 11 | [`migrations/20260808000011_site_photos_storage_select.sql`](supabase/migrations/20260808000011_site_photos_storage_select.sql) | SELECT en storage `site-photos` (URLs firmadas) |
+| 12 | [`migrations/20260808000012_site_social_links.sql`](supabase/migrations/20260808000012_site_social_links.sql) | Enlaces sociales / web por sitio + RLS |
 
 > Los scripts son idempotentes en lo posible (`if not exists` / `create or replace`). Si uno falla a mitad, corrige y vuelve a pegar ese archivo.
 

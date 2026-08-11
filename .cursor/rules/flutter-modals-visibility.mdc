@@ -1,0 +1,37 @@
+---
+description: Flutter bottom sheets vs páginas — evita UI invisible en tema oscuro
+alwaysApply: true
+---
+
+# Bottom sheets y pantallas modales (Chevere Plan)
+
+## Síntoma que NO debe repetirse
+
+Usuario toca una acción → la pantalla **se oscurece** (barrier) pero **no se ve contenido**.
+Eso es un modal/sheet mal montado, no “datos vacíos”.
+
+## Reglas
+
+1. **Galerías de fotos del sitio** → incrustadas en la ficha (`SiteDetailPage`),
+   no en otra pantalla ni bottom sheet. Acciones por foto con menú ⋮.
+
+2. **Otras listas altas / formularios largos** → `Navigator.push` + `Scaffold`
+   si no van embebidos en una ficha.
+
+3. **Solo sheets cortos** (preferencias de 1 pantalla, sin lista larga):
+   `showModalBottomSheet`, como `proximity_prefs_sheet.dart`.
+
+3. Si usas bottom sheet, **obligatorio**:
+   - `backgroundColor` explícito (`AppColors.surface`), nunca transparente.
+   - Contenido con `SafeArea` + color de texto/fondo contrastados.
+   - **No** `Consumer` / `ref` dentro del builder del sheet si se puede
+     inyectar repos por parámetro (patrón de proximidad).
+   - Con `isScrollControlled: true`, el hijo debe tener tamaño visible
+     (`mainAxisSize: min` + padding, o altura mínima clara). Verificar en
+     device real: si solo se ve el dimming, está mal.
+
+4. **Prohibido** resolver “Fotos” u otras acciones de ficha con un sheet
+   vacío / Consumer frágil. Preferir página.
+
+5. Tras cambiar UI modal, probar en el Motorola (tema oscuro): debe verse
+   título y contenido, no solo oscurecer.

@@ -12,6 +12,7 @@ import '../../features/proximity/data/proximity_repository.dart';
 import '../../features/routes/data/routes_repository.dart';
 import '../../features/saves/data/draft_reminder_service.dart';
 import '../../features/saves/data/place_geocoder.dart';
+import '../../features/saves/data/save_models.dart';
 import '../../features/saves/data/saves_repository.dart';
 import '../../features/search/data/search_repository.dart';
 
@@ -70,6 +71,11 @@ final placeGeocoderProvider = Provider<PlaceGeocoder>((ref) {
 /// Servicios singleton existentes (R1: se exponen vía Riverpod sin reescribirlos).
 final draftReminderServiceProvider = Provider<DraftReminderService>((ref) {
   return DraftReminderService.instance;
+});
+
+/// Lista de guardados del usuario. Cache hasta `ref.invalidate(mySavesProvider)`.
+final mySavesProvider = FutureProvider<List<UserSave>>((ref) async {
+  return ref.watch(savesRepositoryProvider).listMine();
 });
 
 /// Cache en memoria de catálogo admin (R4: evita refetch por pantalla).

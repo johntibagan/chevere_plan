@@ -186,6 +186,12 @@ class AppTheme {
         contentTextStyle: const TextStyle(color: AppColors.muted),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
+      bottomSheetTheme: const BottomSheetThemeData(
+        backgroundColor: AppColors.surface,
+        modalBackgroundColor: AppColors.surface,
+        surfaceTintColor: Colors.transparent,
+        showDragHandle: true,
+      ),
       listTileTheme: const ListTileThemeData(
         iconColor: AppColors.muted,
         textColor: AppColors.foreground,

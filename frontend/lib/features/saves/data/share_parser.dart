@@ -55,6 +55,15 @@ class ShareParser {
     if (v.contains('facebook.com') || v.contains('fb.watch')) {
       return 'facebook';
     }
+    if (v.contains('youtube.com') || v.contains('youtu.be')) {
+      return 'youtube';
+    }
+    if (v.contains('google.com/maps') ||
+        v.contains('maps.google.') ||
+        v.contains('maps.app.goo.gl') ||
+        v.contains('goo.gl/maps')) {
+      return 'google_maps';
+    }
     return null;
   }
 }

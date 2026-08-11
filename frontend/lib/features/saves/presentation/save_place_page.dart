@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 
 import '../../../core/di/providers.dart';
@@ -9,12 +10,16 @@ import '../../../core/errors/user_facing_error.dart';
 import '../../../core/l10n/context_l10n.dart';
 import '../../admin/data/admin_models.dart';
 import '../data/geo_place.dart';
+import '../data/google_maps_link_importer.dart';
+import '../data/link_preview_fetcher.dart';
 import '../data/save_models.dart';
 import '../data/saves_repository.dart';
 import '../data/share_parser.dart';
+import '../data/social_link_models.dart';
 import 'category_picker_sheet.dart';
 import 'location_picker_page.dart';
 import 'site_status_l10n.dart';
+import 'social_link_preview_card.dart';
 
 const _kRequiredStar = Color(0xFFFF8C00);
 
@@ -37,7 +42,8 @@ class SavePlacePage extends ConsumerStatefulWidget {
 
 class _SavePlacePageState extends ConsumerState<SavePlacePage> {
   final _nameCtrl = TextEditingController();
-  final _urlCtrl = TextEditingController();
+  final _mapsCtrl = TextEditingController();
+  final _socialCtrl = TextEditingController();
   final _cityCtrl = TextEditingController();
   final _deptCtrl = TextEditingController();
   final _addressCtrl = TextEditingController();
@@ -52,11 +58,16 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
   bool _isPhysical = true;
   bool _loadingCats = true;
   bool _saving = false;
-  String? _network;
+  bool _importingMaps = false;
+  bool _addingSocial = false;
   String? _error;
   File? _pendingPhoto;
+  String? _pendingMapImageUrl;
   String? _editSaveId;
   String? _editSiteId;
+  final List<SocialLinkDraft> _socialLinks = [];
+  final _previewFetcher = LinkPreviewFetcher();
+  final _mapsImporter = GoogleMapsLinkImporter();
 
   bool get _isEditing => _editSaveId != null;
 
@@ -64,9 +75,14 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
   void initState() {
     super.initState();
     final parsed = ShareParser.parse(widget.initialSharedText);
-    if (parsed.url != null) _urlCtrl.text = parsed.url!;
+    if (parsed.url != null) {
+      if (GoogleMapsLinkImporter.looksLikeMapsUrl(parsed.url)) {
+        _mapsCtrl.text = parsed.url!;
+      } else {
+        _socialCtrl.text = parsed.url!;
+      }
+    }
     if (parsed.suggestedName != null) _nameCtrl.text = parsed.suggestedName!;
-    _network = parsed.network;
     _bootstrapForm();
   }
 
@@ -84,11 +100,11 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
         if (!mounted) return;
         final s = data.save;
         _nameCtrl.text = s.siteName == 'Sin nombre' ? '' : s.siteName;
-        _urlCtrl.text = s.sourceUrl ?? '';
         _cityCtrl.text = s.city ?? '';
         _deptCtrl.text = s.department ?? '';
         _addressCtrl.text = s.addressLine ?? '';
-        _network = s.sourceNetwork;
+        final links = await widget.savesRepository.listSocialLinks(s.siteId);
+        if (!mounted) return;
         setState(() {
           _editSaveId = s.id;
           _editSiteId = s.siteId;
@@ -99,10 +115,41 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
           _selectedCategoryIds
             ..clear()
             ..addAll(data.categoryIds);
+          _socialLinks
+            ..clear()
+            ..addAll(
+              links.map(
+                (l) => SocialLinkDraft(
+                  url: l.url,
+                  network: l.network,
+                  title: l.title,
+                  description: l.description,
+                  imageUrl: l.imageUrl,
+                  existingId: l.id,
+                ),
+              ),
+            );
+          if (_socialLinks.isEmpty &&
+              (s.sourceUrl?.trim().isNotEmpty ?? false)) {
+            _socialLinks.add(
+              SocialLinkDraft(
+                url: s.sourceUrl!,
+                network: s.sourceNetwork,
+              ),
+            );
+          }
           _loadingCats = false;
         });
       } else {
-        setState(() => _loadingCats = false);
+        // Si vino un enlace social por share, generar preview.
+        if (_socialCtrl.text.trim().isNotEmpty) {
+          await _addSocialLink(_socialCtrl.text.trim());
+          _socialCtrl.clear();
+        }
+        if (_mapsCtrl.text.trim().isNotEmpty) {
+          await _importFromGoogleMaps();
+        }
+        if (mounted) setState(() => _loadingCats = false);
       }
     } catch (e) {
       if (!mounted) return;
@@ -116,12 +163,106 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
   @override
   void dispose() {
     _nameCtrl.dispose();
-    _urlCtrl.dispose();
+    _mapsCtrl.dispose();
+    _socialCtrl.dispose();
     _cityCtrl.dispose();
     _deptCtrl.dispose();
     _addressCtrl.dispose();
     _categorySearchCtrl.dispose();
     super.dispose();
+  }
+
+  Future<void> _importFromGoogleMaps() async {
+    final text = _mapsCtrl.text.trim();
+    if (text.isEmpty) {
+      setState(() => _error = 'Pega un enlace de Google Maps.');
+      return;
+    }
+    setState(() {
+      _importingMaps = true;
+      _error = null;
+    });
+    try {
+      final result = await _mapsImporter.importFromText(text);
+      if (!mounted) return;
+      setState(() {
+        if (result.name != null &&
+            (result.name!.trim().isNotEmpty) &&
+            (_nameCtrl.text.trim().isEmpty ||
+                _nameCtrl.text.trim() == 'Sin nombre')) {
+          _nameCtrl.text = result.name!;
+        }
+        if (result.city != null && result.city!.trim().isNotEmpty) {
+          _cityCtrl.text = result.city!;
+        }
+        if (result.department != null &&
+            result.department!.trim().isNotEmpty) {
+          _deptCtrl.text = result.department!;
+        }
+        if (result.addressLine != null &&
+            result.addressLine!.trim().isNotEmpty &&
+            _addressCtrl.text.trim().isEmpty) {
+          _addressCtrl.text = result.addressLine!;
+        }
+        _lat = result.lat ?? _lat;
+        _lng = result.lng ?? _lng;
+        _pendingMapImageUrl = result.staticMapUrl;
+        _importingMaps = false;
+      });
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            result.hasCoords
+                ? 'Datos de Google Maps aplicados (nombre, ubicación'
+                    '${result.staticMapUrl != null ? ', mapa' : ''}).'
+                : 'Se leyó el enlace; completa ciudad o elige en el mapa.',
+          ),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _importingMaps = false;
+        _error = userFacingError(e);
+      });
+    }
+  }
+
+  Future<void> _addSocialLink(String raw) async {
+    final parsed = ShareParser.parse(raw);
+    final url = parsed.url ?? raw.trim();
+    if (url.isEmpty || !url.startsWith('http')) {
+      setState(() => _error = 'Pega un enlace http(s) válido.');
+      return;
+    }
+    if (_socialLinks.any((l) => l.url == url)) {
+      setState(() => _error = 'Ese enlace ya está en la lista.');
+      return;
+    }
+    setState(() {
+      _addingSocial = true;
+      _error = null;
+    });
+    final draft = SocialLinkDraft(url: url, network: parsed.network);
+    setState(() => _socialLinks.add(draft));
+    try {
+      final preview = await _previewFetcher.fetch(url);
+      if (!mounted) return;
+      setState(() {
+        draft
+          ..title = preview.title
+          ..description = preview.description
+          ..imageUrl = preview.imageUrl
+          ..network = draft.network ??
+              ShareParser.parse(url).network ??
+              preview.siteName;
+        _addingSocial = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _addingSocial = false);
+    }
   }
 
   String _parentName(Category c) {
@@ -309,11 +450,13 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
       final lat = _lat;
       final lng = _lng;
       final name = _nameCtrl.text.trim();
+      final primaryLink =
+          _socialLinks.isNotEmpty ? _socialLinks.first : null;
 
       final input = SaveDraftInput(
         name: name,
-        sourceUrl: _urlCtrl.text.trim().isEmpty ? null : _urlCtrl.text.trim(),
-        sourceNetwork: _network,
+        sourceUrl: primaryLink?.url,
+        sourceNetwork: primaryLink?.network,
         city: _cityCtrl.text,
         department: _deptCtrl.text,
         addressLine: _addressCtrl.text,
@@ -376,6 +519,21 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
         );
       }
 
+      if (_pendingPhoto == null &&
+          _pendingMapImageUrl != null &&
+          _pendingMapImageUrl!.isNotEmpty) {
+        try {
+          final res = await http.get(Uri.parse(_pendingMapImageUrl!));
+          if (res.statusCode >= 200 && res.statusCode < 300) {
+            final tmp = File(
+              '${Directory.systemTemp.path}/chevere_map_${DateTime.now().millisecondsSinceEpoch}.jpg',
+            );
+            await tmp.writeAsBytes(res.bodyBytes);
+            _pendingPhoto = tmp;
+          }
+        } catch (_) {}
+      }
+
       if (_pendingPhoto != null) {
         try {
           await widget.savesRepository.uploadPhoto(
@@ -394,6 +552,15 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
         }
       }
 
+      try {
+        await widget.savesRepository.replaceSocialLinks(
+          siteId: saved.siteId,
+          links: _socialLinks,
+        );
+      } catch (_) {
+        // Tabla puede no existir aún si no aplicaron migración 12.
+      }
+
       if (saved.status == SiteStatus.complete) {
         await ref.read(draftReminderServiceProvider).cancelForSave(saved.id);
       } else if (saved.status == SiteStatus.draft) {
@@ -404,6 +571,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
       }
 
       if (!mounted) return;
+      ref.invalidate(mySavesProvider);
       final l10n = context.l10n;
       await showDialog<void>(
         context: context,
@@ -604,22 +772,103 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
                 ),
 
                 const SizedBox(height: 16),
-                // 3) Link red social
+                // Google Maps
+                _label('Desde Google Maps'),
+                const SizedBox(height: 8),
                 TextField(
-                  controller: _urlCtrl,
+                  controller: _mapsCtrl,
                   decoration: _dec(
-                    'Enlace de la red social',
-                    helper: 'El enlace original siempre permanece privado',
+                    'Pegar enlace de Google Maps',
+                    helper: 'Extrae nombre, ciudad, departamento y un mapa',
                   ),
                   keyboardType: TextInputType.url,
-                  onChanged: (v) {
-                    final p = ShareParser.parse(v);
-                    setState(() => _network = p.network);
+                ),
+                const SizedBox(height: 8),
+                OutlinedButton.icon(
+                  onPressed: (_saving || _importingMaps)
+                      ? null
+                      : _importFromGoogleMaps,
+                  icon: _importingMaps
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.map_outlined),
+                  label: Text(
+                    _importingMaps
+                        ? 'Importando…'
+                        : 'Importar datos del enlace',
+                  ),
+                ),
+                if (_pendingMapImageUrl != null) ...[
+                  const SizedBox(height: 8),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: Image.network(
+                      _pendingMapImageUrl!,
+                      height: 140,
+                      width: double.infinity,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, _, _) => const SizedBox.shrink(),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'Se guardará este mapa como foto del sitio (si hay cuota Geoapify).',
+                    style: TextStyle(fontSize: 12, color: Colors.white54),
+                  ),
+                ],
+
+                const SizedBox(height: 16),
+                // Enlaces redes
+                _label('Enlaces de redes / web'),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: _socialCtrl,
+                  decoration: _dec(
+                    'Pegar enlace (IG, TikTok, FB, YouTube…)',
+                    helper: 'Puedes añadir varios; se muestra vista previa',
+                  ),
+                  keyboardType: TextInputType.url,
+                  onSubmitted: (v) async {
+                    await _addSocialLink(v);
+                    _socialCtrl.clear();
                   },
                 ),
-                if (_network != null) ...[
-                  const SizedBox(height: 6),
-                  Text('Red detectada: $_network'),
+                const SizedBox(height: 8),
+                OutlinedButton.icon(
+                  onPressed: (_saving || _addingSocial)
+                      ? null
+                      : () async {
+                          await _addSocialLink(_socialCtrl.text);
+                          _socialCtrl.clear();
+                        },
+                  icon: _addingSocial
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.add_link),
+                  label: const Text('Añadir enlace'),
+                ),
+                if (_socialLinks.isNotEmpty) ...[
+                  const SizedBox(height: 10),
+                  ..._socialLinks.map(
+                    (d) => Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: SocialLinkPreviewCard(
+                        draft: d,
+                        loading: _addingSocial &&
+                            d.title == null &&
+                            d.imageUrl == null,
+                        onRemove: _saving
+                            ? null
+                            : () => setState(() => _socialLinks.remove(d)),
+                      ),
+                    ),
+                  ),
                 ],
 
                 const SizedBox(height: 16),

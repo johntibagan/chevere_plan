@@ -81,18 +81,21 @@ class _HomePageState extends ConsumerState<HomePage> {
     return KeyedSubtree(key: ValueKey('tab-$slot'), child: page);
   }
 
-  Future<void> _bootstrap() async {
+  Future<void> _bootstrap({bool forceRefresh = false}) async {
     setState(() {
       _loading = true;
       _error = null;
     });
     try {
       final profileRepo = ref.read(profileRepositoryProvider);
-      final savesRepo = ref.read(savesRepositoryProvider);
       final geofenceSync = ref.read(geofenceSyncServiceProvider);
 
+      if (forceRefresh) {
+        ref.invalidate(mySavesProvider);
+      }
+
       final profile = await profileRepo.fetchCurrent();
-      final saves = await savesRepo.listMine();
+      final saves = await ref.read(mySavesProvider.future);
       final cutoff =
           DateTime.now().toUtc().subtract(SavePolicies.draftRemindAfter);
       final stale = saves
@@ -155,7 +158,9 @@ class _HomePageState extends ConsumerState<HomePage> {
   Future<void> _openSite({UserSave? existing}) async {
     if (existing == null) return;
     final outcome = await openSiteDetail(context, save: existing);
-    if (outcome != SiteDetailOutcome.none) await _bootstrap();
+    if (outcome != SiteDetailOutcome.none) {
+      await _bootstrap(forceRefresh: true);
+    }
   }
 
   Future<void> _openSave({String? shared, UserSave? existing}) async {
@@ -168,7 +173,7 @@ class _HomePageState extends ConsumerState<HomePage> {
         ),
       ),
     );
-    if (result != null) await _bootstrap();
+    if (result != null) await _bootstrap(forceRefresh: true);
   }
 
   String _greeting(AppLocalizations l10n) {
@@ -211,7 +216,7 @@ class _HomePageState extends ConsumerState<HomePage> {
               error: _error,
               saves: _saves,
               profile: _profile,
-              onRefresh: _bootstrap,
+              onRefresh: () => _bootstrap(forceRefresh: true),
               onOpenSave: _openSave,
               onOpenSite: _openSite,
               onProximity: _openProximityPrefs,

@@ -1,11 +1,15 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
-/// Imagen de red con caché en disco/memoria (R4).
+/// Imagen de red con caché en disco/memoria.
+///
+/// Usa [cacheKey] estable (p. ej. id de foto / storage_path) para que al
+/// renovar la URL firmada no se descargue de nuevo el mismo archivo.
 class AppNetworkImage extends StatelessWidget {
   const AppNetworkImage({
     super.key,
     required this.url,
+    this.cacheKey,
     this.width,
     this.height,
     this.fit = BoxFit.cover,
@@ -13,6 +17,8 @@ class AppNetworkImage extends StatelessWidget {
   });
 
   final String url;
+  /// Clave estable de caché (recomendado: `photo.id` o `storage_path`).
+  final String? cacheKey;
   final double? width;
   final double? height;
   final BoxFit fit;
@@ -22,10 +28,12 @@ class AppNetworkImage extends StatelessWidget {
   Widget build(BuildContext context) {
     final image = CachedNetworkImage(
       imageUrl: url,
+      cacheKey: cacheKey,
       width: width,
       height: height,
       fit: fit,
       fadeInDuration: const Duration(milliseconds: 150),
+      memCacheWidth: width != null ? (width! * 2).round() : null,
       placeholder: (context, _) => SizedBox(
         width: width,
         height: height,

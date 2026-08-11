@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../core/cache/signed_url_cache.dart';
 import '../../../core/errors/user_facing_error.dart';
 import 'moderation_models.dart';
 
@@ -22,14 +23,23 @@ class ModerationRepository {
         .toList();
   }
 
-  /// URL firmada (bucket privado). Preferir esto sobre [publicPhotoUrl].
+  /// URL firmada (bucket privado). Cacheada por [storagePath].
   Future<String> signedPhotoUrl(
     String storagePath, {
     int expiresInSeconds = 3600,
   }) async {
-    return _client.storage
+    final cached = SignedUrlCache.instance.get(storagePath);
+    if (cached != null) return cached;
+
+    final url = await _client.storage
         .from('site-photos')
         .createSignedUrl(storagePath, expiresInSeconds);
+    SignedUrlCache.instance.put(
+      storagePath,
+      url,
+      ttlSeconds: expiresInSeconds,
+    );
+    return url;
   }
 
   @Deprecated('Usar signedPhotoUrl — el bucket site-photos es privado.')
