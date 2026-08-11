@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/errors/user_facing_error.dart';
+import '../../moderation/data/moderation_repository.dart';
+import '../../moderation/presentation/admin_reports_page.dart';
 import '../data/admin_models.dart';
 import '../data/admin_repository.dart';
 
@@ -212,6 +214,21 @@ class _AdminPageState extends State<AdminPage>
     return Scaffold(
       appBar: AppBar(
         title: const Text('Panel administrador'),
+        actions: [
+          IconButton(
+            tooltip: 'Reportes de contenido',
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => AdminReportsPage(
+                    repository: ModerationRepository(),
+                  ),
+                ),
+              );
+            },
+            icon: const Icon(Icons.flag_outlined),
+          ),
+        ],
         bottom: TabBar(
           controller: _tabs,
           tabs: const [

@@ -27,13 +27,16 @@ Notas de usabilidad y deuda suave recogidas ciclo a ciclo. No bloquean el MVP; s
 
 - Filtro de horario en UI es placeholder hasta fichas enriquecidas (comportamiento esperado).
 - Búsqueda de planes por título no incluida (solo sitios); valorar en pulido.
-- Tabs General/Avanzada: la avanzada es densa en móvil; valorar sheet de filtros.
-- **Bug layout (corregido):** TabBarView daba ancho infinito y ocultaba el campo General (`BoxConstraints forces an infinite width` en `FilledButton`).
-- **RPC:** re-ejecutar `20260808000007_ciclo6_search.sql` si falla con “Error en la app” (firma con `p_transport_group text`).
+- UI reescrita a ListView + toggle Avanzada (TabBarView/SegmentedButton rompían layout).
+- Fallback local si falla RPC `search_sites` (sigue haciendo falta aplicar SQL C6 en Supabase).
+- **Refinar filtros avanzados:** al cambiar/limpiar filtros parece seguir mostrando los mismos datos o no resetear resultados previos; hay que forzar nueva consulta limpia y limpiar hits al cambiar filtros / modo.
+- **Bug layout (histórico):** TabBarView daba ancho infinito en General.
 
 ## Ciclo 7 — Trazabilidad / moderación
 
-_(se irá llenando)_
+- Transporte usado al marcar “visitado” no se persiste aún (historial solo sitio/plan/fecha).
+- Reportar sitio/perfil/evento: tabla lista; UI MVP solo fotos.
+- Admin aún no elimina la foto del storage al “actioned” — solo cambia estado del reporte.
 
 ## Transversal
 

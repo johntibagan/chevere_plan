@@ -48,6 +48,14 @@ Ejecuta:
 
 (RPC `search_sites` general + filtros avanzados).
 
+## Ciclo 7 — Mis rutas + reportes
+
+Ejecuta:
+
+- `supabase/migrations/20260808000008_ciclo7_routes_reports.sql`
+
+(`content_reports`, RPC `list_my_route_history`, `list_open_content_reports`).
+
 ## Bootstrap root (obligatorio una vez)
 
 Tras iniciar sesión en la app con tu Google, ejecuta **todo este bloque** en SQL Editor:

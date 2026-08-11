@@ -7,10 +7,15 @@ import '../../admin/presentation/admin_page.dart';
 import '../../auth/data/auth_repository.dart';
 import '../../auth/data/profile.dart';
 import '../../auth/data/profile_repository.dart';
-import '../../proximity/data/geofence_sync_service.dart';
-import '../../proximity/presentation/proximity_prefs_sheet.dart';
+import '../../moderation/data/moderation_repository.dart';
+import '../../moderation/presentation/admin_reports_page.dart';
+import '../../moderation/presentation/site_photos_sheet.dart';
 import '../../plans/data/plans_repository.dart';
 import '../../plans/presentation/plans_list_page.dart';
+import '../../proximity/data/geofence_sync_service.dart';
+import '../../proximity/presentation/proximity_prefs_sheet.dart';
+import '../../routes/data/routes_repository.dart';
+import '../../routes/presentation/my_routes_page.dart';
 import '../../search/data/search_repository.dart';
 import '../../search/presentation/search_page.dart';
 import '../../saves/data/draft_reminder_service.dart';
@@ -178,6 +183,19 @@ class _HomePageState extends State<HomePage> {
             icon: const Icon(Icons.route_outlined),
           ),
           IconButton(
+            tooltip: 'Mis rutas',
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => MyRoutesPage(
+                    repository: RoutesRepository(),
+                  ),
+                ),
+              );
+            },
+            icon: const Icon(Icons.history),
+          ),
+          IconButton(
             tooltip: 'Recuerdos cercanos',
             onPressed: _profile == null ? null : _openProximityPrefs,
             icon: const Icon(Icons.near_me_outlined),
@@ -193,6 +211,20 @@ class _HomePageState extends State<HomePage> {
                 );
               },
               icon: const Icon(Icons.admin_panel_settings_outlined),
+            ),
+          if (isStaff)
+            IconButton(
+              tooltip: 'Reportes',
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => AdminReportsPage(
+                      repository: ModerationRepository(),
+                    ),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.flag_outlined),
             ),
           IconButton(
             tooltip: 'Cerrar sesión',
@@ -270,10 +302,27 @@ class _HomePageState extends State<HomePage> {
                       ].join(' · '),
                     ),
                     isThreeLine: true,
-                    trailing: IconButton(
-                      tooltip: 'Descartar',
-                      onPressed: () => _discard(s),
-                      icon: const Icon(Icons.delete_outline),
+                    trailing: Wrap(
+                      spacing: 0,
+                      children: [
+                        IconButton(
+                          tooltip: 'Fotos / reportar',
+                          onPressed: () {
+                            showSitePhotosSheet(
+                              context: context,
+                              siteId: s.siteId,
+                              siteName: s.siteName,
+                              repository: ModerationRepository(),
+                            );
+                          },
+                          icon: const Icon(Icons.photo_library_outlined),
+                        ),
+                        IconButton(
+                          tooltip: 'Descartar',
+                          onPressed: () => _discard(s),
+                          icon: const Icon(Icons.delete_outline),
+                        ),
+                      ],
                     ),
                   ),
                 ),
