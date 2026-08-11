@@ -11,6 +11,7 @@ import '../data/geo_place.dart';
 import '../data/save_models.dart';
 import '../data/saves_repository.dart';
 import '../data/share_parser.dart';
+import 'category_picker_sheet.dart';
 import 'location_picker_page.dart';
 
 const _kRequiredStar = Color(0xFFFF8C00);
@@ -131,10 +132,34 @@ class _SavePlacePageState extends State<SavePlacePage> {
   List<Category> get _filteredCategories {
     final q = _categorySearchCtrl.text.trim().toLowerCase();
     if (q.isEmpty) return const [];
-    return _categories.where((c) {
-      final parent = _parentName(c).toLowerCase();
-      return c.nameEs.toLowerCase().contains(q) || parent.contains(q);
-    }).take(12).toList();
+    final hits = _categories.where((c) {
+      if (!c.isActive) return false;
+      if (c.matchesQuery(q)) return true;
+      final parent = _categories.where((p) => p.id == c.parentId);
+      if (parent.isNotEmpty && parent.first.matchesQuery(q)) return true;
+      final parentName = _parentName(c).toLowerCase();
+      if (parentName.contains(q)) return true;
+      return false;
+    }).toList();
+    hits.sort((a, b) {
+      if (a.isRoot != b.isRoot) return a.isRoot ? 1 : -1;
+      return a.nameEs.compareTo(b.nameEs);
+    });
+    return hits.take(16).toList();
+  }
+
+  Future<void> _openCategoryTree() async {
+    final result = await showCategoryPickerSheet(
+      context: context,
+      categories: _categories,
+      selectedIds: _selectedCategoryIds,
+    );
+    if (result == null || !mounted) return;
+    setState(() {
+      _selectedCategoryIds
+        ..clear()
+        ..addAll(result);
+    });
   }
 
   List<Category> get _selectedCategories {
@@ -566,11 +591,16 @@ class _SavePlacePageState extends State<SavePlacePage> {
                 const SizedBox(height: 8),
                 TextField(
                   controller: _categorySearchCtrl,
-                  decoration: const InputDecoration(
-                    hintText: 'Buscar categoría…',
-                    prefixIcon: Icon(Icons.search),
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    hintText: 'Ej. nadar, tejo, plaza, bar…',
+                    prefixIcon: const Icon(Icons.search),
+                    border: const OutlineInputBorder(),
                     isDense: true,
+                    suffixIcon: IconButton(
+                      tooltip: 'Ver árbol de categorías',
+                      onPressed: _saving ? null : _openCategoryTree,
+                      icon: const Icon(Icons.account_tree_outlined),
+                    ),
                   ),
                   onChanged: (_) => setState(() {}),
                 ),
@@ -606,11 +636,22 @@ class _SavePlacePageState extends State<SavePlacePage> {
                       child: Text('Sin coincidencias'),
                     ),
                 ] else
-                  const Padding(
-                    padding: EdgeInsets.only(top: 6),
-                    child: Text(
-                      'Escribe para ver opciones y marcarlas.',
-                      style: TextStyle(fontSize: 12),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 6),
+                    child: Row(
+                      children: [
+                        const Expanded(
+                          child: Text(
+                            'Escribe una palabra clave o abre el árbol.',
+                            style: TextStyle(fontSize: 12),
+                          ),
+                        ),
+                        TextButton.icon(
+                          onPressed: _saving ? null : _openCategoryTree,
+                          icon: const Icon(Icons.account_tree_outlined, size: 18),
+                          label: const Text('Árbol'),
+                        ),
+                      ],
                     ),
                   ),
 

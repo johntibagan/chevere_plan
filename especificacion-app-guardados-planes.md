@@ -73,18 +73,19 @@ Ya existen apps que resuelven parcialmente el problema de "guardar lugares desde
 
 Para evitar errores de sintaxis, duplicados y categorías inconsistentes, el árbol de categorías es **fijo y parametrizado por administradores** (ver sección 12). Un sitio puede tener **una o varias** categorías/subcategorías. Al enriquecer una tarjeta, el campo es **autocompletable** contra este árbol (no texto libre).
 
-Propuesta de árbol inicial (basado en estándares de clasificación de lugares como Google Places, adaptado a planes/turismo):
+Propuesta de árbol (Google Places / OSM tourism·leisure·amenity + MINCIT gastronomía CO + nicho local). Administrable; cada ítem tiene **keywords** para autocomplete (ej. “nadar” → piscina/río; “caminar” → sendero).
 
 | Categoría | Subcategorías |
 |---|---|
-| **Gastronomía** | Restaurante, Cafetería, Bar/Vida nocturna, Comida rápida, Panadería/Repostería, Heladería, Food truck |
-| **Alojamiento** | Hotel, Hostal, Glamping/Camping, Finca/Casa de descanso, Posada |
-| **Naturaleza y aire libre** | Mirador, Sendero/Caminata, Cascada/Río, Montaña, Parque natural, Playa/Balneario, Reserva ecológica |
-| **Cultura e historia** | Museo, Monumento, Iglesia/Templo, Sitio arqueológico, Centro histórico, Galería de arte |
-| **Entretenimiento y planes** | Parque temático/Recreacional, Deporte de aventura, Spa/Bienestar, Cine/Teatro, Actividad familiar |
-| **Compras** | Mercado artesanal, Centro comercial, Tienda local/Souvenir |
+| **Gastronomía** | Restaurante, Cafetería, Bar/vida nocturna (+18), Discoteca/club (+18), Cervecería, Comida rápida, Asadero/parrilla, Comida típica, Cevichería/mariscos, Piqueteadero, Panadería/repostería, Heladería, Food truck |
+| **Alojamiento** | Hotel, Hostal, Glamping/camping, Finca/casa de descanso, Cabaña, Posada, Resort/eco-hotel |
+| **Naturaleza y aire libre** | Mirador, Sendero/caminata, Cascada/río, Lago/laguna, Montaña, Parque natural, Reserva ecológica, Playa/balneario, Piscina, Termales, Jardín botánico, Picnic/zona verde |
+| **Cultura e historia** | Museo, Monumento, Plaza principal/Plaza de Bolívar, Iglesia/templo, Sitio arqueológico, Centro histórico, Galería de arte, Biblioteca/casa de cultura, Arquitectura patrimonial |
+| **Entretenimiento y planes** | Parque urbano, Parque temático, Parque acuático, Deporte de aventura, Spa/bienestar, Cine/teatro, Karaoke, Escape room, Actividad familiar, Bolera, Billar |
+| **Deporte y recreación** | Tejo, Cancha deportiva, Gimnasio/fitness, Estadio/coliseo, Ciclismo/ruta, Deportes acuáticos, Running/trail |
+| **Compras** | Mercado artesanal, Plaza de mercado, Centro comercial, Tienda local/souvenir, Feria/pulgas |
 | **Eventos** | Festival, Concierto, Feria, Evento cultural, Evento deportivo, Evento religioso |
-| **Servicios turísticos** | Agencia de viajes, Guía turístico, Alquiler de equipos |
+| **Servicios turísticos** | Agencia de viajes, Guía turístico, Alquiler de equipos, Punto de información turística |
 
 - Este árbol se administra desde el panel de administración (sección 12): agregar, editar o desactivar categorías/subcategorías sin afectar tarjetas ya existentes.
 - Un sitio con contenido para adultos (ej. "Bar/Vida nocturna") queda automáticamente restringido para usuarios que declararon ser menores de 18 (ver sección 15).

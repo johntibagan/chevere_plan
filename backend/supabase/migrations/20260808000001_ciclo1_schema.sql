@@ -102,6 +102,8 @@ create table if not exists public.categories (
   sort_order int not null default 0,
   icon_key text,
   color_hex text,
+  -- Sinónimos / términos de búsqueda (ej. nadar → piscina, caminar → sendero)
+  keywords text[] not null default '{}'::text[],
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   unique (parent_id, slug)

@@ -62,6 +62,7 @@ class _AdminPageState extends State<AdminPage>
 
   Future<void> _editCategory(Category cat) async {
     final nameCtrl = TextEditingController(text: cat.nameEs);
+    final keywordsCtrl = TextEditingController(text: cat.keywords.join(', '));
     var active = cat.isActive;
     var ageRestricted = cat.ageRestricted;
 
@@ -72,26 +73,37 @@ class _AdminPageState extends State<AdminPage>
           builder: (context, setLocal) {
             return AlertDialog(
               title: Text(cat.isRoot ? 'Editar categoría' : 'Editar subcategoría'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextField(
-                    controller: nameCtrl,
-                    decoration: const InputDecoration(labelText: 'Nombre (es)'),
-                  ),
-                  SwitchListTile(
-                    contentPadding: EdgeInsets.zero,
-                    title: const Text('Activa'),
-                    value: active,
-                    onChanged: (v) => setLocal(() => active = v),
-                  ),
-                  SwitchListTile(
-                    contentPadding: EdgeInsets.zero,
-                    title: const Text('Restringida +18'),
-                    value: ageRestricted,
-                    onChanged: (v) => setLocal(() => ageRestricted = v),
-                  ),
-                ],
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextField(
+                      controller: nameCtrl,
+                      decoration: const InputDecoration(labelText: 'Nombre (es)'),
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: keywordsCtrl,
+                      decoration: const InputDecoration(
+                        labelText: 'Palabras clave',
+                        helperText: 'Separadas por coma (ej. nadar, agua, pool)',
+                      ),
+                      maxLines: 3,
+                    ),
+                    SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('Activa'),
+                      value: active,
+                      onChanged: (v) => setLocal(() => active = v),
+                    ),
+                    SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('Restringida +18'),
+                      value: ageRestricted,
+                      onChanged: (v) => setLocal(() => ageRestricted = v),
+                    ),
+                  ],
+                ),
               ),
               actions: [
                 TextButton(
@@ -110,12 +122,18 @@ class _AdminPageState extends State<AdminPage>
     );
 
     if (saved != true) return;
+    final keywords = keywordsCtrl.text
+        .split(',')
+        .map((e) => e.trim())
+        .where((e) => e.isNotEmpty)
+        .toList();
     try {
       await widget.repository.updateCategory(
         cat.id,
         nameEs: nameCtrl.text.trim(),
         isActive: active,
         ageRestricted: ageRestricted,
+        keywords: keywords,
       );
       await _load();
     } catch (e) {

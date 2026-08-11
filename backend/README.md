@@ -5,7 +5,7 @@
 Si vas a **empezar de cero** el schema de la app (tablas, funciones, enums, vistas):
 
 1. SQL Editor → pega y ejecuta [`scripts/00_reset_public.sql`](supabase/scripts/00_reset_public.sql)
-2. Luego aplica las migraciones **1→9** abajo.
+2. Luego aplica las migraciones **1→10** abajo.
 
 Ese reset **no** borra usuarios de Auth (`auth.users`). Sí borra `profiles` y todo el resto en `public`.
 
@@ -24,6 +24,7 @@ Si vas a **borrar todo y empezar de cero**, en el Dashboard: Project Settings �
 | 7 | [`migrations/20260808000007_ciclo6_search.sql`](supabase/migrations/20260808000007_ciclo6_search.sql) | `search_sites` |
 | 8 | [`migrations/20260808000008_ciclo7_routes_reports.sql`](supabase/migrations/20260808000008_ciclo7_routes_reports.sql) | Mis rutas + `content_reports` |
 | 9 | [`migrations/20260808000009_ciclo8_get_site_coords.sql`](supabase/migrations/20260808000009_ciclo8_get_site_coords.sql) | `get_site_coords` (editar guardado) |
+| 10 | [`migrations/20260808000010_ciclo8_categories_keywords.sql`](supabase/migrations/20260808000010_ciclo8_categories_keywords.sql) | Keywords + categorías ampliadas |
 
 > Los scripts son idempotentes en lo posible (`if not exists` / `create or replace`). Si uno falla a mitad, corrige y vuelve a pegar ese archivo.
 
@@ -35,8 +36,8 @@ Inicia sesión con Google en la app (así nace el usuario en `auth.users` + perf
 
 | # | Archivo | Qué hace |
 |---|---------|----------|
-| 10 | [`scripts/01_bootstrap_root.sql`](supabase/scripts/01_bootstrap_root.sql) | Te convierte en `root` — **cambia el email** dentro del archivo |
-| 11 | [`scripts/02_designate_admin.sql`](supabase/scripts/02_designate_admin.sql) | (Opcional) Promueve otro usuario a `admin` |
+| 11 | [`scripts/01_bootstrap_root.sql`](supabase/scripts/01_bootstrap_root.sql) | Te convierte en `root` — **cambia el email** dentro del archivo |
+| 12 | [`scripts/02_designate_admin.sql`](supabase/scripts/02_designate_admin.sql) | (Opcional) Promueve otro usuario a `admin` |
 
 ## Notas
 

@@ -12,8 +12,9 @@ Notas de usabilidad y deuda suave. No bloquean el MVP funcional; se revisan al p
 ## Ciclo 2 — Captura / guardados
 
 - Google Places API pendiente (exige facturación). En MVP usamos **Geoapify** (autocomplete + reverse, sin tarjeta).
-- Autocomplete/categorías: ya hay búsqueda textual; refinar cuando llegue Figma.
+- Autocomplete de categorías: busca por nombre **y keywords** (nadar→piscina/río, caminar→sendero, tejo, plaza…).
 - **Ubicación:** mapa OSM + Geoapify (`GEOAPIFY_API_KEY`, tope local `GEOAPIFY_DAILY_LIMIT=100`); fallback Nominatim si no hay key.
+- Árbol ampliado (migración 10): deporte/tejo, plazas, bares/discotecas, termales, piscinas, etc.
 
 ## Ciclo 3 — Privacidad / duplicados
 

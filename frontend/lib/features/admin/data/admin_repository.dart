@@ -23,11 +23,13 @@ class AdminRepository {
     required String nameEs,
     required bool isActive,
     required bool ageRestricted,
+    List<String> keywords = const [],
   }) async {
     await _client.from('categories').update({
       'name_i18n': {'es': nameEs},
       'is_active': isActive,
       'age_restricted': ageRestricted,
+      'keywords': keywords,
     }).eq('id', id);
   }
 
