@@ -1,23 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../../core/di/providers.dart';
 import '../../../core/errors/user_facing_error.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../legal/legal_texts.dart';
 import '../../legal/presentation/legal_document_page.dart';
-import '../data/auth_repository.dart';
 
-class LoginPage extends StatefulWidget {
-  const LoginPage({super.key, required this.authRepository});
-
-  final AuthRepository authRepository;
+class LoginPage extends ConsumerStatefulWidget {
+  const LoginPage({super.key});
 
   @override
-  State<LoginPage> createState() => _LoginPageState();
+  ConsumerState<LoginPage> createState() => _LoginPageState();
 }
 
-class _LoginPageState extends State<LoginPage> {
+class _LoginPageState extends ConsumerState<LoginPage> {
   bool _loading = false;
   bool _acceptedLegal = false;
   String? _error;
@@ -56,7 +55,7 @@ class _LoginPageState extends State<LoginPage> {
     });
     try {
       await _persistAccepted();
-      await widget.authRepository.signInWithGoogle();
+      await ref.read(authRepositoryProvider).signInWithGoogle();
     } catch (error) {
       if (!mounted) return;
       setState(() => _error = userFacingError(error));

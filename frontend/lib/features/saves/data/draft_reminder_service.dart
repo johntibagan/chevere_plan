@@ -2,6 +2,8 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 
+import '../domain/save_policies.dart';
+
 /// Recordatorios locales de borradores (§3.1).
 class DraftReminderService {
   DraftReminderService._();
@@ -29,7 +31,7 @@ class DraftReminderService {
   Future<void> scheduleForSave({
     required String saveId,
     required String title,
-    Duration delay = const Duration(hours: 24),
+    Duration delay = SavePolicies.draftRemindAfter,
   }) async {
     await init();
     final id = saveId.hashCode & 0x7fffffff;

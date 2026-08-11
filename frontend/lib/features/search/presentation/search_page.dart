@@ -1,24 +1,24 @@
 import 'package:flutter/foundation.dart' show debugPrint, kDebugMode;
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 
+import '../../../core/di/providers.dart';
 import '../../../core/errors/user_facing_error.dart';
 import '../../admin/data/admin_models.dart';
-import '../../admin/data/admin_repository.dart';
 import '../data/search_models.dart';
 import '../data/search_repository.dart';
 
-class SearchPage extends StatefulWidget {
+class SearchPage extends ConsumerStatefulWidget {
   const SearchPage({super.key, required this.repository});
 
   final SearchRepository repository;
 
   @override
-  State<SearchPage> createState() => _SearchPageState();
+  ConsumerState<SearchPage> createState() => _SearchPageState();
 }
 
-class _SearchPageState extends State<SearchPage> {
-  final _adminRepo = AdminRepository();
+class _SearchPageState extends ConsumerState<SearchPage> {
   final _queryCtrl = TextEditingController();
   final _locationCtrl = TextEditingController();
   final _radiusCtrl = TextEditingController(text: '10');
@@ -54,7 +54,8 @@ class _SearchPageState extends State<SearchPage> {
 
   Future<void> _loadMeta() async {
     try {
-      final cats = await _adminRepo.fetchCategories();
+      final cats =
+          await ref.read(adminRepositoryProvider).fetchCategories();
       if (!mounted) return;
       setState(() => _categories = cats);
     } catch (e) {

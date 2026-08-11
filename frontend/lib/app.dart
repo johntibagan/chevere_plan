@@ -1,28 +1,26 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:receive_sharing_intent/receive_sharing_intent.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../features/auth/data/auth_repository.dart';
 import '../features/auth/presentation/login_page.dart';
 import '../features/home/presentation/home_page.dart';
-import '../features/saves/data/saves_repository.dart';
 import '../features/saves/presentation/save_place_page.dart';
+import 'core/di/providers.dart';
 import 'core/theme/app_theme.dart';
 
 final GlobalKey<NavigatorState> appNavigatorKey = GlobalKey<NavigatorState>();
 
-class CheverePlanApp extends StatefulWidget {
-  const CheverePlanApp({super.key, required this.authRepository});
-
-  final AuthRepository authRepository;
+class CheverePlanApp extends ConsumerStatefulWidget {
+  const CheverePlanApp({super.key});
 
   @override
-  State<CheverePlanApp> createState() => _CheverePlanAppState();
+  ConsumerState<CheverePlanApp> createState() => _CheverePlanAppState();
 }
 
-class _CheverePlanAppState extends State<CheverePlanApp> {
+class _CheverePlanAppState extends ConsumerState<CheverePlanApp> {
   StreamSubscription<List<SharedMediaFile>>? _shareSub;
 
   @override
@@ -38,12 +36,10 @@ class _CheverePlanAppState extends State<CheverePlanApp> {
   }
 
   void _listenShares() {
-    // App abierta (stream)
     _shareSub = ReceiveSharingIntent.instance.getMediaStream().listen(
       (files) => _handleShared(files),
       onError: (_) {},
     );
-    // App fría / recién abierta
     ReceiveSharingIntent.instance.getInitialMedia().then((files) {
       _handleShared(files);
       ReceiveSharingIntent.instance.reset();
@@ -59,16 +55,16 @@ class _CheverePlanAppState extends State<CheverePlanApp> {
     if (texts.isEmpty) return;
     final payload = texts.join('\n');
 
-    // Esperar un frame para tener navigator + sesión
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final nav = appNavigatorKey.currentState;
       if (nav == null) return;
       if (Supabase.instance.client.auth.currentSession == null) return;
+      final savesRepo = ref.read(savesRepositoryProvider);
       nav.push(
         MaterialPageRoute<void>(
           builder: (_) => SavePlacePage(
             initialSharedText: payload,
-            savesRepository: SavesRepository(),
+            savesRepository: savesRepo,
           ),
         ),
       );
@@ -84,18 +80,18 @@ class _CheverePlanAppState extends State<CheverePlanApp> {
       theme: AppTheme.dark(),
       darkTheme: AppTheme.dark(),
       themeMode: ThemeMode.dark,
-      home: AuthGate(authRepository: widget.authRepository),
+      home: const AuthGate(),
     );
   }
 }
 
-class AuthGate extends StatelessWidget {
-  const AuthGate({super.key, required this.authRepository});
-
-  final AuthRepository authRepository;
+class AuthGate extends ConsumerWidget {
+  const AuthGate({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final authRepository = ref.watch(authRepositoryProvider);
+
     return StreamBuilder<AuthState>(
       stream: authRepository.authStateChanges,
       builder: (context, snapshot) {
@@ -110,13 +106,10 @@ class AuthGate extends StatelessWidget {
         }
 
         if (session != null) {
-          return HomePage(
-            authRepository: authRepository,
-            session: session,
-          );
+          return HomePage(session: session);
         }
 
-        return LoginPage(authRepository: authRepository);
+        return const LoginPage();
       },
     );
   }

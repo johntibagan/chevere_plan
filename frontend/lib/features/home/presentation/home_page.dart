@@ -1,50 +1,34 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../core/di/providers.dart';
 import '../../../core/errors/user_facing_error.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../admin/data/admin_repository.dart';
 import '../../admin/presentation/admin_page.dart';
-import '../../auth/data/auth_repository.dart';
 import '../../auth/data/profile.dart';
-import '../../auth/data/profile_repository.dart';
 import '../../moderation/data/moderation_repository.dart';
 import '../../moderation/presentation/admin_reports_page.dart';
 import '../../moderation/presentation/site_photos_sheet.dart';
-import '../../plans/data/plans_repository.dart';
 import '../../plans/presentation/plans_list_page.dart';
-import '../../proximity/data/geofence_sync_service.dart';
 import '../../proximity/presentation/proximity_prefs_sheet.dart';
-import '../../routes/data/routes_repository.dart';
 import '../../routes/presentation/my_routes_page.dart';
-import '../../search/data/search_repository.dart';
 import '../../search/presentation/search_page.dart';
-import '../../saves/data/draft_reminder_service.dart';
 import '../../saves/data/save_models.dart';
-import '../../saves/data/saves_repository.dart';
 import '../../saves/presentation/save_place_page.dart';
 
 /// Shell Figma: Inicio | Explorar | [+] Guardar | Planes | Rutas
-class HomePage extends StatefulWidget {
-  const HomePage({
-    super.key,
-    required this.authRepository,
-    required this.session,
-  });
+class HomePage extends ConsumerStatefulWidget {
+  const HomePage({super.key, required this.session});
 
-  final AuthRepository authRepository;
   final Session session;
 
   @override
-  State<HomePage> createState() => _HomePageState();
+  ConsumerState<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
-  final _profileRepo = ProfileRepository();
-  final _savesRepo = SavesRepository();
-  final _geofenceSync = GeofenceSyncService();
-
+class _HomePageState extends ConsumerState<HomePage> {
   Profile? _profile;
   List<UserSave> _saves = [];
   String? _error;
@@ -63,9 +47,13 @@ class _HomePageState extends State<HomePage> {
       _error = null;
     });
     try {
-      final profile = await _profileRepo.fetchCurrent();
-      final saves = await _savesRepo.listMine();
-      final stale = await _savesRepo.listStaleDrafts();
+      final profileRepo = ref.read(profileRepositoryProvider);
+      final savesRepo = ref.read(savesRepositoryProvider);
+      final geofenceSync = ref.read(geofenceSyncServiceProvider);
+
+      final profile = await profileRepo.fetchCurrent();
+      final saves = await savesRepo.listMine();
+      final stale = await savesRepo.listStaleDrafts();
       if (!mounted) return;
       setState(() {
         _profile = profile;
@@ -91,7 +79,7 @@ class _HomePageState extends State<HomePage> {
         );
       }
       if (profile != null) {
-        await _geofenceSync.syncFromProfile(profile: profile);
+        await geofenceSync.syncFromProfile(profile: profile);
       }
     } catch (e) {
       if (!mounted) return;
@@ -108,8 +96,8 @@ class _HomePageState extends State<HomePage> {
     final updated = await showProximityPrefsSheet(
       context: context,
       profile: profile,
-      profileRepository: _profileRepo,
-      geofenceSync: _geofenceSync,
+      profileRepository: ref.read(profileRepositoryProvider),
+      geofenceSync: ref.read(geofenceSyncServiceProvider),
     );
     if (updated != null && mounted) {
       setState(() => _profile = updated);
@@ -122,7 +110,7 @@ class _HomePageState extends State<HomePage> {
         builder: (_) => SavePlacePage(
           initialSharedText: shared,
           existingSaveId: existing?.id,
-          savesRepository: _savesRepo,
+          savesRepository: ref.read(savesRepositoryProvider),
         ),
       ),
     );
@@ -148,8 +136,8 @@ class _HomePageState extends State<HomePage> {
       ),
     );
     if (ok != true) return;
-    await DraftReminderService.instance.cancelForSave(save.id);
-    await _savesRepo.discardSave(save.id);
+    await ref.read(draftReminderServiceProvider).cancelForSave(save.id);
+    await ref.read(savesRepositoryProvider).discardSave(save.id);
     await _bootstrap();
   }
 
@@ -169,6 +157,12 @@ class _HomePageState extends State<HomePage> {
         'Usuario';
     final isStaff = _profile?.role.isStaff ?? false;
     final initial = name.trim().isNotEmpty ? name.trim()[0].toUpperCase() : 'U';
+
+    final searchRepo = ref.watch(searchRepositoryProvider);
+    final plansRepo = ref.watch(plansRepositoryProvider);
+    final routesRepo = ref.watch(routesRepositoryProvider);
+    final adminRepo = ref.watch(adminRepositoryProvider);
+    final moderationRepo = ref.watch(moderationRepositoryProvider);
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -193,25 +187,25 @@ class _HomePageState extends State<HomePage> {
               onAdmin: () {
                 Navigator.of(context).push(
                   MaterialPageRoute<void>(
-                    builder: (_) => AdminPage(repository: AdminRepository()),
+                    builder: (_) => AdminPage(repository: adminRepo),
                   ),
                 );
               },
               onReports: () {
                 Navigator.of(context).push(
                   MaterialPageRoute<void>(
-                    builder: (_) => AdminReportsPage(
-                      repository: ModerationRepository(),
-                    ),
+                    builder: (_) =>
+                        AdminReportsPage(repository: moderationRepo),
                   ),
                 );
               },
-              onSignOut: () => widget.authRepository.signOut(),
+              onSignOut: () => ref.read(authRepositoryProvider).signOut(),
               onExplore: () => setState(() => _tab = 1),
+              moderationRepository: moderationRepo,
             ),
-            SearchPage(repository: SearchRepository()),
-            PlansListPage(repository: PlansRepository()),
-            MyRoutesPage(repository: RoutesRepository()),
+            SearchPage(repository: searchRepo),
+            PlansListPage(repository: plansRepo),
+            MyRoutesPage(repository: routesRepo),
           ],
         ),
       ),
@@ -331,6 +325,7 @@ class _InicioTab extends StatelessWidget {
     required this.onReports,
     required this.onSignOut,
     required this.onExplore,
+    required this.moderationRepository,
   });
 
   final String greeting;
@@ -349,6 +344,7 @@ class _InicioTab extends StatelessWidget {
   final VoidCallback onReports;
   final VoidCallback onSignOut;
   final VoidCallback onExplore;
+  final ModerationRepository moderationRepository;
 
   @override
   Widget build(BuildContext context) {
@@ -602,7 +598,7 @@ class _InicioTab extends StatelessWidget {
                         context: context,
                         siteId: s.siteId,
                         siteName: s.siteName,
-                        repository: ModerationRepository(),
+                        repository: moderationRepository,
                       );
                     },
                     onDiscard: () => onDiscard(s),

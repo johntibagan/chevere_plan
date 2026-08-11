@@ -1,22 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/di/providers.dart';
 import '../../../core/errors/user_facing_error.dart';
-import '../../moderation/data/moderation_repository.dart';
 import '../../moderation/presentation/admin_reports_page.dart';
 import '../data/admin_models.dart';
 import '../data/admin_repository.dart';
 
 /// Panel admin mínimo Ciclo 1: categorías + vehículos (especificación §12 / Figma admin).
-class AdminPage extends StatefulWidget {
+class AdminPage extends ConsumerStatefulWidget {
   const AdminPage({super.key, required this.repository});
 
   final AdminRepository repository;
 
   @override
-  State<AdminPage> createState() => _AdminPageState();
+  ConsumerState<AdminPage> createState() => _AdminPageState();
 }
 
-class _AdminPageState extends State<AdminPage>
+class _AdminPageState extends ConsumerState<AdminPage>
     with SingleTickerProviderStateMixin {
   late final TabController _tabs;
   List<Category> _categories = [];
@@ -239,7 +240,7 @@ class _AdminPageState extends State<AdminPage>
               Navigator.of(context).push(
                 MaterialPageRoute<void>(
                   builder: (_) => AdminReportsPage(
-                    repository: ModerationRepository(),
+                    repository: ref.read(moderationRepositoryProvider),
                   ),
                 ),
               );

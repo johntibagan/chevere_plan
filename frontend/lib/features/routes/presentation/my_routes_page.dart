@@ -1,21 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/di/providers.dart';
 import '../../../core/errors/user_facing_error.dart';
-import '../../plans/data/plans_repository.dart';
 import '../../plans/presentation/plan_detail_page.dart';
 import '../data/route_models.dart';
 import '../data/routes_repository.dart';
 
-class MyRoutesPage extends StatefulWidget {
+class MyRoutesPage extends ConsumerStatefulWidget {
   const MyRoutesPage({super.key, required this.repository});
 
   final RoutesRepository repository;
 
   @override
-  State<MyRoutesPage> createState() => _MyRoutesPageState();
+  ConsumerState<MyRoutesPage> createState() => _MyRoutesPageState();
 }
 
-class _MyRoutesPageState extends State<MyRoutesPage> {
+class _MyRoutesPageState extends ConsumerState<MyRoutesPage> {
   bool _loading = true;
   String? _error;
   List<RouteHistoryEntry> _entries = const [];
@@ -106,7 +107,8 @@ class _MyRoutesPageState extends State<MyRoutesPage> {
                                   MaterialPageRoute<void>(
                                     builder: (_) => PlanDetailPage(
                                       planId: e.planId,
-                                      repository: PlansRepository(),
+                                      repository:
+                                          ref.read(plansRepositoryProvider),
                                     ),
                                   ),
                                 );

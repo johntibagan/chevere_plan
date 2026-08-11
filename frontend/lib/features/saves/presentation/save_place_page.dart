@@ -1,12 +1,12 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../../core/di/providers.dart';
 import '../../../core/errors/user_facing_error.dart';
 import '../../admin/data/admin_models.dart';
-import '../../admin/data/admin_repository.dart';
-import '../data/draft_reminder_service.dart';
 import '../data/geo_place.dart';
 import '../data/save_models.dart';
 import '../data/saves_repository.dart';
@@ -16,7 +16,7 @@ import 'location_picker_page.dart';
 
 const _kRequiredStar = Color(0xFFFF8C00);
 
-class SavePlacePage extends StatefulWidget {
+class SavePlacePage extends ConsumerStatefulWidget {
   const SavePlacePage({
     super.key,
     this.initialSharedText,
@@ -30,11 +30,10 @@ class SavePlacePage extends StatefulWidget {
   final SavesRepository savesRepository;
 
   @override
-  State<SavePlacePage> createState() => _SavePlacePageState();
+  ConsumerState<SavePlacePage> createState() => _SavePlacePageState();
 }
 
-class _SavePlacePageState extends State<SavePlacePage> {
-  final _adminRepo = AdminRepository();
+class _SavePlacePageState extends ConsumerState<SavePlacePage> {
   final _nameCtrl = TextEditingController();
   final _urlCtrl = TextEditingController();
   final _cityCtrl = TextEditingController();
@@ -71,7 +70,8 @@ class _SavePlacePageState extends State<SavePlacePage> {
 
   Future<void> _bootstrapForm() async {
     try {
-      final cats = await _adminRepo.fetchCategories();
+      final cats =
+          await ref.read(adminRepositoryProvider).fetchCategories();
       if (!mounted) return;
       setState(() {
         _categories = cats.where((c) => c.isActive).toList();
@@ -152,7 +152,8 @@ class _SavePlacePageState extends State<SavePlacePage> {
     // Refetch por si el form quedó sin datos o el seed se aplicó después.
     if (_categories.isEmpty) {
       try {
-        final cats = await _adminRepo.fetchCategories();
+        final cats =
+            await ref.read(adminRepositoryProvider).fetchCategories();
         if (!mounted) return;
         setState(() {
           _categories = cats.where((c) => c.isActive).toList();
@@ -369,9 +370,9 @@ class _SavePlacePageState extends State<SavePlacePage> {
       }
 
       if (saved.status == SiteStatus.complete) {
-        await DraftReminderService.instance.cancelForSave(saved.id);
+        await ref.read(draftReminderServiceProvider).cancelForSave(saved.id);
       } else if (saved.status == SiteStatus.draft) {
-        await DraftReminderService.instance.scheduleForSave(
+        await ref.read(draftReminderServiceProvider).scheduleForSave(
           saveId: saved.id,
           title: saved.siteName,
         );

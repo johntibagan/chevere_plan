@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../core/errors/user_facing_error.dart';
+import '../domain/save_policies.dart';
 import 'save_models.dart';
 
 class SavesRepository {
@@ -30,15 +31,13 @@ class SavesRepository {
     required double? latitude,
     required double? longitude,
   }) {
-    final hasCategory = categoryIds.isNotEmpty;
-    final hasLocation = (city != null && city.trim().isNotEmpty) ||
-        (addressLine != null && addressLine.trim().isNotEmpty) ||
-        (latitude != null && longitude != null);
-
-    if (hasCategory && hasLocation) return SiteStatus.complete;
-    if (!hasCategory && !hasLocation) return SiteStatus.draft;
-    if (!hasLocation) return SiteStatus.pendingLocation;
-    return SiteStatus.draft;
+    return SavePolicies.computeStatus(
+      categoryIds: categoryIds,
+      city: city,
+      addressLine: addressLine,
+      latitude: latitude,
+      longitude: longitude,
+    );
   }
 
   Future<List<UserSave>> listMine() async {
@@ -70,7 +69,7 @@ class SavesRepository {
         'p_lat': latitude,
         'p_lng': longitude,
         'p_city': city?.trim().isEmpty == true ? null : city?.trim(),
-        'p_radius_m': 100,
+        'p_radius_m': SavePolicies.duplicateSearchRadiusM,
       },
     );
     return (rows as List)
@@ -107,7 +106,7 @@ class SavesRepository {
       });
 
       final draftRemindAt = status == SiteStatus.draft
-          ? DateTime.now().toUtc().add(const Duration(hours: 24))
+          ? DateTime.now().toUtc().add(SavePolicies.draftRemindAfter)
           : null;
 
       final save = await _client
@@ -182,7 +181,7 @@ class SavesRepository {
     }
 
     final draftRemindAt = status == SiteStatus.draft
-        ? DateTime.now().toUtc().add(const Duration(hours: 24))
+        ? DateTime.now().toUtc().add(SavePolicies.draftRemindAfter)
         : null;
 
     final save = await _client
@@ -220,8 +219,10 @@ class SavesRepository {
     if (uid == null) throw const AppUserError('Sin sesión');
 
     final current = await countPhotos(siteId);
-    if (current >= 15) {
-      throw const AppUserError('Máximo 15 fotos por sitio.');
+    if (current >= SavePolicies.maxPhotosPerSite) {
+      throw AppUserError(
+        'Máximo ${SavePolicies.maxPhotosPerSite} fotos por sitio.',
+      );
     }
 
     final ext = file.path.split('.').last.toLowerCase();
@@ -245,7 +246,7 @@ class SavesRepository {
   Future<List<UserSave>> listStaleDrafts() async {
     final uid = _uid;
     if (uid == null) return [];
-    final cutoff = DateTime.now().toUtc().subtract(const Duration(hours: 24));
+    final cutoff = DateTime.now().toUtc().subtract(SavePolicies.draftRemindAfter);
     final rows = await _client
         .from('user_saves')
         .select(_saveSelect)
@@ -378,7 +379,7 @@ class SavesRepository {
     }
 
     final draftRemindAt = status == SiteStatus.draft
-        ? DateTime.now().toUtc().add(const Duration(hours: 24))
+        ? DateTime.now().toUtc().add(SavePolicies.draftRemindAfter)
         : null;
 
     final save = await _client

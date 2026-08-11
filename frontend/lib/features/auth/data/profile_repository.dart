@@ -1,6 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/errors/user_facing_error.dart';
+import '../../proximity/domain/proximity_policies.dart';
 import 'profile.dart';
 
 class ProfileRepository {
@@ -32,7 +33,7 @@ class ProfileRepository {
       throw const AppUserError('Debes iniciar sesión.');
     }
 
-    final clamped = proximityRadiusM.clamp(100, 2000);
+    final clamped = ProximityPolicies.clampRadiusM(proximityRadiusM);
     final row = await _client
         .from('profiles')
         .update({

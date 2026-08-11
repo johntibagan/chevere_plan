@@ -4,6 +4,7 @@ import '../../../core/errors/user_facing_error.dart';
 import '../../auth/data/profile.dart';
 import '../../auth/data/profile_repository.dart';
 import '../data/geofence_sync_service.dart';
+import '../domain/proximity_policies.dart';
 
 /// Preferencias de recuerdos por proximidad (§6).
 Future<Profile?> showProximityPrefsSheet({
@@ -48,7 +49,9 @@ class _ProximityPrefsSheetState extends State<_ProximityPrefsSheet> {
   @override
   void initState() {
     super.initState();
-    _radius = widget.profile.proximityRadiusM.toDouble();
+    _radius = ProximityPolicies.clampRadiusM(
+      widget.profile.proximityRadiusM,
+    ).toDouble();
     _remindPublic = widget.profile.remindPublicSites;
   }
 
@@ -125,8 +128,8 @@ class _ProximityPrefsSheetState extends State<_ProximityPrefsSheet> {
             style: Theme.of(context).textTheme.titleSmall,
           ),
           Slider(
-            min: 100,
-            max: 2000,
+            min: ProximityPolicies.minRadiusM.toDouble(),
+            max: ProximityPolicies.maxRadiusM.toDouble(),
             divisions: 38,
             label: '${_radius.round()} m',
             value: _radius,

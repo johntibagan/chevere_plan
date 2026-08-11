@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 
+import '../../../core/di/providers.dart';
 import '../../../core/errors/user_facing_error.dart';
-import '../../admin/data/admin_repository.dart';
 import '../data/maps_export.dart';
 import '../data/plan_builder.dart';
 import '../data/plan_models.dart';
 import '../data/plans_repository.dart';
 import '../data/transport_suggester.dart';
 
-class PlanDetailPage extends StatefulWidget {
+class PlanDetailPage extends ConsumerStatefulWidget {
   const PlanDetailPage({
     super.key,
     required this.planId,
@@ -20,11 +21,10 @@ class PlanDetailPage extends StatefulWidget {
   final PlansRepository repository;
 
   @override
-  State<PlanDetailPage> createState() => _PlanDetailPageState();
+  ConsumerState<PlanDetailPage> createState() => _PlanDetailPageState();
 }
 
-class _PlanDetailPageState extends State<PlanDetailPage> {
-  final _adminRepo = AdminRepository();
+class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
   Plan? _plan;
   TransportSuggester? _suggester;
   bool _loading = true;
@@ -46,7 +46,8 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
     });
     try {
       final plan = await widget.repository.fetchById(widget.planId);
-      final transports = await _adminRepo.fetchTransportTypes();
+      final transports =
+          await ref.read(adminRepositoryProvider).fetchTransportTypes();
       if (!mounted) return;
       setState(() {
         _plan = plan;

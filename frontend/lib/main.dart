@@ -1,12 +1,12 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'app.dart';
 import 'core/config/env.dart';
 import 'core/notifications/fcm_bootstrap.dart';
-import 'features/auth/data/auth_repository.dart';
 import 'features/proximity/data/proximity_reminder_service.dart';
 import 'features/saves/data/draft_reminder_service.dart';
 
@@ -17,9 +17,11 @@ Future<void> main() async {
 
   if (!Env.hasSupabaseConfig) {
     runApp(
-      const _BootstrapErrorApp(
-        message:
-            'Faltan SUPABASE_URL o SUPABASE_ANON_KEY en frontend/.env',
+      const ProviderScope(
+        child: _BootstrapErrorApp(
+          message:
+              'Faltan SUPABASE_URL o SUPABASE_ANON_KEY en frontend/.env',
+        ),
       ),
     );
     return;
@@ -35,8 +37,7 @@ Future<void> main() async {
     publishableKey: Env.supabaseAnonKey,
   );
 
-  final authRepository = AuthRepository();
-  runApp(CheverePlanApp(authRepository: authRepository));
+  runApp(const ProviderScope(child: CheverePlanApp()));
 }
 
 class _BootstrapErrorApp extends StatelessWidget {
