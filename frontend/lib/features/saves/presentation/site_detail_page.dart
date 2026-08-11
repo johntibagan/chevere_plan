@@ -74,13 +74,14 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
   }
 
   Future<void> _load() async {
+    final hasSeed = _ficha != null;
     setState(() {
-      _loading = _ficha == null;
+      _loading = !hasSeed;
       _error = null;
     });
     try {
-      final ficha =
-          await ref.read(savesRepositoryProvider).loadSiteFicha(widget.siteId);
+      // SWR vía Riverpod: caché inmediata + refresh en background.
+      final ficha = await ref.read(siteFichaProvider(widget.siteId).future);
       if (!mounted) return;
       setState(() {
         _ficha = ficha.copyWithMeta(
@@ -88,6 +89,8 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
               widget.initialHit?.estimatedPriceAmount,
           currencyCode: widget.initialHit?.currencyCode ?? ficha.currencyCode,
           distanceKm: ficha.distanceKm ?? widget.initialHit?.distanceKm,
+          lat: ficha.lat ?? widget.initialHit?.lat,
+          lng: ficha.lng ?? widget.initialHit?.lng,
         );
         _loading = false;
       });
@@ -188,6 +191,7 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
     );
     if (result != null && mounted) {
       _outcome = SiteDetailOutcome.updated;
+      await ref.read(siteFichaProvider(widget.siteId).notifier).refresh(force: true);
       await _load();
     }
   }

@@ -56,6 +56,8 @@ dependencies:
   google_fonts: ^8.2.1
   flutter_riverpod: ^2.6.1
   cached_network_image: ^3.4.1
+  hive_ce: ^2.19.3
+  hive_ce_flutter: ^2.3.4
 
 dev_dependencies:
   flutter_test:

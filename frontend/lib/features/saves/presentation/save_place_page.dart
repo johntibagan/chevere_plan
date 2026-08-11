@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -5,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 
+import '../../../core/cache/cache_ttl.dart';
 import '../../../core/di/providers.dart';
 import '../../../core/errors/user_facing_error.dart';
 import '../../../core/l10n/context_l10n.dart';
@@ -592,6 +594,22 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
 
       if (!mounted) return;
       ref.invalidate(mySavesProvider);
+      final uid = ref.read(supabaseClientProvider).auth.currentUser?.id;
+      if (uid != null) {
+        unawaited(
+          ref
+              .read(entityCacheStoreProvider)
+              .invalidate(CacheKeys.mySavesSummary(uid)),
+        );
+      }
+      if (saved.siteId.isNotEmpty) {
+        unawaited(
+          ref
+              .read(entityCacheStoreProvider)
+              .invalidate(CacheKeys.siteFicha(saved.siteId)),
+        );
+        ref.invalidate(siteFichaProvider(saved.siteId));
+      }
       final l10n = context.l10n;
       await showDialog<void>(
         context: context,

@@ -24,6 +24,12 @@ class SavesRepository {
       'site_categories(categories(name_i18n)), '
       'site_contributors(user_id, profiles(display_name)))';
 
+  /// Select liviano para Inicio (cards): sin contributors, notes, address, etc.
+  static const _saveSelectSummary =
+      'id, user_id, site_id, status, is_public, created_at, '
+      'sites!user_saves_site_id_fkey(name, city, '
+      'site_categories(categories(name_i18n)))';
+
   String? get _uid => _client.auth.currentUser?.id;
 
   SiteStatus computeStatus({
@@ -42,6 +48,7 @@ class SavesRepository {
     );
   }
 
+  /// Lista completa con joins (edición / usos que necesiten el objeto rico).
   Future<List<UserSave>> listMine() async {
     final uid = _uid;
     if (uid == null) return [];
@@ -49,6 +56,22 @@ class SavesRepository {
     final rows = await _client
         .from('user_saves')
         .select(_saveSelect)
+        .eq('user_id', uid)
+        .order('created_at', ascending: false);
+
+    return (rows as List)
+        .map((e) => UserSave.fromJoinedJson(Map<String, dynamic>.from(e as Map)))
+        .toList();
+  }
+
+  /// Lista para Inicio: mismas filas, columnas mínimas para pintar cards.
+  Future<List<UserSave>> listMineSummary() async {
+    final uid = _uid;
+    if (uid == null) return [];
+
+    final rows = await _client
+        .from('user_saves')
+        .select(_saveSelectSummary)
         .eq('user_id', uid)
         .order('created_at', ascending: false);
 

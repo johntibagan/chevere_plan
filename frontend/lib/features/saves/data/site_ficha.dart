@@ -52,6 +52,58 @@ class SiteFicha {
     return parts.join(', ');
   }
 
+  Map<String, dynamic> toCacheJson() => {
+        'site_id': siteId,
+        'name': name,
+        'city': city,
+        'department': department,
+        'address_line': addressLine,
+        'category_names': categoryNames,
+        'is_public': isPublic,
+        'is_physical_place': isPhysicalPlace,
+        'notes': notes,
+        'source_url': sourceUrl,
+        'also_shared_by': alsoSharedBy,
+        'own_save': ownSave?.toCacheJson(),
+        'estimated_price_amount': estimatedPriceAmount,
+        'currency_code': currencyCode,
+        'distance_km': distanceKm,
+        'lat': lat,
+        'lng': lng,
+      };
+
+  factory SiteFicha.fromCacheJson(Map<String, dynamic> json) {
+    final ownRaw = json['own_save'];
+    return SiteFicha(
+      siteId: json['site_id'] as String,
+      name: json['name'] as String? ?? 'Sitio',
+      city: json['city'] as String?,
+      department: json['department'] as String?,
+      addressLine: json['address_line'] as String?,
+      categoryNames: (json['category_names'] as List?)
+              ?.map((e) => '$e')
+              .toList() ??
+          const [],
+      isPublic: json['is_public'] as bool? ?? false,
+      isPhysicalPlace: json['is_physical_place'] as bool? ?? true,
+      notes: json['notes'] as String?,
+      sourceUrl: json['source_url'] as String?,
+      alsoSharedBy: (json['also_shared_by'] as List?)
+              ?.map((e) => '$e')
+              .toList() ??
+          const [],
+      ownSave: ownRaw is Map
+          ? UserSave.fromCacheJson(Map<String, dynamic>.from(ownRaw))
+          : null,
+      estimatedPriceAmount:
+          (json['estimated_price_amount'] as num?)?.toDouble(),
+      currencyCode: json['currency_code'] as String? ?? 'COP',
+      distanceKm: (json['distance_km'] as num?)?.toDouble(),
+      lat: (json['lat'] as num?)?.toDouble(),
+      lng: (json['lng'] as num?)?.toDouble(),
+    );
+  }
+
   factory SiteFicha.fromSave(UserSave save) {
     return SiteFicha(
       siteId: save.siteId,

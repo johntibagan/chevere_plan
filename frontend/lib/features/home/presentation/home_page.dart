@@ -83,8 +83,11 @@ class _HomePageState extends ConsumerState<HomePage> {
   }
 
   Future<void> _bootstrap({bool forceRefresh = false}) async {
+    final hasSaves =
+        (ref.read(mySavesProvider).valueOrNull?.isNotEmpty ?? false) ||
+            _saves.isNotEmpty;
     setState(() {
-      _loading = true;
+      if (!hasSaves) _loading = true;
       _error = null;
     });
     try {
@@ -92,10 +95,11 @@ class _HomePageState extends ConsumerState<HomePage> {
       final geofenceSync = ref.read(geofenceSyncServiceProvider);
 
       if (forceRefresh) {
-        ref.invalidate(mySavesProvider);
+        await ref.read(mySavesProvider.notifier).refresh(force: true);
       }
 
       final profile = await profileRepo.fetchCurrent();
+      // SWR: sirve caché fresca/stale de inmediato; red en background si aplica.
       final saves = await ref.read(mySavesProvider.future);
       final cutoff =
           DateTime.now().toUtc().subtract(SavePolicies.draftRemindAfter);
@@ -186,6 +190,17 @@ class _HomePageState extends ConsumerState<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    // Mantener lista al día si SWR refresca en background.
+    ref.listen<AsyncValue<List<UserSave>>>(mySavesProvider, (prev, next) {
+      next.whenData((saves) {
+        if (!mounted) return;
+        setState(() {
+          _saves = saves;
+          _loading = false;
+        });
+      });
+    });
+
     final l10n = context.l10n;
     final user = widget.session.user;
     final name = _profile?.displayName ??

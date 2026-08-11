@@ -25,6 +25,19 @@ class Category {
 
   bool get isRoot => parentId == null;
 
+  Map<String, dynamic> toCacheJson() => {
+        'id': id,
+        'parent_id': parentId,
+        'slug': slug,
+        'name_i18n': {'es': nameEs},
+        'is_active': isActive,
+        'age_restricted': ageRestricted,
+        'sort_order': sortOrder,
+        'icon_key': iconKey,
+        'color_hex': colorHex,
+        'keywords': keywords,
+      };
+
   /// Coincide nombre, slug o keywords (sinónimos: nadar, agua, caminar…).
   bool matchesQuery(String rawQuery) {
     final q = rawQuery.trim().toLowerCase();
@@ -107,6 +120,17 @@ class TransportType {
   final int sortOrder;
   final double? defaultMaxKm;
   final String? iconKey;
+
+  Map<String, dynamic> toCacheJson() => {
+        'id': id,
+        'transport_group': transportGroup,
+        'slug': slug,
+        'name_i18n': {'es': nameEs},
+        'is_active': isActive,
+        'sort_order': sortOrder,
+        'default_max_km': defaultMaxKm,
+        'icon_key': iconKey,
+      };
 
   factory TransportType.fromJson(Map<String, dynamic> json) {
     final nameI18n = json['name_i18n'];

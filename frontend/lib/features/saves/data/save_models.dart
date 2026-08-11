@@ -112,6 +112,59 @@ class UserSave {
 
   bool get isIncomplete => status != SiteStatus.complete;
 
+  Map<String, dynamic> toCacheJson() => {
+        'id': id,
+        'user_id': userId,
+        'site_id': siteId,
+        'status': status.dbValue,
+        'is_public': isPublic,
+        'site_name': siteName,
+        'source_url': sourceUrl,
+        'source_network': sourceNetwork,
+        'notes': notes,
+        'city': city,
+        'department': department,
+        'address_line': addressLine,
+        'category_names': categoryNames,
+        'created_at': createdAt?.toUtc().toIso8601String(),
+        'is_possible_duplicate': isPossibleDuplicate,
+        'possible_duplicate_of_site_id': possibleDuplicateOfSiteId,
+        'also_shared_by': alsoSharedBy,
+        'is_physical_place': isPhysicalPlace,
+      };
+
+  factory UserSave.fromCacheJson(Map<String, dynamic> json) {
+    return UserSave(
+      id: json['id'] as String,
+      userId: json['user_id'] as String,
+      siteId: json['site_id'] as String,
+      status: SiteStatus.fromDb(json['status'] as String?),
+      isPublic: json['is_public'] as bool? ?? false,
+      siteName: json['site_name'] as String? ?? 'Sin nombre',
+      sourceUrl: json['source_url'] as String?,
+      sourceNetwork: json['source_network'] as String?,
+      notes: json['notes'] as String?,
+      city: json['city'] as String?,
+      department: json['department'] as String?,
+      addressLine: json['address_line'] as String?,
+      categoryNames: (json['category_names'] as List?)
+              ?.map((e) => '$e')
+              .toList() ??
+          const [],
+      createdAt: json['created_at'] != null
+          ? DateTime.tryParse(json['created_at'] as String)
+          : null,
+      isPossibleDuplicate: json['is_possible_duplicate'] as bool? ?? false,
+      possibleDuplicateOfSiteId:
+          json['possible_duplicate_of_site_id'] as String?,
+      alsoSharedBy: (json['also_shared_by'] as List?)
+              ?.map((e) => '$e')
+              .toList() ??
+          const [],
+      isPhysicalPlace: json['is_physical_place'] as bool? ?? true,
+    );
+  }
+
   factory UserSave.fromJoinedJson(Map<String, dynamic> json) {
     final site = Map<String, dynamic>.from(json['sites'] as Map? ?? {});
     final catsRaw = site['site_categories'] as List? ?? const [];

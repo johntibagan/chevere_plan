@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'app.dart';
+import 'core/cache/entity_cache_store.dart';
 import 'core/config/env.dart';
 import 'core/notifications/fcm_bootstrap.dart';
 import 'features/proximity/data/proximity_reminder_service.dart';
@@ -23,6 +24,11 @@ Future<Widget> createRootApp({
       child: BootstrapErrorApp(message: Env.missingConfigUserMessage),
     );
   }
+
+  // Caché disco (Hive CE) — fallos no bloquean el arranque.
+  try {
+    await EntityCacheStore.instance.init();
+  } catch (_) {}
 
   if (initFirebase) {
     await Firebase.initializeApp();

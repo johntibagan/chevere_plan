@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/cache/cache_ttl.dart';
 import '../../../core/di/providers.dart';
 import '../../../core/errors/user_facing_error.dart';
 import '../../../core/l10n/context_l10n.dart';
@@ -138,6 +141,9 @@ class _AdminPageState extends ConsumerState<AdminPage>
         keywords: keywords,
       );
       ref.invalidate(categoriesProvider);
+      unawaited(
+        ref.read(entityCacheStoreProvider).invalidate(CacheKeys.categories()),
+      );
       await _load();
     } catch (e) {
       if (!mounted) return;
@@ -222,6 +228,11 @@ class _AdminPageState extends ConsumerState<AdminPage>
         clearMaxKm: clearKm,
       );
       ref.invalidate(transportTypesProvider);
+      unawaited(
+        ref
+            .read(entityCacheStoreProvider)
+            .invalidate(CacheKeys.transportTypes()),
+      );
       await _load();
     } catch (e) {
       if (!mounted) return;
