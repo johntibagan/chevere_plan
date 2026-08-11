@@ -7,6 +7,7 @@ Notas de usabilidad y deuda suave recogidas ciclo a ciclo. No bloquean el MVP; s
 - Edición de borrador in-app todavía pendiente (completar desde la lista).
 - Google Places API / geocoding automático pendiente.
 - Autocomplete textual de categorías pendiente (hoy selector por árbol).
+- **Ubicación:** picker OSM + búsqueda Nominatim; autocompleta ciudad/depto/dirección/nombre. Refinar UX de categorías buscables si hace falta.
 
 ## Ciclo 3 — Privacidad / duplicados
 

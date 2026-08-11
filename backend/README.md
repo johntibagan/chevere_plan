@@ -1,102 +1,43 @@
-# Backend Supabase — Ciclo 1
+# Backend Supabase — reset y aplicación ordenada
 
-## Aplicar migraciones (SQL Editor)
+## 0. Borrar todo lo de la app (opcional)
 
-1. Abre el proyecto en [Supabase Dashboard](https://supabase.com/dashboard) → **SQL Editor**.
-2. Ejecuta en orden el contenido actualizado de:
-   - `supabase/migrations/20260808000001_ciclo1_schema.sql`
-   - `supabase/migrations/20260808000002_ciclo1_seed.sql`
-3. Verifica: Table Editor debe mostrar `profiles`, `categories`, `transport_types`, `sites`, etc.
+Si vas a **empezar de cero** el schema de la app (tablas, funciones, enums, vistas):
 
-> **Nota:** si un intento anterior falló a mitad, vuelve a pegar el schema completo (es idempotente con `if not exists` / `create or replace`). No hace falta borrar el proyecto.
+1. SQL Editor → pega y ejecuta [`scripts/00_reset_public.sql`](supabase/scripts/00_reset_public.sql)
+2. Luego aplica las migraciones **1→8** abajo.
 
-## Ciclo 2 — Storage + columnas borrador
+Ese reset **no** borra usuarios de Auth (`auth.users`). Sí borra `profiles` y todo el resto en `public`.
 
-Ejecuta también:
+Si vas a **borrar todo y empezar de cero**, en el Dashboard: Project Settings → puede bastar con un proyecto nuevo, o borrar tablas/schemas según tu flujo. Luego aplica los scripts **en este orden**.
 
-- `supabase/migrations/20260808000003_ciclo2_draft_storage.sql`
+## 1. Migraciones (SQL Editor, una tras otra)
 
-(crea/asegura bucket `site-photos` + policies + columnas `draft_remind_at`).
+| # | Archivo | Qué hace |
+|---|---------|----------|
+| 1 | [`migrations/20260808000001_ciclo1_schema.sql`](supabase/migrations/20260808000001_ciclo1_schema.sql) | PostGIS, perfiles/roles, categorías, transporte, sitios, RLS |
+| 2 | [`migrations/20260808000002_ciclo1_seed.sql`](supabase/migrations/20260808000002_ciclo1_seed.sql) | Seed categorías §4.1 + transporte §7.2 |
+| 3 | [`migrations/20260808000003_ciclo2_draft_storage.sql`](supabase/migrations/20260808000003_ciclo2_draft_storage.sql) | Borrador + bucket `site-photos` |
+| 4 | [`migrations/20260808000004_ciclo3_duplicates.sql`](supabase/migrations/20260808000004_ciclo3_duplicates.sql) | Anti-duplicados, contributors, `set_site_location` |
+| 5 | [`migrations/20260808000005_ciclo4_proximity.sql`](supabase/migrations/20260808000005_ciclo4_proximity.sql) | Preferencias proximidad + `list_proximity_sites` |
+| 6 | [`migrations/20260808000006_ciclo5_plans.sql`](supabase/migrations/20260808000006_ciclo5_plans.sql) | Planes / paradas + `list_plan_candidates` |
+| 7 | [`migrations/20260808000007_ciclo6_search.sql`](supabase/migrations/20260808000007_ciclo6_search.sql) | `search_sites` |
+| 8 | [`migrations/20260808000008_ciclo7_routes_reports.sql`](supabase/migrations/20260808000008_ciclo7_routes_reports.sql) | Mis rutas + `content_reports` |
 
-## Ciclo 3 — Anti-duplicados
+> Los scripts son idempotentes en lo posible (`if not exists` / `create or replace`). Si uno falla a mitad, corrige y vuelve a pegar ese archivo.
 
-Ejecuta:
+## 2. Primer login en la app
 
-- `supabase/migrations/20260808000004_ciclo3_duplicates.sql`
+Inicia sesión con Google en la app (así nace el usuario en `auth.users` + perfil).
 
-## Ciclo 4 — Proximidad / geofencing
+## 3. Scripts post-login
 
-Ejecuta:
+| # | Archivo | Qué hace |
+|---|---------|----------|
+| 9 | [`scripts/01_bootstrap_root.sql`](supabase/scripts/01_bootstrap_root.sql) | Te convierte en `root` — **cambia el email** dentro del archivo |
+| 10 | [`scripts/02_designate_admin.sql`](supabase/scripts/02_designate_admin.sql) | (Opcional) Promueve otro usuario a `admin` |
 
-- `supabase/migrations/20260808000005_ciclo4_proximity.sql`
+## Notas
 
-(añade `profiles.proximity_radius_m`, `profiles.remind_public_sites` y RPC `list_proximity_sites`).
-
-## Ciclo 5 — Planes inteligentes
-
-Ejecuta:
-
-- `supabase/migrations/20260808000006_ciclo5_plans.sql`
-
-(tablas `plans` / `plan_stops`, `profiles.transport_max_km`, RPC `list_plan_candidates`).
-
-## Ciclo 6 — Búsqueda
-
-Ejecuta:
-
-- `supabase/migrations/20260808000007_ciclo6_search.sql`
-
-(RPC `search_sites` general + filtros avanzados).
-
-## Ciclo 7 — Mis rutas + reportes
-
-Ejecuta:
-
-- `supabase/migrations/20260808000008_ciclo7_routes_reports.sql`
-
-(`content_reports`, RPC `list_my_route_history`, `list_open_content_reports`).
-
-## Bootstrap root (obligatorio una vez)
-
-Tras iniciar sesión en la app con tu Google, ejecuta **todo este bloque** en SQL Editor:
-
-```sql
--- 1) Permitir bootstrap desde el SQL Editor (auth.uid() es null ahí)
-create or replace function public.prevent_role_escalation()
-returns trigger
-language plpgsql
-security definer
-set search_path = public
-as $$
-begin
-  if new.role is distinct from old.role then
-    if auth.uid() is null then
-      return new;
-    end if;
-    if not public.is_staff() then
-      raise exception 'Solo admin/root pueden cambiar roles';
-    end if;
-  end if;
-  return new;
-end;
-$$;
-
--- 2) Backfill si tu usuario ya existía antes del trigger
-insert into public.profiles (id, display_name, role)
-select id, coalesce(raw_user_meta_data->>'full_name', email), 'user'
-from auth.users
-on conflict (id) do nothing;
-
--- 3) Conviértete en root
-update public.profiles
-set role = 'root'
-where id = (select id from auth.users where email = 'johnftmovil@gmail.com');
-```
-
-## Designar admin (solo root/staff vía SQL por ahora)
-
-```sql
-update public.profiles
-set role = 'admin'
-where id = (select id from auth.users where email = 'otro@gmail.com');
-```
+- El trigger `prevent_role_escalation` ya permite cambios de rol desde el SQL Editor (`auth.uid()` null); no hace falta redefinir esa función en un `.md`.
+- No dejes SQL “suelto” solo en Markdown: la fuente de verdad son `migrations/` y `scripts/`.

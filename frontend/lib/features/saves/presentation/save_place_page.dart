@@ -7,9 +7,13 @@ import '../../../core/errors/user_facing_error.dart';
 import '../../admin/data/admin_models.dart';
 import '../../admin/data/admin_repository.dart';
 import '../data/draft_reminder_service.dart';
+import '../data/nominatim_geocoder.dart';
 import '../data/save_models.dart';
 import '../data/saves_repository.dart';
 import '../data/share_parser.dart';
+import 'location_picker_page.dart';
+
+const _kRequiredStar = Color(0xFFFF8C00);
 
 class SavePlacePage extends StatefulWidget {
   const SavePlacePage({
@@ -32,8 +36,10 @@ class _SavePlacePageState extends State<SavePlacePage> {
   final _cityCtrl = TextEditingController();
   final _deptCtrl = TextEditingController();
   final _addressCtrl = TextEditingController();
-  final _latCtrl = TextEditingController();
-  final _lngCtrl = TextEditingController();
+  final _categorySearchCtrl = TextEditingController();
+
+  double? _lat;
+  double? _lng;
 
   List<Category> _categories = [];
   final Set<String> _selectedCategoryIds = {};
@@ -62,8 +68,7 @@ class _SavePlacePageState extends State<SavePlacePage> {
     _cityCtrl.dispose();
     _deptCtrl.dispose();
     _addressCtrl.dispose();
-    _latCtrl.dispose();
-    _lngCtrl.dispose();
+    _categorySearchCtrl.dispose();
     super.dispose();
   }
 
@@ -82,6 +87,58 @@ class _SavePlacePageState extends State<SavePlacePage> {
         _loadingCats = false;
       });
     }
+  }
+
+  String _parentName(Category c) {
+    if (c.parentId == null) return '';
+    final parent = _categories.where((p) => p.id == c.parentId);
+    return parent.isEmpty ? '' : parent.first.nameEs;
+  }
+
+  List<Category> get _filteredCategories {
+    final q = _categorySearchCtrl.text.trim().toLowerCase();
+    if (q.isEmpty) return const [];
+    return _categories.where((c) {
+      final parent = _parentName(c).toLowerCase();
+      return c.nameEs.toLowerCase().contains(q) || parent.contains(q);
+    }).take(12).toList();
+  }
+
+  List<Category> get _selectedCategories {
+    return _categories
+        .where((c) => _selectedCategoryIds.contains(c.id))
+        .toList();
+  }
+
+  Future<void> _openMap() async {
+    final place = await Navigator.of(context).push<GeoPlace>(
+      MaterialPageRoute(
+        builder: (_) => LocationPickerPage(
+          initialLat: _lat,
+          initialLng: _lng,
+        ),
+      ),
+    );
+    if (place == null || !mounted) return;
+    setState(() {
+      _lat = place.lat;
+      _lng = place.lng;
+      if (place.city != null && place.city!.isNotEmpty) {
+        _cityCtrl.text = place.city!;
+      }
+      if (place.department != null && place.department!.isNotEmpty) {
+        _deptCtrl.text = place.department!;
+      }
+      if (place.addressLine != null && place.addressLine!.isNotEmpty) {
+        _addressCtrl.text = place.addressLine!;
+      }
+      // Solo rellenar nombre si está vacío (no pisar share/sugerencia previa).
+      if (_nameCtrl.text.trim().isEmpty &&
+          place.name != null &&
+          place.name!.isNotEmpty) {
+        _nameCtrl.text = place.name!;
+      }
+    });
   }
 
   Future<void> _pickPhoto() async {
@@ -117,19 +174,35 @@ class _SavePlacePageState extends State<SavePlacePage> {
     setState(() => _pendingPhoto = File(file.path));
   }
 
+  bool _validate() {
+    if (_isPhysical && (_lat == null || _lng == null)) {
+      setState(() => _error = 'Elige la ubicación en el mapa.');
+      return false;
+    }
+    if (_nameCtrl.text.trim().isEmpty) {
+      setState(() => _error = 'Escribe el nombre del lugar.');
+      return false;
+    }
+    if (_selectedCategoryIds.isEmpty) {
+      setState(() => _error = 'Selecciona al menos una categoría.');
+      return false;
+    }
+    return true;
+  }
+
   Future<void> _submit() async {
+    if (!_validate()) return;
     setState(() {
       _saving = true;
       _error = null;
     });
     try {
-      final lat = double.tryParse(_latCtrl.text.replaceAll(',', '.'));
-      final lng = double.tryParse(_lngCtrl.text.replaceAll(',', '.'));
-      final name = _nameCtrl.text.trim().isEmpty ? 'Sin nombre' : _nameCtrl.text.trim();
+      final lat = _lat;
+      final lng = _lng;
+      final name = _nameCtrl.text.trim();
 
       String? linkToExisting;
       final shouldCheckDuplicates = _isPhysical &&
-          name != 'Sin nombre' &&
           ((_isPublic) ||
               (lat != null && lng != null) ||
               _cityCtrl.text.trim().isNotEmpty);
@@ -145,17 +218,15 @@ class _SavePlacePageState extends State<SavePlacePage> {
           final chosen = await _askDuplicate(dupes.first);
           if (chosen == null) {
             setState(() => _saving = false);
-            return; // canceló
+            return;
           }
-          if (chosen) {
-            linkToExisting = dupes.first.siteId;
-          }
+          if (chosen) linkToExisting = dupes.first.siteId;
         }
       }
 
       final saved = await widget.savesRepository.createSave(
         SaveDraftInput(
-          name: _nameCtrl.text,
+          name: name,
           sourceUrl: _urlCtrl.text.trim().isEmpty ? null : _urlCtrl.text.trim(),
           sourceNetwork: _network,
           city: _cityCtrl.text,
@@ -219,11 +290,9 @@ class _SavePlacePageState extends State<SavePlacePage> {
     }
   }
 
-  /// `true` = mismo sitio, `false` = uno nuevo, `null` = cancelar
   Future<bool?> _askDuplicate(PossibleDuplicate d) {
-    final dist = d.distanceM == null
-        ? ''
-        : ' · ~${d.distanceM!.round()} m';
+    final dist =
+        d.distanceM == null ? '' : ' · ~${d.distanceM!.round()} m';
     return showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -252,162 +321,235 @@ class _SavePlacePageState extends State<SavePlacePage> {
     );
   }
 
+  Widget _label(String text, {bool required = false}) {
+    return Text.rich(
+      TextSpan(
+        children: [
+          TextSpan(
+            text: text,
+            style: Theme.of(context).textTheme.titleSmall,
+          ),
+          if (required)
+            const TextSpan(
+              text: ' *',
+              style: TextStyle(
+                color: _kRequiredStar,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  InputDecoration _dec(String label, {bool required = false, String? helper}) {
+    return InputDecoration(
+      label: required
+          ? Text.rich(
+              TextSpan(
+                children: [
+                  TextSpan(text: label),
+                  const TextSpan(
+                    text: ' *',
+                    style: TextStyle(
+                      color: _kRequiredStar,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            )
+          : Text(label),
+      border: const OutlineInputBorder(),
+      helperText: helper,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final roots = _categories.where((c) => c.isRoot).toList()
-      ..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
-
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Guardar lugar'),
-      ),
+      appBar: AppBar(title: const Text('Guardar lugar')),
       body: _loadingCats
           ? const Center(child: CircularProgressIndicator())
           : ListView(
               padding: const EdgeInsets.all(16),
               children: [
                 Text(
-                  'Desde Instagram, TikTok, Facebook y más',
+                  'Primero ubica el lugar; el mapa rellena ciudad y departamento.',
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
+                const SizedBox(height: 12),
+
+                // 1) Mapa primero
+                _label(
+                  _isPhysical ? 'Ubicación en el mapa' : 'Ubicación (opcional)',
+                  required: _isPhysical,
+                ),
+                const SizedBox(height: 8),
+                Card(
+                  child: ListTile(
+                    leading: Icon(
+                      Icons.map_outlined,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                    title: Text(
+                      _lat != null && _lng != null
+                          ? 'Punto listo'
+                          : 'Elegir en el mapa',
+                    ),
+                    subtitle: Text(
+                      _lat != null && _lng != null
+                          ? '${_lat!.toStringAsFixed(5)}, ${_lng!.toStringAsFixed(5)}'
+                          : 'Busca o toca el mapa (OpenStreetMap + Nominatim)',
+                    ),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: _saving ? null : _openMap,
+                  ),
+                ),
+                if (_lat != null)
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: TextButton(
+                      onPressed: _saving
+                          ? null
+                          : () => setState(() {
+                                _lat = null;
+                                _lng = null;
+                              }),
+                      child: const Text('Quitar ubicación'),
+                    ),
+                  ),
+
                 const SizedBox(height: 16),
+                // 2) Campos auto / editables
+                TextField(
+                  controller: _nameCtrl,
+                  decoration: _dec('Nombre del lugar', required: true),
+                  textCapitalization: TextCapitalization.words,
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _cityCtrl,
+                  decoration: _dec('Ciudad', helper: 'Se completa desde el mapa'),
+                  textCapitalization: TextCapitalization.words,
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _deptCtrl,
+                  decoration: _dec(
+                    'Departamento',
+                    helper: 'Se completa desde el mapa',
+                  ),
+                  textCapitalization: TextCapitalization.words,
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _addressCtrl,
+                  decoration: _dec('Dirección'),
+                  textCapitalization: TextCapitalization.sentences,
+                ),
+
+                const SizedBox(height: 16),
+                // 3) Link red social
                 TextField(
                   controller: _urlCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'Enlace de la publicación',
-                    hintText: 'Pega el enlace aquí…',
-                    border: OutlineInputBorder(),
-                    helperText: 'El enlace original siempre permanece privado',
+                  decoration: _dec(
+                    'Enlace de la red social',
+                    helper: 'El enlace original siempre permanece privado',
                   ),
+                  keyboardType: TextInputType.url,
                   onChanged: (v) {
                     final p = ShareParser.parse(v);
                     setState(() => _network = p.network);
                   },
                 ),
                 if (_network != null) ...[
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 6),
                   Text('Red detectada: $_network'),
                 ],
+
                 const SizedBox(height: 16),
-                TextField(
-                  controller: _nameCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'Nombre del lugar',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: _cityCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'Ciudad',
-                    border: OutlineInputBorder(),
-                    helperText:
-                        'Si no la conoces, déjala vacía → pendiente / borrador',
-                  ),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: _deptCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'Departamento',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: _addressCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'Dirección',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: _latCtrl,
-                        keyboardType: const TextInputType.numberWithOptions(
-                          decimal: true,
-                          signed: true,
-                        ),
-                        decoration: const InputDecoration(
-                          labelText: 'Lat (opc.)',
-                          border: OutlineInputBorder(),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: TextField(
-                        controller: _lngCtrl,
-                        keyboardType: const TextInputType.numberWithOptions(
-                          decimal: true,
-                          signed: true,
-                        ),
-                        decoration: const InputDecoration(
-                          labelText: 'Lng (opc.)',
-                          border: OutlineInputBorder(),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-                Text(
-                  'Categorías',
-                  style: Theme.of(context).textTheme.titleSmall,
-                ),
+                // 4) Categorías por búsqueda
+                _label('Categorías', required: true),
                 const SizedBox(height: 8),
-                ...roots.map((root) {
-                  final children = _categories
-                      .where((c) => c.parentId == root.id)
-                      .toList()
-                    ..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
-                  return ExpansionTile(
-                    title: Text(root.nameEs),
-                    children: [
-                      CheckboxListTile(
-                        dense: true,
-                        title: Text('${root.nameEs} (categoría)'),
-                        value: _selectedCategoryIds.contains(root.id),
-                        onChanged: (v) {
-                          setState(() {
-                            if (v == true) {
-                              _selectedCategoryIds.add(root.id);
-                            } else {
-                              _selectedCategoryIds.remove(root.id);
-                            }
-                          });
-                        },
-                      ),
-                      ...children.map(
-                        (c) => CheckboxListTile(
-                          dense: true,
-                          contentPadding: const EdgeInsets.only(left: 24),
-                          title: Text(
-                            c.ageRestricted ? '${c.nameEs} (+18)' : c.nameEs,
-                          ),
-                          value: _selectedCategoryIds.contains(c.id),
-                          onChanged: (v) {
-                            setState(() {
-                              if (v == true) {
-                                _selectedCategoryIds.add(c.id);
-                              } else {
-                                _selectedCategoryIds.remove(c.id);
-                              }
-                            });
-                          },
+                if (_selectedCategories.isNotEmpty)
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: _selectedCategories.map((c) {
+                      final parent = _parentName(c);
+                      final label = parent.isEmpty
+                          ? c.nameEs
+                          : '$parent › ${c.nameEs}';
+                      return InputChip(
+                        label: Text(
+                          c.ageRestricted ? '$label (+18)' : label,
                         ),
+                        onDeleted: _saving
+                            ? null
+                            : () => setState(
+                                  () => _selectedCategoryIds.remove(c.id),
+                                ),
+                      );
+                    }).toList(),
+                  ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: _categorySearchCtrl,
+                  decoration: const InputDecoration(
+                    hintText: 'Buscar categoría…',
+                    prefixIcon: Icon(Icons.search),
+                    border: OutlineInputBorder(),
+                    isDense: true,
+                  ),
+                  onChanged: (_) => setState(() {}),
+                ),
+                if (_categorySearchCtrl.text.trim().isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  ..._filteredCategories.map((c) {
+                    final parent = _parentName(c);
+                    final label = parent.isEmpty
+                        ? c.nameEs
+                        : '$parent › ${c.nameEs}';
+                    final selected = _selectedCategoryIds.contains(c.id);
+                    return CheckboxListTile(
+                      dense: true,
+                      contentPadding: EdgeInsets.zero,
+                      title: Text(
+                        c.ageRestricted ? '$label (+18)' : label,
                       ),
-                    ],
-                  );
-                }),
+                      value: selected,
+                      onChanged: (v) {
+                        setState(() {
+                          if (v == true) {
+                            _selectedCategoryIds.add(c.id);
+                          } else {
+                            _selectedCategoryIds.remove(c.id);
+                          }
+                        });
+                      },
+                    );
+                  }),
+                  if (_filteredCategories.isEmpty)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 8),
+                      child: Text('Sin coincidencias'),
+                    ),
+                ] else
+                  const Padding(
+                    padding: EdgeInsets.only(top: 6),
+                    child: Text(
+                      'Escribe para ver opciones y marcarlas.',
+                      style: TextStyle(fontSize: 12),
+                    ),
+                  ),
+
+                const SizedBox(height: 8),
                 SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
                   title: const Text('Es un lugar físico'),
                   subtitle: const Text(
-                    'Si no lo es (receta, tip, etc.), quedará siempre privado',
+                    'Si no lo es (receta, tip…), quedará siempre privado',
                   ),
                   value: _isPhysical,
                   onChanged: (v) => setState(() {
@@ -416,20 +558,15 @@ class _SavePlacePageState extends State<SavePlacePage> {
                   }),
                 ),
                 SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
                   title: const Text('Hacer público'),
-                  subtitle: Text(
-                    _isPhysical
-                        ? (_isPublic ? 'Visible para otros' : 'Solo para ti')
-                        : 'No aplica (contenido no físico)',
-                  ),
                   value: _isPublic,
                   onChanged: _isPhysical
                       ? (v) => setState(() => _isPublic = v)
                       : null,
                 ),
-                const SizedBox(height: 8),
                 OutlinedButton.icon(
-                  onPressed: _pickPhoto,
+                  onPressed: _saving ? null : _pickPhoto,
                   icon: const Icon(Icons.photo_outlined),
                   label: Text(
                     _pendingPhoto == null
@@ -441,10 +578,12 @@ class _SavePlacePageState extends State<SavePlacePage> {
                   const SizedBox(height: 12),
                   Text(
                     _error!,
-                    style: TextStyle(color: Theme.of(context).colorScheme.error),
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.error,
+                    ),
                   ),
                 ],
-                const SizedBox(height: 24),
+                const SizedBox(height: 20),
                 FilledButton(
                   onPressed: _saving ? null : _submit,
                   child: _saving
@@ -454,6 +593,11 @@ class _SavePlacePageState extends State<SavePlacePage> {
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
                       : const Text('Guardar'),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  '* Campos obligatorios',
+                  style: TextStyle(color: _kRequiredStar, fontSize: 12),
                 ),
               ],
             ),

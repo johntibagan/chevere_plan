@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 
 import '../../../core/errors/user_facing_error.dart';
+import '../../saves/data/nominatim_geocoder.dart';
+import '../../saves/presentation/location_picker_page.dart';
 import '../data/plan_builder.dart';
 import '../data/plans_repository.dart';
 import 'plan_detail_page.dart';
@@ -19,8 +21,8 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
   final _titleCtrl = TextEditingController();
   final _locationCtrl = TextEditingController();
   final _budgetCtrl = TextEditingController();
-  final _latCtrl = TextEditingController();
-  final _lngCtrl = TextEditingController();
+  double? _manualLat;
+  double? _manualLng;
   bool _includePublic = false;
   bool _useCurrentLocation = true;
   bool _saving = false;
@@ -31,16 +33,12 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
     _titleCtrl.dispose();
     _locationCtrl.dispose();
     _budgetCtrl.dispose();
-    _latCtrl.dispose();
-    _lngCtrl.dispose();
     super.dispose();
   }
 
   Future<(double?, double?)> _resolveStart() async {
     if (!_useCurrentLocation) {
-      final lat = double.tryParse(_latCtrl.text.replaceAll(',', '.'));
-      final lng = double.tryParse(_lngCtrl.text.replaceAll(',', '.'));
-      return (lat, lng);
+      return (_manualLat, _manualLng);
     }
     try {
       var permission = await Geolocator.checkPermission();
@@ -177,34 +175,40 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
             contentPadding: EdgeInsets.zero,
             title: const Text('Usar mi ubicación actual como inicio'),
             subtitle: const Text(
-              'Si está apagado, puedes poner lat/lng manualmente',
+              'Si está apagado, elige el punto de inicio en el mapa',
             ),
             value: _useCurrentLocation,
             onChanged: _saving
                 ? null
                 : (v) => setState(() => _useCurrentLocation = v),
           ),
-          if (!_useCurrentLocation) ...[
-            TextField(
-              controller: _latCtrl,
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true, signed: true),
-              decoration: const InputDecoration(
-                labelText: 'Latitud inicio',
-                border: OutlineInputBorder(),
+          if (!_useCurrentLocation)
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              title: Text(
+                _manualLat != null && _manualLng != null
+                    ? 'Inicio: ${_manualLat!.toStringAsFixed(5)}, ${_manualLng!.toStringAsFixed(5)}'
+                    : 'Elegir inicio en el mapa',
               ),
+              trailing: const Icon(Icons.map_outlined),
+              onTap: _saving
+                  ? null
+                  : () async {
+                      final result = await Navigator.of(context).push<GeoPlace>(
+                        MaterialPageRoute(
+                          builder: (_) => LocationPickerPage(
+                            initialLat: _manualLat,
+                            initialLng: _manualLng,
+                          ),
+                        ),
+                      );
+                      if (result == null || !mounted) return;
+                      setState(() {
+                        _manualLat = result.lat;
+                        _manualLng = result.lng;
+                      });
+                    },
             ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: _lngCtrl,
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true, signed: true),
-              decoration: const InputDecoration(
-                labelText: 'Longitud inicio',
-                border: OutlineInputBorder(),
-              ),
-            ),
-          ],
           if (_error != null) ...[
             const SizedBox(height: 12),
             Text(
