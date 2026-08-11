@@ -4,6 +4,9 @@ import '../../../core/logging/app_log.dart';
 import '../../plans/data/plan_hours_policy.dart';
 import 'search_models.dart';
 
+/// Tope del fallback local (sin RPC). La UI pagina en cliente de 20 en 20.
+const _kFallbackPublicCap = 100;
+
 class SearchRepository {
   SearchRepository({SupabaseClient? client})
       : _client = client ?? Supabase.instance.client;
@@ -91,7 +94,7 @@ class SearchRepository {
           )
           .eq('is_public', true)
           .not('location', 'is', null)
-          .limit(100);
+          .limit(_kFallbackPublicCap);
 
       final ownIds = hits.map((h) => h.siteId).toSet();
       for (final raw in pubRows as List<dynamic>) {

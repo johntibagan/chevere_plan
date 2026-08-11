@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 
+import '../../../core/cache/paged_items.dart';
 import '../../../core/di/providers.dart';
 import '../../../core/errors/user_facing_error.dart';
 import '../../../core/formatters/money_format.dart';
@@ -38,6 +39,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
   String? _error;
   List<SearchHit> _hits = const [];
   bool _searched = false;
+  int _visibleCount = PagedItems.defaultPageSize;
 
   @override
   void dispose() {
@@ -81,6 +83,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
     _hits = const [];
     _searched = false;
     _error = null;
+    _visibleCount = PagedItems.defaultPageSize;
   }
 
   Future<void> _runSearch() async {
@@ -98,7 +101,8 @@ class _SearchPageState extends ConsumerState<SearchPage> {
       _loading = true;
       _error = null;
       _searched = true;
-      _hits = const []; // no mostrar resultados viejos mientras busca
+      _hits = const [];
+      _visibleCount = PagedItems.defaultPageSize;
     });
 
     try {
@@ -387,46 +391,63 @@ class _SearchPageState extends ConsumerState<SearchPage> {
               child: Text(l10n.searchNoResults),
             )
           else
-            ..._hits.map(
-              (h) => AppListCard(
-                child: ListTile(
-                  title: Text(h.name),
-                  subtitle: Text(
-                    [
-                      if (h.city != null && h.city!.isNotEmpty) h.city!,
-                      if (h.department != null && h.department!.isNotEmpty)
-                        h.department!,
-                      if (h.estimatedPriceAmount != null)
-                        formatMoney(
-                          h.estimatedPriceAmount!,
-                          currencyCode: h.currencyCode,
-                        ),
-                      if (h.distanceKm != null)
-                        '${h.distanceKm!.toStringAsFixed(1)} km',
-                      if (h.isOwn) l10n.labelOwn,
-                    ].join(' · '),
+            ...() {
+              final visible = _hits.take(_visibleCount).toList();
+              final hasMore = _visibleCount < _hits.length;
+              return [
+                ...visible.map(
+                  (h) => AppListCard(
+                    child: ListTile(
+                      title: Text(h.name),
+                      subtitle: Text(
+                        [
+                          if (h.city != null && h.city!.isNotEmpty) h.city!,
+                          if (h.department != null && h.department!.isNotEmpty)
+                            h.department!,
+                          if (h.estimatedPriceAmount != null)
+                            formatMoney(
+                              h.estimatedPriceAmount!,
+                              currencyCode: h.currencyCode,
+                            ),
+                          if (h.distanceKm != null)
+                            '${h.distanceKm!.toStringAsFixed(1)} km',
+                          if (h.isOwn) l10n.labelOwn,
+                        ].join(' · '),
+                      ),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (!h.isOwn)
+                            const VisibilityBadge(isPublic: true, compact: true),
+                          const Icon(Icons.chevron_right),
+                        ],
+                      ),
+                      onTap: () async {
+                        final outcome = await openSiteDetail(
+                          context,
+                          hit: h,
+                          siteId: h.siteId,
+                        );
+                        if (outcome != SiteDetailOutcome.none && mounted) {
+                          await _runSearch();
+                        }
+                      },
+                    ),
                   ),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (!h.isOwn)
-                        const VisibilityBadge(isPublic: true, compact: true),
-                      const Icon(Icons.chevron_right),
-                    ],
-                  ),
-                  onTap: () async {
-                    final outcome = await openSiteDetail(
-                      context,
-                      hit: h,
-                      siteId: h.siteId,
-                    );
-                    if (outcome != SiteDetailOutcome.none && mounted) {
-                      await _runSearch();
-                    }
-                  },
                 ),
-              ),
-            ),
+                if (hasMore)
+                  TextButton(
+                    onPressed: () {
+                      setState(() {
+                        _visibleCount += PagedItems.defaultPageSize;
+                      });
+                    },
+                    child: Text(
+                      'Cargar más (${_hits.length - _visibleCount} restantes)',
+                    ),
+                  ),
+              ];
+            }(),
         ],
       ),
     );

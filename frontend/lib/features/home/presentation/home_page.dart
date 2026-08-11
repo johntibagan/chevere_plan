@@ -35,6 +35,8 @@ class HomePage extends ConsumerStatefulWidget {
 class _HomePageState extends ConsumerState<HomePage> {
   Profile? _profile;
   List<UserSave> _saves = [];
+  bool _hasMoreSaves = false;
+  bool _loadingMoreSaves = false;
   String? _error;
   bool _loading = true;
   int _tab = 0; // 0 inicio, 1 explorar, 2 planes, 3 rutas
@@ -84,7 +86,7 @@ class _HomePageState extends ConsumerState<HomePage> {
 
   Future<void> _bootstrap({bool forceRefresh = false}) async {
     final hasSaves =
-        (ref.read(mySavesProvider).valueOrNull?.isNotEmpty ?? false) ||
+        (ref.read(mySavesProvider).valueOrNull?.items.isNotEmpty ?? false) ||
             _saves.isNotEmpty;
     setState(() {
       if (!hasSaves) _loading = true;
@@ -100,7 +102,8 @@ class _HomePageState extends ConsumerState<HomePage> {
 
       final profile = await profileRepo.fetchCurrent();
       // SWR: sirve caché fresca/stale de inmediato; red en background si aplica.
-      final saves = await ref.read(mySavesProvider.future);
+      final page = await ref.read(mySavesProvider.future);
+      final saves = page.items;
       final cutoff =
           DateTime.now().toUtc().subtract(SavePolicies.draftRemindAfter);
       final stale = saves
@@ -115,6 +118,8 @@ class _HomePageState extends ConsumerState<HomePage> {
       setState(() {
         _profile = profile;
         _saves = saves;
+        _hasMoreSaves = page.hasMore;
+        _loadingMoreSaves = page.loadingMore;
         _loading = false;
       });
       if (stale.isNotEmpty) {
@@ -191,11 +196,13 @@ class _HomePageState extends ConsumerState<HomePage> {
   @override
   Widget build(BuildContext context) {
     // Mantener lista al día si SWR refresca en background.
-    ref.listen<AsyncValue<List<UserSave>>>(mySavesProvider, (prev, next) {
-      next.whenData((saves) {
+    ref.listen(mySavesProvider, (prev, next) {
+      next.whenData((page) {
         if (!mounted) return;
         setState(() {
-          _saves = saves;
+          _saves = page.items;
+          _hasMoreSaves = page.hasMore;
+          _loadingMoreSaves = page.loadingMore;
           _loading = false;
         });
       });
@@ -231,8 +238,12 @@ class _HomePageState extends ConsumerState<HomePage> {
               loading: _loading,
               error: _error,
               saves: _saves,
+              hasMoreSaves: _hasMoreSaves,
+              loadingMoreSaves: _loadingMoreSaves,
               profile: _profile,
               onRefresh: () => _bootstrap(forceRefresh: true),
+              onLoadMoreSaves: () =>
+                  ref.read(mySavesProvider.notifier).loadMore(),
               onOpenSave: _openSave,
               onOpenSite: _openSite,
               onProximity: _openProximityPrefs,
@@ -377,8 +388,11 @@ class _InicioTab extends StatelessWidget {
     required this.loading,
     required this.error,
     required this.saves,
+    required this.hasMoreSaves,
+    required this.loadingMoreSaves,
     required this.profile,
     required this.onRefresh,
+    required this.onLoadMoreSaves,
     required this.onOpenSave,
     required this.onOpenSite,
     required this.onProximity,
@@ -395,8 +409,11 @@ class _InicioTab extends StatelessWidget {
   final bool loading;
   final String? error;
   final List<UserSave> saves;
+  final bool hasMoreSaves;
+  final bool loadingMoreSaves;
   final Profile? profile;
   final Future<void> Function() onRefresh;
+  final Future<void> Function() onLoadMoreSaves;
   final Future<void> Function({String? shared, UserSave? existing}) onOpenSave;
   final Future<void> Function({UserSave? existing}) onOpenSite;
   final VoidCallback onProximity;
@@ -409,7 +426,7 @@ class _InicioTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final drafts = saves.where((s) => s.isIncomplete).toList();
-    final recent = saves.take(8).toList();
+    final recent = saves;
 
     return RefreshIndicator(
       color: AppColors.primary,
@@ -646,9 +663,27 @@ class _InicioTab extends StatelessWidget {
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
               sliver: SliverList.separated(
-                itemCount: recent.length,
+                itemCount: recent.length + (hasMoreSaves ? 1 : 0),
                 separatorBuilder: (_, _) => const SizedBox(height: 10),
                 itemBuilder: (context, i) {
+                  if (i >= recent.length) {
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      child: Center(
+                        child: loadingMoreSaves
+                            ? const SizedBox(
+                                width: 24,
+                                height: 24,
+                                child:
+                                    CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : TextButton(
+                                onPressed: onLoadMoreSaves,
+                                child: const Text('Cargar más'),
+                              ),
+                      ),
+                    );
+                  }
                   final s = recent[i];
                   return _SaveCard(
                     save: s,

@@ -66,6 +66,7 @@ class Plan {
     this.startLng,
     this.maxBudgetAmount,
     this.currencyCode = 'COP',
+    this.listedStopCount,
   });
 
   final String id;
@@ -79,7 +80,42 @@ class Plan {
   final String currencyCode;
   final String status;
   final List<PlanStop> stops;
+  /// Cuando el listado usa `plan_stops(count)` en vez de stops hidratados.
+  final int? listedStopCount;
+
+  int get stopCount => listedStopCount ?? stops.length;
 
   List<PlanStop> get pendingStops =>
       stops.where((s) => !s.isVisited).toList();
+
+  Map<String, dynamic> toCacheJson() => {
+        'id': id,
+        'user_id': userId,
+        'title': title,
+        'location_query': locationQuery,
+        'start_lat': startLat,
+        'start_lng': startLng,
+        'include_public': includePublic,
+        'max_budget_amount': maxBudgetAmount,
+        'currency_code': currencyCode,
+        'status': status,
+        'listed_stop_count': listedStopCount ?? stops.length,
+      };
+
+  factory Plan.fromCacheJson(Map<String, dynamic> json) {
+    return Plan(
+      id: json['id'] as String,
+      userId: json['user_id'] as String,
+      title: json['title'] as String? ?? 'Plan',
+      locationQuery: json['location_query'] as String? ?? '',
+      startLat: (json['start_lat'] as num?)?.toDouble(),
+      startLng: (json['start_lng'] as num?)?.toDouble(),
+      includePublic: json['include_public'] as bool? ?? false,
+      maxBudgetAmount: (json['max_budget_amount'] as num?)?.toDouble(),
+      currencyCode: json['currency_code'] as String? ?? 'COP',
+      status: json['status'] as String? ?? 'active',
+      stops: const [],
+      listedStopCount: (json['listed_stop_count'] as num?)?.toInt() ?? 0,
+    );
+  }
 }

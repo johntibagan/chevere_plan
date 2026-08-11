@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/cache/paged_items.dart';
 import '../../../core/di/providers.dart';
 import '../../../core/errors/user_facing_error.dart';
 import '../../../core/formatters/date_format.dart';
@@ -21,54 +24,55 @@ class MyRoutesPage extends ConsumerStatefulWidget {
 }
 
 class _MyRoutesPageState extends ConsumerState<MyRoutesPage> {
-  bool _loading = true;
-  String? _error;
-  List<RouteHistoryEntry> _entries = const [];
+  int _visible = PagedItems.defaultPageSize;
 
   @override
   void initState() {
     super.initState();
-    _load();
+    unawaited(ref.read(routesProvider.future));
   }
 
-  Future<void> _load() async {
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
-    try {
-      final entries = await widget.repository.listMine();
-      if (!mounted) return;
-      setState(() {
-        _entries = entries;
-        _loading = false;
-      });
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _error = userFacingError(e);
-        _loading = false;
-      });
-    }
+  Future<void> _refresh() async {
+    setState(() => _visible = PagedItems.defaultPageSize);
+    await ref.read(routesProvider.notifier).refresh(force: true);
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
+    final async = ref.watch(routesProvider);
+    final all = async.valueOrNull ?? const <RouteHistoryEntry>[];
+    final loading = async.isLoading && async.valueOrNull == null;
+    final error = async.hasError && async.valueOrNull == null
+        ? userFacingError(async.error!)
+        : null;
+    final visible = all.take(_visible).toList();
+    final hasMore = _visible < all.length;
+
     return Scaffold(
       appBar: AppBar(title: Text(l10n.routesTitle)),
       body: AppAsyncBody(
-        loading: _loading,
-        error: _error,
-        isEmpty: _entries.isEmpty,
+        loading: loading,
+        error: error,
+        isEmpty: all.isEmpty,
         emptyMessage: l10n.routesEmpty,
-        onRefresh: _load,
+        onRefresh: _refresh,
         child: ListView.builder(
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.all(16),
-          itemCount: _entries.length,
+          itemCount: visible.length + (hasMore ? 1 : 0),
           itemBuilder: (context, index) {
-            final e = _entries[index];
+            if (index >= visible.length) {
+              return TextButton(
+                onPressed: () {
+                  setState(() {
+                    _visible += PagedItems.defaultPageSize;
+                  });
+                },
+                child: const Text('Cargar más'),
+              );
+            }
+            final e = visible[index];
             return AppListCard(
               child: ListTile(
                 title: Text(e.siteName),

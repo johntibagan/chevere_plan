@@ -64,16 +64,23 @@ class SavesRepository {
         .toList();
   }
 
-  /// Lista para Inicio: mismas filas, columnas mínimas para pintar cards.
-  Future<List<UserSave>> listMineSummary() async {
+  /// Lista para Inicio: columnas mínimas. [limit]/[offset] vía PostgREST `.range`.
+  Future<List<UserSave>> listMineSummary({
+    int limit = 20,
+    int offset = 0,
+  }) async {
     final uid = _uid;
     if (uid == null) return [];
+
+    final from = offset < 0 ? 0 : offset;
+    final to = from + (limit < 1 ? 20 : limit) - 1;
 
     final rows = await _client
         .from('user_saves')
         .select(_saveSelectSummary)
         .eq('user_id', uid)
-        .order('created_at', ascending: false);
+        .order('created_at', ascending: false)
+        .range(from, to);
 
     return (rows as List)
         .map((e) => UserSave.fromJoinedJson(Map<String, dynamic>.from(e as Map)))

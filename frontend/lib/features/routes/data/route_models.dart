@@ -28,4 +28,18 @@ class RouteHistoryEntry {
       visitedAt: DateTime.parse(json['visited_at'] as String),
     );
   }
+
+  Map<String, dynamic> toCacheJson() => {
+        'stop_id': stopId,
+        'plan_id': planId,
+        'plan_title': planTitle,
+        'site_id': siteId,
+        'site_name': siteName,
+        'city': city,
+        'visited_at': visitedAt.toUtc().toIso8601String(),
+      };
+
+  factory RouteHistoryEntry.fromCacheJson(Map<String, dynamic> json) {
+    return RouteHistoryEntry.fromJson(json);
+  }
 }
