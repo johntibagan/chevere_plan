@@ -81,7 +81,9 @@ class _CheverePlanAppState extends State<CheverePlanApp> {
       title: 'Chevere Plan',
       navigatorKey: appNavigatorKey,
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.light(),
+      theme: AppTheme.dark(),
+      darkTheme: AppTheme.dark(),
+      themeMode: ThemeMode.dark,
       home: AuthGate(authRepository: widget.authRepository),
     );
   }

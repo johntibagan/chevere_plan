@@ -163,7 +163,7 @@ class _SearchPageState extends State<SearchPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Buscar'),
+        title: const Text('Explorar'),
         actions: [
           TextButton(
             onPressed: () {
@@ -179,7 +179,7 @@ class _SearchPageState extends State<SearchPage> {
         ],
       ),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
         children: [
           Text(
             _advanced ? 'Búsqueda avanzada' : 'Búsqueda general',

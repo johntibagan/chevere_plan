@@ -46,7 +46,7 @@ Notas de usabilidad y deuda suave. No bloquean el MVP funcional; se revisan al p
 
 ## Transversal / diseño
 
-- **Figma:** aplazar hasta petición explícita; no tocar interfaz visual de marca.
+- **Figma:** aplicado tema dark + shell (Inicio / Explorar / + / Planes / Rutas) según Make `HhANLxoeQuTr5YJZnTAfG7`. Refinar pixel-perfect por pantalla en iteraciones.
 - Errores al usuario: solo negocio o “Error en la app…” (regla 8).
 - Horarios de apertura: hook listo (`PlanHoursPolicy`); filtrado real cuando existan fichas (§8.2).
 - Textos legales MVP son borrador; versión formal revisada por abogado pendiente.

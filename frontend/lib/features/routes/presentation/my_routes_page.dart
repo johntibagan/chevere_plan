@@ -50,7 +50,7 @@ class _MyRoutesPageState extends State<MyRoutesPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Mis rutas')),
+      appBar: AppBar(title: const Text('Rutas')),
       body: RefreshIndicator(
         onRefresh: _load,
         child: _loading

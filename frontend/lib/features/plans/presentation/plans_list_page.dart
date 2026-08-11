@@ -59,11 +59,15 @@ class _PlansListPageState extends State<PlansListPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Mis planes')),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _openCreate,
-        icon: const Icon(Icons.route),
-        label: const Text('Armar plan'),
+      appBar: AppBar(title: const Text('Planes')),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(bottom: 8),
+        child: FloatingActionButton.extended(
+          onPressed: _openCreate,
+          icon: const Icon(Icons.auto_awesome),
+          label: const Text('Armar plan'),
+        ),
       ),
       body: RefreshIndicator(
         onRefresh: _load,
