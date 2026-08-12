@@ -137,17 +137,19 @@ def municipalities_as_sites(munis: list[dict]) -> list[dict]:
             continue
         name = title_es(raw_name)
         dept_name = title_es(dept)
+        # Sitio = punto emblemático del municipio (Maps abre por nombre, no pin crudo).
+        place_name = f'Plaza / parque principal de {name}'
         out.append(
             {
                 "external_id": f"co-muni-{code}",
-                "name": name,
+                "name": place_name,
                 "lat": lat,
                 "lng": lng,
-                "address_line": None,
+                "address_line": f'{name}, {dept_name}',
                 "department_name": dept_name,
                 "city_name": name,
                 "country_code": "CO",
-                "category_slugs": ["pueblo-ciudad"],
+                "category_slugs": ["plaza-principal", "pueblo-ciudad"],
                 "is_physical_place": True,
                 "estimated_price_amount": None,
                 "currency_code": "COP",
@@ -184,7 +186,7 @@ def pick_city(
     return None, None
 
 
-def ensure_external_id_column(cur) -> None:
+def ensure_schema(cur) -> None:
     cur.execute("alter table public.sites add column if not exists external_id text")
     cur.execute(
         """
@@ -202,6 +204,13 @@ def ensure_external_id_column(cur) -> None:
         $$;
         """
     )
+    cur.execute(
+        "alter table public.sites add column if not exists google_place_id text"
+    )
+
+
+def ensure_external_id_column(cur) -> None:
+    ensure_schema(cur)
 
 
 def upsert_batch(
@@ -264,6 +273,8 @@ def upsert_batch(
         price = s.get("estimated_price_amount")
         currency = (s.get("currency_code") or "COP").strip() or "COP"
         is_physical = bool(s.get("is_physical_place", True))
+        place_id = s.get("google_place_id")
+        place_id = str(place_id).strip() if place_id else None
 
         if dry_run:
             if inserted < 5 or "tunja" in fold(name):
@@ -282,12 +293,14 @@ def upsert_batch(
                   address_line, city, department, country_code,
                   city_id, department_id,
                   estimated_price_amount, currency_code,
+                  google_place_id,
                   created_by, location
                 ) values (
                   %s, %s, 'complete', true, %s,
                   %s, %s, %s, 'CO',
                   %s, %s,
                   %s, %s,
+                  %s,
                   %s,
                   st_setsrid(st_makepoint(%s, %s), 4326)::geography
                 )
@@ -303,6 +316,9 @@ def upsert_batch(
                   department_id = excluded.department_id,
                   estimated_price_amount = excluded.estimated_price_amount,
                   currency_code = excluded.currency_code,
+                  google_place_id = coalesce(
+                    excluded.google_place_id, public.sites.google_place_id
+                  ),
                   location = excluded.location,
                   updated_at = now()
                 returning id, (xmax = 0) as is_insert
@@ -318,6 +334,7 @@ def upsert_batch(
                     dept_id,
                     price,
                     currency,
+                    place_id,
                     owner_id,
                     lng_f,
                     lat_f,
@@ -406,11 +423,23 @@ def main() -> int:
             )
             row = cur.fetchone()
             owner_id = row[0] if row else None
-            print(
-                f"owner = {args.owner_email}"
-                if owner_id
-                else f"aviso: {args.owner_email} no en Auth"
-            )
+            if owner_id is None:
+                print(f"aviso: {args.owner_email} no en Auth")
+            else:
+                cur.execute(
+                    """
+                    insert into public.profiles (id, display_name, role)
+                    select id,
+                           coalesce(raw_user_meta_data->>'full_name', email),
+                           'user'
+                    from auth.users
+                    where id = %s
+                    on conflict (id) do nothing
+                    """,
+                    (owner_id,),
+                )
+                print(f"owner = {args.owner_email}")
+            conn.commit()
 
             cur.execute(
                 """

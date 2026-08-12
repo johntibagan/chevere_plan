@@ -21,6 +21,7 @@ class SiteFicha {
     this.distanceKm,
     this.lat,
     this.lng,
+    this.googlePlaceId,
   });
 
   final String siteId;
@@ -40,6 +41,7 @@ class SiteFicha {
   final double? distanceKm;
   final double? lat;
   final double? lng;
+  final String? googlePlaceId;
 
   bool get isOwn => ownSave != null;
 
@@ -70,6 +72,7 @@ class SiteFicha {
         'distance_km': distanceKm,
         'lat': lat,
         'lng': lng,
+        'google_place_id': googlePlaceId,
       };
 
   factory SiteFicha.fromCacheJson(Map<String, dynamic> json) {
@@ -101,6 +104,7 @@ class SiteFicha {
       distanceKm: (json['distance_km'] as num?)?.toDouble(),
       lat: (json['lat'] as num?)?.toDouble(),
       lng: (json['lng'] as num?)?.toDouble(),
+      googlePlaceId: json['google_place_id'] as String?,
     );
   }
 
@@ -118,6 +122,7 @@ class SiteFicha {
       sourceUrl: save.sourceUrl,
       alsoSharedBy: save.alsoSharedBy,
       ownSave: save,
+      googlePlaceId: save.googlePlaceId,
     );
   }
 
@@ -171,6 +176,7 @@ class SiteFicha {
       isPublic: site['is_public'] as bool? ?? false,
       isPhysicalPlace: site['is_physical_place'] as bool? ?? true,
       alsoSharedBy: contribs,
+      googlePlaceId: site['google_place_id'] as String?,
     );
   }
 
@@ -180,6 +186,7 @@ class SiteFicha {
     double? distanceKm,
     double? lat,
     double? lng,
+    String? googlePlaceId,
   }) {
     return SiteFicha(
       siteId: siteId,
@@ -199,6 +206,7 @@ class SiteFicha {
       distanceKm: distanceKm ?? this.distanceKm,
       lat: lat ?? this.lat,
       lng: lng ?? this.lng,
+      googlePlaceId: googlePlaceId ?? this.googlePlaceId,
     );
   }
 }

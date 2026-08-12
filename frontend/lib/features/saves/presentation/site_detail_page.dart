@@ -15,6 +15,7 @@ import '../../../core/widgets/app_network_image.dart';
 import '../../../core/widgets/visibility_badge.dart';
 import '../../moderation/data/moderation_models.dart';
 import '../../search/data/search_models.dart';
+import '../data/google_maps_links.dart';
 import '../data/save_models.dart';
 import '../data/site_ficha.dart';
 import '../data/social_link_models.dart';
@@ -233,20 +234,26 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
     await launchUrl(uri, mode: LaunchMode.externalApplication);
   }
 
-  bool _hasCoords(SiteFicha? ficha) {
-    return ficha != null && ficha.lat != null && ficha.lng != null;
+  bool _canOpenMaps(SiteFicha? ficha) {
+    if (ficha == null) return false;
+    if (ficha.lat != null && ficha.lng != null) return true;
+    if ((ficha.googlePlaceId ?? '').trim().isNotEmpty) return true;
+    return ficha.name.trim().isNotEmpty;
   }
 
   Future<void> _openPlaceOnMaps(SiteFicha ficha) async {
-    final lat = ficha.lat;
-    final lng = ficha.lng;
-    if (lat == null || lng == null) {
+    if (!_canOpenMaps(ficha)) {
       if (!mounted) return;
       AppToast.show(context, context.l10n.siteDetailNoCoords, error: true);
       return;
     }
-    final uri = Uri.parse(
-      'https://www.google.com/maps/search/?api=1&query=$lat,$lng',
+    final uri = GoogleMapsLinks.viewPlace(
+      name: ficha.name,
+      city: ficha.city,
+      department: ficha.department,
+      googlePlaceId: ficha.googlePlaceId,
+      lat: ficha.lat,
+      lng: ficha.lng,
     );
     final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
     if (!ok && mounted) {
@@ -255,15 +262,18 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
   }
 
   Future<void> _openDirectionsOnMaps(SiteFicha ficha) async {
-    final lat = ficha.lat;
-    final lng = ficha.lng;
-    if (lat == null || lng == null) {
+    if (!_canOpenMaps(ficha)) {
       if (!mounted) return;
       AppToast.show(context, context.l10n.siteDetailNoCoords, error: true);
       return;
     }
-    final uri = Uri.parse(
-      'https://www.google.com/maps/dir/?api=1&destination=$lat,$lng',
+    final uri = GoogleMapsLinks.directionsTo(
+      name: ficha.name,
+      city: ficha.city,
+      department: ficha.department,
+      googlePlaceId: ficha.googlePlaceId,
+      lat: ficha.lat,
+      lng: ficha.lng,
     );
     final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
     if (!ok && mounted) {
@@ -503,10 +513,10 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
                         onAddPhoto: ficha.isOwn ? _addPhoto : null,
                         onPhotoMenu: _onPhotoMenu,
                         onOpenLink: _openUrl,
-                        onOpenPlaceOnMaps: _hasCoords(ficha)
+                        onOpenPlaceOnMaps: _canOpenMaps(ficha)
                             ? () => _openPlaceOnMaps(ficha)
                             : null,
-                        onOpenDirectionsOnMaps: _hasCoords(ficha)
+                        onOpenDirectionsOnMaps: _canOpenMaps(ficha)
                             ? () => _openDirectionsOnMaps(ficha)
                             : null,
                       ),

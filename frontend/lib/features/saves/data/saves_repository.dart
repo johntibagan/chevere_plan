@@ -20,7 +20,7 @@ class SavesRepository {
       'id, user_id, site_id, status, is_public, source_url, source_network, notes, created_at, '
       'is_possible_duplicate, possible_duplicate_of_site_id, '
       'sites!user_saves_site_id_fkey(name, city, city_id, department, department_id, address_line, is_public, '
-      'is_physical_place, '
+      'is_physical_place, google_place_id, '
       'site_categories(categories(name_i18n)), '
       'site_contributors(user_id, profiles(display_name)))';
 
@@ -476,6 +476,7 @@ class SavesRepository {
 
   static const _siteSelect =
       'id, name, city, department, address_line, is_public, is_physical_place, '
+      'google_place_id, '
       'site_categories(categories(name_i18n)), '
       'site_contributors(user_id, profiles(display_name))';
 

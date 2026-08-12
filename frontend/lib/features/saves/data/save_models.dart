@@ -81,6 +81,7 @@ class UserSave {
     this.possibleDuplicateOfSiteId,
     this.alsoSharedBy = const [],
     this.isPhysicalPlace = true,
+    this.googlePlaceId,
   });
 
   final String id;
@@ -103,6 +104,7 @@ class UserSave {
   final String? possibleDuplicateOfSiteId;
   final List<String> alsoSharedBy;
   final bool isPhysicalPlace;
+  final String? googlePlaceId;
 
   bool get isIncomplete => status != SiteStatus.complete;
 
@@ -127,6 +129,7 @@ class UserSave {
         'possible_duplicate_of_site_id': possibleDuplicateOfSiteId,
         'also_shared_by': alsoSharedBy,
         'is_physical_place': isPhysicalPlace,
+        'google_place_id': googlePlaceId,
       };
 
   factory UserSave.fromCacheJson(Map<String, dynamic> json) {
@@ -160,6 +163,7 @@ class UserSave {
               .toList() ??
           const [],
       isPhysicalPlace: json['is_physical_place'] as bool? ?? true,
+      googlePlaceId: json['google_place_id'] as String?,
     );
   }
 
@@ -211,6 +215,7 @@ class UserSave {
           json['possible_duplicate_of_site_id'] as String?,
       alsoSharedBy: contribs,
       isPhysicalPlace: site['is_physical_place'] as bool? ?? true,
+      googlePlaceId: site['google_place_id'] as String?,
     );
   }
 }
