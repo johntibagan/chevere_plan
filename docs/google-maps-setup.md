@@ -42,7 +42,7 @@ flutter run --dart-define-from-file=.env
   3. Parse gratis (`!3d!4d` / nombre / CID)
   4. Si falta pin → **1× Place Details** (ChIJ o CID)
   5. Reverse **solo** si hay coords y falta ciudad
-  6. Sin Google key: un HTML ligero como último recurso (no cadena de probes)
+  6. Si aún no hay pin: un HTML ligero (no cadena de probes)
 - Buscador del mapa → **solo al pulsar 🔍** (sin teclas).
 - Autocomplete con **session token** → al elegir, Place Details y fin de sesión.
 - Tap en mapa → **1× Geocoding reverse**.

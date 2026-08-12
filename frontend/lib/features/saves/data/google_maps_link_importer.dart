@@ -7,8 +7,6 @@ import 'geo_place.dart';
 import 'google_places_cache.dart';
 import 'google_places_client.dart';
 import 'place_geocoder.dart';
-import 'geo_place.dart';
-import 'google_places_client.dart';
 
 /// Resultado de importar un enlace de Google Maps.
 class GoogleMapsImportResult {
@@ -203,8 +201,8 @@ class GoogleMapsLinkImporter {
       }
     }
 
-    // Sin Google: un único HTML solo si aún no hay pin (último recurso).
-    if (!hasExactPin && !_places.isConfigured) {
+    // Último recurso: un HTML si aún no hay pin (p. ej. consent sin CID en Location).
+    if (!hasExactPin) {
       try {
         final body = await _fetchBody(resolved);
         final fromHtml = _extractMapsUriFromHtml(body);
