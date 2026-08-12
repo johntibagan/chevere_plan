@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:geolocator/geolocator.dart';
 
+import '../../../core/cache/cache_ttl.dart';
 import '../../../core/di/providers.dart';
-import '../../../core/errors/user_facing_error.dart';
+import '../../../core/l10n/context_l10n.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_toast.dart';
-import '../../../core/formatters/money_format.dart';
-import '../data/maps_export.dart';
-import '../data/plan_builder.dart';
+import '../../saves/presentation/open_site_detail.dart';
 import '../data/plan_models.dart';
 import '../data/plans_repository.dart';
-import '../data/transport_suggester.dart';
+import 'plan_builder_page.dart';
+import 'plan_timeline.dart';
 
 class PlanDetailPage extends ConsumerStatefulWidget {
   const PlanDetailPage({
@@ -28,12 +29,7 @@ class PlanDetailPage extends ConsumerStatefulWidget {
 
 class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
   Plan? _plan;
-  TransportSuggester? _suggester;
   bool _loading = true;
-  String? _error;
-
-  /// Paradas marcadas para incluir en Maps (orden = sort_order del plan).
-  final Set<String> _mapsSelectedIds = {};
 
   @override
   void initState() {
@@ -42,446 +38,173 @@ class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
   }
 
   Future<void> _load() async {
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
+    setState(() => _loading = true);
     try {
       final plan = await widget.repository.fetchById(widget.planId);
-      final transports = await ref.read(transportTypesProvider.future);
       if (!mounted) return;
       setState(() {
         _plan = plan;
-        _suggester = TransportSuggester(types: transports);
-        _syncSelectionWithPlan(plan);
         _loading = false;
       });
     } catch (e) {
       if (!mounted) return;
-      setState(() {
-        _error = 'failed';
-        _loading = false;
-      });
+      setState(() => _loading = false);
       AppToast.error(context, e, logContext: 'plan_detail');
     }
   }
 
-  /// Por defecto: pendientes (no visitados). Conserva selección previa válida.
-  void _syncSelectionWithPlan(Plan plan) {
-    final validIds = plan.stops.map((s) => s.id).toSet();
-    _mapsSelectedIds.removeWhere((id) => !validIds.contains(id));
-    if (_mapsSelectedIds.isEmpty) {
-      for (final s in plan.stops) {
-        if (!s.isVisited) _mapsSelectedIds.add(s.id);
-      }
+  Future<void> _invalidatePlansCache() async {
+    final uid = ref.read(supabaseClientProvider).auth.currentUser?.id;
+    if (uid != null) {
+      await ref
+          .read(entityCacheStoreProvider)
+          .invalidate(CacheKeys.plansPage0(uid));
     }
+    ref.invalidate(plansProvider);
   }
 
-  List<PlanStop> get _selectedStopsInOrder {
-    final plan = _plan;
-    if (plan == null) return const [];
-    return plan.stops
-        .where((s) => _mapsSelectedIds.contains(s.id))
-        .toList();
+  Future<void> _openBuilder() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => PlanBuilderPage(
+          planId: widget.planId,
+          repository: widget.repository,
+        ),
+      ),
+    );
+    await _load();
+    await _invalidatePlansCache();
   }
 
-  String get _routePreview {
-    final selected = _selectedStopsInOrder;
-    if (selected.isEmpty) return 'Ninguna parada seleccionada para Maps';
-    final names = selected.map((s) => s.siteName).join(' → ');
-    return 'Ruta a Maps (${selected.length}): Mi ubicación → $names';
-  }
-
-  void _toggleMapsSelect(PlanStop stop) {
-    setState(() {
-      if (_mapsSelectedIds.contains(stop.id)) {
-        _mapsSelectedIds.remove(stop.id);
-      } else {
-        _mapsSelectedIds.add(stop.id);
-      }
-    });
-  }
-
-  Future<void> _onReorder(int oldIndex, int newIndex) async {
+  Future<void> _share() async {
     final plan = _plan;
     if (plan == null) return;
-    final stops = List<PlanStop>.from(plan.stops);
-    final item = stops.removeAt(oldIndex);
-    final insertAt = newIndex.clamp(0, stops.length);
-    stops.insert(insertAt, item);
-    setState(() {
-      _plan = Plan(
-        id: plan.id,
-        userId: plan.userId,
-        title: plan.title,
-        locationQuery: plan.locationQuery,
-        startLat: plan.startLat,
-        startLng: plan.startLng,
-        includePublic: plan.includePublic,
-        maxBudgetAmount: plan.maxBudgetAmount,
-        currencyCode: plan.currencyCode,
-        status: plan.status,
-        stops: [
-          for (var i = 0; i < stops.length; i++)
-            stops[i].copyWith(sortOrder: i),
-        ],
-      );
-    });
-    try {
-      await widget.repository.reorderStops(
-        planId: plan.id,
-        ordered: _plan!.stops,
-      );
-    } catch (e) {
-      if (!mounted) return;
-      AppToast.error(context, e);
-      await _load();
-    }
+    final text = [
+      plan.title,
+      if (plan.stops.isNotEmpty)
+        plan.stops.map((s) => '• ${s.siteName}').join('\n'),
+    ].join('\n');
+    await Clipboard.setData(ClipboardData(text: text));
+    if (!mounted) return;
+    AppToast.show(context, context.l10n.planShareCopied);
   }
 
-  Future<void> _toggleVisited(PlanStop stop) async {
-    final willVisit = !stop.isVisited;
-    try {
-      await widget.repository.setVisited(
-        stopId: stop.id,
-        visited: willVisit,
-      );
-      // Visitado → sale de la ruta a Maps; pendiente → se puede volver a incluir.
-      setState(() {
-        if (willVisit) {
-          _mapsSelectedIds.remove(stop.id);
-        } else {
-          _mapsSelectedIds.add(stop.id);
-        }
-      });
-      await _load();
-    } catch (e) {
-      if (!mounted) return;
-      AppToast.error(context, e);
-    }
-  }
-
-  Future<void> _editPrice(PlanStop stop) async {
-    final ctrl = TextEditingController(
-      text: stop.displayPrice?.toStringAsFixed(0) ?? '',
-    );
-    final amount = await showDialog<double?>(
+  Future<void> _delete() async {
+    final l10n = context.l10n;
+    final ok = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Estimado por persona'),
-        content: TextField(
-          controller: ctrl,
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          decoration: const InputDecoration(
-            labelText: 'COP (vacío = sin estimado)',
-            border: OutlineInputBorder(),
-          ),
-        ),
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n.planDeleteTitle),
+        content: Text(l10n.planDeleteConfirm),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancelar'),
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(l10n.actionCancel),
           ),
           FilledButton(
-            onPressed: () {
-              final t = ctrl.text.trim();
-              if (t.isEmpty) {
-                Navigator.pop(context, -1.0);
-                return;
-              }
-              final v = double.tryParse(t.replaceAll(',', '.'));
-              Navigator.pop(context, v);
-            },
-            child: const Text('Guardar'),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(l10n.actionDelete),
           ),
         ],
       ),
     );
-    if (amount == null) return;
+    if (ok != true) return;
     try {
-      await widget.repository.setStopEstimatedPrice(
-        stopId: stop.id,
-        amount: amount < 0 ? null : amount,
-      );
-      await _load();
+      await widget.repository.deletePlan(widget.planId);
+      await _invalidatePlansCache();
+      if (!mounted) return;
+      Navigator.of(context).pop();
     } catch (e) {
       if (!mounted) return;
-      AppToast.error(context, e);
+      AppToast.error(context, e, logContext: 'plan_delete');
     }
-  }
-
-  Future<(double, double)?> _originForMaps() async {
-    final plan = _plan;
-    try {
-      var permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-      }
-      if (permission == LocationPermission.whileInUse ||
-          permission == LocationPermission.always) {
-        final pos = await Geolocator.getCurrentPosition(
-          locationSettings: const LocationSettings(
-            accuracy: LocationAccuracy.medium,
-          ),
-        );
-        return (pos.latitude, pos.longitude);
-      }
-    } catch (_) {}
-    if (plan?.startLat != null && plan?.startLng != null) {
-      return (plan!.startLat!, plan.startLng!);
-    }
-    return null;
-  }
-
-  Future<void> _sendToMaps() async {
-    final plan = _plan;
-    if (plan == null) return;
-
-    final selected = _selectedStopsInOrder;
-    if (selected.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Selecciona al menos una parada para enviar a Maps.'),
-        ),
-      );
-      return;
-    }
-
-    final missingCoords =
-        selected.where((s) => s.lat == null || s.lng == null).toList();
-    if (missingCoords.isNotEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Falta ubicación en: ${missingCoords.map((s) => s.siteName).join(', ')}',
-          ),
-        ),
-      );
-      return;
-    }
-
-    final origin = await _originForMaps();
-    if (origin == null) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Activa la ubicación o define un punto de inicio para exportar.',
-          ),
-        ),
-      );
-      return;
-    }
-
-    try {
-      final ok = await openGoogleMapsDirections(
-        originLat: origin.$1,
-        originLng: origin.$2,
-        stopsInOrder: selected,
-      );
-      if (!ok && mounted) {
-        AppToast.show(context, kGenericAppError, error: true);
-      }
-    } catch (e) {
-      if (!mounted) return;
-      AppToast.error(context, e);
-    }
-  }
-
-  String _legTransportLabel(double? fromLat, double? fromLng, PlanStop to) {
-    final suggester = _suggester;
-    if (suggester == null ||
-        fromLat == null ||
-        fromLng == null ||
-        to.lat == null ||
-        to.lng == null) {
-      return '';
-    }
-    final km = haversineKm(
-      LatLngPoint(fromLat, fromLng),
-      LatLngPoint(to.lat!, to.lng!),
-    );
-    final opts = suggester.suggestForDistanceKm(km);
-    if (opts.isEmpty) return '${km.toStringAsFixed(1)} km';
-    return '${km.toStringAsFixed(1)} km · ${opts.map((t) => t.nameEs).join(' / ')}';
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final plan = _plan;
-    final selectedCount = _selectedStopsInOrder.length;
+
     return Scaffold(
       appBar: AppBar(
-        title: Text(plan?.title ?? 'Plan'),
+        title: Text(plan?.title ?? l10n.plansTitle),
         actions: [
           if (plan != null)
-            IconButton(
-              tooltip: 'Enviar a Maps',
-              onPressed: _sendToMaps,
-              icon: const Icon(Icons.map_outlined),
+            PopupMenuButton<_PlanMenu>(
+              icon: const Icon(Icons.more_vert),
+              onSelected: (value) {
+                switch (value) {
+                  case _PlanMenu.addSites:
+                    _openBuilder();
+                  case _PlanMenu.share:
+                    _share();
+                  case _PlanMenu.delete:
+                    _delete();
+                }
+              },
+              itemBuilder: (context) => [
+                PopupMenuItem(
+                  value: _PlanMenu.addSites,
+                  child: Text(l10n.planMenuAddSites),
+                ),
+                PopupMenuItem(
+                  value: _PlanMenu.share,
+                  child: Text(l10n.planMenuShare),
+                ),
+                PopupMenuItem(
+                  value: _PlanMenu.delete,
+                  child: Text(l10n.actionDelete),
+                ),
+              ],
             ),
         ],
       ),
-      floatingActionButton: plan == null
-          ? null
-          : FloatingActionButton.extended(
-              onPressed: _sendToMaps,
-              icon: const Icon(Icons.directions),
-              label: Text(
-                selectedCount == 0
-                    ? 'Enviar a Maps'
-                    : 'Enviar a Maps ($selectedCount)',
-              ),
-            ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
-          : _error != null
-              ? Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: const Text(
-                      'No se pudo cargar. Intenta de nuevo.',
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                )
-              : plan == null
-                  ? const SizedBox.shrink()
-                  : Column(
-                      children: [
-                        Material(
-                          color: Theme.of(context)
-                              .colorScheme
-                              .surfaceContainerHighest,
-                          child: Padding(
-                            padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Icon(
-                                  Icons.route,
-                                  color: Theme.of(context).colorScheme.primary,
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Text(
-                                    _routePreview,
-                                    style:
-                                        Theme.of(context).textTheme.bodyMedium,
-                                  ),
-                                ),
-                              ],
+          : plan == null
+              ? Center(child: Text(l10n.actionRetry))
+              : Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(
+                        AppSpacing.lg,
+                        AppSpacing.md,
+                        AppSpacing.lg,
+                        AppSpacing.sm,
+                      ),
+                      child: Text(
+                        plan.status == 'draft'
+                            ? l10n.planStatusDraft
+                            : l10n.planStopsCount(plan.stops.length),
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: AppColors.muted,
                             ),
-                          ),
-                        ),
-                        Expanded(
-                          child: RefreshIndicator(
-                            onRefresh: _load,
-                            child: ReorderableListView.builder(
-                              padding:
-                                  const EdgeInsets.fromLTRB(16, 12, 16, 96),
-                              itemCount: plan.stops.length + 1,
-                              onReorderItem: (oldIndex, newIndex) {
-                                if (oldIndex == 0 || newIndex == 0) return;
-                                _onReorder(oldIndex - 1, newIndex - 1);
-                              },
-                              itemBuilder: (context, index) {
-                                if (index == 0) {
-                                  return Card(
-                                    key: const ValueKey('header'),
-                                    child: ListTile(
-                                      title: Text(plan.locationQuery),
-                                      subtitle: Text(
-                                        [
-                                          if (plan.includePublic)
-                                            'Incluye públicos',
-                                          if (plan.maxBudgetAmount != null)
-                                            'Tope ${formatMoney(plan.maxBudgetAmount!, currencyCode: plan.currencyCode)}',
-                                          '${plan.stops.length} paradas',
-                                          'Marca el check para incluir en Maps',
-                                        ].join(' · '),
-                                      ),
-                                    ),
-                                  );
-                                }
-                                final stop = plan.stops[index - 1];
-                                double? fromLat = plan.startLat;
-                                double? fromLng = plan.startLng;
-                                if (index > 1) {
-                                  final prev = plan.stops[index - 2];
-                                  fromLat = prev.lat;
-                                  fromLng = prev.lng;
-                                }
-                                final leg = _legTransportLabel(
-                                  fromLat,
-                                  fromLng,
-                                  stop,
-                                );
-                                final inMaps =
-                                    _mapsSelectedIds.contains(stop.id);
-                                return Card(
-                                  key: ValueKey(stop.id),
-                                  child: ListTile(
-                                    leading: Checkbox(
-                                      value: inMaps,
-                                      onChanged: (_) =>
-                                          _toggleMapsSelect(stop),
-                                    ),
-                                    title: Text(
-                                      '${stop.sortOrder + 1}. ${stop.siteName}',
-                                      style: TextStyle(
-                                        decoration: stop.isVisited
-                                            ? TextDecoration.lineThrough
-                                            : null,
-                                      ),
-                                    ),
-                                    subtitle: Text(
-                                      [
-                                        if (stop.city != null) stop.city!,
-                                        if (leg.isNotEmpty) leg,
-                                        if (stop.displayPrice != null)
-                                          'Estimado: ${formatMoney(stop.displayPrice!, currencyCode: plan.currencyCode)}',
-                                        if (stop.isVisited) 'Visitado',
-                                        if (stop.lat == null ||
-                                            stop.lng == null)
-                                          'Sin coordenadas',
-                                      ].join(' · '),
-                                    ),
-                                    isThreeLine: true,
-                                    trailing: Wrap(
-                                      spacing: 0,
-                                      children: [
-                                        IconButton(
-                                          tooltip: stop.isVisited
-                                              ? 'Marcar pendiente'
-                                              : 'Marcar visitado',
-                                          onPressed: () =>
-                                              _toggleVisited(stop),
-                                          icon: Icon(
-                                            stop.isVisited
-                                                ? Icons.check_circle
-                                                : Icons.check_circle_outline,
-                                          ),
-                                        ),
-                                        IconButton(
-                                          tooltip: 'Estimado',
-                                          onPressed: () => _editPrice(stop),
-                                          icon: const Icon(
-                                            Icons.payments_outlined,
-                                          ),
-                                        ),
-                                        const Icon(Icons.drag_handle),
-                                      ],
-                                    ),
-                                    onTap: () => _toggleMapsSelect(stop),
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
+                    Expanded(
+                      child: PlanTimeline(
+                        stops: plan.stops,
+                        emptyLabel: l10n.planTimelineEmpty,
+                        onStopTap: (stop) => openSiteDetail(
+                          context,
+                          siteId: stop.siteId,
+                        ),
+                      ),
+                    ),
+                    if (plan.stops.isEmpty)
+                      Padding(
+                        padding: const EdgeInsets.all(AppSpacing.lg),
+                        child: FilledButton.icon(
+                          onPressed: _openBuilder,
+                          icon: const Icon(Icons.add),
+                          label: Text(l10n.planMenuAddSites),
+                        ),
+                      ),
+                  ],
+                ),
     );
   }
 }
+
+enum _PlanMenu { addSites, share, delete }

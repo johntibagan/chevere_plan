@@ -140,7 +140,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get plansEmpty =>
-      'Aún no tienes planes. Arma uno a partir de tus guardados por ciudad o departamento.';
+      'Aún no tienes planes. Crea uno y agrega sitios cuando quieras.';
 
   @override
   String get plansCreateFab => 'Armar plan';
@@ -578,38 +578,60 @@ class AppLocalizationsEs extends AppLocalizations {
   String get planCreateTitle => 'Armar plan';
 
   @override
-  String get planIncludePublic => 'Incluir guardados públicos';
+  String get planCreateStepTitleHint =>
+      'Ponle un nombre al plan. Luego eliges los sitios.';
 
   @override
-  String get planUseMyLocation => 'Usar mi ubicación actual como inicio';
-
-  @override
-  String get planGenerate => 'Generar plan';
-
-  @override
-  String get planNeedCity => 'Indica una ciudad o departamento.';
+  String get actionNext => 'Siguiente';
 
   @override
   String get planTitleOptional => 'Título (opcional)';
 
   @override
-  String get planLocationLabel => 'Ciudad o departamento';
+  String get planTabSearch => 'Buscar';
 
   @override
-  String get planLocationHint => 'Ej. Villa de Leyva / Boyacá';
+  String get planTabResults => 'Resultados';
 
   @override
-  String get planBudgetLabel => 'Presupuesto máx. por sitio (opcional)';
+  String planTabAdded(int count) {
+    return 'Agregados ($count)';
+  }
 
   @override
-  String get planEstimatedPerPerson => 'Estimado por persona';
+  String get planTimelineEmpty => 'Aún no hay sitios. Busca y agrégalos.';
 
   @override
-  String get planSelectStops =>
-      'Selecciona al menos una parada para enviar a Maps.';
+  String get planSearchFirst => 'Busca arriba y verás los resultados aquí.';
 
   @override
-  String get planBudgetHint => 'Vacío = sin estimado';
+  String get planAddSite => 'Agregar al plan';
+
+  @override
+  String get planSiteAdded => 'Sitio agregado al plan.';
+
+  @override
+  String get planStatusDraft => 'Borrador';
+
+  @override
+  String planStopsCount(int count) {
+    return '$count sitios';
+  }
+
+  @override
+  String get planMenuAddSites => 'Agregar sitios';
+
+  @override
+  String get planMenuShare => 'Compartir';
+
+  @override
+  String get planShareCopied => 'Plan copiado al portapapeles.';
+
+  @override
+  String get planDeleteTitle => 'Eliminar plan';
+
+  @override
+  String get planDeleteConfirm => '¿Eliminar este plan y sus paradas?';
 
   @override
   String get adminActive => 'Activa';

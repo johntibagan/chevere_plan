@@ -60,7 +60,7 @@
     }
   },
   "plansTitle": "Planes",
-  "plansEmpty": "Aún no tienes planes. Arma uno a partir de tus guardados por ciudad o departamento.",
+  "plansEmpty": "Aún no tienes planes. Crea uno y agrega sitios cuando quieras.",
   "plansCreateFab": "Armar plan",
   "routesTitle": "Rutas",
   "routesEmpty": "Aún no hay lugares visitados. En un plan, marca paradas como visitadas para verlas aquí.",
@@ -222,17 +222,33 @@
   "photoReportSend": "Enviar reporte",
   "directionsMaps": "Cómo llegar (Google Maps)",
   "planCreateTitle": "Armar plan",
-  "planIncludePublic": "Incluir guardados públicos",
-  "planUseMyLocation": "Usar mi ubicación actual como inicio",
-  "planGenerate": "Generar plan",
-  "planNeedCity": "Indica una ciudad o departamento.",
+  "planCreateStepTitleHint": "Ponle un nombre al plan. Luego eliges los sitios.",
+  "actionNext": "Siguiente",
   "planTitleOptional": "Título (opcional)",
-  "planLocationLabel": "Ciudad o departamento",
-  "planLocationHint": "Ej. Villa de Leyva / Boyacá",
-  "planBudgetLabel": "Presupuesto máx. por sitio (opcional)",
-  "planEstimatedPerPerson": "Estimado por persona",
-  "planSelectStops": "Selecciona al menos una parada para enviar a Maps.",
-  "planBudgetHint": "Vacío = sin estimado",
+  "planTabSearch": "Buscar",
+  "planTabResults": "Resultados",
+  "planTabAdded": "Agregados ({count})",
+  "@planTabAdded": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "planTimelineEmpty": "Aún no hay sitios. Busca y agrégalos.",
+  "planSearchFirst": "Busca arriba y verás los resultados aquí.",
+  "planAddSite": "Agregar al plan",
+  "planSiteAdded": "Sitio agregado al plan.",
+  "planStatusDraft": "Borrador",
+  "planStopsCount": "{count} sitios",
+  "@planStopsCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "planMenuAddSites": "Agregar sitios",
+  "planMenuShare": "Compartir",
+  "planShareCopied": "Plan copiado al portapapeles.",
+  "planDeleteTitle": "Eliminar plan",
+  "planDeleteConfirm": "¿Eliminar este plan y sus paradas?",
   "adminActive": "Activa",
   "adminAgeRestricted": "Restringida +18",
   "adminEditTransport": "Editar transporte",

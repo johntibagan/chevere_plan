@@ -337,7 +337,7 @@ abstract class AppLocalizations {
   /// No description provided for @plansEmpty.
   ///
   /// In es, this message translates to:
-  /// **'Aún no tienes planes. Arma uno a partir de tus guardados por ciudad o departamento.'**
+  /// **'Aún no tienes planes. Crea uno y agrega sitios cuando quieras.'**
   String get plansEmpty;
 
   /// No description provided for @plansCreateFab.
@@ -1150,29 +1150,17 @@ abstract class AppLocalizations {
   /// **'Armar plan'**
   String get planCreateTitle;
 
-  /// No description provided for @planIncludePublic.
+  /// No description provided for @planCreateStepTitleHint.
   ///
   /// In es, this message translates to:
-  /// **'Incluir guardados públicos'**
-  String get planIncludePublic;
+  /// **'Ponle un nombre al plan. Luego eliges los sitios.'**
+  String get planCreateStepTitleHint;
 
-  /// No description provided for @planUseMyLocation.
+  /// No description provided for @actionNext.
   ///
   /// In es, this message translates to:
-  /// **'Usar mi ubicación actual como inicio'**
-  String get planUseMyLocation;
-
-  /// No description provided for @planGenerate.
-  ///
-  /// In es, this message translates to:
-  /// **'Generar plan'**
-  String get planGenerate;
-
-  /// No description provided for @planNeedCity.
-  ///
-  /// In es, this message translates to:
-  /// **'Indica una ciudad o departamento.'**
-  String get planNeedCity;
+  /// **'Siguiente'**
+  String get actionNext;
 
   /// No description provided for @planTitleOptional.
   ///
@@ -1180,41 +1168,89 @@ abstract class AppLocalizations {
   /// **'Título (opcional)'**
   String get planTitleOptional;
 
-  /// No description provided for @planLocationLabel.
+  /// No description provided for @planTabSearch.
   ///
   /// In es, this message translates to:
-  /// **'Ciudad o departamento'**
-  String get planLocationLabel;
+  /// **'Buscar'**
+  String get planTabSearch;
 
-  /// No description provided for @planLocationHint.
+  /// No description provided for @planTabResults.
   ///
   /// In es, this message translates to:
-  /// **'Ej. Villa de Leyva / Boyacá'**
-  String get planLocationHint;
+  /// **'Resultados'**
+  String get planTabResults;
 
-  /// No description provided for @planBudgetLabel.
+  /// No description provided for @planTabAdded.
   ///
   /// In es, this message translates to:
-  /// **'Presupuesto máx. por sitio (opcional)'**
-  String get planBudgetLabel;
+  /// **'Agregados ({count})'**
+  String planTabAdded(int count);
 
-  /// No description provided for @planEstimatedPerPerson.
+  /// No description provided for @planTimelineEmpty.
   ///
   /// In es, this message translates to:
-  /// **'Estimado por persona'**
-  String get planEstimatedPerPerson;
+  /// **'Aún no hay sitios. Busca y agrégalos.'**
+  String get planTimelineEmpty;
 
-  /// No description provided for @planSelectStops.
+  /// No description provided for @planSearchFirst.
   ///
   /// In es, this message translates to:
-  /// **'Selecciona al menos una parada para enviar a Maps.'**
-  String get planSelectStops;
+  /// **'Busca arriba y verás los resultados aquí.'**
+  String get planSearchFirst;
 
-  /// No description provided for @planBudgetHint.
+  /// No description provided for @planAddSite.
   ///
   /// In es, this message translates to:
-  /// **'Vacío = sin estimado'**
-  String get planBudgetHint;
+  /// **'Agregar al plan'**
+  String get planAddSite;
+
+  /// No description provided for @planSiteAdded.
+  ///
+  /// In es, this message translates to:
+  /// **'Sitio agregado al plan.'**
+  String get planSiteAdded;
+
+  /// No description provided for @planStatusDraft.
+  ///
+  /// In es, this message translates to:
+  /// **'Borrador'**
+  String get planStatusDraft;
+
+  /// No description provided for @planStopsCount.
+  ///
+  /// In es, this message translates to:
+  /// **'{count} sitios'**
+  String planStopsCount(int count);
+
+  /// No description provided for @planMenuAddSites.
+  ///
+  /// In es, this message translates to:
+  /// **'Agregar sitios'**
+  String get planMenuAddSites;
+
+  /// No description provided for @planMenuShare.
+  ///
+  /// In es, this message translates to:
+  /// **'Compartir'**
+  String get planMenuShare;
+
+  /// No description provided for @planShareCopied.
+  ///
+  /// In es, this message translates to:
+  /// **'Plan copiado al portapapeles.'**
+  String get planShareCopied;
+
+  /// No description provided for @planDeleteTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Eliminar plan'**
+  String get planDeleteTitle;
+
+  /// No description provided for @planDeleteConfirm.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Eliminar este plan y sus paradas?'**
+  String get planDeleteConfirm;
 
   /// No description provided for @adminActive.
   ///

@@ -12,6 +12,7 @@ import '../../../core/widgets/app_list_card.dart';
 import '../data/plan_models.dart';
 import '../data/plans_repository.dart';
 import 'create_plan_page.dart';
+import 'plan_builder_page.dart';
 import 'plan_detail_page.dart';
 
 class PlansListPage extends ConsumerStatefulWidget {
@@ -75,7 +76,7 @@ class _PlansListPageState extends ConsumerState<PlansListPage> {
         child: FloatingActionButton.extended(
           heroTag: 'plans_create_fab',
           onPressed: _openCreate,
-          icon: const Icon(Icons.auto_awesome),
+          icon: const Icon(Icons.add),
           label: Text(l10n.plansCreateFab),
         ),
       ),
@@ -86,7 +87,7 @@ class _PlansListPageState extends ConsumerState<PlansListPage> {
         emptyMessage: l10n.plansEmpty,
         emptyAction: FilledButton.icon(
           onPressed: _openCreate,
-          icon: const Icon(Icons.auto_awesome),
+          icon: const Icon(Icons.add),
           label: Text(l10n.plansCreateFab),
         ),
         onRefresh: _refresh,
@@ -114,20 +115,28 @@ class _PlansListPageState extends ConsumerState<PlansListPage> {
               );
             }
             final plan = plans[index];
+            final isDraft = plan.status == 'draft';
             return AppListCard(
               child: ListTile(
                 title: Text(plan.title),
                 subtitle: Text(
-                  '${plan.locationQuery} · ${plan.stopCount} paradas',
+                  isDraft
+                      ? context.l10n.planStatusDraft
+                      : context.l10n.planStopsCount(plan.stopCount),
                 ),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () async {
                   await Navigator.of(context).push(
                     MaterialPageRoute<void>(
-                      builder: (_) => PlanDetailPage(
-                        planId: plan.id,
-                        repository: widget.repository,
-                      ),
+                      builder: (_) => isDraft && plan.stopCount == 0
+                          ? PlanBuilderPage(
+                              planId: plan.id,
+                              repository: widget.repository,
+                            )
+                          : PlanDetailPage(
+                              planId: plan.id,
+                              repository: widget.repository,
+                            ),
                     ),
                   );
                   await ref.read(plansProvider.notifier).refresh(force: false);

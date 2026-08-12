@@ -70,6 +70,26 @@ class PlansRepository {
     return _planFromJson(Map<String, dynamic>.from(row));
   }
 
+  Future<Plan> createDraft({required String title}) async {
+    final uid = _uid;
+    if (uid == null) {
+      throw const AppUserError('Debes iniciar sesión.');
+    }
+    final trimmed = title.trim();
+    final row = await _client
+        .from('plans')
+        .insert({
+          'user_id': uid,
+          'title': trimmed.isEmpty ? 'Plan sin título' : trimmed,
+          'location_query': '',
+          'include_public': true,
+          'status': 'draft',
+        })
+        .select()
+        .single();
+    return fetchById(row['id'] as String);
+  }
+
   Future<Plan> createPlan({
     required String title,
     required String locationQuery,
@@ -82,11 +102,6 @@ class PlansRepository {
     final uid = _uid;
     if (uid == null) {
       throw const AppUserError('Debes iniciar sesión.');
-    }
-    if (orderedStops.isEmpty) {
-      throw const AppUserError(
-        'No hay lugares para ese destino. Revisa ciudad/departamento o presupuesto.',
-      );
     }
 
     final planRow = await _client
@@ -101,26 +116,102 @@ class PlansRepository {
           'start_lng': startLng,
           'include_public': includePublic,
           'max_budget_amount': maxBudget,
-          'status': 'active',
+          'status': orderedStops.isEmpty ? 'draft' : 'active',
         })
         .select()
         .single();
 
     final planId = planRow['id'] as String;
-    final stopRows = <Map<String, dynamic>>[];
-    for (var i = 0; i < orderedStops.length; i++) {
-      final c = orderedStops[i];
-      stopRows.add({
-        'plan_id': planId,
-        'site_id': c.siteId,
-        'sort_order': i,
-        'estimated_price_amount': c.estimatedPriceAmount,
-        'lat': c.lat,
-        'lng': c.lng,
-      });
+    if (orderedStops.isNotEmpty) {
+      final stopRows = <Map<String, dynamic>>[];
+      for (var i = 0; i < orderedStops.length; i++) {
+        final c = orderedStops[i];
+        stopRows.add({
+          'plan_id': planId,
+          'site_id': c.siteId,
+          'sort_order': i,
+          'estimated_price_amount': c.estimatedPriceAmount,
+          'lat': c.lat,
+          'lng': c.lng,
+        });
+      }
+      await _client.from('plan_stops').insert(stopRows);
     }
-    await _client.from('plan_stops').insert(stopRows);
     return fetchById(planId);
+  }
+
+  Future<PlanStop> addStop({
+    required String planId,
+    required String siteId,
+    double? lat,
+    double? lng,
+    double? estimatedPriceAmount,
+  }) async {
+    final existing = await _client
+        .from('plan_stops')
+        .select('id')
+        .eq('plan_id', planId)
+        .eq('site_id', siteId)
+        .maybeSingle();
+    if (existing != null) {
+      throw const AppUserError('Ese sitio ya está en el plan.');
+    }
+
+    final maxRow = await _client
+        .from('plan_stops')
+        .select('sort_order')
+        .eq('plan_id', planId)
+        .order('sort_order', ascending: false)
+        .limit(1)
+        .maybeSingle();
+    final nextOrder = ((maxRow?['sort_order'] as num?)?.toInt() ?? -1) + 1;
+
+    await _client.from('plan_stops').insert({
+      'plan_id': planId,
+      'site_id': siteId,
+      'sort_order': nextOrder,
+      'lat': lat,
+      'lng': lng,
+      'estimated_price_amount': estimatedPriceAmount,
+    });
+
+    await _client.from('plans').update({'status': 'active'}).eq('id', planId);
+
+    final plan = await fetchById(planId);
+    return plan.stops.firstWhere((s) => s.siteId == siteId);
+  }
+
+  Future<void> removeStop({
+    required String planId,
+    required String stopId,
+  }) async {
+    await _client
+        .from('plan_stops')
+        .delete()
+        .eq('id', stopId)
+        .eq('plan_id', planId);
+
+    final left = await _client
+        .from('plan_stops')
+        .select('id')
+        .eq('plan_id', planId);
+    if ((left as List).isEmpty) {
+      await _client.from('plans').update({'status': 'draft'}).eq('id', planId);
+    }
+  }
+
+  Future<void> deletePlan(String planId) async {
+    await _client.from('plans').delete().eq('id', planId);
+  }
+
+  Future<void> updateTitle({
+    required String planId,
+    required String title,
+  }) async {
+    final trimmed = title.trim();
+    await _client.from('plans').update({
+      'title': trimmed.isEmpty ? 'Plan sin título' : trimmed,
+    }).eq('id', planId);
   }
 
   Future<void> reorderStops({

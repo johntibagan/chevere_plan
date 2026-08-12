@@ -8,9 +8,8 @@ No bloquean el uso diario. Al implementar, tacha aquí y ajusta el código.
 
 ## Planes
 
-- “Marcar visitado” vs “incluir en Maps” (checkbox) confunde; falta copy más claro.
-- Si una parada no tiene coords, Maps no la incluye — avisar mejor.
-- Compartir plan por link: en la spec, no entregado.
+- Compartir plan por link formal (ahora solo copia texto al portapapeles).
+- “Marcar visitado” / exportar a Maps: se puede reintroducir desde el menú ⋮ más adelante.
 - Transporte usado al marcar visitado no se persiste.
 
 ## Búsqueda
