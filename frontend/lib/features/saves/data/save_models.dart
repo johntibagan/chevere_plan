@@ -81,7 +81,9 @@ class UserSave {
     this.sourceNetwork,
     this.notes,
     this.city,
+    this.cityId,
     this.department,
+    this.departmentId,
     this.addressLine,
     this.categoryNames = const [],
     this.createdAt,
@@ -101,7 +103,9 @@ class UserSave {
   final String? sourceNetwork;
   final String? notes;
   final String? city;
+  final String? cityId;
   final String? department;
+  final String? departmentId;
   final String? addressLine;
   final List<String> categoryNames;
   final DateTime? createdAt;
@@ -123,7 +127,9 @@ class UserSave {
         'source_network': sourceNetwork,
         'notes': notes,
         'city': city,
+        'city_id': cityId,
         'department': department,
+        'department_id': departmentId,
         'address_line': addressLine,
         'category_names': categoryNames,
         'created_at': createdAt?.toUtc().toIso8601String(),
@@ -145,7 +151,9 @@ class UserSave {
       sourceNetwork: json['source_network'] as String?,
       notes: json['notes'] as String?,
       city: json['city'] as String?,
+      cityId: json['city_id'] as String?,
       department: json['department'] as String?,
+      departmentId: json['department_id'] as String?,
       addressLine: json['address_line'] as String?,
       categoryNames: (json['category_names'] as List?)
               ?.map((e) => '$e')
@@ -200,7 +208,9 @@ class UserSave {
       sourceNetwork: json['source_network'] as String?,
       notes: json['notes'] as String?,
       city: site['city'] as String?,
+      cityId: site['city_id'] as String?,
       department: site['department'] as String?,
+      departmentId: site['department_id'] as String?,
       addressLine: site['address_line'] as String?,
       categoryNames: names,
       createdAt: json['created_at'] != null
@@ -236,7 +246,9 @@ class SaveDraftInput {
     this.sourceUrl,
     this.sourceNetwork,
     this.city,
+    this.cityId,
     this.department,
+    this.departmentId,
     this.addressLine,
     this.latitude,
     this.longitude,
@@ -252,7 +264,9 @@ class SaveDraftInput {
   final String? sourceUrl;
   final String? sourceNetwork;
   final String? city;
+  final String? cityId;
   final String? department;
+  final String? departmentId;
   final String? addressLine;
   final double? latitude;
   final double? longitude;

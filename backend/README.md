@@ -28,6 +28,7 @@ Si el schema aún no está aplicado, salta al paso 1 y aplica las migraciones **
 | 10 | [`migrations/20260808000010_ciclo8_categories_keywords.sql`](supabase/migrations/20260808000010_ciclo8_categories_keywords.sql) | Índice GIN de `keywords` (sin reampliar árbol) |
 | 11 | [`migrations/20260808000011_site_photos_storage_select.sql`](supabase/migrations/20260808000011_site_photos_storage_select.sql) | SELECT en storage `site-photos` (URLs firmadas) |
 | 12 | [`migrations/20260808000012_site_social_links.sql`](supabase/migrations/20260808000012_site_social_links.sql) | Enlaces sociales / web por sitio + RLS |
+| 13 | [`migrations/20260811000013_divipola_geo.sql`](supabase/migrations/20260811000013_divipola_geo.sql) | Países / departamentos / ciudades (DIVIPOLA) + FKs en `sites` |
 
 > Los scripts son idempotentes en lo posible (`if not exists` / `create or replace`). Si uno falla a mitad, corrige y vuelve a pegar ese archivo.
 
@@ -43,6 +44,7 @@ Inicia sesión con Google en la app (así nace el usuario en `auth.users` + perf
 | 12 | [`scripts/02_designate_admin.sql`](supabase/scripts/02_designate_admin.sql) | (Opcional) Promueve otro usuario a `admin` |
 | 13 | [`scripts/03_list_categories.sql`](supabase/scripts/03_list_categories.sql) | Consulta árbol categoría → subcategoría |
 | 14 | [`scripts/04_reseed_categories_simplified.sql`](supabase/scripts/04_reseed_categories_simplified.sql) | Reemplaza categorías por la CSV simplificada |
+| 15 | [`scripts/05_sync_divipola.sql`](supabase/scripts/05_sync_divipola.sql) | Carga DIVIPOLA (DANE). Regenerar: `python scripts/05_sync_divipola.py --sql -o scripts/05_sync_divipola.sql` |
 
 ## Notas
 

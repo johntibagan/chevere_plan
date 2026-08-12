@@ -18,6 +18,12 @@ class CacheTtl {
     stale: Duration(days: 7),
   );
 
+  /// DIVIPOLA: el dato más frío. Tras la 1ª sync, selector 100% local.
+  static const geoCatalog = CacheTtl(
+    fresh: Duration(days: 30),
+    stale: Duration(days: 90),
+  );
+
   static const mySaves = CacheTtl(
     fresh: Duration(minutes: 3),
     stale: Duration(hours: 24),
@@ -43,6 +49,7 @@ abstract final class CacheKeys {
   static String mySavesSummary(String uid) => 'my_saves_summary_p0:$uid';
   static String categories() => 'categories:v1';
   static String transportTypes() => 'transport_types:v1';
+  static String geoCatalog() => 'geo_catalog:v1';
   static String siteFicha(String siteId) => 'site_ficha:$siteId';
   static String plansPage0(String uid) => 'plans_p0:$uid';
   static String routesAll(String uid) => 'routes_all:$uid';

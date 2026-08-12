@@ -5,6 +5,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../features/admin/data/admin_models.dart';
 import '../../features/admin/data/admin_repository.dart';
+import '../../features/geo/data/geo_models.dart';
+import '../../features/geo/data/geo_repository.dart';
 import '../../features/auth/data/auth_repository.dart';
 import '../../features/auth/data/profile_repository.dart';
 import '../../features/moderation/data/moderation_repository.dart';
@@ -52,6 +54,10 @@ final savesRepositoryProvider = Provider<SavesRepository>((ref) {
 
 final adminRepositoryProvider = Provider<AdminRepository>((ref) {
   return AdminRepository(client: ref.watch(supabaseClientProvider));
+});
+
+final geoRepositoryProvider = Provider<GeoRepository>((ref) {
+  return GeoRepository(client: ref.watch(supabaseClientProvider));
 });
 
 final searchRepositoryProvider = Provider<SearchRepository>((ref) {
@@ -334,6 +340,45 @@ class TransportTypesNotifier extends AsyncNotifier<List<TransportType>> {
     );
   }
 }
+
+class GeoCatalogNotifier extends AsyncNotifier<GeoCatalog> {
+  var _refreshing = false;
+
+  @override
+  Future<GeoCatalog> build() => _load(forceNetwork: false);
+
+  Future<void> refresh({bool force = true}) async {
+    state = await AsyncValue.guard(() => _load(forceNetwork: force));
+  }
+
+  Future<GeoCatalog> _load({required bool forceNetwork}) {
+    final swr = ref.read(swrLoaderProvider);
+    return swr.load<GeoCatalog>(
+      key: CacheKeys.geoCatalog(),
+      ttl: CacheTtl.geoCatalog,
+      decode: GeoCatalog.fromJson,
+      encode: (c) => c.toJson(),
+      forceNetwork: forceNetwork,
+      network: () => ref.read(geoRepositoryProvider).fetchCatalog(),
+      onBackgroundRefresh: (pending) {
+        if (_refreshing) return;
+        _refreshing = true;
+        unawaited(
+          pending.then((fresh) {
+            state = AsyncData(fresh);
+          }).catchError((_) {}).whenComplete(() {
+            _refreshing = false;
+          }),
+        );
+      },
+    );
+  }
+}
+
+final geoCatalogProvider =
+    AsyncNotifierProvider<GeoCatalogNotifier, GeoCatalog>(
+  GeoCatalogNotifier.new,
+);
 
 final transportTypesProvider =
     AsyncNotifierProvider<TransportTypesNotifier, List<TransportType>>(

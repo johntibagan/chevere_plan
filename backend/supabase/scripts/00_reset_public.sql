@@ -6,8 +6,8 @@
 -- NO hace falta volver a ejecutar las migraciones.
 --
 -- Borra: sitios y relacionados, planes, reportes, fotos en Storage.
--- Conserva: categories, transport_types (seed), profiles (roles / prefs),
---           auth.users, bucket site-photos + policies.
+-- Conserva: categories, transport_types (seed), countries/departments/cities
+--           (DIVIPOLA), profiles (roles / prefs), auth.users, bucket site-photos.
 --
 -- Después (si hace falta root de nuevo): scripts/01_bootstrap_root.sql
 -- =============================================================================

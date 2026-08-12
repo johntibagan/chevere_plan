@@ -1,38 +1,32 @@
 ---
-description: Extraer datos de lugar (no listas quemadas); crear y editar el mismo formulario
+description: Extraer datos de lugar; catálogo DIVIPOLA en DB/caché, no listas quemadas en Dart
 alwaysApply: true
 ---
 
 # Datos de lugar (Chevere Plan)
 
-## No quemar geografía
+## No quemar geografía en Dart
 
-No hardcodear países, departamentos, ciudades, barrios ni códigos postales
-en lógica de negocio ni en archivos de “catálogo” local.
+No hardcodear países, departamentos ni ciudades en lógica de negocio.
+El catálogo vive en Supabase (`countries`, `departments`, `cities`), se
+sincroniza desde DIVIPOLA/DANE con `scripts/05_sync_divipola.py`, y la app
+lo cachea en Hive (TTL 30/90 días). El selector filtra **solo esa caché**.
 
-Nombre, ciudad, departamento, dirección y coordenadas se **extraen**:
-enlace de Google Maps (parseo de URL) y/o campos que ya trae el geocoder
-(`city`, `town`, `village`, `municipality`, `state`, `address_line1`…).
+Nombre/dirección/coords pueden salir de Maps; ciudad y departamento se
+**resuelven** contra el catálogo (fuzzy local) y se guardan con **id**.
 
 ```dart
 // ❌ BAD
-const departamentos = ['Cundinamarca', 'Boyacá', ...];
+const departamentos = ['Cundinamarca', 'Boyacá'];
 
 // ✅ GOOD
-city: json['city'] ?? json['town'],
-department: json['state'],
+GeoFuzzy.match(catalog: cached, departmentHint: hint, cityHint: city);
 ```
 
 ## Crear = editar
 
-Misma pantalla y mismas acciones (importar Maps, mapa, enlaces).
-La única diferencia de editar es **precargar** lo ya guardado en cada campo.
+Misma pantalla y acciones. Editar solo precarga. Orden: departamento → ciudad
+(ciudad deshabilitada hasta elegir depto). Siempre una opción de la lista.
 
-Excepción: al **crear**, si no hay match de categoría → default Otros.
-Al **editar**, no reemplazar las categorías cargadas con ese default.
-
-## Código
-
-Un solo camino para rellenar ficha desde Maps/mapa. Sin flags
-`onlyEmpty` / `overwriteName` / ramas crear-vs-editar en el import.
-Si un campo viene vacío del origen, no borrar el valor que ya está en el form.
+Excepción: al **crear**, categoría default Otros. Al **editar**, no pisar
+categorías cargadas con ese default.

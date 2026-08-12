@@ -12,6 +12,9 @@ import '../../../core/l10n/context_l10n.dart';
 import '../../../core/widgets/app_toast.dart';
 import '../../../core/widgets/app_network_image.dart';
 import '../../admin/data/admin_models.dart';
+import '../../geo/data/geo_models.dart';
+import '../../geo/domain/geo_fuzzy.dart';
+import '../../geo/presentation/geo_typeahead_field.dart';
 import '../data/geo_place.dart';
 import '../data/google_maps_link_importer.dart';
 import '../data/place_geocoder.dart';
@@ -52,8 +55,13 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
   final _socialCtrl = TextEditingController();
   final _cityCtrl = TextEditingController();
   final _deptCtrl = TextEditingController();
+  final _deptFocus = FocusNode();
+  final _cityFocus = FocusNode();
   final _addressCtrl = TextEditingController();
   final _categorySearchCtrl = TextEditingController();
+  GeoCatalog? _geoCatalog;
+  GeoDepartment? _selectedDept;
+  GeoCity? _selectedCity;
 
   double? _lat;
   double? _lng;
@@ -84,6 +92,66 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
 
   bool get _isEditing => _editSaveId != null;
 
+  void _bindGeoFromSave(UserSave s) {
+    final cat = _geoCatalog;
+    if (cat == null) return;
+    if (s.departmentId != null) {
+      _selectedDept = cat.departmentById(s.departmentId!);
+    }
+    if (s.cityId != null) {
+      _selectedCity = cat.cityById(s.cityId!);
+      if (_selectedCity != null) {
+        _selectedDept ??= cat.departmentById(_selectedCity!.departmentId);
+      }
+    }
+    if (_selectedDept == null || _selectedCity == null) {
+      final m = GeoFuzzy.match(
+        catalog: cat,
+        departmentHint: s.department,
+        cityHint: s.city,
+      );
+      _selectedDept ??= m.department;
+      if (_selectedDept != null) {
+        _selectedCity ??= m.city;
+      }
+    }
+    _deptCtrl.text = _selectedDept?.name ?? '';
+    _cityCtrl.text = _selectedCity?.name ?? '';
+  }
+
+  void _applyGeoHints({String? department, String? city}) {
+    final cat = _geoCatalog;
+    if (cat == null) return;
+    final m = GeoFuzzy.match(
+      catalog: cat,
+      departmentHint: department,
+      cityHint: city,
+    );
+    if (m.department != null) {
+      _setDepartment(m.department, clearCity: m.city == null);
+    }
+    if (m.city != null) _setCity(m.city);
+  }
+
+  void _setDepartment(GeoDepartment? d, {bool clearCity = true}) {
+    final changed = d?.id != _selectedDept?.id;
+    _selectedDept = d;
+    _deptCtrl.text = d?.name ?? '';
+    if (changed && clearCity) {
+      _selectedCity = null;
+      _cityCtrl.clear();
+    }
+  }
+
+  void _setCity(GeoCity? c) {
+    _selectedCity = c;
+    _cityCtrl.text = c?.name ?? '';
+    if (c != null && _geoCatalog != null) {
+      _selectedDept ??= _geoCatalog!.departmentById(c.departmentId);
+      if (_selectedDept != null) _deptCtrl.text = _selectedDept!.name;
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -102,9 +170,17 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
 
   Future<void> _bootstrapForm() async {
     try {
-      final cats = await ref.read(categoriesProvider.future);
+      final catsFuture = ref.read(categoriesProvider.future);
+      GeoCatalog? catalog;
+      try {
+        catalog = await ref.read(geoCatalogProvider.future);
+      } catch (_) {
+        catalog = null;
+      }
+      final cats = await catsFuture;
       if (!mounted) return;
       setState(() {
+        _geoCatalog = catalog;
         _categories = cats.where((c) => c.isActive).toList();
       });
 
@@ -114,9 +190,8 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
         if (!mounted) return;
         final s = data.save;
         _nameCtrl.text = s.siteName == 'Sin nombre' ? '' : s.siteName;
-        _cityCtrl.text = s.city ?? '';
-        _deptCtrl.text = s.department ?? '';
         _addressCtrl.text = s.addressLine ?? '';
+        _bindGeoFromSave(s);
         final links = await widget.savesRepository.listSocialLinks(s.siteId);
         if (!mounted) return;
         setState(() {
@@ -183,6 +258,8 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
     _socialCtrl.dispose();
     _cityCtrl.dispose();
     _deptCtrl.dispose();
+    _deptFocus.dispose();
+    _cityFocus.dispose();
     _addressCtrl.dispose();
     _categorySearchCtrl.dispose();
     super.dispose();
@@ -204,9 +281,8 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
 
     setState(() {
       put(_nameCtrl, name);
-      put(_cityCtrl, city);
-      put(_deptCtrl, department);
       put(_addressCtrl, address);
+      _applyGeoHints(department: department, city: city);
       _lat = lat ?? _lat;
       _lng = lng ?? _lng;
       if (staticMapUrl != null && staticMapUrl.isNotEmpty) {
@@ -298,7 +374,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
   );
 
   bool get _hasFormLocation => SavePolicies.hasLocation(
-        city: _cityCtrl.text,
+        city: _selectedCity?.name,
         addressLine: _addressCtrl.text,
         latitude: _lat,
         longitude: _lng,
@@ -317,12 +393,8 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
       setState(() {
         _lat ??= place.lat;
         _lng ??= place.lng;
-        if (_cityCtrl.text.trim().isEmpty && (place.city?.isNotEmpty ?? false)) {
-          _cityCtrl.text = place.city!;
-        }
-        if (_deptCtrl.text.trim().isEmpty &&
-            (place.department?.isNotEmpty ?? false)) {
-          _deptCtrl.text = place.department!;
+        if (_selectedDept == null && _selectedCity == null) {
+          _applyGeoHints(department: place.department, city: place.city);
         }
         if (_addressCtrl.text.trim().isEmpty &&
             (place.addressLine?.isNotEmpty ?? false)) {
@@ -490,8 +562,8 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
     final name = _nameCtrl.text.trim();
     final parts = <String>[
       if (name.isNotEmpty) name else 'Sin nombre',
-      if (_cityCtrl.text.trim().isNotEmpty) _cityCtrl.text.trim(),
-      if (_deptCtrl.text.trim().isNotEmpty) _deptCtrl.text.trim(),
+      if (_selectedDept != null) _selectedDept!.name,
+      if (_selectedCity != null) _selectedCity!.name,
       if (_addressCtrl.text.trim().isNotEmpty) _addressCtrl.text.trim(),
       if (_lat != null && _lng != null) 'Punto en mapa',
     ];
@@ -581,8 +653,10 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
         name: name,
         sourceUrl: sourceUrl,
         sourceNetwork: sourceNetwork,
-        city: _cityCtrl.text,
-        department: _deptCtrl.text,
+        city: _selectedCity?.name,
+        cityId: _selectedCity?.id,
+        department: _selectedDept?.name,
+        departmentId: _selectedDept?.id,
         addressLine: _addressCtrl.text,
         latitude: lat,
         longitude: lng,
@@ -607,12 +681,12 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
         final shouldCheckDuplicates = _isPhysical &&
             ((_isPublic) ||
                 (lat != null && lng != null) ||
-                _cityCtrl.text.trim().isNotEmpty);
+                _selectedCity != null);
 
         if (shouldCheckDuplicates) {
           final dupes = await widget.savesRepository.findPossibleDuplicates(
             name: name,
-            city: _cityCtrl.text,
+            city: _selectedCity?.name,
             latitude: lat,
             longitude: lng,
           );
@@ -632,7 +706,9 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
             sourceUrl: input.sourceUrl,
             sourceNetwork: input.sourceNetwork,
             city: input.city,
+            cityId: input.cityId,
             department: input.department,
+            departmentId: input.departmentId,
             addressLine: input.addressLine,
             latitude: lat,
             longitude: lng,
@@ -990,18 +1066,42 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
                             onSubmitted: (_) => _maybeSuggestCategories(),
                           ),
                           const SizedBox(height: 10),
-                          TextField(
-                            controller: _cityCtrl,
-                            decoration: _dec('Ciudad'),
-                            textCapitalization: TextCapitalization.words,
-                            onChanged: (_) => setState(() {}),
+                          GeoTypeaheadField<GeoDepartment>(
+                            controller: _deptCtrl,
+                            focusNode: _deptFocus,
+                            items: _geoCatalog?.activeDepartments ?? const [],
+                            labelOf: (d) => d.name,
+                            selected: _selectedDept,
+                            enabled: _geoCatalog != null,
+                            decoration: _dec(
+                              'Departamento',
+                              helper: _geoCatalog == null
+                                  ? 'Catálogo no cargado. Ejecuta el script DIVIPOLA.'
+                                  : 'Elige una opción de la lista',
+                            ),
+                            onSelected: (d) => setState(() {
+                              _setDepartment(d);
+                            }),
                           ),
                           const SizedBox(height: 10),
-                          TextField(
-                            controller: _deptCtrl,
-                            decoration: _dec('Departamento'),
-                            textCapitalization: TextCapitalization.words,
-                            onChanged: (_) => setState(() {}),
+                          GeoTypeaheadField<GeoCity>(
+                            controller: _cityCtrl,
+                            focusNode: _cityFocus,
+                            items: _selectedDept == null
+                                ? const []
+                                : (_geoCatalog?.citiesIn(_selectedDept!.id) ??
+                                    const []),
+                            labelOf: (c) => c.name,
+                            selected: _selectedCity,
+                            enabled:
+                                _geoCatalog != null && _selectedDept != null,
+                            decoration: _dec(
+                              'Ciudad',
+                              helper: _selectedDept == null
+                                  ? 'Primero elige el departamento'
+                                  : 'Elige una opción de la lista',
+                            ),
+                            onSelected: (c) => setState(() => _setCity(c)),
                           ),
                           const SizedBox(height: 10),
                           TextField(
