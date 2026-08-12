@@ -1,0 +1,39 @@
+---
+description: Lineamientos frontend Chevere Plan — leerlos antes de tocar frontend/
+alwaysApply: true
+---
+
+# Frontend — obligatorio antes de tocar código
+
+Si el trabajo toca `frontend/` (Dart, widgets, `.arb`, tests, `pubspec`), **leer y cumplir** [`docs/lineamientos-desarrollo-frontend.md`](docs/lineamientos-desarrollo-frontend.md). Complementa [`docs/producto.md`](docs/producto.md). No inventar comportamiento.
+
+## Prioridad
+
+Agilidad percibida: carga instantánea, tabs fluidos, formularios rápidos. Ante duda: *¿se siente más rápida e intuitiva, o menos?*
+
+## Arquitectura
+
+- Features con `data / domain / presentation`. Riverpod; **cero** negocio en widgets.
+- Sin duplicar: 2+ repeticiones → extraer. Tokens de tema, no colores sueltos.
+- Parametrizable (categorías, geo, tarifas) en DB + caché, **nunca** listas quemadas en Dart.
+- i18n: strings en `.arb`. Fechas UTC internas. Moneda desacoplada del número.
+
+## Caché (nada está “terminado” sin esto)
+
+Read-through memoria → Hive → red. SWR: pintar caché al toque, refrescar atrás, sin spinner en navegación repetida.
+
+TTL de referencia: categorías 24h/7d · DIVIPOLA 30d/90d · listas/fichas minutos · fotos ~firma · búsqueda 1–2 min.
+
+Catálogos fríos (categorías, depto/ciudad) **solo** desde memoria/disco tras el primer sync. Listas paginadas. Tabs con `IndexedStack`. `ref.watch` con `.select`. Invalidar al guardar/editar/descartar.
+
+## Errores (no negociable)
+
+UI: solo negocio o **"Error en la app. Intenta de nuevo."** Nunca PostgREST, SQL, stacks, keys. Detalle en `developer.log`.
+
+## Formularios / UX
+
+Crear/editar sitio = pantalla más sensible: pocos campos, prellenado, confirmar. Acciones en el campo (`suffixIcon`: pegar, buscar), no botones sueltos. Feedback inmediato.
+
+## Al trabajar
+
+Pasos chicos. Señalar supuestos. Al cerrar: qué cambió y qué probar en el celular (carga, offline).

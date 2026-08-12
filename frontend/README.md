@@ -1,5 +1,7 @@
 # App Flutter
 
+Antes de cambiar código: [docs/lineamientos-desarrollo-frontend.md](../docs/lineamientos-desarrollo-frontend.md).
+
 ```powershell
 copy .env.example .env
 .\tool\run_dev.ps1
