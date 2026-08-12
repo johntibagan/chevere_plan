@@ -84,7 +84,7 @@ class _MyRoutesPageState extends ConsumerState<MyRoutesPage> {
                     _visible += PagedItems.defaultPageSize;
                   });
                 },
-                child: const Text('Cargar más'),
+                child: Text(context.l10n.actionLoadMore),
               );
             }
             final e = visible[index];

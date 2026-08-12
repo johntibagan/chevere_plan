@@ -76,7 +76,7 @@ class _CheverePlanAppState extends ConsumerState<CheverePlanApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Chevere Plan',
+      onGenerateTitle: (ctx) => AppLocalizations.of(ctx).appTitle,
       navigatorKey: appNavigatorKey,
       debugShowCheckedModeBanner: false,
       theme: AppTheme.dark(),

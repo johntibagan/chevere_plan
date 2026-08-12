@@ -40,6 +40,19 @@ class SearchHit {
       distanceKm: dist == null ? null : (dist as num).toDouble(),
     );
   }
+
+  Map<String, dynamic> toJson() => {
+        'site_id': siteId,
+        'name': name,
+        'city': city,
+        'department': department,
+        'lat': lat,
+        'lng': lng,
+        'estimated_price_amount': estimatedPriceAmount,
+        'currency_code': currencyCode,
+        'is_own': isOwn,
+        'distance_km': distanceKm,
+      };
 }
 
 class SearchFilters {
@@ -66,4 +79,17 @@ class SearchFilters {
   final double? budgetMin;
   final double? budgetMax;
   final bool includePublic;
+
+  String get cacheKey => [
+        query ?? '',
+        categoryId ?? '',
+        locationQuery ?? '',
+        lat?.toStringAsFixed(4) ?? '',
+        lng?.toStringAsFixed(4) ?? '',
+        radiusKm?.toString() ?? '',
+        transportGroup ?? '',
+        budgetMin?.toString() ?? '',
+        budgetMax?.toString() ?? '',
+        includePublic ? '1' : '0',
+      ].join('|');
 }

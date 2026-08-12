@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 
+import '../../../core/cache/cache_ttl.dart';
 import '../../../core/cache/paged_items.dart';
 import '../../../core/di/providers.dart';
 import '../../../core/widgets/app_toast.dart';
@@ -9,7 +10,9 @@ import '../../../core/formatters/money_format.dart';
 import '../../../core/l10n/context_l10n.dart';
 import '../../../core/prefetch/site_prefetch.dart';
 import '../../../core/widgets/app_list_card.dart';
+import '../../../core/widgets/field_action_icon.dart';
 import '../../../core/widgets/visibility_badge.dart';
+import '../../admin/data/admin_models.dart';
 import '../../saves/data/site_ficha.dart';
 import '../../saves/presentation/open_site_detail.dart';
 import '../data/search_models.dart';
@@ -106,26 +109,39 @@ class _SearchPageState extends ConsumerState<SearchPage> {
     try {
       final loc = await _maybeLocation();
       final locationExtra = _locationCtrl.text.trim();
-      final hits = await widget.repository.search(
-        SearchFilters(
-          query: text.isEmpty ? null : text,
-          categoryId: _advanced ? _categoryId : null,
-          locationQuery: _advanced
-              ? (locationExtra.isNotEmpty
-                  ? locationExtra
-                  : (text.isNotEmpty ? text : null))
-              : null,
-          lat: _advanced ? loc.$1 : null,
-          lng: _advanced ? loc.$2 : null,
-          radiusKm: _advanced && _useMyLocation
-              ? _parseNum(_radiusCtrl.text)
-              : null,
-          transportGroup: _advanced ? _transportGroup : null,
-          budgetMin: _advanced ? _parseNum(_budgetMinCtrl.text) : null,
-          budgetMax: _advanced ? _parseNum(_budgetMaxCtrl.text) : null,
-          includePublic: _includePublic,
-        ),
+      final filters = SearchFilters(
+        query: text.isEmpty ? null : text,
+        categoryId: _advanced ? _categoryId : null,
+        locationQuery: _advanced
+            ? (locationExtra.isNotEmpty
+                ? locationExtra
+                : (text.isNotEmpty ? text : null))
+            : null,
+        lat: _advanced ? loc.$1 : null,
+        lng: _advanced ? loc.$2 : null,
+        radiusKm: _advanced && _useMyLocation
+            ? _parseNum(_radiusCtrl.text)
+            : null,
+        transportGroup: _advanced ? _transportGroup : null,
+        budgetMin: _advanced ? _parseNum(_budgetMinCtrl.text) : null,
+        budgetMax: _advanced ? _parseNum(_budgetMaxCtrl.text) : null,
+        includePublic: _includePublic,
       );
+      final hits = await ref.read(swrLoaderProvider).load<List<SearchHit>>(
+            key: CacheKeys.search(filters.cacheKey),
+            ttl: CacheTtl.search,
+            decode: (payload) {
+              final list = payload as List? ?? const [];
+              return list
+                  .whereType<Map>()
+                  .map(
+                    (e) => SearchHit.fromJson(Map<String, dynamic>.from(e)),
+                  )
+                  .toList();
+            },
+            encode: (value) => value.map((e) => e.toJson()).toList(),
+            network: () => widget.repository.search(filters),
+          );
       if (!mounted) return;
       setState(() {
         _hits = hits;
@@ -144,7 +160,9 @@ class _SearchPageState extends ConsumerState<SearchPage> {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final categories = ref.watch(categoriesProvider).valueOrNull ?? const [];
+    final categories = ref.watch(
+      categoriesProvider.select((a) => a.valueOrNull ?? const <Category>[]),
+    );
     final roots = categories.where((c) => c.isRoot).toList();
     final children = categories.where((c) => !c.isRoot).toList();
 
@@ -160,7 +178,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                 _searched = false;
               });
             },
-            child: Text(_advanced ? 'Simple' : 'Avanzada'),
+            child: Text(_advanced ? l10n.searchSimple : l10n.searchAdvanced),
           ),
         ],
       ),
@@ -168,7 +186,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
         children: [
           Text(
-            _advanced ? 'Búsqueda avanzada' : 'Búsqueda general',
+            _advanced ? l10n.searchModeAdvanced : l10n.searchModeGeneral,
             style: Theme.of(context).textTheme.titleMedium,
           ),
           const SizedBox(height: 12),
@@ -176,10 +194,15 @@ class _SearchPageState extends ConsumerState<SearchPage> {
             controller: _queryCtrl,
             decoration: InputDecoration(
               labelText:
-                  _advanced ? 'Texto (nombre o ciudad)' : l10n.actionSearch,
-              hintText: 'Ej. Tunja',
+                  _advanced ? l10n.searchLabelText : l10n.actionSearch,
+              hintText: l10n.searchHintPlace,
               border: const OutlineInputBorder(),
-              prefixIcon: const Icon(Icons.search),
+              suffixIcon: FieldActionIcon(
+                icon: Icons.search,
+                tooltip: l10n.actionSearch,
+                loading: _loading,
+                onPressed: _loading ? null : _runSearch,
+              ),
             ),
             textInputAction: TextInputAction.search,
             onSubmitted: (_) => _runSearch(),
@@ -188,26 +211,26 @@ class _SearchPageState extends ConsumerState<SearchPage> {
             const SizedBox(height: 12),
             TextField(
               controller: _locationCtrl,
-              decoration: const InputDecoration(
-                labelText: 'Ciudad o departamento (extra)',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: l10n.searchLabelLocationExtra,
+                border: const OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: 12),
             InputDecorator(
-              decoration: const InputDecoration(
-                labelText: 'Categoría',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: l10n.searchLabelCategory,
+                border: const OutlineInputBorder(),
               ),
               child: DropdownButtonHideUnderline(
                 child: DropdownButton<String?>(
                   isExpanded: true,
                   value: _categoryId,
-                  hint: const Text('Cualquiera'),
+                  hint: Text(l10n.searchAny),
                   items: [
-                    const DropdownMenuItem<String?>(
+                    DropdownMenuItem<String?>(
                       value: null,
-                      child: Text('Cualquiera'),
+                      child: Text(l10n.searchAny),
                     ),
                     ...roots.map(
                       (r) => DropdownMenuItem<String?>(
@@ -231,26 +254,29 @@ class _SearchPageState extends ConsumerState<SearchPage> {
             ),
             const SizedBox(height: 12),
             InputDecorator(
-              decoration: const InputDecoration(
-                labelText: 'Transporte',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: l10n.searchLabelTransport,
+                border: const OutlineInputBorder(),
               ),
               child: DropdownButtonHideUnderline(
                 child: DropdownButton<String?>(
                   isExpanded: true,
                   value: _transportGroup,
-                  hint: const Text('Cualquiera'),
-                  items: const [
-                    DropdownMenuItem(value: null, child: Text('Cualquiera')),
+                  hint: Text(l10n.searchAny),
+                  items: [
+                    DropdownMenuItem(value: null, child: Text(l10n.searchAny)),
                     DropdownMenuItem(
                       value: 'particular',
-                      child: Text('Particular'),
+                      child: Text(l10n.searchTransportPrivate),
                     ),
                     DropdownMenuItem(
                       value: 'publico',
-                      child: Text('Público'),
+                      child: Text(l10n.searchTransportPublic),
                     ),
-                    DropdownMenuItem(value: 'otro', child: Text('Otro')),
+                    DropdownMenuItem(
+                      value: 'otro',
+                      child: Text(l10n.searchTransportOther),
+                    ),
                   ],
                   onChanged: (v) => setState(() {
                     _transportGroup = v;
@@ -268,9 +294,9 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                     keyboardType: const TextInputType.numberWithOptions(
                       decimal: true,
                     ),
-                    decoration: const InputDecoration(
-                      labelText: 'Presupuesto min',
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      labelText: l10n.searchBudgetMin,
+                      border: const OutlineInputBorder(),
                     ),
                   ),
                 ),
@@ -281,9 +307,9 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                     keyboardType: const TextInputType.numberWithOptions(
                       decimal: true,
                     ),
-                    decoration: const InputDecoration(
-                      labelText: 'Presupuesto max',
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      labelText: l10n.searchBudgetMax,
+                      border: const OutlineInputBorder(),
                     ),
                   ),
                 ),
@@ -291,7 +317,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
             ),
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
-              title: const Text('Usar mi ubicación + radio'),
+              title: Text(l10n.searchUseMyLocation),
               value: _useMyLocation,
               onChanged: (v) => setState(() {
                 _useMyLocation = v;
@@ -304,19 +330,19 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                 keyboardType: const TextInputType.numberWithOptions(
                   decimal: true,
                 ),
-                decoration: const InputDecoration(
-                  labelText: 'Radio (km)',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: l10n.searchRadiusKm,
+                  border: const OutlineInputBorder(),
                 ),
               ),
             Text(
-              'Horario: cuando los sitios tengan horario oficial.',
+              l10n.searchHoursPlaceholder,
               style: Theme.of(context).textTheme.bodySmall,
             ),
           ],
           SwitchListTile(
             contentPadding: EdgeInsets.zero,
-            title: const Text('Incluir sitios públicos'),
+            title: Text(l10n.searchIncludePublic),
             value: _includePublic,
             onChanged: (v) => setState(() {
               _includePublic = v;
@@ -324,48 +350,28 @@ class _SearchPageState extends ConsumerState<SearchPage> {
             }),
           ),
           const SizedBox(height: 8),
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: _loading
-                      ? null
-                      : () {
-                          _queryCtrl.clear();
-                          _locationCtrl.clear();
-                          _budgetMinCtrl.clear();
-                          _budgetMaxCtrl.clear();
-                          _radiusCtrl.text = '10';
-                          setState(() {
-                            _categoryId = null;
-                            _transportGroup = null;
-                            _useMyLocation = false;
-                            _includePublic = true;
-                            _hits = const [];
-                            _searched = false;
-                          });
-                        },
-                  child: const Text('Limpiar'),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                flex: 2,
-                child: FilledButton.icon(
-                  onPressed: _loading ? null : _runSearch,
-                  icon: _loading
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.search),
-                  label: Text(
-                    _loading ? l10n.searchSearching : l10n.actionSearch,
-                  ),
-                ),
-              ),
-            ],
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton(
+              onPressed: _loading
+                  ? null
+                  : () {
+                      _queryCtrl.clear();
+                      _locationCtrl.clear();
+                      _budgetMinCtrl.clear();
+                      _budgetMaxCtrl.clear();
+                      _radiusCtrl.text = '10';
+                      setState(() {
+                        _categoryId = null;
+                        _transportGroup = null;
+                        _useMyLocation = false;
+                        _includePublic = true;
+                        _hits = const [];
+                        _searched = false;
+                      });
+                    },
+              child: Text(l10n.actionClear),
+            ),
           ),
           const SizedBox(height: 16),
           const Divider(),
@@ -432,7 +438,9 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                       });
                     },
                     child: Text(
-                      'Cargar más (${_hits.length - _visibleCount} restantes)',
+                      l10n.searchLoadMoreRemaining(
+                        _hits.length - _visibleCount,
+                      ),
                     ),
                   ),
               ];

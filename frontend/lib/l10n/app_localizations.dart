@@ -406,12 +406,6 @@ abstract class AppLocalizations {
   /// **'Explorar'**
   String get searchTitle;
 
-  /// No description provided for @searchEmptyHint.
-  ///
-  /// In es, this message translates to:
-  /// **'Escribe y pulsa Buscar.'**
-  String get searchEmptyHint;
-
   /// No description provided for @searchNoResults.
   ///
   /// In es, this message translates to:
@@ -621,6 +615,630 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Vehículos'**
   String get adminTabVehicles;
+
+  /// No description provided for @actionLoadMore.
+  ///
+  /// In es, this message translates to:
+  /// **'Cargar más'**
+  String get actionLoadMore;
+
+  /// No description provided for @actionClear.
+  ///
+  /// In es, this message translates to:
+  /// **'Limpiar'**
+  String get actionClear;
+
+  /// No description provided for @actionDone.
+  ///
+  /// In es, this message translates to:
+  /// **'Listo'**
+  String get actionDone;
+
+  /// No description provided for @actionAcceptContinue.
+  ///
+  /// In es, this message translates to:
+  /// **'Acepto y continuar'**
+  String get actionAcceptContinue;
+
+  /// No description provided for @actionUse.
+  ///
+  /// In es, this message translates to:
+  /// **'Usar'**
+  String get actionUse;
+
+  /// No description provided for @actionDelete.
+  ///
+  /// In es, this message translates to:
+  /// **'Eliminar'**
+  String get actionDelete;
+
+  /// No description provided for @actionPaste.
+  ///
+  /// In es, this message translates to:
+  /// **'Pegar'**
+  String get actionPaste;
+
+  /// No description provided for @actionReport.
+  ///
+  /// In es, this message translates to:
+  /// **'Reportar'**
+  String get actionReport;
+
+  /// No description provided for @clipboardEmpty.
+  ///
+  /// In es, this message translates to:
+  /// **'El portapapeles está vacío.'**
+  String get clipboardEmpty;
+
+  /// No description provided for @searchSimple.
+  ///
+  /// In es, this message translates to:
+  /// **'Simple'**
+  String get searchSimple;
+
+  /// No description provided for @searchAdvanced.
+  ///
+  /// In es, this message translates to:
+  /// **'Avanzada'**
+  String get searchAdvanced;
+
+  /// No description provided for @searchModeGeneral.
+  ///
+  /// In es, this message translates to:
+  /// **'Búsqueda general'**
+  String get searchModeGeneral;
+
+  /// No description provided for @searchModeAdvanced.
+  ///
+  /// In es, this message translates to:
+  /// **'Búsqueda avanzada'**
+  String get searchModeAdvanced;
+
+  /// No description provided for @searchHintPlace.
+  ///
+  /// In es, this message translates to:
+  /// **'Ej. Tunja'**
+  String get searchHintPlace;
+
+  /// No description provided for @searchLabelText.
+  ///
+  /// In es, this message translates to:
+  /// **'Texto (nombre o ciudad)'**
+  String get searchLabelText;
+
+  /// No description provided for @searchLabelLocationExtra.
+  ///
+  /// In es, this message translates to:
+  /// **'Ciudad o departamento (extra)'**
+  String get searchLabelLocationExtra;
+
+  /// No description provided for @searchLabelCategory.
+  ///
+  /// In es, this message translates to:
+  /// **'Categoría'**
+  String get searchLabelCategory;
+
+  /// No description provided for @searchAny.
+  ///
+  /// In es, this message translates to:
+  /// **'Cualquiera'**
+  String get searchAny;
+
+  /// No description provided for @searchLabelTransport.
+  ///
+  /// In es, this message translates to:
+  /// **'Transporte'**
+  String get searchLabelTransport;
+
+  /// No description provided for @searchTransportPrivate.
+  ///
+  /// In es, this message translates to:
+  /// **'Particular'**
+  String get searchTransportPrivate;
+
+  /// No description provided for @searchTransportPublic.
+  ///
+  /// In es, this message translates to:
+  /// **'Público'**
+  String get searchTransportPublic;
+
+  /// No description provided for @searchTransportOther.
+  ///
+  /// In es, this message translates to:
+  /// **'Otro'**
+  String get searchTransportOther;
+
+  /// No description provided for @searchBudgetMin.
+  ///
+  /// In es, this message translates to:
+  /// **'Presupuesto min'**
+  String get searchBudgetMin;
+
+  /// No description provided for @searchBudgetMax.
+  ///
+  /// In es, this message translates to:
+  /// **'Presupuesto max'**
+  String get searchBudgetMax;
+
+  /// No description provided for @searchUseMyLocation.
+  ///
+  /// In es, this message translates to:
+  /// **'Usar mi ubicación + radio'**
+  String get searchUseMyLocation;
+
+  /// No description provided for @searchRadiusKm.
+  ///
+  /// In es, this message translates to:
+  /// **'Radio (km)'**
+  String get searchRadiusKm;
+
+  /// No description provided for @searchHoursPlaceholder.
+  ///
+  /// In es, this message translates to:
+  /// **'Horario: cuando los sitios tengan horario oficial.'**
+  String get searchHoursPlaceholder;
+
+  /// No description provided for @searchIncludePublic.
+  ///
+  /// In es, this message translates to:
+  /// **'Incluir sitios públicos'**
+  String get searchIncludePublic;
+
+  /// No description provided for @searchLoadMoreRemaining.
+  ///
+  /// In es, this message translates to:
+  /// **'Cargar más ({count} restantes)'**
+  String searchLoadMoreRemaining(int count);
+
+  /// No description provided for @searchEmptyHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Escribe y pulsa la lupa o Enter.'**
+  String get searchEmptyHint;
+
+  /// No description provided for @saveLocationSection.
+  ///
+  /// In es, this message translates to:
+  /// **'1. Ubicación (opcional)'**
+  String get saveLocationSection;
+
+  /// No description provided for @saveLocationDraftHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Si no la tienes aún, guarda igual: queda en borrador.'**
+  String get saveLocationDraftHint;
+
+  /// No description provided for @saveLocationMap.
+  ///
+  /// In es, this message translates to:
+  /// **'Mapa'**
+  String get saveLocationMap;
+
+  /// No description provided for @saveLocationGoogleLink.
+  ///
+  /// In es, this message translates to:
+  /// **'Enlace Google'**
+  String get saveLocationGoogleLink;
+
+  /// No description provided for @saveLocationPointReady.
+  ///
+  /// In es, this message translates to:
+  /// **'Punto listo'**
+  String get saveLocationPointReady;
+
+  /// No description provided for @saveLocationPickMap.
+  ///
+  /// In es, this message translates to:
+  /// **'Elegir en el mapa'**
+  String get saveLocationPickMap;
+
+  /// No description provided for @saveLocationTapHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Toca el mapa o busca el lugar'**
+  String get saveLocationTapHint;
+
+  /// No description provided for @saveLocationClear.
+  ///
+  /// In es, this message translates to:
+  /// **'Quitar ubicación'**
+  String get saveLocationClear;
+
+  /// No description provided for @saveMapsPasteLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Pegar enlace de Google Maps'**
+  String get saveMapsPasteLabel;
+
+  /// No description provided for @saveMapsPasteHelper.
+  ///
+  /// In es, this message translates to:
+  /// **'maps.app.goo.gl o google.com/maps'**
+  String get saveMapsPasteHelper;
+
+  /// No description provided for @saveMapsNeedLink.
+  ///
+  /// In es, this message translates to:
+  /// **'Pega un enlace de Google Maps.'**
+  String get saveMapsNeedLink;
+
+  /// No description provided for @saveMapsNeedCity.
+  ///
+  /// In es, this message translates to:
+  /// **'Se leyó el enlace. Completa ciudad o elige en el mapa.'**
+  String get saveMapsNeedCity;
+
+  /// No description provided for @saveLocationAppliedNamed.
+  ///
+  /// In es, this message translates to:
+  /// **'Ubicación aplicada: {name}, {city}.'**
+  String saveLocationAppliedNamed(String name, String city);
+
+  /// No description provided for @saveLocationApplied.
+  ///
+  /// In es, this message translates to:
+  /// **'Ubicación aplicada.'**
+  String get saveLocationApplied;
+
+  /// No description provided for @saveNameDetails.
+  ///
+  /// In es, this message translates to:
+  /// **'Nombre y detalles'**
+  String get saveNameDetails;
+
+  /// No description provided for @savePlaceName.
+  ///
+  /// In es, this message translates to:
+  /// **'Nombre del lugar'**
+  String get savePlaceName;
+
+  /// No description provided for @savePlaceNameHelper.
+  ///
+  /// In es, this message translates to:
+  /// **'Opcional. Se completa del mapa o queda “Sin nombre”'**
+  String get savePlaceNameHelper;
+
+  /// No description provided for @saveDepartment.
+  ///
+  /// In es, this message translates to:
+  /// **'Departamento'**
+  String get saveDepartment;
+
+  /// No description provided for @saveCity.
+  ///
+  /// In es, this message translates to:
+  /// **'Ciudad'**
+  String get saveCity;
+
+  /// No description provided for @saveAddress.
+  ///
+  /// In es, this message translates to:
+  /// **'Dirección'**
+  String get saveAddress;
+
+  /// No description provided for @saveGeoCatalogMissing.
+  ///
+  /// In es, this message translates to:
+  /// **'Catálogo no cargado. Ejecuta el reset DIVIPOLA.'**
+  String get saveGeoCatalogMissing;
+
+  /// No description provided for @savePickFromList.
+  ///
+  /// In es, this message translates to:
+  /// **'Elige una opción de la lista'**
+  String get savePickFromList;
+
+  /// No description provided for @savePickDeptFirst.
+  ///
+  /// In es, this message translates to:
+  /// **'Primero elige el departamento'**
+  String get savePickDeptFirst;
+
+  /// No description provided for @saveLinksSection.
+  ///
+  /// In es, this message translates to:
+  /// **'2. Enlaces (opcional)'**
+  String get saveLinksSection;
+
+  /// No description provided for @saveSocialPaste.
+  ///
+  /// In es, this message translates to:
+  /// **'Pegar enlace (IG, TikTok, FB…)'**
+  String get saveSocialPaste;
+
+  /// No description provided for @saveSocialInvalid.
+  ///
+  /// In es, this message translates to:
+  /// **'Pega un enlace http(s) válido.'**
+  String get saveSocialInvalid;
+
+  /// No description provided for @saveSocialDuplicate.
+  ///
+  /// In es, this message translates to:
+  /// **'Ese enlace ya está en la lista.'**
+  String get saveSocialDuplicate;
+
+  /// No description provided for @saveCategoriesSection.
+  ///
+  /// In es, this message translates to:
+  /// **'3. Categorías'**
+  String get saveCategoriesSection;
+
+  /// No description provided for @saveCategoryHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Ej. nadar, tejo, plaza, bar…'**
+  String get saveCategoryHint;
+
+  /// No description provided for @saveCategoryNone.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin coincidencias'**
+  String get saveCategoryNone;
+
+  /// No description provided for @saveCategorySuggestHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Se sugiere sola; o busca / abre el árbol.'**
+  String get saveCategorySuggestHint;
+
+  /// No description provided for @saveCategoryTree.
+  ///
+  /// In es, this message translates to:
+  /// **'Árbol'**
+  String get saveCategoryTree;
+
+  /// No description provided for @saveCategorySuggested.
+  ///
+  /// In es, this message translates to:
+  /// **'Sugerida según el nombre / Maps (puedes cambiarla)'**
+  String get saveCategorySuggested;
+
+  /// No description provided for @saveCategoryFallbackOtros.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin coincidencia clara → Otros (puedes cambiarla)'**
+  String get saveCategoryFallbackOtros;
+
+  /// No description provided for @saveVisibilitySection.
+  ///
+  /// In es, this message translates to:
+  /// **'4. Visibilidad y foto'**
+  String get saveVisibilitySection;
+
+  /// No description provided for @saveIsPhysical.
+  ///
+  /// In es, this message translates to:
+  /// **'Es un lugar físico'**
+  String get saveIsPhysical;
+
+  /// No description provided for @saveIsPhysicalSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Si no lo es (receta, tip…), quedará siempre privado'**
+  String get saveIsPhysicalSubtitle;
+
+  /// No description provided for @saveMakePublic.
+  ///
+  /// In es, this message translates to:
+  /// **'Hacer público'**
+  String get saveMakePublic;
+
+  /// No description provided for @savePublicNeedLocation.
+  ///
+  /// In es, this message translates to:
+  /// **'Primero indica ubicación para poder publicarlo'**
+  String get savePublicNeedLocation;
+
+  /// No description provided for @savePublicNonPhysical.
+  ///
+  /// In es, this message translates to:
+  /// **'Los contenidos no físicos quedan privados'**
+  String get savePublicNonPhysical;
+
+  /// No description provided for @savePublicVisible.
+  ///
+  /// In es, this message translates to:
+  /// **'Visible para otros en la capa pública'**
+  String get savePublicVisible;
+
+  /// No description provided for @saveAddPhoto.
+  ///
+  /// In es, this message translates to:
+  /// **'Añadir foto (máx. 15)'**
+  String get saveAddPhoto;
+
+  /// No description provided for @savePhotoReady.
+  ///
+  /// In es, this message translates to:
+  /// **'Foto lista para subir'**
+  String get savePhotoReady;
+
+  /// No description provided for @saveDraftFooter.
+  ///
+  /// In es, this message translates to:
+  /// **'Puedes guardar ya: sin ubicación queda en borrador y te recordaremos completarlo.'**
+  String get saveDraftFooter;
+
+  /// No description provided for @sameSiteTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Es el mismo sitio?'**
+  String get sameSiteTitle;
+
+  /// No description provided for @sameSiteNew.
+  ///
+  /// In es, this message translates to:
+  /// **'Es uno nuevo'**
+  String get sameSiteNew;
+
+  /// No description provided for @sameSiteYes.
+  ///
+  /// In es, this message translates to:
+  /// **'Sí, es el mismo'**
+  String get sameSiteYes;
+
+  /// No description provided for @locationPickerTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Elegir ubicación'**
+  String get locationPickerTitle;
+
+  /// No description provided for @locationPickerSearchHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Buscar lugar, dirección, ciudad…'**
+  String get locationPickerSearchHint;
+
+  /// No description provided for @locationMyLocation.
+  ///
+  /// In es, this message translates to:
+  /// **'Mi ubicación'**
+  String get locationMyLocation;
+
+  /// No description provided for @locationConfirm.
+  ///
+  /// In es, this message translates to:
+  /// **'Confirmar'**
+  String get locationConfirm;
+
+  /// No description provided for @locationNoMatches.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin coincidencias. Prueba otro nombre o toca el mapa.'**
+  String get locationNoMatches;
+
+  /// No description provided for @locationNeedGps.
+  ///
+  /// In es, this message translates to:
+  /// **'Activa la ubicación para centrar el mapa en ti.'**
+  String get locationNeedGps;
+
+  /// No description provided for @photoDeleteTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Eliminar foto'**
+  String get photoDeleteTitle;
+
+  /// No description provided for @photoDeleteConfirm.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Quieres eliminar esta foto del sitio?'**
+  String get photoDeleteConfirm;
+
+  /// No description provided for @photoReportTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Reportar foto'**
+  String get photoReportTitle;
+
+  /// No description provided for @photoReportSend.
+  ///
+  /// In es, this message translates to:
+  /// **'Enviar reporte'**
+  String get photoReportSend;
+
+  /// No description provided for @directionsMaps.
+  ///
+  /// In es, this message translates to:
+  /// **'Cómo llegar (Google Maps)'**
+  String get directionsMaps;
+
+  /// No description provided for @planCreateTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Armar plan'**
+  String get planCreateTitle;
+
+  /// No description provided for @planIncludePublic.
+  ///
+  /// In es, this message translates to:
+  /// **'Incluir guardados públicos'**
+  String get planIncludePublic;
+
+  /// No description provided for @planUseMyLocation.
+  ///
+  /// In es, this message translates to:
+  /// **'Usar mi ubicación actual como inicio'**
+  String get planUseMyLocation;
+
+  /// No description provided for @planGenerate.
+  ///
+  /// In es, this message translates to:
+  /// **'Generar plan'**
+  String get planGenerate;
+
+  /// No description provided for @planNeedCity.
+  ///
+  /// In es, this message translates to:
+  /// **'Indica una ciudad o departamento.'**
+  String get planNeedCity;
+
+  /// No description provided for @planTitleOptional.
+  ///
+  /// In es, this message translates to:
+  /// **'Título (opcional)'**
+  String get planTitleOptional;
+
+  /// No description provided for @planLocationLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Ciudad o departamento'**
+  String get planLocationLabel;
+
+  /// No description provided for @planLocationHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Ej. Villa de Leyva / Boyacá'**
+  String get planLocationHint;
+
+  /// No description provided for @planBudgetLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Presupuesto máx. por sitio (opcional)'**
+  String get planBudgetLabel;
+
+  /// No description provided for @planEstimatedPerPerson.
+  ///
+  /// In es, this message translates to:
+  /// **'Estimado por persona'**
+  String get planEstimatedPerPerson;
+
+  /// No description provided for @planSelectStops.
+  ///
+  /// In es, this message translates to:
+  /// **'Selecciona al menos una parada para enviar a Maps.'**
+  String get planSelectStops;
+
+  /// No description provided for @planBudgetHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Vacío = sin estimado'**
+  String get planBudgetHint;
+
+  /// No description provided for @adminActive.
+  ///
+  /// In es, this message translates to:
+  /// **'Activa'**
+  String get adminActive;
+
+  /// No description provided for @adminAgeRestricted.
+  ///
+  /// In es, this message translates to:
+  /// **'Restringida +18'**
+  String get adminAgeRestricted;
+
+  /// No description provided for @adminEditTransport.
+  ///
+  /// In es, this message translates to:
+  /// **'Editar transporte'**
+  String get adminEditTransport;
+
+  /// No description provided for @adminKmInvalid.
+  ///
+  /// In es, this message translates to:
+  /// **'Km inválido'**
+  String get adminKmInvalid;
 }
 
 class _AppLocalizationsDelegate

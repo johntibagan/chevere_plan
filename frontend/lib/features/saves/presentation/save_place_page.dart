@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
@@ -9,8 +10,10 @@ import 'package:image_picker/image_picker.dart';
 import '../../../core/cache/cache_ttl.dart';
 import '../../../core/di/providers.dart';
 import '../../../core/l10n/context_l10n.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_toast.dart';
 import '../../../core/widgets/app_network_image.dart';
+import '../../../core/widgets/field_action_icon.dart';
 import '../../admin/data/admin_models.dart';
 import '../../geo/data/geo_models.dart';
 import '../../geo/domain/geo_fuzzy.dart';
@@ -29,8 +32,6 @@ import 'category_picker_sheet.dart';
 import 'location_picker_page.dart';
 import 'site_status_l10n.dart';
 import 'social_link_preview_card.dart';
-
-const _kRequiredStar = Color(0xFFFF8C00);
 
 class SavePlacePage extends ConsumerStatefulWidget {
   const SavePlacePage({
@@ -84,8 +85,10 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
   String? _editSiteId;
   final List<SocialLinkDraft> _socialLinks = [];
   final _socialExtractor = SocialPlaceExtractor();
-  final _mapsImporter = GoogleMapsLinkImporter();
-  final _placeGeocoder = PlaceGeocoder();
+
+  PlaceGeocoder get _placeGeocoder => ref.read(placeGeocoderProvider);
+  GoogleMapsLinkImporter get _mapsImporter =>
+      GoogleMapsLinkImporter(geocoder: _placeGeocoder);
   /// Si el usuario eligió/quitó categorías a mano, no sobrescribir la sugerencia.
   bool _categoriesUserTouched = false;
   bool _categoryWasAutoSuggested = false;
@@ -297,7 +300,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
   Future<void> _importFromGoogleMaps() async {
     final text = _mapsCtrl.text.trim();
     if (text.isEmpty) {
-      AppToast.show(context, 'Pega un enlace de Google Maps.', error: true);
+      AppToast.show(context, context.l10n.saveMapsNeedLink, error: true);
       return;
     }
     setState(() => _importingMaps = true);
@@ -318,8 +321,11 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
       AppToast.show(
         context,
         _cityCtrl.text.trim().isNotEmpty
-            ? 'Ubicación aplicada: ${_nameCtrl.text.trim()}, ${_cityCtrl.text.trim()}.'
-            : 'Se leyó el enlace. Completa ciudad o elige en el mapa.',
+            ? context.l10n.saveLocationAppliedNamed(
+                _nameCtrl.text.trim(),
+                _cityCtrl.text.trim(),
+              )
+            : context.l10n.saveMapsNeedCity,
       );
     } catch (e) {
       if (!mounted) return;
@@ -328,15 +334,40 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
     }
   }
 
+  Future<void> _pasteMapsAndImport() async {
+    final data = await Clipboard.getData(Clipboard.kTextPlain);
+    if (!mounted) return;
+    final text = data?.text?.trim() ?? '';
+    if (text.isEmpty) {
+      AppToast.show(context, context.l10n.clipboardEmpty, error: true);
+      return;
+    }
+    _mapsCtrl.text = text;
+    await _importFromGoogleMaps();
+  }
+
+  Future<void> _pasteSocialAndAdd() async {
+    final data = await Clipboard.getData(Clipboard.kTextPlain);
+    if (!mounted) return;
+    final text = data?.text?.trim() ?? '';
+    if (text.isEmpty) {
+      AppToast.show(context, context.l10n.clipboardEmpty, error: true);
+      return;
+    }
+    _socialCtrl.text = text;
+    await _addSocialLink(text);
+    _socialCtrl.clear();
+  }
+
   Future<void> _addSocialLink(String raw) async {
     final parsed = ShareParser.parse(raw);
     final url = parsed.url ?? raw.trim();
     if (url.isEmpty || !url.startsWith('http')) {
-      AppToast.show(context, 'Pega un enlace http(s) válido.', error: true);
+      AppToast.show(context, context.l10n.saveSocialInvalid, error: true);
       return;
     }
     if (_socialLinks.any((l) => l.url == url)) {
-      AppToast.show(context, 'Ese enlace ya está en la lista.', error: true);
+      AppToast.show(context, context.l10n.saveSocialDuplicate, error: true);
       return;
     }
     setState(() => _addingSocial = true);
@@ -554,7 +585,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
       lng: place.lng,
     );
     if (mounted) {
-      AppToast.show(context, 'Ubicación aplicada.');
+      AppToast.show(context, context.l10n.saveLocationApplied);
     }
   }
 
@@ -574,7 +605,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
     final accepted = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Términos de Uso'),
+        title: Text(context.l10n.loginTerms),
         content: const Text(
           'Al subir una foto confirmas que cumple los Términos de Uso de '
           'Chevere Plan (turismo, gastronomía y planes de ocio; sin contenido '
@@ -583,11 +614,11 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancelar'),
+            child: Text(context.l10n.actionCancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Acepto y continuar'),
+            child: Text(context.l10n.actionAcceptContinue),
           ),
         ],
       ),
@@ -814,7 +845,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
           actions: [
             FilledButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Listo'),
+              child: Text(l10n.actionDone),
             ),
           ],
         ),
@@ -834,7 +865,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
     return showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('¿Es el mismo sitio?'),
+        title: Text(context.l10n.sameSiteTitle),
         content: Text(
           'Encontramos un sitio público parecido:\n\n'
           '«${d.siteName}»'
@@ -844,15 +875,15 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancelar'),
+            child: Text(context.l10n.actionCancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Es uno nuevo'),
+            child: Text(context.l10n.sameSiteNew),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Sí, es el mismo'),
+            child: Text(context.l10n.sameSiteYes),
           ),
         ],
       ),
@@ -891,7 +922,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
                   const TextSpan(
                     text: ' *',
                     style: TextStyle(
-                      color: _kRequiredStar,
+                      color: AppColors.requiredMark,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -920,24 +951,24 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
               children: [
                 // 1) Ubicación primero
                 _sectionCard(
-                  title: '1. Ubicación (opcional)',
+                  title: l10n.saveLocationSection,
                   children: [
-                    const Text(
-                      'Si no la tienes aún, guarda igual: queda en borrador.',
-                      style: TextStyle(fontSize: 12),
+                    Text(
+                      l10n.saveLocationDraftHint,
+                      style: const TextStyle(fontSize: 12),
                     ),
                     const SizedBox(height: 10),
                     SegmentedButton<bool>(
-                      segments: const [
+                      segments: [
                         ButtonSegment<bool>(
                           value: false,
-                          label: Text('Mapa'),
-                          icon: Icon(Icons.map_outlined, size: 18),
+                          label: Text(l10n.saveLocationMap),
+                          icon: const Icon(Icons.map_outlined, size: 18),
                         ),
                         ButtonSegment<bool>(
                           value: true,
-                          label: Text('Enlace Google'),
-                          icon: Icon(Icons.link, size: 18),
+                          label: Text(l10n.saveLocationGoogleLink),
+                          icon: const Icon(Icons.link, size: 18),
                         ),
                       ],
                       selected: {_useGoogleLink},
@@ -955,13 +986,13 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
                         ),
                         title: Text(
                           _lat != null && _lng != null
-                              ? 'Punto listo'
-                              : 'Elegir en el mapa',
+                              ? l10n.saveLocationPointReady
+                              : l10n.saveLocationPickMap,
                         ),
                         subtitle: Text(
                           _lat != null && _lng != null
                               ? '${_lat!.toStringAsFixed(5)}, ${_lng!.toStringAsFixed(5)}'
-                              : 'Toca el mapa o busca el lugar',
+                              : l10n.saveLocationTapHint,
                         ),
                         trailing: const Icon(Icons.chevron_right),
                         onTap: _saving ? null : _openMap,
@@ -976,15 +1007,24 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
                                       _lat = null;
                                       _lng = null;
                                     }),
-                            child: const Text('Quitar ubicación'),
+                            child: Text(l10n.saveLocationClear),
                           ),
                         ),
                     ] else ...[
                       TextField(
                         controller: _mapsCtrl,
                         decoration: _dec(
-                          'Pegar enlace de Google Maps',
-                          helper: 'maps.app.goo.gl o google.com/maps',
+                          l10n.saveMapsPasteLabel,
+                          helper: l10n.saveMapsPasteHelper,
+                        ).copyWith(
+                          suffixIcon: FieldActionIcon(
+                            icon: Icons.content_paste,
+                            tooltip: l10n.actionPaste,
+                            loading: _importingMaps,
+                            onPressed: (_saving || _importingMaps)
+                                ? null
+                                : _pasteMapsAndImport,
+                          ),
                         ),
                         keyboardType: TextInputType.url,
                         textInputAction: TextInputAction.done,
@@ -993,25 +1033,6 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
                             _importFromGoogleMaps();
                           }
                         },
-                      ),
-                      const SizedBox(height: 8),
-                      OutlinedButton.icon(
-                        onPressed: (_saving || _importingMaps)
-                            ? null
-                            : _importFromGoogleMaps,
-                        icon: _importingMaps
-                            ? const SizedBox(
-                                width: 18,
-                                height: 18,
-                                child:
-                                    CircularProgressIndicator(strokeWidth: 2),
-                              )
-                            : const Icon(Icons.download_outlined),
-                        label: Text(
-                          _importingMaps
-                              ? 'Importando…'
-                              : 'Importar del enlace',
-                        ),
                       ),
                       if (_pendingMapImageUrl != null) ...[
                         const SizedBox(height: 8),
@@ -1036,9 +1057,9 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
                         childrenPadding: const EdgeInsets.only(bottom: 4),
                         onExpansionChanged: (v) =>
                             setState(() => _locationDetailsExpanded = v),
-                        title: const Text(
-                          'Nombre y detalles',
-                          style: TextStyle(fontWeight: FontWeight.w700),
+                        title: Text(
+                          l10n.saveNameDetails,
+                          style: const TextStyle(fontWeight: FontWeight.w700),
                         ),
                         subtitle: Text(
                           _locationSummary,
@@ -1046,16 +1067,15 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
                             fontSize: 12,
-                            color: Colors.white54,
+                            color: AppColors.onImageMuted,
                           ),
                         ),
                         children: [
                           TextField(
                             controller: _nameCtrl,
                             decoration: _dec(
-                              'Nombre del lugar',
-                              helper:
-                                  'Opcional. Se completa del mapa o queda “Sin nombre”',
+                              l10n.savePlaceName,
+                              helper: l10n.savePlaceNameHelper,
                             ),
                             textCapitalization: TextCapitalization.words,
                             onChanged: (_) => setState(() {}),
@@ -1074,10 +1094,10 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
                             selected: _selectedDept,
                             enabled: _geoCatalog != null,
                             decoration: _dec(
-                              'Departamento',
+                              l10n.saveDepartment,
                               helper: _geoCatalog == null
-                                  ? 'Catálogo no cargado. Ejecuta el script DIVIPOLA.'
-                                  : 'Elige una opción de la lista',
+                                  ? l10n.saveGeoCatalogMissing
+                                  : l10n.savePickFromList,
                             ),
                             onSelected: (d) => setState(() {
                               _setDepartment(d);
@@ -1096,17 +1116,17 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
                             enabled:
                                 _geoCatalog != null && _selectedDept != null,
                             decoration: _dec(
-                              'Ciudad',
+                              l10n.saveCity,
                               helper: _selectedDept == null
-                                  ? 'Primero elige el departamento'
-                                  : 'Elige una opción de la lista',
+                                  ? l10n.savePickDeptFirst
+                                  : l10n.savePickFromList,
                             ),
                             onSelected: (c) => setState(() => _setCity(c)),
                           ),
                           const SizedBox(height: 10),
                           TextField(
                             controller: _addressCtrl,
-                            decoration: _dec('Dirección'),
+                            decoration: _dec(l10n.saveAddress),
                             textCapitalization: TextCapitalization.sentences,
                             onChanged: (_) => setState(() {}),
                           ),
@@ -1118,33 +1138,25 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
 
                 // 2) Enlaces
                 _sectionCard(
-                  title: '2. Enlaces (opcional)',
+                  title: l10n.saveLinksSection,
                   children: [
                     TextField(
                       controller: _socialCtrl,
-                      decoration: _dec('Pegar enlace (IG, TikTok, FB…)'),
+                      decoration: _dec(l10n.saveSocialPaste).copyWith(
+                        suffixIcon: FieldActionIcon(
+                          icon: Icons.content_paste,
+                          tooltip: l10n.actionPaste,
+                          loading: _addingSocial,
+                          onPressed: (_saving || _addingSocial)
+                              ? null
+                              : _pasteSocialAndAdd,
+                        ),
+                      ),
                       keyboardType: TextInputType.url,
                       onSubmitted: (v) async {
                         await _addSocialLink(v);
                         _socialCtrl.clear();
                       },
-                    ),
-                    const SizedBox(height: 8),
-                    OutlinedButton.icon(
-                      onPressed: (_saving || _addingSocial)
-                          ? null
-                          : () async {
-                              await _addSocialLink(_socialCtrl.text);
-                              _socialCtrl.clear();
-                            },
-                      icon: _addingSocial
-                          ? const SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Icon(Icons.add_link),
-                      label: const Text('Añadir enlace'),
                     ),
                     if (_socialLinks.isNotEmpty) ...[
                       const SizedBox(height: 8),
@@ -1169,7 +1181,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
 
                 // 3) Categorías (sugeridas; default Otros si no hay match)
                 _sectionCard(
-                  title: '3. Categorías',
+                  title: l10n.saveCategoriesSection,
                   children: [
                     if (_categoryWasAutoSuggested &&
                         _selectedCategories.isNotEmpty)
@@ -1183,8 +1195,8 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
                                     c.slug ==
                                         CategorySuggester.defaultParentSlug,
                               )
-                              ? 'Sin coincidencia clara → Otros (puedes cambiarla)'
-                              : 'Sugerida según el nombre / Maps (puedes cambiarla)',
+                              ? l10n.saveCategoryFallbackOtros
+                              : l10n.saveCategorySuggested,
                           style: Theme.of(context).textTheme.bodySmall,
                         ),
                       ),
@@ -1214,12 +1226,12 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
                     TextField(
                       controller: _categorySearchCtrl,
                       decoration: InputDecoration(
-                        hintText: 'Ej. nadar, tejo, plaza, bar…',
+                        hintText: l10n.saveCategoryHint,
                         prefixIcon: const Icon(Icons.search),
                         border: const OutlineInputBorder(),
                         isDense: true,
                         suffixIcon: IconButton(
-                          tooltip: 'Ver árbol de categorías',
+                          tooltip: l10n.saveCategoryTree,
                           onPressed: _saving ? null : _openCategoryTree,
                           icon: const Icon(Icons.account_tree_outlined),
                         ),
@@ -1254,19 +1266,19 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
                         );
                       }),
                       if (_filteredCategories.isEmpty)
-                        const Padding(
-                          padding: EdgeInsets.symmetric(vertical: 8),
-                          child: Text('Sin coincidencias'),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          child: Text(l10n.saveCategoryNone),
                         ),
                     ] else
                       Padding(
                         padding: const EdgeInsets.only(top: 6),
                         child: Row(
                           children: [
-                            const Expanded(
+                            Expanded(
                               child: Text(
-                                'Se sugiere sola; o busca / abre el árbol.',
-                                style: TextStyle(fontSize: 12),
+                                l10n.saveCategorySuggestHint,
+                                style: const TextStyle(fontSize: 12),
                               ),
                             ),
                             TextButton.icon(
@@ -1275,7 +1287,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
                                 Icons.account_tree_outlined,
                                 size: 18,
                               ),
-                              label: const Text('Árbol'),
+                              label: Text(l10n.saveCategoryTree),
                             ),
                           ],
                         ),
@@ -1285,14 +1297,12 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
 
                 // 4) Opciones
                 _sectionCard(
-                  title: '4. Visibilidad y foto',
+                  title: l10n.saveVisibilitySection,
                   children: [
                     SwitchListTile(
                       contentPadding: EdgeInsets.zero,
-                      title: const Text('Es un lugar físico'),
-                      subtitle: const Text(
-                        'Si no lo es (receta, tip…), quedará siempre privado',
-                      ),
+                      title: Text(l10n.saveIsPhysical),
+                      subtitle: Text(l10n.saveIsPhysicalSubtitle),
                       value: _isPhysical,
                       onChanged: (v) => setState(() {
                         _isPhysical = v;
@@ -1301,13 +1311,13 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
                     ),
                     SwitchListTile(
                       contentPadding: EdgeInsets.zero,
-                      title: const Text('Hacer público'),
+                      title: Text(l10n.saveMakePublic),
                       subtitle: Text(
                         !_isPhysical
-                            ? 'Los contenidos no físicos quedan privados'
+                            ? l10n.savePublicNonPhysical
                             : !_hasFormLocation
-                                ? 'Primero indica ubicación para poder publicarlo'
-                                : 'Visible para otros en la capa pública',
+                                ? l10n.savePublicNeedLocation
+                                : l10n.savePublicVisible,
                       ),
                       value: _isPublic,
                       onChanged: (_isPhysical && _hasFormLocation)
@@ -1319,8 +1329,8 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
                       icon: const Icon(Icons.photo_outlined),
                       label: Text(
                         _pendingPhoto == null
-                            ? 'Añadir foto (máx. 15)'
-                            : 'Foto lista para subir',
+                            ? l10n.saveAddPhoto
+                            : l10n.savePhotoReady,
                       ),
                     ),
                   ],
@@ -1343,8 +1353,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Puedes guardar ya: sin ubicación queda en borrador y te '
-                  'recordaremos completarlo.',
+                  l10n.saveDraftFooter,
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
               ],

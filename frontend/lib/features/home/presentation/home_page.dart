@@ -345,7 +345,7 @@ class _ChevereBottomNav extends StatelessWidget {
                           ),
                           child: const Icon(
                             Icons.add,
-                            color: Colors.black,
+                            color: AppColors.background,
                             size: 28,
                           ),
                         ),
@@ -535,12 +535,12 @@ class _InicioTab extends StatelessWidget {
                             width: 40,
                             height: 40,
                             decoration: BoxDecoration(
-                              color: Colors.black.withValues(alpha: 0.15),
+                              color: AppColors.background.withValues(alpha: 0.15),
                               shape: BoxShape.circle,
                             ),
                             child: const Icon(
                               Icons.bolt_rounded,
-                              color: Colors.white,
+                              color: AppColors.onImage,
                             ),
                           ),
                           const SizedBox(width: 12),
@@ -553,7 +553,8 @@ class _InicioTab extends StatelessWidget {
                                   style: TextStyle(
                                     fontSize: 10,
                                     fontWeight: FontWeight.w800,
-                                    color: Colors.black.withValues(alpha: 0.55),
+                                    color: AppColors.background
+                                        .withValues(alpha: 0.55),
                                     letterSpacing: 0.6,
                                   ),
                                 ),
@@ -562,7 +563,7 @@ class _InicioTab extends StatelessWidget {
                                   style: const TextStyle(
                                     fontSize: 13,
                                     fontWeight: FontWeight.w800,
-                                    color: Colors.black,
+                                    color: AppColors.background,
                                   ),
                                 ),
                               ],
@@ -570,7 +571,7 @@ class _InicioTab extends StatelessWidget {
                           ),
                           Icon(
                             Icons.chevron_right,
-                            color: Colors.black.withValues(alpha: 0.5),
+                            color: AppColors.background.withValues(alpha: 0.5),
                           ),
                         ],
                       ),
@@ -692,7 +693,7 @@ class _InicioTab extends StatelessWidget {
                               )
                             : TextButton(
                                 onPressed: onLoadMoreSaves,
-                                child: const Text('Cargar más'),
+                                child: Text(context.l10n.actionLoadMore),
                               ),
                       ),
                     );

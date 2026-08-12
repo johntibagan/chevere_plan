@@ -179,9 +179,6 @@ class AppLocalizationsEs extends AppLocalizations {
   String get searchTitle => 'Explorar';
 
   @override
-  String get searchEmptyHint => 'Escribe y pulsa Buscar.';
-
-  @override
   String get searchNoResults => 'Sin resultados.';
 
   @override
@@ -294,4 +291,335 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get adminTabVehicles => 'Vehículos';
+
+  @override
+  String get actionLoadMore => 'Cargar más';
+
+  @override
+  String get actionClear => 'Limpiar';
+
+  @override
+  String get actionDone => 'Listo';
+
+  @override
+  String get actionAcceptContinue => 'Acepto y continuar';
+
+  @override
+  String get actionUse => 'Usar';
+
+  @override
+  String get actionDelete => 'Eliminar';
+
+  @override
+  String get actionPaste => 'Pegar';
+
+  @override
+  String get actionReport => 'Reportar';
+
+  @override
+  String get clipboardEmpty => 'El portapapeles está vacío.';
+
+  @override
+  String get searchSimple => 'Simple';
+
+  @override
+  String get searchAdvanced => 'Avanzada';
+
+  @override
+  String get searchModeGeneral => 'Búsqueda general';
+
+  @override
+  String get searchModeAdvanced => 'Búsqueda avanzada';
+
+  @override
+  String get searchHintPlace => 'Ej. Tunja';
+
+  @override
+  String get searchLabelText => 'Texto (nombre o ciudad)';
+
+  @override
+  String get searchLabelLocationExtra => 'Ciudad o departamento (extra)';
+
+  @override
+  String get searchLabelCategory => 'Categoría';
+
+  @override
+  String get searchAny => 'Cualquiera';
+
+  @override
+  String get searchLabelTransport => 'Transporte';
+
+  @override
+  String get searchTransportPrivate => 'Particular';
+
+  @override
+  String get searchTransportPublic => 'Público';
+
+  @override
+  String get searchTransportOther => 'Otro';
+
+  @override
+  String get searchBudgetMin => 'Presupuesto min';
+
+  @override
+  String get searchBudgetMax => 'Presupuesto max';
+
+  @override
+  String get searchUseMyLocation => 'Usar mi ubicación + radio';
+
+  @override
+  String get searchRadiusKm => 'Radio (km)';
+
+  @override
+  String get searchHoursPlaceholder =>
+      'Horario: cuando los sitios tengan horario oficial.';
+
+  @override
+  String get searchIncludePublic => 'Incluir sitios públicos';
+
+  @override
+  String searchLoadMoreRemaining(int count) {
+    return 'Cargar más ($count restantes)';
+  }
+
+  @override
+  String get searchEmptyHint => 'Escribe y pulsa la lupa o Enter.';
+
+  @override
+  String get saveLocationSection => '1. Ubicación (opcional)';
+
+  @override
+  String get saveLocationDraftHint =>
+      'Si no la tienes aún, guarda igual: queda en borrador.';
+
+  @override
+  String get saveLocationMap => 'Mapa';
+
+  @override
+  String get saveLocationGoogleLink => 'Enlace Google';
+
+  @override
+  String get saveLocationPointReady => 'Punto listo';
+
+  @override
+  String get saveLocationPickMap => 'Elegir en el mapa';
+
+  @override
+  String get saveLocationTapHint => 'Toca el mapa o busca el lugar';
+
+  @override
+  String get saveLocationClear => 'Quitar ubicación';
+
+  @override
+  String get saveMapsPasteLabel => 'Pegar enlace de Google Maps';
+
+  @override
+  String get saveMapsPasteHelper => 'maps.app.goo.gl o google.com/maps';
+
+  @override
+  String get saveMapsNeedLink => 'Pega un enlace de Google Maps.';
+
+  @override
+  String get saveMapsNeedCity =>
+      'Se leyó el enlace. Completa ciudad o elige en el mapa.';
+
+  @override
+  String saveLocationAppliedNamed(String name, String city) {
+    return 'Ubicación aplicada: $name, $city.';
+  }
+
+  @override
+  String get saveLocationApplied => 'Ubicación aplicada.';
+
+  @override
+  String get saveNameDetails => 'Nombre y detalles';
+
+  @override
+  String get savePlaceName => 'Nombre del lugar';
+
+  @override
+  String get savePlaceNameHelper =>
+      'Opcional. Se completa del mapa o queda “Sin nombre”';
+
+  @override
+  String get saveDepartment => 'Departamento';
+
+  @override
+  String get saveCity => 'Ciudad';
+
+  @override
+  String get saveAddress => 'Dirección';
+
+  @override
+  String get saveGeoCatalogMissing =>
+      'Catálogo no cargado. Ejecuta el reset DIVIPOLA.';
+
+  @override
+  String get savePickFromList => 'Elige una opción de la lista';
+
+  @override
+  String get savePickDeptFirst => 'Primero elige el departamento';
+
+  @override
+  String get saveLinksSection => '2. Enlaces (opcional)';
+
+  @override
+  String get saveSocialPaste => 'Pegar enlace (IG, TikTok, FB…)';
+
+  @override
+  String get saveSocialInvalid => 'Pega un enlace http(s) válido.';
+
+  @override
+  String get saveSocialDuplicate => 'Ese enlace ya está en la lista.';
+
+  @override
+  String get saveCategoriesSection => '3. Categorías';
+
+  @override
+  String get saveCategoryHint => 'Ej. nadar, tejo, plaza, bar…';
+
+  @override
+  String get saveCategoryNone => 'Sin coincidencias';
+
+  @override
+  String get saveCategorySuggestHint =>
+      'Se sugiere sola; o busca / abre el árbol.';
+
+  @override
+  String get saveCategoryTree => 'Árbol';
+
+  @override
+  String get saveCategorySuggested =>
+      'Sugerida según el nombre / Maps (puedes cambiarla)';
+
+  @override
+  String get saveCategoryFallbackOtros =>
+      'Sin coincidencia clara → Otros (puedes cambiarla)';
+
+  @override
+  String get saveVisibilitySection => '4. Visibilidad y foto';
+
+  @override
+  String get saveIsPhysical => 'Es un lugar físico';
+
+  @override
+  String get saveIsPhysicalSubtitle =>
+      'Si no lo es (receta, tip…), quedará siempre privado';
+
+  @override
+  String get saveMakePublic => 'Hacer público';
+
+  @override
+  String get savePublicNeedLocation =>
+      'Primero indica ubicación para poder publicarlo';
+
+  @override
+  String get savePublicNonPhysical =>
+      'Los contenidos no físicos quedan privados';
+
+  @override
+  String get savePublicVisible => 'Visible para otros en la capa pública';
+
+  @override
+  String get saveAddPhoto => 'Añadir foto (máx. 15)';
+
+  @override
+  String get savePhotoReady => 'Foto lista para subir';
+
+  @override
+  String get saveDraftFooter =>
+      'Puedes guardar ya: sin ubicación queda en borrador y te recordaremos completarlo.';
+
+  @override
+  String get sameSiteTitle => '¿Es el mismo sitio?';
+
+  @override
+  String get sameSiteNew => 'Es uno nuevo';
+
+  @override
+  String get sameSiteYes => 'Sí, es el mismo';
+
+  @override
+  String get locationPickerTitle => 'Elegir ubicación';
+
+  @override
+  String get locationPickerSearchHint => 'Buscar lugar, dirección, ciudad…';
+
+  @override
+  String get locationMyLocation => 'Mi ubicación';
+
+  @override
+  String get locationConfirm => 'Confirmar';
+
+  @override
+  String get locationNoMatches =>
+      'Sin coincidencias. Prueba otro nombre o toca el mapa.';
+
+  @override
+  String get locationNeedGps =>
+      'Activa la ubicación para centrar el mapa en ti.';
+
+  @override
+  String get photoDeleteTitle => 'Eliminar foto';
+
+  @override
+  String get photoDeleteConfirm => '¿Quieres eliminar esta foto del sitio?';
+
+  @override
+  String get photoReportTitle => 'Reportar foto';
+
+  @override
+  String get photoReportSend => 'Enviar reporte';
+
+  @override
+  String get directionsMaps => 'Cómo llegar (Google Maps)';
+
+  @override
+  String get planCreateTitle => 'Armar plan';
+
+  @override
+  String get planIncludePublic => 'Incluir guardados públicos';
+
+  @override
+  String get planUseMyLocation => 'Usar mi ubicación actual como inicio';
+
+  @override
+  String get planGenerate => 'Generar plan';
+
+  @override
+  String get planNeedCity => 'Indica una ciudad o departamento.';
+
+  @override
+  String get planTitleOptional => 'Título (opcional)';
+
+  @override
+  String get planLocationLabel => 'Ciudad o departamento';
+
+  @override
+  String get planLocationHint => 'Ej. Villa de Leyva / Boyacá';
+
+  @override
+  String get planBudgetLabel => 'Presupuesto máx. por sitio (opcional)';
+
+  @override
+  String get planEstimatedPerPerson => 'Estimado por persona';
+
+  @override
+  String get planSelectStops =>
+      'Selecciona al menos una parada para enviar a Maps.';
+
+  @override
+  String get planBudgetHint => 'Vacío = sin estimado';
+
+  @override
+  String get adminActive => 'Activa';
+
+  @override
+  String get adminAgeRestricted => 'Restringida +18';
+
+  @override
+  String get adminEditTransport => 'Editar transporte';
+
+  @override
+  String get adminKmInvalid => 'Km inválido';
 }

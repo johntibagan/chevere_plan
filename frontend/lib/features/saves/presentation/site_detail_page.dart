@@ -876,12 +876,12 @@ class _PhotoTile extends StatelessWidget {
             top: 4,
             right: 4,
             child: Material(
-              color: Colors.black54,
+              color: AppColors.scrim,
               shape: const CircleBorder(),
               child: PopupMenuButton<String>(
                 enabled: !busy,
                 padding: EdgeInsets.zero,
-                icon: const Icon(Icons.more_vert, color: Colors.white, size: 20),
+                icon: const Icon(Icons.more_vert, color: AppColors.onImage, size: 20),
                 onSelected: onMenu,
                 itemBuilder: (context) => [
                   if (canDelete)

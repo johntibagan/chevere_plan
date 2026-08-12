@@ -2,16 +2,20 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../../core/config/env.dart';
+import '../../../core/di/providers.dart';
+import '../../../core/l10n/context_l10n.dart';
 import '../../../core/widgets/app_toast.dart';
+import '../../../core/widgets/field_action_icon.dart';
 import '../data/geo_place.dart';
 import '../data/place_geocoder.dart';
 
 /// Mapa OSM + búsqueda Geoapify (autocomplete). Devuelve [GeoPlace] al confirmar.
-class LocationPickerPage extends StatefulWidget {
+class LocationPickerPage extends ConsumerStatefulWidget {
   const LocationPickerPage({
     super.key,
     this.initialLat,
@@ -22,13 +26,13 @@ class LocationPickerPage extends StatefulWidget {
   final double? initialLng;
 
   @override
-  State<LocationPickerPage> createState() => _LocationPickerPageState();
+  ConsumerState<LocationPickerPage> createState() => _LocationPickerPageState();
 }
 
-class _LocationPickerPageState extends State<LocationPickerPage> {
+class _LocationPickerPageState extends ConsumerState<LocationPickerPage> {
   static const _colombiaCenter = LatLng(4.5709, -74.2973);
 
-  final _geocoder = PlaceGeocoder();
+  PlaceGeocoder get _geocoder => ref.read(placeGeocoderProvider);
   final _searchCtrl = TextEditingController();
   late final MapController _mapController;
 
@@ -88,38 +92,42 @@ class _LocationPickerPageState extends State<LocationPickerPage> {
 
   void _onSearchChanged(String value) {
     _debounce?.cancel();
-    _debounce = Timer(const Duration(milliseconds: 400), () async {
-      if (value.trim().length < 2) {
-        if (mounted) setState(() => _suggestions = const []);
-        return;
-      }
-      setState(() {
-        _busy = true;
-        _hint = null;
-      });
-      try {
-        final hits = await _geocoder.search(
-          value,
-          biasLat: _pin.latitude,
-          biasLng: _pin.longitude,
-        );
-        if (!mounted) return;
-        setState(() {
-          _suggestions = hits;
-          _busy = false;
-          if (hits.isEmpty) {
-            _hint = 'Sin coincidencias. Prueba otro nombre o toca el mapa.';
-          }
-        });
-      } catch (e) {
-        if (!mounted) return;
-        setState(() {
-          _suggestions = const [];
-          _busy = false;
-        });
-        AppToast.error(context, e, logContext: 'location_search');
-      }
+    _debounce = Timer(const Duration(milliseconds: 400), () {
+      unawaited(_runSearch(value));
     });
+  }
+
+  Future<void> _runSearch(String value) async {
+    if (value.trim().length < 2) {
+      if (mounted) setState(() => _suggestions = const []);
+      return;
+    }
+    setState(() {
+      _busy = true;
+      _hint = null;
+    });
+    try {
+      final hits = await _geocoder.search(
+        value,
+        biasLat: _pin.latitude,
+        biasLng: _pin.longitude,
+      );
+      if (!mounted) return;
+      setState(() {
+        _suggestions = hits;
+        _busy = false;
+        if (hits.isEmpty) {
+          _hint = context.l10n.locationNoMatches;
+        }
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _suggestions = const [];
+        _busy = false;
+      });
+      AppToast.error(context, e, logContext: 'location_search');
+    }
   }
 
   Future<void> _selectSuggestion(GeoPlace place) async {
@@ -156,7 +164,7 @@ class _LocationPickerPageState extends State<LocationPickerPage> {
       if (permission == LocationPermission.denied ||
           permission == LocationPermission.deniedForever) {
         setState(() {
-          _hint = 'Activa la ubicación para centrar el mapa en ti.';
+          _hint = context.l10n.locationNeedGps;
           _locating = false;
         });
         return;
@@ -202,11 +210,12 @@ class _LocationPickerPageState extends State<LocationPickerPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Elegir ubicación'),
+        title: Text(l10n.locationPickerTitle),
         actions: [
-          TextButton(onPressed: _confirm, child: const Text('Usar')),
+          TextButton(onPressed: _confirm, child: Text(l10n.actionUse)),
         ],
       ),
       body: Column(
@@ -216,30 +225,20 @@ class _LocationPickerPageState extends State<LocationPickerPage> {
             child: TextField(
               controller: _searchCtrl,
               decoration: InputDecoration(
-                hintText: 'Buscar lugar, dirección, ciudad…',
-                prefixIcon: const Icon(Icons.search),
+                hintText: l10n.locationPickerSearchHint,
                 border: const OutlineInputBorder(),
                 isDense: true,
-                suffixIcon: _busy
-                    ? const Padding(
-                        padding: EdgeInsets.all(12),
-                        child: SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        ),
-                      )
-                    : (_searchCtrl.text.isEmpty
-                        ? null
-                        : IconButton(
-                            icon: const Icon(Icons.clear),
-                            onPressed: () {
-                              _searchCtrl.clear();
-                              setState(() => _suggestions = const []);
-                            },
-                          )),
+                suffixIcon: FieldActionIcon(
+                  icon: Icons.search,
+                  tooltip: l10n.actionSearch,
+                  loading: _busy,
+                  onPressed: _busy
+                      ? null
+                      : () => _runSearch(_searchCtrl.text),
+                ),
               ),
               textInputAction: TextInputAction.search,
+              onSubmitted: _runSearch,
               onChanged: _onSearchChanged,
             ),
           ),
@@ -347,7 +346,7 @@ class _LocationPickerPageState extends State<LocationPickerPage> {
                                   ),
                                 )
                               : const Icon(Icons.my_location),
-                          label: const Text('Mi ubicación'),
+                          label: Text(l10n.locationMyLocation),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -355,7 +354,7 @@ class _LocationPickerPageState extends State<LocationPickerPage> {
                         child: FilledButton.icon(
                           onPressed: _confirm,
                           icon: const Icon(Icons.check),
-                          label: const Text('Confirmar'),
+                          label: Text(l10n.locationConfirm),
                         ),
                       ),
                     ],

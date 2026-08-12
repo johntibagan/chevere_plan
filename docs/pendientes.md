@@ -33,3 +33,8 @@ No bloquean el uso diario. Al implementar, tacha aquí y ajusta el código.
 
 - Textos legales del login son borrador; revisión formal pendiente.
 - Pixel-perfect Figma por pantalla: tema dark + shell ya aplicados; detalle por vista pendiente.
+
+
+## Mis notas
+- Rutas
+- Planes

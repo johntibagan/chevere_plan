@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 
 import '../../../core/errors/user_facing_error.dart';
+import '../../../core/l10n/context_l10n.dart';
 import '../../../core/widgets/app_toast.dart';
 import '../../saves/data/geo_place.dart';
 import '../../saves/presentation/location_picker_page.dart';
@@ -63,7 +64,7 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
   Future<void> _create() async {
     final location = _locationCtrl.text.trim();
     if (location.isEmpty) {
-      AppToast.show(context, 'Indica una ciudad o departamento.', error: true);
+      AppToast.show(context, context.l10n.planNeedCity, error: true);
       return;
     }
     setState(() => _saving = true);
@@ -127,25 +128,26 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return Scaffold(
-      appBar: AppBar(title: const Text('Armar plan')),
+      appBar: AppBar(title: Text(l10n.planCreateTitle)),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           TextField(
             controller: _titleCtrl,
-            decoration: const InputDecoration(
-              labelText: 'Título (opcional)',
-              border: OutlineInputBorder(),
+            decoration: InputDecoration(
+              labelText: l10n.planTitleOptional,
+              border: const OutlineInputBorder(),
             ),
           ),
           const SizedBox(height: 12),
           TextField(
             controller: _locationCtrl,
-            decoration: const InputDecoration(
-              labelText: 'Ciudad o departamento',
-              hintText: 'Ej. Villa de Leyva / Boyacá',
-              border: OutlineInputBorder(),
+            decoration: InputDecoration(
+              labelText: l10n.planLocationLabel,
+              hintText: l10n.planLocationHint,
+              border: const OutlineInputBorder(),
             ),
             textCapitalization: TextCapitalization.words,
           ),
@@ -153,14 +155,14 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
           TextField(
             controller: _budgetCtrl,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            decoration: const InputDecoration(
-              labelText: 'Presupuesto máx. por sitio (COP, opcional)',
-              border: OutlineInputBorder(),
+            decoration: InputDecoration(
+              labelText: l10n.planBudgetLabel,
+              border: const OutlineInputBorder(),
             ),
           ),
           SwitchListTile(
             contentPadding: EdgeInsets.zero,
-            title: const Text('Incluir guardados públicos'),
+            title: Text(l10n.planIncludePublic),
             value: _includePublic,
             onChanged: _saving
                 ? null
@@ -168,7 +170,7 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
           ),
           SwitchListTile(
             contentPadding: EdgeInsets.zero,
-            title: const Text('Usar mi ubicación actual como inicio'),
+            title: Text(l10n.planUseMyLocation),
             subtitle: const Text(
               'Si está apagado, elige el punto de inicio en el mapa',
             ),
@@ -213,7 +215,7 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
                     width: 22,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
-                : const Text('Generar plan'),
+                : Text(l10n.planGenerate),
           ),
         ],
       ),

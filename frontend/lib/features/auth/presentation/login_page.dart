@@ -89,7 +89,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                   child: const Icon(
                     Icons.map_rounded,
                     size: 36,
-                    color: Colors.black,
+                    color: AppColors.background,
                   ),
                 ),
               ),
@@ -167,7 +167,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                         height: 18,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          color: Colors.black,
+                          color: AppColors.background,
                         ),
                       )
                     : const Icon(Icons.login),

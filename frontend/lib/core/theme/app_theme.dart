@@ -28,6 +28,22 @@ class AppColors {
   static const catEven = Color(0xFFFF5252);
   static const catServ = Color(0xFF4A90D9);
   static const catDeporte = Color(0xFF2ECC71);
+
+  static const scrim = Color(0x8A000000);
+  static const onImage = Color(0xFFFFFFFF);
+  static const onImageMuted = Color(0x8AFFFFFF);
+  static const requiredMark = Color(0xFFFF8C00);
+}
+
+class AppSpacing {
+  AppSpacing._();
+
+  static const xs = 4.0;
+  static const sm = 8.0;
+  static const md = 12.0;
+  static const lg = 16.0;
+  static const xl = 24.0;
+  static const xxl = 32.0;
 }
 
 class AppTheme {
@@ -47,9 +63,9 @@ class AppTheme {
       secondary: AppColors.surfaceElevated,
       onSecondary: AppColors.foreground,
       tertiary: AppColors.accent,
-      onTertiary: Colors.white,
+      onTertiary: AppColors.onImage,
       error: AppColors.accent,
-      onError: Colors.white,
+      onError: AppColors.onImage,
       surface: AppColors.surface,
       onSurface: AppColors.foreground,
       onSurfaceVariant: AppColors.muted,

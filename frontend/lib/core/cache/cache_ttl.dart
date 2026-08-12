@@ -43,6 +43,11 @@ class CacheTtl {
     fresh: Duration(minutes: 5),
     stale: Duration(hours: 24),
   );
+
+  static const search = CacheTtl(
+    fresh: Duration(minutes: 2),
+    stale: Duration(minutes: 45),
+  );
 }
 
 abstract final class CacheKeys {
@@ -53,4 +58,5 @@ abstract final class CacheKeys {
   static String siteFicha(String siteId) => 'site_ficha:$siteId';
   static String plansPage0(String uid) => 'plans_p0:$uid';
   static String routesAll(String uid) => 'routes_all:$uid';
+  static String search(String fingerprint) => 'search:$fingerprint';
 }

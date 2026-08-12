@@ -108,7 +108,7 @@ class _PlansListPageState extends ConsumerState<PlansListPage> {
                       : TextButton(
                           onPressed: () =>
                               ref.read(plansProvider.notifier).loadMore(),
-                          child: const Text('Cargar más'),
+                          child: Text(context.l10n.actionLoadMore),
                         ),
                 ),
               );
