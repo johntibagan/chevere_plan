@@ -188,6 +188,36 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
     super.dispose();
   }
 
+  /// Escribe en el form lo que trajo Maps o el mapa. Igual en crear y editar.
+  void _fillFromPlace({
+    String? name,
+    String? city,
+    String? department,
+    String? address,
+    double? lat,
+    double? lng,
+    String? staticMapUrl,
+  }) {
+    void put(TextEditingController c, String? v) {
+      if (v != null && v.trim().isNotEmpty) c.text = v.trim();
+    }
+
+    setState(() {
+      put(_nameCtrl, name);
+      put(_cityCtrl, city);
+      put(_deptCtrl, department);
+      put(_addressCtrl, address);
+      _lat = lat ?? _lat;
+      _lng = lng ?? _lng;
+      if (staticMapUrl != null && staticMapUrl.isNotEmpty) {
+        _pendingMapImageUrl = staticMapUrl;
+      }
+      _locationDetailsExpanded = true;
+      _locationPanelEpoch++;
+    });
+    if (!_isEditing) _maybeSuggestCategories(force: true);
+  }
+
   Future<void> _importFromGoogleMaps() async {
     final text = _mapsCtrl.text.trim();
     if (text.isEmpty) {
@@ -198,41 +228,22 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
     try {
       final result = await _mapsImporter.importFromText(text);
       if (!mounted) return;
-      setState(() {
-        if (result.name != null &&
-            (result.name!.trim().isNotEmpty) &&
-            (_nameCtrl.text.trim().isEmpty ||
-                _nameCtrl.text.trim() == 'Sin nombre')) {
-          _nameCtrl.text = result.name!;
-        }
-        if (result.city != null && result.city!.trim().isNotEmpty) {
-          _cityCtrl.text = result.city!;
-        }
-        if (result.department != null &&
-            result.department!.trim().isNotEmpty) {
-          _deptCtrl.text = result.department!;
-        }
-        if (result.addressLine != null &&
-            result.addressLine!.trim().isNotEmpty &&
-            _addressCtrl.text.trim().isEmpty) {
-          _addressCtrl.text = result.addressLine!;
-        }
-        _lat = result.lat ?? _lat;
-        _lng = result.lng ?? _lng;
-        _pendingMapImageUrl = result.staticMapUrl;
-        _locationDetailsExpanded = false;
-        _locationPanelEpoch++;
-        _importingMaps = false;
-      });
-      _maybeSuggestCategories(force: true);
+      setState(() => _importingMaps = false);
+      _fillFromPlace(
+        name: result.name,
+        city: result.city,
+        department: result.department,
+        address: result.addressLine,
+        lat: result.lat,
+        lng: result.lng,
+        staticMapUrl: result.staticMapUrl,
+      );
       if (!mounted) return;
       AppToast.show(
         context,
-        result.hasCoords
-            ? 'Datos de Google Maps aplicados (nombre, ubicación'
-                '${result.staticMapUrl != null ? ', mapa' : ''}'
-                ', categoría).'
-            : 'Se leyó el enlace; completa ciudad o elige en el mapa.',
+        _cityCtrl.text.trim().isNotEmpty
+            ? 'Ubicación aplicada: ${_nameCtrl.text.trim()}, ${_cityCtrl.text.trim()}.'
+            : 'Se leyó el enlace. Completa ciudad o elige en el mapa.',
       );
     } catch (e) {
       if (!mounted) return;
@@ -336,7 +347,9 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
       ].join(' ');
 
   /// Sugiere y marca categoría según nombre / Maps; si no hay match → Otros.
+  /// Solo al crear. En editar se respetan las categorías ya guardadas.
   void _maybeSuggestCategories({bool force = false}) {
+    if (_isEditing) return;
     if (_categories.isEmpty) return;
     if (!force && _categoriesUserTouched) return;
 
@@ -460,28 +473,17 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
       ),
     );
     if (place == null || !mounted) return;
-    setState(() {
-      _lat = place.lat;
-      _lng = place.lng;
-      if (place.city != null && place.city!.isNotEmpty) {
-        _cityCtrl.text = place.city!;
-      }
-      if (place.department != null && place.department!.isNotEmpty) {
-        _deptCtrl.text = place.department!;
-      }
-      if (place.addressLine != null && place.addressLine!.isNotEmpty) {
-        _addressCtrl.text = place.addressLine!;
-      }
-      // Solo rellenar nombre si está vacío (no pisar share/sugerencia previa).
-      if (_nameCtrl.text.trim().isEmpty &&
-          place.name != null &&
-          place.name!.isNotEmpty) {
-        _nameCtrl.text = place.name!;
-      }
-      _locationDetailsExpanded = false;
-      _locationPanelEpoch++;
-    });
-    _maybeSuggestCategories();
+    _fillFromPlace(
+      name: place.name,
+      city: place.city,
+      department: place.department,
+      address: place.addressLine ?? place.displayName,
+      lat: place.lat,
+      lng: place.lng,
+    );
+    if (mounted) {
+      AppToast.show(context, 'Ubicación aplicada.');
+    }
   }
 
   String get _locationSummary {
@@ -539,6 +541,13 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
           : _nameCtrl.text.trim();
       final primaryLink =
           _socialLinks.isNotEmpty ? _socialLinks.first : null;
+      final mapsUrl = _mapsCtrl.text.trim();
+      final sourceUrl = primaryLink?.url ??
+          (GoogleMapsLinkImporter.looksLikeMapsUrl(mapsUrl) ? mapsUrl : null);
+      final sourceNetwork = primaryLink?.network ??
+          (GoogleMapsLinkImporter.looksLikeMapsUrl(mapsUrl)
+              ? 'google_maps'
+              : null);
 
       final categoryIds = _resolvedCategoryIds();
       if (categoryIds.isEmpty) {
@@ -570,8 +579,8 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
 
       final input = SaveDraftInput(
         name: name,
-        sourceUrl: primaryLink?.url,
-        sourceNetwork: primaryLink?.network,
+        sourceUrl: sourceUrl,
+        sourceNetwork: sourceNetwork,
         city: _cityCtrl.text,
         department: _deptCtrl.text,
         addressLine: _addressCtrl.text,
@@ -668,9 +677,16 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
       }
 
       try {
+        final linksToSave = List<SocialLinkDraft>.from(_socialLinks);
+        if (GoogleMapsLinkImporter.looksLikeMapsUrl(mapsUrl) &&
+            linksToSave.every((l) => l.url != mapsUrl)) {
+          linksToSave.add(
+            SocialLinkDraft(url: mapsUrl, network: 'google_maps'),
+          );
+        }
         await widget.savesRepository.replaceSocialLinks(
           siteId: saved.siteId,
-          links: _socialLinks,
+          links: linksToSave,
         );
       } catch (_) {
         // Tabla puede no existir aún si no aplicaron migración 12.
@@ -895,6 +911,12 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
                           helper: 'maps.app.goo.gl o google.com/maps',
                         ),
                         keyboardType: TextInputType.url,
+                        textInputAction: TextInputAction.done,
+                        onSubmitted: (_) {
+                          if (!_saving && !_importingMaps) {
+                            _importFromGoogleMaps();
+                          }
+                        },
                       ),
                       const SizedBox(height: 8),
                       OutlinedButton.icon(

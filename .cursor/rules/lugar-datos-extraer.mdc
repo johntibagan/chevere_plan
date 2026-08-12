@@ -1,0 +1,38 @@
+---
+description: Extraer datos de lugar (no listas quemadas); crear y editar el mismo formulario
+alwaysApply: true
+---
+
+# Datos de lugar (Chevere Plan)
+
+## No quemar geografía
+
+No hardcodear países, departamentos, ciudades, barrios ni códigos postales
+en lógica de negocio ni en archivos de “catálogo” local.
+
+Nombre, ciudad, departamento, dirección y coordenadas se **extraen**:
+enlace de Google Maps (parseo de URL) y/o campos que ya trae el geocoder
+(`city`, `town`, `village`, `municipality`, `state`, `address_line1`…).
+
+```dart
+// ❌ BAD
+const departamentos = ['Cundinamarca', 'Boyacá', ...];
+
+// ✅ GOOD
+city: json['city'] ?? json['town'],
+department: json['state'],
+```
+
+## Crear = editar
+
+Misma pantalla y mismas acciones (importar Maps, mapa, enlaces).
+La única diferencia de editar es **precargar** lo ya guardado en cada campo.
+
+Excepción: al **crear**, si no hay match de categoría → default Otros.
+Al **editar**, no reemplazar las categorías cargadas con ese default.
+
+## Código
+
+Un solo camino para rellenar ficha desde Maps/mapa. Sin flags
+`onlyEmpty` / `overwriteName` / ramas crear-vs-editar en el import.
+Si un campo viene vacío del origen, no borrar el valor que ya está en el form.

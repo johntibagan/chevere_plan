@@ -1,4 +1,10 @@
+import 'dart:convert';
+
+import 'package:chevere_plan/features/saves/data/bigdatacloud_geocoder.dart';
+import 'package:chevere_plan/features/saves/data/geoapify_geocoder.dart';
 import 'package:chevere_plan/features/saves/data/google_maps_link_importer.dart';
+import 'package:chevere_plan/features/saves/data/nominatim_geocoder.dart';
+import 'package:chevere_plan/features/saves/data/place_geocoder.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -37,5 +43,76 @@ void main() {
     );
     expect(result.name, 'Termales Los Volcanes');
     expect(result.hasCoords, isTrue);
+  });
+
+  test('Geoapify city/state del JSON de la API', () {
+    final p = GeoapifyGeocoder.placeFromJson({
+      'lat': 5.0928761,
+      'lon': -73.6406624,
+      'name': 'Termales Los Volcanes',
+      'city': 'Chocontá',
+      'state': 'Cundinamarca',
+      'address_line1': 'Termales Los Volcanes',
+      'formatted': 'Termales Los Volcanes, 250840 Chocontá, CU, Colombia',
+    });
+    expect(p?.name, 'Termales Los Volcanes');
+    expect(p?.city, 'Chocontá');
+    expect(p?.department, 'Cundinamarca');
+    expect(p?.addressLine, contains('Chocontá'));
+  });
+
+  test('Nominatim town/state del JSON de OSM', () {
+    final p = NominatimGeocoder.placeFromJson({
+      'lat': '5.0912654',
+      'lon': '-73.6407057',
+      'name': 'Termales Los Volcanes',
+      'address': {
+        'town': 'Chocontá',
+        'state': 'Cundinamarca',
+        'country': 'Colombia',
+      },
+    });
+    expect(p?.city, 'Chocontá');
+    expect(p?.department, 'Cundinamarca');
+  });
+
+  test('BigDataCloud city + principalSubdivision', () {
+    final p = BigDataCloudGeocoder.placeFromJson({
+      'latitude': 5.0928761,
+      'longitude': -73.6406624,
+      'city': 'Chocontá',
+      'locality': 'Chocontá',
+      'principalSubdivision': 'Cundinamarca',
+    });
+    expect(p?.city, 'Chocontá');
+    expect(p?.department, 'Cundinamarca');
+    expect(p?.addressLine, 'Chocontá, Cundinamarca');
+  });
+
+  test('reverse sin Geoapify rellena ciudad vía BigDataCloud', () async {
+    final client = MockClient((request) async {
+      if (request.url.host.contains('bigdatacloud')) {
+        return http.Response(
+          jsonEncode({
+            'latitude': 5.0928761,
+            'longitude': -73.6406624,
+            'city': 'Chocontá',
+            'locality': 'Chocontá',
+            'principalSubdivision': 'Cundinamarca',
+          }),
+          200,
+        );
+      }
+      return http.Response('no', 403);
+    });
+    final geocoder = PlaceGeocoder(
+      geoapify: GeoapifyGeocoder(apiKey: '', client: client),
+      bigDataCloud: BigDataCloudGeocoder(client: client),
+      nominatim: NominatimGeocoder(client: client),
+    );
+    final p = await geocoder.reverse(lat: 5.0928761, lng: -73.6406624);
+    expect(p?.city, 'Chocontá');
+    expect(p?.department, 'Cundinamarca');
+    expect(p?.addressLine, isNotEmpty);
   });
 }

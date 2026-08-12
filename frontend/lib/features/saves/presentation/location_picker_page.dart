@@ -178,7 +178,13 @@ class _LocationPickerPageState extends State<LocationPickerPage> {
     }
   }
 
-  void _confirm() {
+  Future<void> _confirm() async {
+    if (_place == null ||
+        _place!.city == null ||
+        _place!.addressLine == null) {
+      await _reverse(_pin);
+    }
+    if (!mounted) return;
     final place = _place ??
         GeoPlace(lat: _pin.latitude, lng: _pin.longitude);
     Navigator.of(context).pop<GeoPlace>(
@@ -189,7 +195,7 @@ class _LocationPickerPageState extends State<LocationPickerPage> {
         name: place.name,
         city: place.city,
         department: place.department,
-        addressLine: place.addressLine,
+        addressLine: place.addressLine ?? place.displayName,
       ),
     );
   }

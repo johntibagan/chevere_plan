@@ -123,22 +123,36 @@ class GoogleMapsLinkImporter {
         if (place != null) {
           city ??= place.city;
           department ??= place.department;
-          address ??= place.addressLine;
+          address ??= place.addressLine ?? place.displayName;
           name ??= place.name;
         }
       } catch (_) {}
-    } else if (geocode && name != null && name.trim().isNotEmpty) {
+    }
+
+    final missingCity = city == null || city.trim().isEmpty;
+    final missingDept = department == null || department.trim().isEmpty;
+    if (geocode && (missingCity || missingDept) && name != null && name.trim().isNotEmpty) {
       try {
-        final hits = await _geocoder.search('$name Colombia', limit: 3);
+        final hits = await _geocoder.search(name.trim(), limit: 3);
         if (hits.isNotEmpty) {
           final best = hits.first;
           lat ??= best.lat;
           lng ??= best.lng;
           city ??= best.city;
           department ??= best.department;
-          address ??= best.addressLine;
+          address ??= best.addressLine ?? best.displayName;
+          name ??= best.name;
         }
       } catch (_) {}
+    }
+
+    if (address == null || address.trim().isEmpty) {
+      final parts = [
+        if (city != null && city.trim().isNotEmpty) city.trim(),
+        if (department != null && department.trim().isNotEmpty)
+          department.trim(),
+      ];
+      if (parts.isNotEmpty) address = parts.join(', ');
     }
 
     final result = GoogleMapsImportResult(

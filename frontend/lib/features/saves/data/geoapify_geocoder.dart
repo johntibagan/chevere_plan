@@ -43,7 +43,7 @@ class GeoapifyGeocoder {
       '/v1/geocode/autocomplete',
       params,
     );
-    final res = await _client.get(uri);
+    final res = await _client.get(uri).timeout(const Duration(seconds: 10));
     if (res.statusCode != 200) return const [];
 
     final body = jsonDecode(res.body);
@@ -52,7 +52,7 @@ class GeoapifyGeocoder {
 
     return results
         .whereType<Map>()
-        .map((e) => _fromGeoapify(Map<String, dynamic>.from(e)))
+        .map((e) => placeFromJson(Map<String, dynamic>.from(e)))
         .whereType<GeoPlace>()
         .toList();
   }
@@ -71,70 +71,62 @@ class GeoapifyGeocoder {
       'apiKey': _apiKey,
     });
 
-    final res = await _client.get(uri);
+    final res = await _client.get(uri).timeout(const Duration(seconds: 10));
     if (res.statusCode != 200) return null;
 
     final body = jsonDecode(res.body);
-    final results = body is Map ? body['results'] : null;
-    if (results is! List || results.isEmpty) return null;
-    final first = results.first;
-    if (first is! Map) return null;
-    return _fromGeoapify(Map<String, dynamic>.from(first));
+    final raw = _firstResult(body);
+    if (raw == null) return null;
+    return placeFromJson(raw);
   }
 
-  GeoPlace? _fromGeoapify(Map<String, dynamic> json) {
-    final lat = (json['lat'] as num?)?.toDouble();
-    final lng = (json['lon'] as num?)?.toDouble();
+  static Map<String, dynamic>? _firstResult(dynamic body) {
+    if (body is! Map) return null;
+    final results = body['results'];
+    if (results is List && results.isNotEmpty && results.first is Map) {
+      return Map<String, dynamic>.from(results.first as Map);
+    }
+    final features = body['features'];
+    if (features is List && features.isNotEmpty && features.first is Map) {
+      final feature = Map<String, dynamic>.from(features.first as Map);
+      final props = feature['properties'];
+      if (props is Map) return Map<String, dynamic>.from(props);
+    }
+    return null;
+  }
+
+  /// Mapea la respuesta de Geoapify a [GeoPlace] (campos de la API, sin catálogos).
+  static GeoPlace? placeFromJson(Map<String, dynamic> json) {
+    final lat = _asDouble(json['lat']);
+    final lng = _asDouble(json['lon']);
     if (lat == null || lng == null) return null;
-
-    final name = _firstNonEmpty([
-      json['name']?.toString(),
-      json['address_line1']?.toString(),
-    ]);
-
-    final city = _firstNonEmpty([
-      json['city']?.toString(),
-      json['town']?.toString(),
-      json['village']?.toString(),
-      json['municipality']?.toString(),
-      json['county']?.toString(),
-    ]);
-
-    final department = _firstNonEmpty([
-      json['state']?.toString(),
-      json['region']?.toString(),
-    ]);
-
-    final addressLine = _firstNonEmpty([
-      json['address_line1']?.toString(),
-      [
-        if (json['street'] != null) json['street'].toString(),
-        if (json['housenumber'] != null) json['housenumber'].toString(),
-      ].where((s) => s.isNotEmpty).join(' '),
-    ]);
-
-    final display = _firstNonEmpty([
-      json['formatted']?.toString(),
-      json['address_line2'] != null
-          ? '${json['address_line1']}, ${json['address_line2']}'
-          : null,
-    ]);
 
     return GeoPlace(
       lat: lat,
       lng: lng,
-      displayName: display,
-      name: name,
-      city: city,
-      department: department,
-      addressLine: addressLine,
+      displayName: _nonEmpty(json['formatted']?.toString()),
+      name: _nonEmpty(json['name']?.toString()) ??
+          _nonEmpty(json['address_line1']?.toString()),
+      city: _nonEmpty(json['city']?.toString()) ??
+          _nonEmpty(json['town']?.toString()) ??
+          _nonEmpty(json['village']?.toString()) ??
+          _nonEmpty(json['municipality']?.toString()),
+      department: _nonEmpty(json['state']?.toString()),
+      addressLine: _nonEmpty(json['formatted']?.toString()) ??
+          _nonEmpty(json['address_line2']?.toString()) ??
+          _nonEmpty(json['address_line1']?.toString()),
     );
   }
 
-  String? _firstNonEmpty(List<String?> values) {
-    for (final v in values) {
-      if (v != null && v.trim().isNotEmpty) return v.trim();
-    }
+  static double? _asDouble(dynamic v) {
+    if (v is num) return v.toDouble();
+    if (v is String) return double.tryParse(v);
     return null;
+  }
+
+  static String? _nonEmpty(String? v) {
+    final t = v?.trim();
+    if (t == null || t.isEmpty) return null;
+    return t;
   }
 }

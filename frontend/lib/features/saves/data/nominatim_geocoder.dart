@@ -28,14 +28,15 @@ class NominatimGeocoder {
       'countrycodes': 'co',
     });
 
-    final res = await _client.get(uri, headers: _headers);
+    final res =
+        await _client.get(uri, headers: _headers).timeout(const Duration(seconds: 10));
     if (res.statusCode != 200) return const [];
 
     final list = jsonDecode(res.body);
     if (list is! List) return const [];
     return list
         .whereType<Map>()
-        .map((e) => _fromNominatim(Map<String, dynamic>.from(e)))
+        .map((e) => placeFromJson(Map<String, dynamic>.from(e)))
         .whereType<GeoPlace>()
         .toList();
   }
@@ -48,15 +49,17 @@ class NominatimGeocoder {
       'addressdetails': '1',
     });
 
-    final res = await _client.get(uri, headers: _headers);
+    final res =
+        await _client.get(uri, headers: _headers).timeout(const Duration(seconds: 10));
     if (res.statusCode != 200) return null;
 
     final map = jsonDecode(res.body);
     if (map is! Map) return null;
-    return _fromNominatim(Map<String, dynamic>.from(map));
+    return placeFromJson(Map<String, dynamic>.from(map));
   }
 
-  GeoPlace? _fromNominatim(Map<String, dynamic> json) {
+  /// Mapea la respuesta de Nominatim a [GeoPlace] (campos OSM, sin catálogos).
+  static GeoPlace? placeFromJson(Map<String, dynamic> json) {
     final lat = double.tryParse('${json['lat']}');
     final lng = double.tryParse('${json['lon']}');
     if (lat == null || lng == null) return null;
@@ -67,51 +70,34 @@ class NominatimGeocoder {
       addr = Map<String, dynamic>.from(address);
     }
 
-    final name = _firstNonEmpty([
-      json['name']?.toString(),
-      addr?['tourism']?.toString(),
-      addr?['amenity']?.toString(),
-      addr?['shop']?.toString(),
-      addr?['leisure']?.toString(),
-      addr?['building']?.toString(),
-    ]);
-
-    final city = _firstNonEmpty([
-      addr?['city']?.toString(),
-      addr?['town']?.toString(),
-      addr?['village']?.toString(),
-      addr?['municipality']?.toString(),
-      addr?['city_district']?.toString(),
-    ]);
-
-    final department = _firstNonEmpty([
-      addr?['state']?.toString(),
-      addr?['region']?.toString(),
-      addr?['county']?.toString(),
-    ]);
-
     final road = addr?['road']?.toString();
     final house = addr?['house_number']?.toString();
-    final addressLine = [
-      if (road != null && road.isNotEmpty) road,
-      if (house != null && house.isNotEmpty) house,
+    final street = [
+      if (road != null && road.trim().isNotEmpty) road.trim(),
+      if (house != null && house.trim().isNotEmpty) house.trim(),
     ].join(' ');
 
     return GeoPlace(
       lat: lat,
       lng: lng,
-      displayName: json['display_name']?.toString(),
-      name: name,
-      city: city,
-      department: department,
-      addressLine: addressLine.isEmpty ? null : addressLine,
+      displayName: _nonEmpty(json['display_name']?.toString()),
+      name: _nonEmpty(json['name']?.toString()) ??
+          _nonEmpty(addr?['tourism']?.toString()) ??
+          _nonEmpty(addr?['amenity']?.toString()),
+      city: _nonEmpty(addr?['city']?.toString()) ??
+          _nonEmpty(addr?['town']?.toString()) ??
+          _nonEmpty(addr?['village']?.toString()) ??
+          _nonEmpty(addr?['municipality']?.toString()),
+      department: _nonEmpty(addr?['state']?.toString()),
+      addressLine: street.isNotEmpty
+          ? street
+          : _nonEmpty(json['display_name']?.toString()),
     );
   }
 
-  String? _firstNonEmpty(List<String?> values) {
-    for (final v in values) {
-      if (v != null && v.trim().isNotEmpty) return v.trim();
-    }
-    return null;
+  static String? _nonEmpty(String? v) {
+    final t = v?.trim();
+    if (t == null || t.isEmpty) return null;
+    return t;
   }
 }
