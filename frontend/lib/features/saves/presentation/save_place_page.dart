@@ -240,17 +240,18 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
           _loadingCats = false;
         });
       } else {
-        // Si vino un enlace social por share, generar preview.
-        if (_socialCtrl.text.trim().isNotEmpty) {
-          await _addSocialLink(_socialCtrl.text.trim());
+        // Pintar form al toque (categorías listas). Social/Maps no bloquean.
+        if (mounted) setState(() => _loadingCats = false);
+        final social = _socialCtrl.text.trim();
+        if (social.isNotEmpty) {
           _socialCtrl.clear();
+          unawaited(_addSocialLink(social));
         }
         if (_mapsCtrl.text.trim().isNotEmpty) {
-          await _importFromGoogleMaps();
-        } else {
+          unawaited(_importFromGoogleMaps());
+        } else if (social.isEmpty) {
           _maybeSuggestCategories();
         }
-        if (mounted) setState(() => _loadingCats = false);
       }
     } catch (e) {
       if (!mounted) return;
@@ -406,6 +407,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
     } catch (_) {
       if (!mounted) return;
       setState(() => _addingSocial = false);
+      _maybeSuggestCategories();
     }
   }
 
@@ -444,6 +446,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
           _addressCtrl.text = place.addressLine!;
         }
       });
+      _maybeSuggestCategories();
     } catch (_) {}
   }
 
@@ -459,7 +462,13 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
         _deptCtrl.text,
         _addressCtrl.text,
         _mapsCtrl.text,
-      ].join(' ');
+        for (final l in _socialLinks) ...[
+          l.title,
+          l.description,
+          l.network,
+          l.url,
+        ],
+      ].whereType<String>().join(' ');
 
   /// Sugiere y marca categoría según nombre / Maps; si no hay match → Otros.
   /// Solo al crear. En editar se respetan las categorías ya guardadas.

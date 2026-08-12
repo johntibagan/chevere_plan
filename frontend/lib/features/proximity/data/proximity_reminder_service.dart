@@ -1,5 +1,7 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
+import '../../../core/notifications/local_notification_router.dart';
+
 /// Notificaciones de recuerdo por proximidad (§6).
 class ProximityReminderService {
   ProximityReminderService._();
@@ -15,6 +17,9 @@ class ProximityReminderService {
     const android = AndroidInitializationSettings('@mipmap/ic_launcher');
     await _plugin.initialize(
       settings: const InitializationSettings(android: android),
+      onDidReceiveNotificationResponse: (response) {
+        LocalNotificationRouter.handlePayload(response.payload);
+      },
     );
     await _plugin
         .resolvePlatformSpecificImplementation<
@@ -27,16 +32,27 @@ class ProximityReminderService {
             importance: Importance.high,
           ),
         );
+
+    final launch = await _plugin.getNotificationAppLaunchDetails();
+    if (launch?.didNotificationLaunchApp == true) {
+      LocalNotificationRouter.handlePayload(
+        launch!.notificationResponse?.payload,
+      );
+    }
     _ready = true;
   }
 
-  Future<void> showNearby({required String siteName}) async {
+  Future<void> showNearby({
+    required String siteId,
+    required String siteName,
+  }) async {
     await init();
-    final id = siteName.hashCode & 0x7fffffff;
+    final id = siteId.hashCode & 0x7fffffff;
     await _plugin.show(
       id: id,
       title: 'Chevere Plan',
       body: 'Tienes guardado un lugar cerca de aquí: $siteName',
+      payload: '${LocalNotificationRouter.proximityPrefix}$siteId',
       notificationDetails: const NotificationDetails(
         android: AndroidNotificationDetails(
           'proximity_reminders',

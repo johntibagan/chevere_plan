@@ -40,6 +40,7 @@ Future<Widget> createRootApp({
     await bootstrapFcm();
   }
   if (initLocalNotifications) {
+    // Proximity al final: registra onTap (payload → ficha del sitio).
     await DraftReminderService.instance.init();
     await ProximityReminderService.instance.init();
   }

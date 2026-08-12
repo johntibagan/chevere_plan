@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/logging/app_log.dart';
 import '../../auth/data/profile.dart';
 import '../../auth/data/profile_repository.dart';
+import 'proximity_notify_throttle.dart';
 import 'proximity_reminder_service.dart';
 import 'proximity_repository.dart';
 
@@ -112,6 +113,7 @@ class GeofenceSyncService {
     try {
       await _ensurePlugin();
       await NativeGeofenceManager.instance.removeAllGeofences();
+      await ProximityNotifyThrottle.clearAll();
     } catch (e, st) {
       AppLog.error(
         'Clear geofences failed',
@@ -134,8 +136,14 @@ Future<void> geofenceTriggered(GeofenceCallbackParams params) async {
       names = jsonDecode(raw) as Map<String, dynamic>;
     }
     for (final fence in params.geofences) {
-      final name = names[fence.id]?.toString() ?? 'un lugar';
-      await ProximityReminderService.instance.showNearby(siteName: name);
+      final siteId = fence.id;
+      if (!await ProximityNotifyThrottle.shouldNotify(siteId)) continue;
+      final name = names[siteId]?.toString() ?? 'un lugar';
+      await ProximityReminderService.instance.showNearby(
+        siteId: siteId,
+        siteName: name,
+      );
+      await ProximityNotifyThrottle.markShown(siteId);
     }
   } catch (e, st) {
     AppLog.debug(

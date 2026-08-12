@@ -11,6 +11,7 @@ import '../features/saves/presentation/save_place_page.dart';
 import 'core/cache/session_cache_cleanup.dart';
 import 'core/di/providers.dart';
 import 'core/l10n/context_l10n.dart';
+import 'core/notifications/local_notification_router.dart';
 import 'core/theme/app_theme.dart';
 
 final GlobalKey<NavigatorState> appNavigatorKey = GlobalKey<NavigatorState>();
@@ -130,6 +131,9 @@ class _AuthGateState extends ConsumerState<AuthGate> {
         }
 
         if (session != null) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            LocalNotificationRouter.tryOpenPending();
+          });
           return HomePage(session: session);
         }
 
