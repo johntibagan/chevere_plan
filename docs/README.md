@@ -8,6 +8,7 @@ Empieza por el [README de la raíz](../README.md).
 | [lineamientos-desarrollo-frontend.md](lineamientos-desarrollo-frontend.md) | Cómo construir el frontend (obligatorio para Cursor) |
 | [setup/](setup/) | Cómo dejar el entorno listo (una vez) |
 | [pendientes.md](pendientes.md) | Huecos conocidos, no bloquean el MVP |
+| [google-maps-setup.md](google-maps-setup.md) | Places + Maps SDK: keys, cupos, anti-fugas |
 | [e2e.md](e2e.md) | Tests Patrol en Android físico |
 | [adr/](adr/) | Por qué se decidió X en cada ciclo |
 

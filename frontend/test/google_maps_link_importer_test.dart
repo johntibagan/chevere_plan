@@ -8,8 +8,12 @@ import 'package:chevere_plan/features/saves/data/place_geocoder.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  SharedPreferences.setMockInitialValues({});
+
   const resolved =
       'https://www.google.com/maps/place/Termales+Los+Volcanes/@5.0928814,-73.6432373,17z/data=!3m1!4b1!4m6!3m5!1s0x8e4019f862f66469:0x89a875aa7db13fd7!8m2!3d5.0928761!4d-73.6406624!16s%2Fg%2F11c3mr9lfr';
 

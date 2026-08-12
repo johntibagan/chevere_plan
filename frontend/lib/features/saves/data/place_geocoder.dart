@@ -2,25 +2,30 @@ import 'bigdatacloud_geocoder.dart';
 import 'geo_place.dart';
 import 'geoapify_geocoder.dart';
 import 'geocoder_quota.dart';
+import 'google_places_client.dart';
 import 'nominatim_geocoder.dart';
 
-/// Geoapify si hay key y cupo; si no, reverse sin key (BigDataCloud) y Nominatim.
+/// Google Places si hay key; si no / cupo, Geoapify → BigDataCloud → Nominatim.
 class PlaceGeocoder {
   PlaceGeocoder({
+    GooglePlacesClient? google,
     GeoapifyGeocoder? geoapify,
     BigDataCloudGeocoder? bigDataCloud,
     NominatimGeocoder? nominatim,
     GeocoderQuota? quota,
-  })  : _geoapify = geoapify ?? GeoapifyGeocoder(),
+  })  : _google = google ?? GooglePlacesClient(),
+        _geoapify = geoapify ?? GeoapifyGeocoder(),
         _bigDataCloud = bigDataCloud ?? BigDataCloudGeocoder(),
         _nominatim = nominatim ?? NominatimGeocoder(),
         _quota = quota ?? GeocoderQuota();
 
+  final GooglePlacesClient _google;
   final GeoapifyGeocoder _geoapify;
   final BigDataCloudGeocoder _bigDataCloud;
   final NominatimGeocoder _nominatim;
   final GeocoderQuota _quota;
 
+  bool get usingGoogle => _google.isConfigured;
   bool get usingGeoapify => _geoapify.isConfigured;
 
   Future<List<GeoPlace>> search(
@@ -29,6 +34,7 @@ class PlaceGeocoder {
     double? biasLat,
     double? biasLng,
   }) async {
+    // Preferir Google vía LocationPicker (sesión). Aquí queda fallback Geoapify.
     if (_geoapify.isConfigured) {
       try {
         if (await _quota.tryConsume()) {
@@ -49,6 +55,13 @@ class PlaceGeocoder {
     required double lat,
     required double lng,
   }) async {
+    if (_google.isConfigured) {
+      try {
+        final g = await _google.reverseGeocode(lat: lat, lng: lng);
+        if (g != null) return g;
+      } catch (_) {}
+    }
+
     GeoPlace? acc;
 
     if (_geoapify.isConfigured) {
@@ -89,6 +102,7 @@ class PlaceGeocoder {
       city: _or(a.city, b.city),
       department: _or(a.department, b.department),
       addressLine: _or(a.addressLine, b.addressLine),
+      placeId: a.placeId ?? b.placeId,
     );
   }
 
@@ -107,6 +121,7 @@ class PlaceGeocoder {
       city: p.city,
       department: p.department,
       addressLine: line,
+      placeId: p.placeId,
     );
   }
 
