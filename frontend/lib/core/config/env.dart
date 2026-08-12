@@ -9,7 +9,8 @@ import 'package:flutter/foundation.dart';
 /// Claves de cliente esperadas (públicas por diseño, protegidas por RLS / cuotas):
 /// - `SUPABASE_URL`, `SUPABASE_ANON_KEY` (nunca `service_role`)
 /// - `GOOGLE_WEB_CLIENT_ID`
-/// - `GEOAPIFY_API_KEY`, `GEOAPIFY_DAILY_LIMIT`
+/// - `GOOGLE_MAPS_API_KEY` (Maps SDK + Places + Geocoding)
+/// - `GEOAPIFY_API_KEY`, `GEOAPIFY_DAILY_LIMIT` (fallback)
 class Env {
   Env._();
 
@@ -18,10 +19,21 @@ class Env {
       String.fromEnvironment('SUPABASE_ANON_KEY');
   static const String googleWebClientId =
       String.fromEnvironment('GOOGLE_WEB_CLIENT_ID');
+  static const String googleMapsApiKey =
+      String.fromEnvironment('GOOGLE_MAPS_API_KEY');
+  static const String _googlePlacesDailyLimitRaw =
+      String.fromEnvironment('GOOGLE_PLACES_DAILY_LIMIT');
   static const String geoapifyApiKey =
       String.fromEnvironment('GEOAPIFY_API_KEY');
   static const String _geoapifyDailyLimitRaw =
       String.fromEnvironment('GEOAPIFY_DAILY_LIMIT');
+
+  /// Tope diario local de Place Details + Autocomplete + Geocoding (default 80).
+  static int get googlePlacesDailyLimit {
+    final n = int.tryParse(_googlePlacesDailyLimitRaw.trim());
+    if (n == null || n < 1) return 80;
+    return n;
+  }
 
   /// Tope diario local de llamadas Geoapify en prueba (default 100).
   static int get geoapifyDailyLimit {
@@ -34,6 +46,8 @@ class Env {
       supabaseUrl.trim().isNotEmpty && supabaseAnonKey.trim().isNotEmpty;
 
   static bool get hasGoogleWebClientId => googleWebClientId.trim().isNotEmpty;
+
+  static bool get hasGoogleMapsKey => googleMapsApiKey.trim().isNotEmpty;
 
   static bool get hasGeoapifyKey => geoapifyApiKey.trim().isNotEmpty;
 

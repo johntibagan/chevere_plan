@@ -4,6 +4,8 @@ import '../../../core/config/env.dart';
 import '../../../core/errors/user_facing_error.dart';
 import '../../../core/logging/app_log.dart';
 import 'place_geocoder.dart';
+import 'geo_place.dart';
+import 'google_places_client.dart';
 
 /// Resultado de importar un enlace de Google Maps.
 class GoogleMapsImportResult {
@@ -53,12 +55,15 @@ class GoogleMapsImportResult {
 class GoogleMapsLinkImporter {
   GoogleMapsLinkImporter({
     PlaceGeocoder? geocoder,
+    GooglePlacesClient? places,
     http.Client? httpClient,
     this.geocode = true,
   })  : _geocoder = geocoder ?? PlaceGeocoder(),
+        _places = places ?? GooglePlacesClient(),
         _http = httpClient ?? http.Client();
 
   final PlaceGeocoder _geocoder;
+  final GooglePlacesClient _places;
   final http.Client _http;
   final bool geocode;
 
@@ -183,6 +188,44 @@ class GoogleMapsLinkImporter {
             }
             name ??= _extractTitleFromHtml(body);
           } catch (_) {}
+        }
+      }
+    }
+
+    // Google Places: place_id / CID → 1× Place Details (coords exactas).
+    if (!hasExactPin && _places.isConfigured) {
+      try {
+          final blob = '$resolved${htmlBody ?? ''}';
+        final chij = GooglePlacesClient.extractChijPlaceId(blob);
+        GeoPlace? fromPlaces;
+        if (chij != null) {
+          fromPlaces = await _places.placeDetails(placeId: chij);
+        }
+        if (fromPlaces == null) {
+          final fid = extractFeatureId(blob);
+          final cid = GooglePlacesClient.cidFromFeatureId(fid);
+          if (cid != null) {
+            fromPlaces = await _places.placeDetailsByCid(cid);
+          }
+        }
+        if (fromPlaces != null) {
+          lat = fromPlaces.lat;
+          lng = fromPlaces.lng;
+          hasExactPin = true;
+          name ??= fromPlaces.name;
+          city ??= fromPlaces.city;
+          department ??= fromPlaces.department;
+          address ??= fromPlaces.addressLine ?? fromPlaces.displayName;
+        }
+      } catch (e, st) {
+        AppLog.debug(
+          'maps import places enrich failed',
+          name: 'maps_import',
+          error: e,
+          stackTrace: st,
+        );
+        if (e is AppUserError) {
+          // Cupo agotado: seguimos con fallbacks gratis.
         }
       }
     }

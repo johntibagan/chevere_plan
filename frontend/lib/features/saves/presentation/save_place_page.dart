@@ -20,6 +20,7 @@ import '../../geo/domain/geo_fuzzy.dart';
 import '../../geo/presentation/geo_typeahead_field.dart';
 import '../data/geo_place.dart';
 import '../data/google_maps_link_importer.dart';
+import '../data/google_places_client.dart';
 import '../data/place_geocoder.dart';
 import '../data/save_models.dart';
 import '../data/saves_repository.dart';
@@ -87,8 +88,11 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
   final _socialExtractor = SocialPlaceExtractor();
 
   PlaceGeocoder get _placeGeocoder => ref.read(placeGeocoderProvider);
-  GoogleMapsLinkImporter get _mapsImporter =>
-      GoogleMapsLinkImporter(geocoder: _placeGeocoder);
+  GooglePlacesClient get _placesClient => ref.read(googlePlacesClientProvider);
+  GoogleMapsLinkImporter get _mapsImporter => GoogleMapsLinkImporter(
+        geocoder: _placeGeocoder,
+        places: _placesClient,
+      );
   /// Si el usuario eligió/quitó categorías a mano, no sobrescribir la sugerencia.
   bool _categoriesUserTouched = false;
   bool _categoryWasAutoSuggested = false;

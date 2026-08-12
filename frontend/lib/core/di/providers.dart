@@ -17,6 +17,7 @@ import '../../features/proximity/data/proximity_repository.dart';
 import '../../features/routes/data/route_models.dart';
 import '../../features/routes/data/routes_repository.dart';
 import '../../features/saves/data/draft_reminder_service.dart';
+import '../../features/saves/data/google_places_client.dart';
 import '../../features/saves/data/place_geocoder.dart';
 import '../../features/saves/data/save_models.dart';
 import '../../features/saves/data/saves_repository.dart';
@@ -87,8 +88,12 @@ final geofenceSyncServiceProvider = Provider<GeofenceSyncService>((ref) {
   );
 });
 
+final googlePlacesClientProvider = Provider<GooglePlacesClient>((ref) {
+  return GooglePlacesClient();
+});
+
 final placeGeocoderProvider = Provider<PlaceGeocoder>((ref) {
-  return PlaceGeocoder();
+  return PlaceGeocoder(google: ref.watch(googlePlacesClientProvider));
 });
 
 /// Servicios singleton existentes (R1: se exponen vía Riverpod sin reescribirlos).

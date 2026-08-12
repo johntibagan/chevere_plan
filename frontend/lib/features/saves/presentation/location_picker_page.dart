@@ -1,10 +1,9 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:latlong2/latlong.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 import '../../../core/config/env.dart';
 import '../../../core/di/providers.dart';
@@ -12,9 +11,10 @@ import '../../../core/l10n/context_l10n.dart';
 import '../../../core/widgets/app_toast.dart';
 import '../../../core/widgets/field_action_icon.dart';
 import '../data/geo_place.dart';
+import '../data/google_places_client.dart';
 import '../data/place_geocoder.dart';
 
-/// Mapa OSM + búsqueda Geoapify (autocomplete). Devuelve [GeoPlace] al confirmar.
+/// Mapa Google + búsqueda solo al pulsar 🔍 (anti-fugas). Devuelve [GeoPlace].
 class LocationPickerPage extends ConsumerStatefulWidget {
   const LocationPickerPage({
     super.key,
@@ -33,37 +33,38 @@ class _LocationPickerPageState extends ConsumerState<LocationPickerPage> {
   static const _colombiaCenter = LatLng(4.5709, -74.2973);
 
   PlaceGeocoder get _geocoder => ref.read(placeGeocoderProvider);
+  GooglePlacesClient get _places => ref.read(googlePlacesClientProvider);
+
   final _searchCtrl = TextEditingController();
-  late final MapController _mapController;
+  GoogleMapController? _mapController;
 
   late LatLng _pin;
   GeoPlace? _place;
-  List<GeoPlace> _suggestions = const [];
+  List<PlacePrediction> _predictions = const [];
+  String? _sessionToken;
   bool _locating = false;
   bool _busy = false;
   String? _hint;
-  Timer? _debounce;
+  DateTime? _lastTapAt;
 
   @override
   void initState() {
     super.initState();
-    _mapController = MapController();
     if (widget.initialLat != null && widget.initialLng != null) {
       _pin = LatLng(widget.initialLat!, widget.initialLng!);
-      _reverse(_pin);
+      WidgetsBinding.instance.addPostFrameCallback((_) => _reverse(_pin));
     } else {
       _pin = _colombiaCenter;
     }
-    if (!Env.hasGeoapifyKey) {
-      _hint =
-          'Falta GEOAPIFY_API_KEY en .env — búsqueda limitada.';
+    if (!Env.hasGoogleMapsKey && !Env.hasGeoapifyKey) {
+      _hint = 'Configura GOOGLE_MAPS_API_KEY en .env (ver docs/google-maps-setup.md).';
     }
   }
 
   @override
   void dispose() {
-    _debounce?.cancel();
     _searchCtrl.dispose();
+    _mapController?.dispose();
     super.dispose();
   }
 
@@ -90,62 +91,135 @@ class _LocationPickerPageState extends ConsumerState<LocationPickerPage> {
     }
   }
 
-  void _onSearchChanged(String value) {
-    _debounce?.cancel();
-    _debounce = Timer(const Duration(milliseconds: 400), () {
-      unawaited(_runSearch(value));
-    });
-  }
-
+  /// Solo botón / tecla Enter — no onChanged (cero llamadas por tecla).
   Future<void> _runSearch(String value) async {
-    if (value.trim().length < 2) {
-      if (mounted) setState(() => _suggestions = const []);
+    final q = value.trim();
+    if (q.length < 3) {
+      if (mounted) {
+        setState(() {
+          _predictions = const [];
+          _hint = 'Escribe al menos 3 letras y toca buscar.';
+        });
+      }
       return;
     }
     setState(() {
       _busy = true;
       _hint = null;
+      _predictions = const [];
+      _sessionToken = _places.isConfigured ? _places.newSessionToken() : null;
     });
     try {
+      if (_places.isConfigured) {
+        final hits = await _places.autocomplete(
+          input: q,
+          sessionToken: _sessionToken!,
+          biasLat: _pin.latitude,
+          biasLng: _pin.longitude,
+        );
+        if (!mounted) return;
+        setState(() {
+          _predictions = hits;
+          _busy = false;
+          if (hits.isEmpty) _hint = context.l10n.locationNoMatches;
+        });
+        return;
+      }
+
+      // Fallback Geoapify/Nominatim (sin sesión Google).
       final hits = await _geocoder.search(
-        value,
+        q,
         biasLat: _pin.latitude,
         biasLng: _pin.longitude,
       );
       if (!mounted) return;
       setState(() {
-        _suggestions = hits;
+        _predictions = hits
+            .map(
+              (h) => PlacePrediction(
+                placeId: h.placeId ?? '${h.lat},${h.lng}',
+                primaryText: h.name ?? h.displayName ?? 'Lugar',
+                secondaryText: h.displayName,
+              ),
+            )
+            .toList();
         _busy = false;
-        if (hits.isEmpty) {
-          _hint = context.l10n.locationNoMatches;
-        }
+        if (hits.isEmpty) _hint = context.l10n.locationNoMatches;
+        // Guardamos coords en un mapa paralelo vía placeId sintético.
+        _fallbackById = {
+          for (final h in hits)
+            (h.placeId ?? '${h.lat},${h.lng}'): h,
+        };
       });
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _suggestions = const [];
+        _predictions = const [];
         _busy = false;
       });
       AppToast.error(context, e, logContext: 'location_search');
     }
   }
 
-  Future<void> _selectSuggestion(GeoPlace place) async {
-    final point = LatLng(place.lat, place.lng);
-    setState(() {
-      _pin = point;
-      _place = place;
-      _suggestions = const [];
-      _searchCtrl.text = place.displayName ?? place.name ?? '';
-      _hint = null;
-    });
-    _mapController.move(point, 16);
+  Map<String, GeoPlace> _fallbackById = {};
+
+  Future<void> _selectPrediction(PlacePrediction pred) async {
+    setState(() => _busy = true);
+    try {
+      GeoPlace? place;
+      final id = pred.placeId.startsWith('places/')
+          ? pred.placeId.substring('places/'.length)
+          : pred.placeId;
+      if (_places.isConfigured &&
+          (id.startsWith('ChIJ') || id.length > 16)) {
+        place = await _places.placeDetails(
+          placeId: id,
+          sessionToken: _sessionToken,
+        );
+      }
+      place ??= _fallbackById[pred.placeId];
+      _sessionToken = null;
+      if (place == null) {
+        if (mounted) {
+          setState(() => _busy = false);
+          AppToast.show(
+            context,
+            context.l10n.locationNoMatches,
+            error: true,
+          );
+        }
+        return;
+      }
+      final point = LatLng(place.lat, place.lng);
+      if (!mounted) return;
+      setState(() {
+        _pin = point;
+        _place = place;
+        _predictions = const [];
+        _searchCtrl.text = place!.displayName ?? place.name ?? pred.primaryText;
+        _hint = null;
+        _busy = false;
+      });
+      await _mapController?.animateCamera(
+        CameraUpdate.newLatLngZoom(point, 16),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _busy = false);
+      AppToast.error(context, e, logContext: 'location_select');
+    }
   }
 
   Future<void> _setPin(LatLng point) async {
+    final now = DateTime.now();
+    if (_lastTapAt != null &&
+        now.difference(_lastTapAt!) < const Duration(milliseconds: 500)) {
+      return;
+    }
+    _lastTapAt = now;
     setState(() {
       _pin = point;
-      _suggestions = const [];
+      _predictions = const [];
       _hint = null;
     });
     await _reverse(point);
@@ -176,7 +250,9 @@ class _LocationPickerPageState extends ConsumerState<LocationPickerPage> {
       );
       final next = LatLng(pos.latitude, pos.longitude);
       setState(() => _locating = false);
-      _mapController.move(next, 16);
+      await _mapController?.animateCamera(
+        CameraUpdate.newLatLngZoom(next, 16),
+      );
       await _setPin(next);
     } catch (_) {
       setState(() {
@@ -204,6 +280,7 @@ class _LocationPickerPageState extends ConsumerState<LocationPickerPage> {
         city: place.city,
         department: place.department,
         addressLine: place.addressLine ?? place.displayName,
+        placeId: place.placeId,
       ),
     );
   }
@@ -211,6 +288,12 @@ class _LocationPickerPageState extends ConsumerState<LocationPickerPage> {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
+    final providerLabel = Env.hasGoogleMapsKey
+        ? 'Google Maps · buscar solo con 🔍'
+        : Env.hasGeoapifyKey
+            ? 'Fallback Geoapify · configura GOOGLE_MAPS_API_KEY'
+            : 'Sin key de mapas';
+
     return Scaffold(
       appBar: AppBar(
         title: Text(l10n.locationPickerTitle),
@@ -239,33 +322,35 @@ class _LocationPickerPageState extends ConsumerState<LocationPickerPage> {
               ),
               textInputAction: TextInputAction.search,
               onSubmitted: _runSearch,
-              onChanged: _onSearchChanged,
+              // Sin onChanged: no Autocomplete por tecla.
             ),
           ),
-          if (_suggestions.isNotEmpty)
+          if (_predictions.isNotEmpty)
             Material(
               elevation: 2,
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxHeight: 180),
                 child: ListView.builder(
                   shrinkWrap: true,
-                  itemCount: _suggestions.length,
+                  itemCount: _predictions.length,
                   itemBuilder: (context, index) {
-                    final s = _suggestions[index];
+                    final s = _predictions[index];
                     return ListTile(
                       dense: true,
                       leading: const Icon(Icons.place_outlined),
                       title: Text(
-                        s.name ?? s.displayName ?? 'Lugar',
+                        s.primaryText,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      subtitle: Text(
-                        s.displayName ?? '',
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      onTap: () => _selectSuggestion(s),
+                      subtitle: s.secondaryText == null
+                          ? null
+                          : Text(
+                              s.secondaryText!,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                      onTap: () => _selectPrediction(s),
                     );
                   },
                 ),
@@ -286,35 +371,24 @@ class _LocationPickerPageState extends ConsumerState<LocationPickerPage> {
               ),
             ),
           Expanded(
-            child: FlutterMap(
-              mapController: _mapController,
-              options: MapOptions(
-                initialCenter: _pin,
-                initialZoom: widget.initialLat != null ? 15 : 6,
-                onTap: (tap, point) => _setPin(point),
+            child: GoogleMap(
+              initialCameraPosition: CameraPosition(
+                target: _pin,
+                zoom: widget.initialLat != null ? 15 : 6,
               ),
-              children: [
-                TileLayer(
-                  urlTemplate:
-                      'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                  userAgentPackageName: 'com.chevere.plan',
+              onMapCreated: (c) => _mapController = c,
+              onTap: _setPin,
+              myLocationEnabled: true,
+              myLocationButtonEnabled: false,
+              zoomControlsEnabled: false,
+              markers: {
+                Marker(
+                  markerId: const MarkerId('pin'),
+                  position: _pin,
+                  draggable: true,
+                  onDragEnd: _setPin,
                 ),
-                MarkerLayer(
-                  markers: [
-                    Marker(
-                      point: _pin,
-                      width: 48,
-                      height: 48,
-                      alignment: Alignment.topCenter,
-                      child: Icon(
-                        Icons.location_on,
-                        size: 48,
-                        color: Theme.of(context).colorScheme.error,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+              },
             ),
           ),
           SafeArea(
@@ -325,9 +399,7 @@ class _LocationPickerPageState extends ConsumerState<LocationPickerPage> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Text(
-                    _geocoder.usingGeoapify
-                        ? 'Búsqueda: Geoapify · mapa: OpenStreetMap'
-                        : 'Búsqueda: fallback · configura GEOAPIFY_API_KEY',
+                    providerLabel,
                     style: Theme.of(context).textTheme.labelSmall,
                     textAlign: TextAlign.center,
                   ),

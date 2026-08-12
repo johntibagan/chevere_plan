@@ -4,7 +4,7 @@ No bloquean el uso diario. Al implementar, tacha aquí y ajusta el código.
 
 ## Captura / Maps
 
-- Autocomplete Maps: cadena multi-estrategia (redirect → `!3d!4d` → HTML → feature-id → geocode acotado por nombre en CO → viewport `@`). Sin Google Places API (billing). Si falla, mapa interactivo.
+- Autocomplete Maps: cadena multi-estrategia + **Google Place Details** (si hay `GOOGLE_MAPS_API_KEY`). Setup: [`docs/google-maps-setup.md`](google-maps-setup.md). Buscador del mapa solo con botón 🔍.
 
 ## Planes
 
