@@ -1,6 +1,6 @@
--- Bootstrap root (ejecutar DESPUÉS del primer login Google en la app).
--- 1) Sustituye el email por el tuyo.
--- 2) Corre este archivo entero en SQL Editor.
+-- Bootstrap root (DESPUÉS del primer login Google).
+-- Preferido:  python backend/reset_all.py --root-only --root tu@gmail.com
+-- O pega esto en SQL Editor (cambia el email).
 
 -- Backfill de perfil si el usuario existía antes del trigger
 insert into public.profiles (id, display_name, role)

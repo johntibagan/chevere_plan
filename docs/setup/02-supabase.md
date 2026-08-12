@@ -59,6 +59,12 @@ Tú solo necesitas: proyecto Supabase + Google provider + `.env` + (luego) SHA-1
 
 ---
 
+## Reset total de la base
+
+```powershell
+powershell -File C:\workspace\chevere_plan\backend\reset_all.ps1
+```
+
 ## 5. CLI de Supabase — opcional
 
 Sirve para migraciones SQL desde la carpeta `backend/`. **No bloquea** el Ciclo 0 si usas el dashboard web.

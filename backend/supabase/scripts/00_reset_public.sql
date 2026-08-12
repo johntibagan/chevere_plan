@@ -1,7 +1,9 @@
 -- =============================================================================
 -- RESET DE DATOS (solo filas) — no toca estructura
 -- =============================================================================
--- Vacía el contenido de la app creado vía migraciones 000001 … 000012.
+-- Si quieres schema + datos desde cero, usa:  python backend/reset_all.py --yes
+--
+-- Vacía el contenido de la app (sitios, planes, etc.) SIN dropear tablas.
 -- Conserva tablas, funciones, triggers, enums, RLS, bucket y policies.
 -- NO hace falta volver a ejecutar las migraciones.
 --
@@ -13,8 +15,8 @@
 -- =============================================================================
 
 -- Fotos en Storage (el bucket y las policies se quedan).
--- Supabase bloquea DELETE directo salvo con este flag de sesión.
-set storage.allow_delete_query = 'true';
+select set_config('storage.allow_delete_query', 'true', true);
+select set_config('storage.can_delete', 'true', true);
 delete from storage.objects where bucket_id = 'site-photos';
 
 -- Contenido de la app (orden libre: truncate multi-tabla respeta FKs entre ellas)
