@@ -7,6 +7,8 @@ import 'geo_place.dart';
 import 'google_places_cache.dart';
 import 'google_places_client.dart';
 import 'place_geocoder.dart';
+import 'geo_place.dart';
+import 'google_places_client.dart';
 
 /// Resultado de importar un enlace de Google Maps.
 class GoogleMapsImportResult {
