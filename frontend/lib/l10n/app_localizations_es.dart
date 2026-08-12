@@ -625,6 +625,32 @@ class AppLocalizationsEs extends AppLocalizations {
   String get planMenuShare => 'Compartir';
 
   @override
+  String get planMenuOpenMaps => 'Llevar a Maps';
+
+  @override
+  String get planMenuMore => 'Más opciones';
+
+  @override
+  String get planMarkDone => 'Marcar como hecho';
+
+  @override
+  String get planMarkPending => 'Marcar pendiente';
+
+  @override
+  String get planRemoveStop => 'Quitar del plan';
+
+  @override
+  String get planNoPendingStops => 'No hay sitios pendientes para Maps.';
+
+  @override
+  String get planStopsMissingCoords =>
+      'Algún sitio pendiente no tiene ubicación.';
+
+  @override
+  String get planNeedLocation =>
+      'Activa la ubicación para usar tu posición como inicio.';
+
+  @override
   String get planShareCopied => 'Plan copiado al portapapeles.';
 
   @override

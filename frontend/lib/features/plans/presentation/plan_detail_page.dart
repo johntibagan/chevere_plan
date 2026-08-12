@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:geolocator/geolocator.dart';
 
 import '../../../core/cache/cache_ttl.dart';
 import '../../../core/di/providers.dart';
+import '../../../core/errors/user_facing_error.dart';
 import '../../../core/l10n/context_l10n.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_toast.dart';
 import '../../saves/presentation/open_site_detail.dart';
+import '../data/maps_export.dart';
 import '../data/plan_models.dart';
 import '../data/plans_repository.dart';
 import 'plan_builder_page.dart';
@@ -30,6 +33,7 @@ class PlanDetailPage extends ConsumerStatefulWidget {
 class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
   Plan? _plan;
   bool _loading = true;
+  bool _busy = false;
 
   @override
   void initState() {
@@ -89,6 +93,61 @@ class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
     AppToast.show(context, context.l10n.planShareCopied);
   }
 
+  Future<(double, double)?> _currentLocation() async {
+    try {
+      var permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) {
+        return null;
+      }
+      final pos = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.medium,
+        ),
+      );
+      return (pos.latitude, pos.longitude);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> _openMaps() async {
+    final plan = _plan;
+    if (plan == null) return;
+    final pending = plan.stops.where((s) => !s.isVisited).toList();
+    if (pending.isEmpty) {
+      AppToast.show(context, context.l10n.planNoPendingStops, error: true);
+      return;
+    }
+    final missing = pending.where((s) => s.lat == null || s.lng == null);
+    if (missing.isNotEmpty) {
+      AppToast.show(context, context.l10n.planStopsMissingCoords, error: true);
+      return;
+    }
+    final origin = await _currentLocation();
+    if (!mounted) return;
+    if (origin == null) {
+      AppToast.show(context, context.l10n.planNeedLocation, error: true);
+      return;
+    }
+    try {
+      final ok = await openGoogleMapsDirections(
+        originLat: origin.$1,
+        originLng: origin.$2,
+        stopsInOrder: pending,
+      );
+      if (!ok && mounted) {
+        AppToast.show(context, kGenericAppError, error: true);
+      }
+    } catch (e) {
+      if (!mounted) return;
+      AppToast.error(context, e, logContext: 'plan_open_maps');
+    }
+  }
+
   Future<void> _delete() async {
     final l10n = context.l10n;
     final ok = await showDialog<bool>(
@@ -120,6 +179,85 @@ class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
     }
   }
 
+  Future<void> _toggleVisited(PlanStop stop) async {
+    if (_busy) return;
+    setState(() => _busy = true);
+    try {
+      await widget.repository.setVisited(
+        stopId: stop.id,
+        visited: !stop.isVisited,
+      );
+      await _load();
+      await _invalidatePlansCache();
+    } catch (e) {
+      if (!mounted) return;
+      AppToast.error(context, e, logContext: 'plan_toggle_visited');
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _removeStop(PlanStop stop) async {
+    if (_busy) return;
+    setState(() => _busy = true);
+    try {
+      await widget.repository.removeStop(
+        planId: widget.planId,
+        stopId: stop.id,
+      );
+      await _load();
+      await _invalidatePlansCache();
+    } catch (e) {
+      if (!mounted) return;
+      AppToast.error(context, e, logContext: 'plan_remove_stop');
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _showMoreMenu() async {
+    final l10n = context.l10n;
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: AppColors.surface,
+      showDragHandle: true,
+      builder: (ctx) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.map_outlined),
+                title: Text(l10n.planMenuOpenMaps),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _openMaps();
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.ios_share_outlined),
+                title: Text(l10n.planMenuShare),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _share();
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.delete_outline),
+                title: Text(l10n.actionDelete),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _delete();
+                },
+              ),
+              const SizedBox(height: AppSpacing.sm),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
@@ -128,37 +266,28 @@ class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(plan?.title ?? l10n.plansTitle),
-        actions: [
-          if (plan != null)
-            PopupMenuButton<_PlanMenu>(
-              icon: const Icon(Icons.more_vert),
-              onSelected: (value) {
-                switch (value) {
-                  case _PlanMenu.addSites:
-                    _openBuilder();
-                  case _PlanMenu.share:
-                    _share();
-                  case _PlanMenu.delete:
-                    _delete();
-                }
-              },
-              itemBuilder: (context) => [
-                PopupMenuItem(
-                  value: _PlanMenu.addSites,
-                  child: Text(l10n.planMenuAddSites),
+      ),
+      floatingActionButton: plan == null
+          ? null
+          : Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                FloatingActionButton.small(
+                  heroTag: 'plan_more_fab',
+                  tooltip: l10n.planMenuMore,
+                  onPressed: _showMoreMenu,
+                  child: const Icon(Icons.more_vert),
                 ),
-                PopupMenuItem(
-                  value: _PlanMenu.share,
-                  child: Text(l10n.planMenuShare),
-                ),
-                PopupMenuItem(
-                  value: _PlanMenu.delete,
-                  child: Text(l10n.actionDelete),
+                const SizedBox(height: AppSpacing.sm),
+                FloatingActionButton(
+                  heroTag: 'plan_add_fab',
+                  tooltip: l10n.planMenuAddSites,
+                  onPressed: _openBuilder,
+                  child: const Icon(Icons.add),
                 ),
               ],
             ),
-        ],
-      ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : plan == null
@@ -186,25 +315,17 @@ class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
                       child: PlanTimeline(
                         stops: plan.stops,
                         emptyLabel: l10n.planTimelineEmpty,
+                        bottomPadding: 120,
                         onStopTap: (stop) => openSiteDetail(
                           context,
                           siteId: stop.siteId,
                         ),
+                        onToggleVisited: _busy ? null : _toggleVisited,
+                        onRemove: _busy ? null : _removeStop,
                       ),
                     ),
-                    if (plan.stops.isEmpty)
-                      Padding(
-                        padding: const EdgeInsets.all(AppSpacing.lg),
-                        child: FilledButton.icon(
-                          onPressed: _openBuilder,
-                          icon: const Icon(Icons.add),
-                          label: Text(l10n.planMenuAddSites),
-                        ),
-                      ),
                   ],
                 ),
     );
   }
 }
-
-enum _PlanMenu { addSites, share, delete }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/l10n/context_l10n.dart';
 import '../../../core/theme/app_theme.dart';
 import '../data/plan_models.dart';
 
@@ -9,22 +10,27 @@ class PlanTimeline extends StatelessWidget {
     super.key,
     required this.stops,
     required this.onStopTap,
+    this.onToggleVisited,
     this.onRemove,
     this.emptyLabel,
+    this.bottomPadding = AppSpacing.xxl,
   });
 
   final List<PlanStop> stops;
   final void Function(PlanStop stop) onStopTap;
+  final void Function(PlanStop stop)? onToggleVisited;
   final void Function(PlanStop stop)? onRemove;
   final String? emptyLabel;
+  final double bottomPadding;
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     if (stops.isEmpty) {
       return Padding(
         padding: const EdgeInsets.all(AppSpacing.lg),
         child: Text(
-          emptyLabel ?? 'Sin sitios aún',
+          emptyLabel ?? l10n.planTimelineEmpty,
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: AppColors.muted,
               ),
@@ -34,11 +40,11 @@ class PlanTimeline extends StatelessWidget {
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.fromLTRB(
+      padding: EdgeInsets.fromLTRB(
         AppSpacing.lg,
         AppSpacing.md,
         AppSpacing.lg,
-        AppSpacing.xxl,
+        bottomPadding,
       ),
       itemCount: stops.length,
       itemBuilder: (context, index) {
@@ -115,18 +121,33 @@ class PlanTimeline extends StatelessWidget {
                             ],
                           ),
                         ),
+                        if (onToggleVisited != null)
+                          IconButton(
+                            tooltip: stop.isVisited
+                                ? l10n.planMarkPending
+                                : l10n.planMarkDone,
+                            visualDensity: VisualDensity.compact,
+                            onPressed: () => onToggleVisited!(stop),
+                            icon: Icon(
+                              stop.isVisited
+                                  ? Icons.check_circle
+                                  : Icons.check_circle_outline,
+                              color: stop.isVisited
+                                  ? AppColors.success
+                                  : AppColors.muted,
+                              size: 22,
+                            ),
+                          ),
                         if (onRemove != null)
                           IconButton(
-                            tooltip: 'Quitar',
+                            tooltip: l10n.planRemoveStop,
                             visualDensity: VisualDensity.compact,
                             onPressed: () => onRemove!(stop),
-                            icon: const Icon(Icons.close, size: 18),
-                          )
-                        else
-                          const Icon(
-                            Icons.chevron_right,
-                            color: AppColors.mutedDark,
-                            size: 20,
+                            icon: const Icon(
+                              Icons.delete_outline,
+                              size: 22,
+                              color: AppColors.muted,
+                            ),
                           ),
                       ],
                     ),

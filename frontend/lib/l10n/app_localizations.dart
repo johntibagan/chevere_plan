@@ -1234,6 +1234,54 @@ abstract class AppLocalizations {
   /// **'Compartir'**
   String get planMenuShare;
 
+  /// No description provided for @planMenuOpenMaps.
+  ///
+  /// In es, this message translates to:
+  /// **'Llevar a Maps'**
+  String get planMenuOpenMaps;
+
+  /// No description provided for @planMenuMore.
+  ///
+  /// In es, this message translates to:
+  /// **'Más opciones'**
+  String get planMenuMore;
+
+  /// No description provided for @planMarkDone.
+  ///
+  /// In es, this message translates to:
+  /// **'Marcar como hecho'**
+  String get planMarkDone;
+
+  /// No description provided for @planMarkPending.
+  ///
+  /// In es, this message translates to:
+  /// **'Marcar pendiente'**
+  String get planMarkPending;
+
+  /// No description provided for @planRemoveStop.
+  ///
+  /// In es, this message translates to:
+  /// **'Quitar del plan'**
+  String get planRemoveStop;
+
+  /// No description provided for @planNoPendingStops.
+  ///
+  /// In es, this message translates to:
+  /// **'No hay sitios pendientes para Maps.'**
+  String get planNoPendingStops;
+
+  /// No description provided for @planStopsMissingCoords.
+  ///
+  /// In es, this message translates to:
+  /// **'Algún sitio pendiente no tiene ubicación.'**
+  String get planStopsMissingCoords;
+
+  /// No description provided for @planNeedLocation.
+  ///
+  /// In es, this message translates to:
+  /// **'Activa la ubicación para usar tu posición como inicio.'**
+  String get planNeedLocation;
+
   /// No description provided for @planShareCopied.
   ///
   /// In es, this message translates to:

@@ -234,6 +234,25 @@ class _PlanBuilderPageState extends ConsumerState<PlanBuilderPage> {
     }
   }
 
+  Future<void> _toggleVisited(PlanStop stop) async {
+    if (_mutating) return;
+    setState(() => _mutating = true);
+    try {
+      await widget.repository.setVisited(
+        stopId: stop.id,
+        visited: !stop.isVisited,
+      );
+      await _invalidatePlansCache();
+      await _loadPlan();
+      if (!mounted) return;
+      setState(() => _mutating = false);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _mutating = false);
+      AppToast.error(context, e, logContext: 'plan_toggle_visited');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
@@ -304,6 +323,7 @@ class _PlanBuilderPageState extends ConsumerState<PlanBuilderPage> {
                           context,
                           siteId: stop.siteId,
                         ),
+                        onToggleVisited: _mutating ? null : _toggleVisited,
                         onRemove: _mutating ? null : _removeStop,
                       ),
                   },
