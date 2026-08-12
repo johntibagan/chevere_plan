@@ -8,6 +8,7 @@ import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 
 import '../../../core/cache/cache_ttl.dart';
+import '../../../core/config/env.dart';
 import '../../../core/di/providers.dart';
 import '../../../core/l10n/context_l10n.dart';
 import '../../../core/theme/app_theme.dart';
@@ -325,7 +326,9 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
       AppToast.show(
         context,
         !result.hasCoords
-            ? context.l10n.saveMapsNeedExactPin
+            ? (Env.hasGoogleMapsKey
+                ? context.l10n.saveMapsNeedExactPin
+                : context.l10n.saveMapsNeedGoogleKey)
             : !result.hasExactPin
                 ? context.l10n.saveMapsApproxPin
                 : (_cityCtrl.text.trim().isNotEmpty

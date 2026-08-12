@@ -886,6 +886,12 @@ abstract class AppLocalizations {
   /// **'No se obtuvo el punto exacto. Ábrelo en el mapa interactivo y confirma el pin.'**
   String get saveMapsNeedExactPin;
 
+  /// No description provided for @saveMapsNeedGoogleKey.
+  ///
+  /// In es, this message translates to:
+  /// **'Falta GOOGLE_MAPS_API_KEY en el build. Corre con: flutter run --dart-define-from-file=.env'**
+  String get saveMapsNeedGoogleKey;
+
   /// No description provided for @planSearchCompleteOnlyHint.
   ///
   /// In es, this message translates to:

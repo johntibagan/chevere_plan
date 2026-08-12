@@ -91,6 +91,60 @@ class GooglePlacesClient {
     return place;
   }
 
+  /// Text Text (New): 1ª coincidencia con coords. Para links Maps con nombre y sin pin.
+  Future<GeoPlace?> findByText(String query) async {
+    if (!isConfigured) return null;
+    final q = query.trim();
+    if (q.length < 2) return null;
+
+    final cacheKey = 'text_${q.toLowerCase()}';
+    final cached = await _cache.read(cacheKey);
+    if (cached != null) return cached;
+
+    if (!await _quota.tryConsume()) {
+      throw const AppUserError(
+        'Límite diario de búsquedas de ubicación. Intenta mañana o usa el mapa.',
+      );
+    }
+
+    final res = await _http
+        .post(
+          Uri.https('places.googleapis.com', '/v1/places:searchText'),
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Goog-Api-Key': _apiKey,
+            'X-Goog-FieldMask':
+                'places.id,places.displayName,places.formattedAddress,'
+                    'places.location,places.addressComponents',
+            'Accept-Language': 'es',
+          },
+          body: jsonEncode({
+            'textQuery': q,
+            'languageCode': 'es',
+            'regionCode': 'CO',
+            'maxResultCount': 1,
+          }),
+        )
+        .timeout(const Duration(seconds: 12));
+
+    if (res.statusCode != 200) {
+      AppLog.debug(
+        'findByText status=${res.statusCode} body=${res.body}',
+        name: 'google_places',
+      );
+      return null;
+    }
+
+    final body = Map<String, dynamic>.from(jsonDecode(res.body) as Map);
+    final places = body['places'];
+    if (places is! List || places.isEmpty) return null;
+    final first = places.first;
+    if (first is! Map) return null;
+    final place = _placeFromDetailsJson(Map<String, dynamic>.from(first));
+    if (place != null) await _cache.write(cacheKey, place);
+    return place;
+  }
+
   /// Detalle por CID (hex feature id de Maps → decimal string). Legacy, 1 llamada.
   Future<GeoPlace?> placeDetailsByCid(String cidDecimal) async {
     if (!isConfigured || cidDecimal.isEmpty) return null;

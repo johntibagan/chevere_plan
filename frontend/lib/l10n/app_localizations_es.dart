@@ -434,6 +434,10 @@ class AppLocalizationsEs extends AppLocalizations {
       'No se obtuvo el punto exacto. Ábrelo en el mapa interactivo y confirma el pin.';
 
   @override
+  String get saveMapsNeedGoogleKey =>
+      'Falta GOOGLE_MAPS_API_KEY en el build. Corre con: flutter run --dart-define-from-file=.env';
+
+  @override
   String get planSearchCompleteOnlyHint =>
       'Solo aparecen sitios completos con ubicación en el mapa.';
 

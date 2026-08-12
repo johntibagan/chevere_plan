@@ -165,13 +165,48 @@ class GoogleMapsLinkImporter {
     String? city = parsed.city;
     String? department = parsed.department;
     String? address = parsed.addressLine;
+    var blob = resolved.toString();
 
-    // Google Places: una sola llamada si falta el pin exacto.
+    // HTML una vez si falta pin (acortador 200 / consent / data solo en body).
+    if (!hasExactPin) {
+      try {
+        final body = await _fetchBody(resolved);
+        blob = '$blob\n$body';
+        final fromHtml = _extractMapsUriFromHtml(body);
+        if (fromHtml != null) {
+          resolved = fromHtml;
+          blob = '$blob\n${fromHtml.toString()}';
+          final again = parseMapsUrl(fromHtml);
+          if (again.hasExactPin) {
+            lat = again.lat;
+            lng = again.lng;
+            hasExactPin = true;
+          }
+          name ??= again.name;
+          address ??= again.addressLine;
+        }
+        final pin = extractExactPinCoords(body);
+        if (pin != null) {
+          lat = pin.$1;
+          lng = pin.$2;
+          hasExactPin = true;
+        }
+        name ??= _extractTitleFromHtml(body);
+      } catch (e, st) {
+        AppLog.debug(
+          'maps import html fallback failed',
+          name: 'maps_import',
+          error: e,
+          stackTrace: st,
+        );
+      }
+    }
+
+    // Google Places: Details (ChIJ/CID) o Search Text por nombre (API New).
     if (!hasExactPin && _places.isConfigured) {
       try {
-        final blob = resolved.toString();
-        final chij = GooglePlacesClient.extractChijPlaceId(blob);
         GeoPlace? fromPlaces;
+        final chij = GooglePlacesClient.extractChijPlaceId(blob);
         if (chij != null) {
           fromPlaces = await _places.placeDetails(placeId: chij);
         }
@@ -180,6 +215,13 @@ class GoogleMapsLinkImporter {
           final cid = GooglePlacesClient.cidFromFeatureId(fid);
           if (cid != null) {
             fromPlaces = await _places.placeDetailsByCid(cid);
+          }
+        }
+        // Links que solo traen /place/Nombre → 1× Search Text (Places New).
+        if (fromPlaces == null) {
+          final q = (name ?? '').trim();
+          if (q.length >= 2) {
+            fromPlaces = await _places.findByText(q);
           }
         }
         if (fromPlaces != null) {
@@ -198,38 +240,7 @@ class GoogleMapsLinkImporter {
           error: e,
           stackTrace: st,
         );
-      }
-    }
-
-    // Último recurso: un HTML si aún no hay pin (p. ej. consent sin CID en Location).
-    if (!hasExactPin) {
-      try {
-        final body = await _fetchBody(resolved);
-        final fromHtml = _extractMapsUriFromHtml(body);
-        if (fromHtml != null) {
-          final again = parseMapsUrl(fromHtml);
-          if (again.hasExactPin) {
-            lat = again.lat;
-            lng = again.lng;
-            hasExactPin = true;
-            name ??= again.name;
-          }
-        }
-        final pin = extractExactPinCoords(body) ??
-            extractExactPinCoords(resolved.toString());
-        if (pin != null) {
-          lat = pin.$1;
-          lng = pin.$2;
-          hasExactPin = true;
-        }
-        name ??= _extractTitleFromHtml(body);
-      } catch (e, st) {
-        AppLog.debug(
-          'maps import html fallback failed',
-          name: 'maps_import',
-          error: e,
-          stackTrace: st,
-        );
+        if (e is AppUserError) rethrow;
       }
     }
 
@@ -306,11 +317,15 @@ class GoogleMapsLinkImporter {
         final next = parseRedirectLocation(uri, loc);
         if (next == null || next == uri) break;
         uri = next;
+        // Si Location ya trae pin o feature-id, listo.
+        final s = next.toString();
+        if (extractExactPinCoords(s) != null || extractFeatureId(s) != null) {
+          return next;
+        }
         continue;
       }
       break;
     }
-    // No descargar HTML del acortador: Places / parse de Location bastan.
     return uri;
   }
 

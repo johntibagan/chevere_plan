@@ -36,13 +36,14 @@ flutter run --dart-define-from-file=.env
 
 ## 3. Anti-fugas (ya en código)
 
-- Pegar link Maps (rápido):
+- Pegar link Maps:
   1. Caché por URL
-  2. Redirect (solo headers `Location`)
-  3. Parse gratis (`!3d!4d` / nombre / CID)
-  4. Si falta pin → **1× Place Details** (ChIJ o CID)
+  2. Redirect (`Location`); si ya trae `!3d`/`CID`, para ahí
+  3. Si falta pin → **1× HTML** (consent / acortador)
+  4. Si falta pin + key → Place Details (ChIJ/CID) o **Search Text** por nombre
   5. Reverse **solo** si hay coords y falta ciudad
-  6. Si aún no hay pin: un HTML ligero (no cadena de probes)
+- **Importante:** la key en `.env` no basta sola: hay que correr con
+  `--dart-define-from-file=.env` (o `tool/run_dev.ps1`). Sin eso Places no se usa.
 - Buscador del mapa → **solo al pulsar 🔍** (sin teclas).
 - Autocomplete con **session token** → al elegir, Place Details y fin de sesión.
 - Tap en mapa → **1× Geocoding reverse**.
