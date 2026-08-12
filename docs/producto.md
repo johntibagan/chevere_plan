@@ -1,8 +1,8 @@
-# Especificación de Producto: App de Guardado Centralizado y Planes de Turismo/Ocio
+# Especificación de producto
 
-**Versión:** 1.0 (documento vivo de concepto)
-**Alcance geográfico inicial:** Colombia
-**Plataforma inicial:** Android (expansión futura a iOS)
+Fuente de **qué** debe hacer la app. Lo técnico operativo está en [README](README.md) y [setup](setup/02-supabase.md).
+
+**Versión:** 1.0 (concepto vivo) · Colombia · Android primero
 
 ---
 

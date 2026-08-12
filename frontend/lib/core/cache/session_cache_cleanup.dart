@@ -31,6 +31,10 @@ Future<void> clearSessionCaches({
     read(sitePrefetchProvider).cancelPending();
   } catch (_) {}
 
+  try {
+    await read(geofenceSyncServiceProvider).clearAll();
+  } catch (_) {}
+
   invalidate(mySavesProvider);
   invalidate(categoriesProvider);
   invalidate(geoCatalogProvider);

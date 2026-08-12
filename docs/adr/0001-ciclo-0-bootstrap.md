@@ -2,7 +2,7 @@
 
 ## Contexto
 
-Ciclo 0: app que compila con login Google vía Supabase y FCM inicializado, sin lógica de negocio (especificación §15 Fase 1 / prompt Ciclo 0).
+Ciclo 0: app que compila con login Google vía Supabase y FCM inicializado, sin lógica de negocio (especificación §15 Fase 1).
 
 ## Decisiones
 

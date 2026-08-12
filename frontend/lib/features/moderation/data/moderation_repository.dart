@@ -67,11 +67,6 @@ class ModerationRepository {
     );
   }
 
-  @Deprecated('Usar signedPhotoUrl — el bucket site-photos es privado.')
-  String publicPhotoUrl(String storagePath) {
-    return _client.storage.from('site-photos').getPublicUrl(storagePath);
-  }
-
   Future<void> deletePhoto(SitePhoto photo) async {
     final uid = _uid;
     if (uid == null) {

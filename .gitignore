@@ -25,3 +25,7 @@ Desktop.ini
 # Node / Supabase CLI caches
 node_modules/
 .supabase/
+
+# Python
+**/__pycache__/
+*.pyc

@@ -5,12 +5,10 @@ Fuente: https://www.datos.gov.co/resource/gdxc-w37w.json
 (dataset de municipios; los departamentos se deducen por distinct).
 
 Uso:
-  python 05_sync_divipola.py --sql > 05_sync_divipola.sql
   python 05_sync_divipola.py --sql -o 05_sync_divipola.sql
 
-Luego pega el SQL en el editor de Supabase (después de la migración 13).
-
-No llama la API desde la app: solo este script (manual o cron).
+El reset (`backend/reset_all.py`) aplica ese SQL después de las migraciones.
+No llama la API desde la app.
 """
 
 from __future__ import annotations

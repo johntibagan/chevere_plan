@@ -1,23 +1,39 @@
 # Chevere Plan
 
-App móvil (Flutter) + backend Supabase para guardar lugares y armar planes de ocio en Colombia.
-
-## Estructura
+App Flutter (Android) + Supabase para guardar lugares y armar planes de ocio en Colombia.
 
 ```
-frontend/   # App Flutter (Android primero) — package com.chevere.plan
-backend/    # Supabase (migraciones + Edge Functions)
-docs/       # Setup e ADRs
+frontend/   App Flutter — package com.chevere.plan
+backend/    Supabase: migraciones + reset
+docs/       Producto, setup, ADRs, E2E
 ```
 
-## Setup local
+## Arranque diario
 
-Sigue en orden:
+```powershell
+cd frontend
+.\tool\run_dev.ps1
+```
 
-1. [docs/setup/01-flutter-android.md](docs/setup/01-flutter-android.md)
-2. [docs/setup/02-supabase.md](docs/setup/02-supabase.md)
-3. [docs/setup/03-firebase-fcm.md](docs/setup/03-firebase-fcm.md)
+Requisitos: `frontend/.env` (ver `.env.example`) y un dispositivo/emulador Android.
 
-## Ciclo actual
+## Reset de la base (desde cero)
 
-**Ciclo 0 — Setup base** (en progreso): toolchain OK, estructura creada; falta cerrar Firebase + login Google en la app.
+```powershell
+powershell -File C:\workspace\chevere_plan\backend\reset_all.ps1
+```
+
+Detalles: [backend/README.md](backend/README.md).
+
+## Documentación
+
+| Doc | Qué es |
+|-----|--------|
+| [docs/README.md](docs/README.md) | Índice |
+| [docs/producto.md](docs/producto.md) | Especificación de producto |
+| [docs/setup/01-flutter-android.md](docs/setup/01-flutter-android.md) | Flutter + Android |
+| [docs/setup/02-supabase.md](docs/setup/02-supabase.md) | Supabase, Google Auth, reset |
+| [docs/setup/03-firebase-fcm.md](docs/setup/03-firebase-fcm.md) | FCM |
+| [docs/pendientes.md](docs/pendientes.md) | Deuda y pendientes |
+| [docs/e2e.md](docs/e2e.md) | Patrol E2E |
+| [docs/adr/](docs/adr/) | Decisiones por ciclo (histórico) |

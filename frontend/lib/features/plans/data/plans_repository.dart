@@ -154,10 +154,6 @@ class PlansRepository {
     }).eq('id', stopId);
   }
 
-  Future<void> deletePlan(String planId) async {
-    await _client.from('plans').delete().eq('id', planId);
-  }
-
   Plan _planFromJson(Map<String, dynamic> json) {
     final stopsRaw = json['plan_stops'];
     final stops = <PlanStop>[];

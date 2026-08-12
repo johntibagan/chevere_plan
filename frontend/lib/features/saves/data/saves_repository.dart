@@ -43,22 +43,6 @@ class SavesRepository {
     );
   }
 
-  /// Lista completa con joins (edición / usos que necesiten el objeto rico).
-  Future<List<UserSave>> listMine() async {
-    final uid = _uid;
-    if (uid == null) return [];
-
-    final rows = await _client
-        .from('user_saves')
-        .select(_saveSelect)
-        .eq('user_id', uid)
-        .order('created_at', ascending: false);
-
-    return (rows as List)
-        .map((e) => UserSave.fromJoinedJson(Map<String, dynamic>.from(e as Map)))
-        .toList();
-  }
-
   /// Lista para Inicio: columnas mínimas. [limit]/[offset] vía PostgREST `.range`.
   Future<List<UserSave>> listMineSummary({
     int limit = 20,
@@ -311,22 +295,6 @@ class SavesRepository {
             : 'No se pudo guardar la foto. Intenta de nuevo.',
       );
     }
-  }
-
-  Future<List<UserSave>> listStaleDrafts() async {
-    final uid = _uid;
-    if (uid == null) return [];
-    final cutoff = DateTime.now().toUtc().subtract(SavePolicies.draftRemindAfter);
-    final rows = await _client
-        .from('user_saves')
-        .select(_saveSelect)
-        .eq('user_id', uid)
-        .inFilter('status', ['draft', 'pending_location'])
-        .lt('created_at', cutoff.toIso8601String());
-
-    return (rows as List)
-        .map((e) => UserSave.fromJoinedJson(Map<String, dynamic>.from(e as Map)))
-        .toList();
   }
 
   Future<void> discardSave(String saveId) async {

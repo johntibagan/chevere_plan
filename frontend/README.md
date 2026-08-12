@@ -1,41 +1,22 @@
-# Chevere Plan (Flutter)
-
-## Config segura (R5)
-
-Los valores de cliente se inyectan en compile-time con `.env` (no van como asset en el APK).
-
-1. Copia `.env.example` → `.env` (gitignored) y rellena valores.
-2. Ejecuta:
-
-```bash
-flutter run --dart-define-from-file=.env
-```
-
-Windows (PowerShell):
+# App Flutter
 
 ```powershell
+copy .env.example .env
 .\tool\run_dev.ps1
 ```
 
-### Qué sí / qué no
+Los valores se inyectan en compile-time (`--dart-define-from-file`). Nunca `SUPABASE_SERVICE_ROLE_KEY` en el cliente.
 
-| Valor | Cliente | Notas |
-|-------|---------|--------|
-| `SUPABASE_URL` + `SUPABASE_ANON_KEY` | Sí | Públicas por diseño; la seguridad real es **RLS** en Supabase |
-| `GOOGLE_WEB_CLIENT_ID` | Sí | OAuth Web client id |
-| `GEOAPIFY_API_KEY` | Sí | Key de cliente + cuota local |
-| `SUPABASE_SERVICE_ROLE_KEY` | **Nunca** | Solo backend/CI; `Env.assertNoServerSecrets()` falla en debug si se inyecta |
+| Variable | Notas |
+|----------|--------|
+| `SUPABASE_URL` + `SUPABASE_ANON_KEY` | Públicas; la seguridad es RLS |
+| `GOOGLE_WEB_CLIENT_ID` | OAuth Web |
+| `GEOAPIFY_API_KEY` | Autocomplete / reverse (opcional) |
 
-Release recomendado:
+Tests:
 
-```bash
-flutter build apk --release --obfuscate --split-debug-info=build/symbols --dart-define-from-file=.env
+```powershell
+flutter test
 ```
 
-## Getting Started
-
-```bash
-flutter pub get
-# copiar .env.example → .env
-flutter run --dart-define-from-file=.env
-```
+E2E Patrol: [docs/e2e.md](../docs/e2e.md).

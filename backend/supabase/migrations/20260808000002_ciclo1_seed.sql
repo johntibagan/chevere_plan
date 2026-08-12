@@ -1,4 +1,4 @@
--- Seed categorías (propuesta simplificada; frontend/categorias-propuesta-simplificada.csv)
+-- Seed categorías simplificadas + tipos de transporte.
 -- + keywords para autocomplete. Idempotente.
 
 insert into public.categories (slug, name_i18n, sort_order, icon_key, color_hex, age_restricted, keywords)

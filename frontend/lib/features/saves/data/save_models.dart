@@ -59,16 +59,6 @@ class PossibleDuplicate {
   }
 }
 
-class SiteContributor {
-  const SiteContributor({
-    required this.userId,
-    this.displayName,
-  });
-
-  final String userId;
-  final String? displayName;
-}
-
 class UserSave {
   const UserSave({
     required this.id,
