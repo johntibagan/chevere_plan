@@ -460,6 +460,30 @@ abstract class AppLocalizations {
   /// **'Ubicación'**
   String get siteDetailLocation;
 
+  /// No description provided for @siteDetailOpenInMaps.
+  ///
+  /// In es, this message translates to:
+  /// **'Ver en Maps'**
+  String get siteDetailOpenInMaps;
+
+  /// No description provided for @siteDetailDirections.
+  ///
+  /// In es, this message translates to:
+  /// **'Cómo llegar'**
+  String get siteDetailDirections;
+
+  /// No description provided for @siteDetailNoCoords.
+  ///
+  /// In es, this message translates to:
+  /// **'Este sitio aún no tiene punto en el mapa.'**
+  String get siteDetailNoCoords;
+
+  /// No description provided for @saveNeedsMapPoint.
+  ///
+  /// In es, this message translates to:
+  /// **'Guardado. Falta el punto en el mapa para marcarlo completo.'**
+  String get saveNeedsMapPoint;
+
   /// No description provided for @siteDetailCategories.
   ///
   /// In es, this message translates to:
@@ -855,6 +879,48 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'maps.app.goo.gl o google.com/maps'**
   String get saveMapsPasteHelper;
+
+  /// No description provided for @saveMapsNeedExactPin.
+  ///
+  /// In es, this message translates to:
+  /// **'No se obtuvo el punto exacto. Ábrelo en el mapa interactivo y confirma el pin.'**
+  String get saveMapsNeedExactPin;
+
+  /// No description provided for @planSearchCompleteOnlyHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Solo aparecen sitios completos con ubicación en el mapa.'**
+  String get planSearchCompleteOnlyHint;
+
+  /// No description provided for @planSearchEmptyQueryHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Deja el buscador vacío y toca buscar para ver todos tus sitios elegibles.'**
+  String get planSearchEmptyQueryHint;
+
+  /// No description provided for @planSearchHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Nombre, ciudad… o vacío = todos'**
+  String get planSearchHint;
+
+  /// No description provided for @planOpeningMaps.
+  ///
+  /// In es, this message translates to:
+  /// **'Preparando ruta en Maps…'**
+  String get planOpeningMaps;
+
+  /// No description provided for @saveMapsApproxPin.
+  ///
+  /// In es, this message translates to:
+  /// **'Punto aproximado. Confirma o ajusta el pin en el mapa.'**
+  String get saveMapsApproxPin;
+
+  /// No description provided for @actionLoading.
+  ///
+  /// In es, this message translates to:
+  /// **'Cargando…'**
+  String get actionLoading;
 
   /// No description provided for @saveMapsNeedLink.
   ///

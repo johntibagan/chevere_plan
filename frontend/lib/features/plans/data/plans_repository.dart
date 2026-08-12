@@ -157,6 +157,25 @@ class PlansRepository {
       throw const AppUserError('Ese sitio ya está en el plan.');
     }
 
+    var stopLat = lat;
+    var stopLng = lng;
+    if (stopLat == null || stopLng == null) {
+      try {
+        final coords = await _client.rpc(
+          'get_site_coords',
+          params: {'p_site_id': siteId},
+        );
+        final parsed = _parseSiteCoords(coords);
+        stopLat ??= parsed.$1;
+        stopLng ??= parsed.$2;
+      } catch (_) {}
+    }
+    if (stopLat == null || stopLng == null) {
+      throw const AppUserError(
+        'Solo puedes agregar sitios con ubicación en el mapa.',
+      );
+    }
+
     final maxRow = await _client
         .from('plan_stops')
         .select('sort_order')
@@ -170,8 +189,8 @@ class PlansRepository {
       'plan_id': planId,
       'site_id': siteId,
       'sort_order': nextOrder,
-      'lat': lat,
-      'lng': lng,
+      'lat': stopLat,
+      'lng': stopLng,
       'estimated_price_amount': estimatedPriceAmount,
     });
 
@@ -179,6 +198,46 @@ class PlansRepository {
 
     final plan = await fetchById(planId);
     return plan.stops.firstWhere((s) => s.siteId == siteId);
+  }
+
+  /// Rellena lat/lng de paradas desde `sites.location` (p. ej. sitio editado después).
+  Future<Plan> hydrateMissingStopCoords(String planId) async {
+    final plan = await fetchById(planId);
+    for (final stop in plan.stops) {
+      if (stop.lat != null && stop.lng != null) continue;
+      try {
+        final coords = await _client.rpc(
+          'get_site_coords',
+          params: {'p_site_id': stop.siteId},
+        );
+        final parsed = _parseSiteCoords(coords);
+        final lat = parsed.$1;
+        final lng = parsed.$2;
+        if (lat == null || lng == null) continue;
+        await _client.from('plan_stops').update({
+          'lat': lat,
+          'lng': lng,
+        }).eq('id', stop.id);
+      } catch (_) {}
+    }
+    return fetchById(planId);
+  }
+
+  /// Normaliza la respuesta de `get_site_coords` (lista u objeto).
+  static (double?, double?) _parseSiteCoords(Object? coords) {
+    Map<String, dynamic>? row;
+    if (coords is List && coords.isNotEmpty) {
+      final first = coords.first;
+      if (first is Map) {
+        row = Map<String, dynamic>.from(first);
+      }
+    } else if (coords is Map) {
+      row = Map<String, dynamic>.from(coords);
+    }
+    if (row == null) return (null, null);
+    final lat = (row['lat'] as num?)?.toDouble();
+    final lng = (row['lng'] as num?)?.toDouble();
+    return (lat, lng);
   }
 
   Future<void> removeStop({

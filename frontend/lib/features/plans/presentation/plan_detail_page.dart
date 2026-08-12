@@ -8,6 +8,7 @@ import '../../../core/di/providers.dart';
 import '../../../core/errors/user_facing_error.dart';
 import '../../../core/l10n/context_l10n.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/app_busy_overlay.dart';
 import '../../../core/widgets/app_toast.dart';
 import '../../saves/presentation/open_site_detail.dart';
 import '../data/maps_export.dart';
@@ -34,11 +35,19 @@ class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
   Plan? _plan;
   bool _loading = true;
   bool _busy = false;
+  (double, double)? _cachedOrigin;
 
   @override
   void initState() {
     super.initState();
     _load();
+    _prefetchOrigin();
+  }
+
+  Future<void> _prefetchOrigin() async {
+    final origin = await _currentLocation();
+    if (!mounted || origin == null) return;
+    _cachedOrigin = origin;
   }
 
   Future<void> _load() async {
@@ -116,35 +125,57 @@ class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
 
   Future<void> _openMaps() async {
     final plan = _plan;
-    if (plan == null) return;
-    final pending = plan.stops.where((s) => !s.isVisited).toList();
-    if (pending.isEmpty) {
-      AppToast.show(context, context.l10n.planNoPendingStops, error: true);
-      return;
-    }
-    final missing = pending.where((s) => s.lat == null || s.lng == null);
-    if (missing.isNotEmpty) {
-      AppToast.show(context, context.l10n.planStopsMissingCoords, error: true);
-      return;
-    }
-    final origin = await _currentLocation();
-    if (!mounted) return;
-    if (origin == null) {
-      AppToast.show(context, context.l10n.planNeedLocation, error: true);
-      return;
-    }
+    if (plan == null || _busy) return;
+    final l10n = context.l10n;
+    setState(() => _busy = true);
     try {
-      final ok = await openGoogleMapsDirections(
-        originLat: origin.$1,
-        originLng: origin.$2,
-        stopsInOrder: pending,
+      await AppBusyOverlay.run(
+        context,
+        message: l10n.planOpeningMaps,
+        action: () async {
+          final results = await Future.wait<Object?>([
+            widget.repository.hydrateMissingStopCoords(widget.planId),
+            _cachedOrigin != null
+                ? Future<(double, double)?>.value(_cachedOrigin)
+                : _currentLocation(),
+          ]);
+          final hydrated = results[0] as Plan;
+          final origin = results[1] as (double, double)?;
+          if (origin != null) _cachedOrigin = origin;
+
+          if (!mounted) return;
+          setState(() => _plan = hydrated);
+
+          final pending = hydrated.stops.where((s) => !s.isVisited).toList();
+          if (pending.isEmpty) {
+            throw AppUserError(l10n.planNoPendingStops);
+          }
+          final missing = pending.where((s) => s.lat == null || s.lng == null);
+          if (missing.isNotEmpty) {
+            throw AppUserError(l10n.planStopsMissingCoords);
+          }
+          if (origin == null) {
+            throw AppUserError(l10n.planNeedLocation);
+          }
+          final ok = await openGoogleMapsDirections(
+            originLat: origin.$1,
+            originLng: origin.$2,
+            stopsInOrder: pending,
+          );
+          if (!ok) {
+            throw const AppUserError(kGenericAppError);
+          }
+        },
       );
-      if (!ok && mounted) {
-        AppToast.show(context, kGenericAppError, error: true);
-      }
     } catch (e) {
       if (!mounted) return;
-      AppToast.error(context, e, logContext: 'plan_open_maps');
+      if (e is AppUserError) {
+        AppToast.show(context, e.message, error: true);
+      } else {
+        AppToast.error(context, e, logContext: 'plan_open_maps');
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
     }
   }
 
@@ -276,14 +307,14 @@ class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
                 FloatingActionButton.small(
                   heroTag: 'plan_more_fab',
                   tooltip: l10n.planMenuMore,
-                  onPressed: _showMoreMenu,
+                  onPressed: _busy ? null : _showMoreMenu,
                   child: const Icon(Icons.more_vert),
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 FloatingActionButton(
                   heroTag: 'plan_add_fab',
                   tooltip: l10n.planMenuAddSites,
-                  onPressed: _openBuilder,
+                  onPressed: _busy ? null : _openBuilder,
                   child: const Icon(Icons.add),
                 ),
               ],

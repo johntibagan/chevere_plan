@@ -16,8 +16,38 @@ void main() {
   test('parsea place + !3d!4d (coords del sitio, no del viewport)', () {
     final r = GoogleMapsLinkImporter.parseMapsUrl(Uri.parse(resolved));
     expect(r.name, 'Termales Los Volcanes');
+    expect(r.hasExactPin, isTrue);
     expect(r.lat, closeTo(5.0928761, 0.00001));
     expect(r.lng, closeTo(-73.6406624, 0.00001));
+    // Viewport @ es distinto al pin
+    expect(r.lng, isNot(closeTo(-73.6432373, 0.00001)));
+  });
+
+  test('ignora @viewport si no hay pin exacto', () {
+    final r = GoogleMapsLinkImporter.parseMapsUrl(
+      Uri.parse(
+        'https://www.google.com/maps/place/Foo/@4.6,-74.0,17z/data=!3m1!4b1',
+      ),
+    );
+    expect(r.name, 'Foo');
+    expect(r.hasExactPin, isFalse);
+    expect(r.lat, isNull);
+    expect(r.lng, isNull);
+  });
+
+  test('extractViewportCoords lee @lat,lng', () {
+    final v = GoogleMapsLinkImporter.extractViewportCoords(
+      'https://www.google.com/maps/@5.09,-73.64,17z',
+    );
+    expect(v?.$1, closeTo(5.09, 0.001));
+    expect(v?.$2, closeTo(-73.64, 0.001));
+  });
+
+  test('extractFeatureId desde data=!1s', () {
+    final id = GoogleMapsLinkImporter.extractFeatureId(
+      'data=!4m2!3m1!1s0x8e4019f862f66469:0x89a875aa7db13fd7',
+    );
+    expect(id, '0x8e4019f862f66469:0x89a875aa7db13fd7');
   });
 
   test('parseRedirectLocation entiende intent://', () {
@@ -43,6 +73,34 @@ void main() {
     );
     expect(result.name, 'Termales Los Volcanes');
     expect(result.hasCoords, isTrue);
+    expect(result.hasExactPin, isTrue);
+    expect(result.lat, closeTo(5.0928761, 0.00001));
+    expect(result.lng, closeTo(-73.6406624, 0.00001));
+  });
+
+  test('sin pin en URL, extrae !3d!4d del HTML', () async {
+    final short = 'https://maps.app.goo.gl/xyz';
+    final consent =
+        'https://www.google.com/maps?consent=1';
+    final client = MockClient((request) async {
+      if (request.url.host.contains('maps.app.goo.gl')) {
+        return http.Response('', 302, headers: {'location': consent});
+      }
+      if (request.url.toString().contains('consent')) {
+        return http.Response(
+          '<html><a href="$resolved">maps</a>'
+          '<div>!8m2!3d5.0928761!4d-73.6406624</div></html>',
+          200,
+        );
+      }
+      return http.Response('', 200);
+    });
+
+    final importer = GoogleMapsLinkImporter(httpClient: client, geocode: false);
+    final result = await importer.importFromText(short);
+    expect(result.hasExactPin, isTrue);
+    expect(result.lat, closeTo(5.0928761, 0.00001));
+    expect(result.lng, closeTo(-73.6406624, 0.00001));
   });
 
   test('Geoapify city/state del JSON de la API', () {

@@ -2,6 +2,7 @@ import 'package:http/http.dart' as http;
 
 import '../../../core/config/env.dart';
 import '../../../core/errors/user_facing_error.dart';
+import '../../../core/logging/app_log.dart';
 import 'place_geocoder.dart';
 
 /// Resultado de importar un enlace de Google Maps.
@@ -15,6 +16,7 @@ class GoogleMapsImportResult {
     this.addressLine,
     this.staticMapUrl,
     this.resolvedUrl,
+    this.hasExactPin = false,
   });
 
   final String? name;
@@ -23,9 +25,13 @@ class GoogleMapsImportResult {
   final String? city;
   final String? department;
   final String? addressLine;
+
   /// Mapa estático Geoapify (si hay coords + API key) como “imagen” del lugar.
   final String? staticMapUrl;
   final String? resolvedUrl;
+
+  /// True si lat/lng vienen del pin del lugar (!3d!4d), no del viewport.
+  final bool hasExactPin;
 
   bool get hasCoords => lat != null && lng != null;
   bool get hasAnything =>
@@ -35,6 +41,15 @@ class GoogleMapsImportResult {
 }
 
 /// Detecta e importa datos desde enlaces de Google Maps / maps.app.goo.gl.
+///
+/// Prioridad de coordenadas (exactas del pin del lugar):
+/// 1. `!8m2!3dLAT!4dLNG` / `!3dLAT!4dLNG`
+/// 2. `!2dLNG!3dLAT`
+/// 3. HTML de la página resuelta (mismos patrones)
+/// 4. `q=lat,lng` explícito
+///
+/// Nunca usa el centro del viewport (`@lat,lng`) ni geocode por nombre
+/// para inventar lat/lng (eso coloca el sitio en otro lado).
 class GoogleMapsLinkImporter {
   GoogleMapsLinkImporter({
     PlaceGeocoder? geocoder,
@@ -97,26 +112,107 @@ class GoogleMapsLinkImporter {
     }
 
     var parsed = parseMapsUrl(resolved);
-
-    // Si el acortador dejó HTML (consent / interstitial), buscar URL de Maps.
-    if (!parsed.hasAnything) {
-      try {
-        final html = await _fetchBody(resolved);
-        final fromHtml = _extractMapsUriFromHtml(html);
-        if (fromHtml != null) {
-          resolved = fromHtml;
-          parsed = parseMapsUrl(fromHtml);
-        }
-      } catch (_) {}
-    }
-
+    var lat = parsed.lat;
+    var lng = parsed.lng;
+    var hasExactPin = parsed.hasExactPin;
+    var name = parsed.name;
     String? city = parsed.city;
     String? department = parsed.department;
     String? address = parsed.addressLine;
-    var lat = parsed.lat;
-    var lng = parsed.lng;
-    var name = parsed.name;
+    String? htmlBody;
 
+    // Siempre scrapear HTML: acortadores / consent / solo feature-id.
+    try {
+      final body = await _fetchBody(resolved);
+      htmlBody = body;
+      final fromHtml = _extractMapsUriFromHtml(body);
+      if (fromHtml != null) {
+        final again = parseMapsUrl(fromHtml);
+        if (again.hasExactPin && !hasExactPin) {
+          resolved = fromHtml;
+          lat = again.lat;
+          lng = again.lng;
+          hasExactPin = true;
+        }
+        name ??= again.name;
+        address ??= again.addressLine;
+        // Si el canonical trae pin, también fetch de esa URL.
+        if (!hasExactPin && again.hasExactPin == false) {
+          try {
+            final richer = await _fetchBody(fromHtml);
+            htmlBody = '$body\n$richer';
+            resolved = fromHtml;
+          } catch (_) {}
+        }
+      }
+      final scrape = htmlBody ?? body;
+      final pin = extractExactPinCoords(scrape) ??
+          extractExactPinCoords(resolved.toString());
+      if (pin != null) {
+        lat = pin.$1;
+        lng = pin.$2;
+        hasExactPin = true;
+      }
+      name ??= _extractTitleFromHtml(scrape);
+    } catch (e, st) {
+      AppLog.debug(
+        'maps import html scrape failed',
+        name: 'maps_import',
+        error: e,
+        stackTrace: st,
+      );
+    }
+
+    // Feature-id (0x…:0x…): reintentar URLs de enriquecimiento.
+    if (!hasExactPin) {
+      final fid = extractFeatureId(resolved.toString()) ??
+          (htmlBody == null ? null : extractFeatureId(htmlBody));
+      if (fid != null) {
+        for (final probe in _featureIdProbeUris(fid)) {
+          try {
+            final body = await _fetchBody(probe);
+            final pin = extractExactPinCoords(body) ??
+                extractExactPinCoords(probe.toString());
+            if (pin != null) {
+              lat = pin.$1;
+              lng = pin.$2;
+              hasExactPin = true;
+              resolved = probe;
+              name ??= _extractTitleFromHtml(body);
+              break;
+            }
+            name ??= _extractTitleFromHtml(body);
+          } catch (_) {}
+        }
+      }
+    }
+
+    // Geocode acotado por nombre (Colombia + similitud). Evita el “primer hit”.
+    if (!hasExactPin &&
+        geocode &&
+        name != null &&
+        name.trim().length >= 3) {
+      final matched = await _resolveCoordsFromPlaceName(name.trim());
+      if (matched != null) {
+        lat = matched.$1;
+        lng = matched.$2;
+        // No marcamos exacto: el usuario puede afinar en el mapa.
+        hasExactPin = false;
+      }
+    }
+
+    // Viewport @lat,lng solo como último recurso (pin caído / centro cercano).
+    if (lat == null || lng == null) {
+      final view = extractViewportCoords(resolved.toString()) ??
+          (htmlBody == null ? null : extractViewportCoords(htmlBody));
+      if (view != null) {
+        lat = view.$1;
+        lng = view.$2;
+        hasExactPin = false;
+      }
+    }
+
+    // Reverse solo para ciudad/depto.
     if (geocode && lat != null && lng != null) {
       try {
         final place = await _geocoder.reverse(lat: lat, lng: lng);
@@ -125,23 +221,6 @@ class GoogleMapsLinkImporter {
           department ??= place.department;
           address ??= place.addressLine ?? place.displayName;
           name ??= place.name;
-        }
-      } catch (_) {}
-    }
-
-    final missingCity = city == null || city.trim().isEmpty;
-    final missingDept = department == null || department.trim().isEmpty;
-    if (geocode && (missingCity || missingDept) && name != null && name.trim().isNotEmpty) {
-      try {
-        final hits = await _geocoder.search(name.trim(), limit: 3);
-        if (hits.isNotEmpty) {
-          final best = hits.first;
-          lat ??= best.lat;
-          lng ??= best.lng;
-          city ??= best.city;
-          department ??= best.department;
-          address ??= best.addressLine ?? best.displayName;
-          name ??= best.name;
         }
       } catch (_) {}
     }
@@ -164,6 +243,13 @@ class GoogleMapsLinkImporter {
       addressLine: address,
       staticMapUrl: _staticMapUrl(lat: lat, lng: lng),
       resolvedUrl: resolved.toString(),
+      hasExactPin: hasExactPin && lat != null && lng != null,
+    );
+
+    AppLog.debug(
+      'maps import name=${result.name} hasCoords=${result.hasCoords} '
+      'exact=${result.hasExactPin} lat=${result.lat} lng=${result.lng}',
+      name: 'maps_import',
     );
 
     if (!result.hasAnything) {
@@ -172,6 +258,94 @@ class GoogleMapsLinkImporter {
       );
     }
     return result;
+  }
+
+  Future<(double, double)?> _resolveCoordsFromPlaceName(String name) async {
+    try {
+      final hits = await _geocoder.search('$name Colombia', limit: 5);
+      final needle = _normalizeName(name);
+      if (needle.isEmpty) return null;
+      for (final h in hits) {
+        final cand = _normalizeName(h.name ?? h.displayName ?? '');
+        if (cand.isEmpty) continue;
+        if (_namesLikelySame(needle, cand)) {
+          return (h.lat, h.lng);
+        }
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  static String _normalizeName(String raw) {
+    var s = raw.toLowerCase().trim();
+    const pairs = {
+      'á': 'a',
+      'é': 'e',
+      'í': 'i',
+      'ó': 'o',
+      'ú': 'u',
+      'ü': 'u',
+      'ñ': 'n',
+    };
+    for (final e in pairs.entries) {
+      s = s.replaceAll(e.key, e.value);
+    }
+    s = s.replaceAll(RegExp(r'[^a-z0-9\s]'), ' ');
+    s = s.replaceAll(RegExp(r'\s+'), ' ').trim();
+    return s;
+  }
+
+  static bool _namesLikelySame(String a, String b) {
+    if (a == b) return true;
+    if (a.contains(b) || b.contains(a)) return true;
+    final ta = a.split(' ').where((t) => t.length > 2).toSet();
+    final tb = b.split(' ').where((t) => t.length > 2).toSet();
+    if (ta.isEmpty || tb.isEmpty) return false;
+    final inter = ta.intersection(tb).length;
+    final ratio = inter / (ta.length < tb.length ? ta.length : tb.length);
+    return ratio >= 0.6;
+  }
+
+  static String? extractFeatureId(String raw) {
+    final m = RegExp(
+      r'1s(0x[0-9a-fA-F]+:0x[0-9a-fA-F]+)',
+    ).firstMatch(raw);
+    if (m != null) return m.group(1);
+    final m2 = RegExp(
+      r'(0x[0-9a-fA-F]+:0x[0-9a-fA-F]+)',
+    ).firstMatch(raw);
+    return m2?.group(1);
+  }
+
+  static List<Uri> _featureIdProbeUris(String fid) {
+    final cidHex = fid.split(':').last.replaceFirst('0x', '');
+    final cid = int.tryParse(cidHex, radix: 16);
+    return [
+      Uri.parse('https://www.google.com/maps/place/data=!4m2!3m1!1s$fid'),
+      Uri.parse('https://www.google.com/maps?ftid=$fid'),
+      if (cid != null) Uri.parse('https://www.google.com/maps?cid=$cid'),
+      if (cid != null)
+        Uri.parse(
+          'https://www.google.com/maps/dir/?api=1&destination=cid:$cid',
+        ),
+    ];
+  }
+
+  /// Centro del viewport `@lat,lng` (aproximado).
+  static (double, double)? extractViewportCoords(String raw) {
+    if (raw.isEmpty) return null;
+    String decoded;
+    try {
+      decoded = Uri.decodeFull(raw);
+    } catch (_) {
+      decoded = raw;
+    }
+    final m = RegExp(r'@(-?\d+\.\d+),(-?\d+\.\d+)').firstMatch(decoded);
+    if (m == null) return null;
+    final lat = double.tryParse(m.group(1)!);
+    final lng = double.tryParse(m.group(2)!);
+    if (!_validCoord(lat, lng)) return null;
+    return (lat!, lng!);
   }
 
   Future<Uri> _resolveFinalUrl(String raw) async {
@@ -198,7 +372,6 @@ class GoogleMapsLinkImporter {
       break;
     }
 
-    // Fallback: seguir redirects del cliente (algunos hosts no mandan Location).
     if (_isShortener(uri)) {
       try {
         final res = await _http.get(uri, headers: _kHeaders);
@@ -227,8 +400,7 @@ class GoogleMapsLinkImporter {
     if (value.isEmpty) return null;
     if (value.startsWith('intent://')) {
       value = 'https://${value.substring('intent://'.length)}';
-      final cut = value.split('#Intent').first;
-      value = cut;
+      value = value.split('#Intent').first;
     }
     if (value.startsWith('/maps') || value.startsWith('/maps/')) {
       return Uri.parse('https://www.google.com$value');
@@ -265,40 +437,109 @@ class GoogleMapsLinkImporter {
     return null;
   }
 
+  static String? _extractTitleFromHtml(String html) {
+    final og = RegExp(
+      r'''property=["']og:title["'][^>]*content=["']([^"']+)["']''',
+      caseSensitive: false,
+    ).firstMatch(html);
+    final t = og?.group(1)?.trim();
+    if (t != null && t.isNotEmpty) {
+      return _stripMapsSuffix(t);
+    }
+    final title = RegExp(
+      r'<title[^>]*>([^<]+)</title>',
+      caseSensitive: false,
+    ).firstMatch(html);
+    final raw = title?.group(1)?.trim();
+    if (raw == null || raw.isEmpty) return null;
+    return _stripMapsSuffix(raw);
+  }
+
+  static String _stripMapsSuffix(String raw) {
+    return raw
+        .replaceAll(
+          RegExp(r'\s*[-–|].*Google Maps.*$', caseSensitive: false),
+          '',
+        )
+        .trim();
+  }
+
+  /// Pin exacto del lugar. No usa `@lat,lng` (centro del mapa).
+  static (double, double)? extractExactPinCoords(String raw) {
+    if (raw.isEmpty) return null;
+    String decoded;
+    try {
+      decoded = Uri.decodeFull(raw);
+    } catch (_) {
+      decoded = raw;
+    }
+
+    final m8 =
+        RegExp(r'!8m2!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)').firstMatch(decoded);
+    if (m8 != null) {
+      final lat = double.tryParse(m8.group(1)!);
+      final lng = double.tryParse(m8.group(2)!);
+      if (_validCoord(lat, lng)) return (lat!, lng!);
+    }
+
+    final m34 =
+        RegExp(r'!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)').firstMatch(decoded);
+    if (m34 != null) {
+      final lat = double.tryParse(m34.group(1)!);
+      final lng = double.tryParse(m34.group(2)!);
+      if (_validCoord(lat, lng)) return (lat!, lng!);
+    }
+
+    // !2dLNG!3dLAT
+    final m23 =
+        RegExp(r'!2d(-?\d+\.\d+)!3d(-?\d+\.\d+)').firstMatch(decoded);
+    if (m23 != null) {
+      final lng = double.tryParse(m23.group(1)!);
+      final lat = double.tryParse(m23.group(2)!);
+      if (_validCoord(lat, lng)) return (lat!, lng!);
+    }
+
+    // Varias tuplas en el HTML: preferir bbox Colombia.
+    (double, double)? fallback;
+    for (final m in RegExp(
+      r'\[null,null,(-?\d+\.\d+),(-?\d+\.\d+)\]',
+    ).allMatches(decoded)) {
+      final lat = double.tryParse(m.group(1)!);
+      final lng = double.tryParse(m.group(2)!);
+      if (!_validCoord(lat, lng)) continue;
+      if (_looksLikeColombia(lat!, lng!)) {
+        return (lat, lng);
+      }
+      fallback ??= (lat, lng);
+    }
+    return fallback;
+  }
+
+  static bool _looksLikeColombia(double lat, double lng) {
+    return lat >= -5 && lat <= 14 && lng >= -82 && lng <= -66;
+  }
+
+  static bool _validCoord(double? lat, double? lng) {
+    if (lat == null || lng == null) return false;
+    if (lat < -90 || lat > 90) return false;
+    if (lng < -180 || lng > 180) return false;
+    if (lat.abs() < 1e-6 && lng.abs() < 1e-6) return false;
+    return true;
+  }
+
   /// Parseo puro de una URL ya resuelta (para tests).
   static GoogleMapsImportResult parseMapsUrl(Uri uri) {
     String? name;
-    double? lat;
-    double? lng;
     String? address;
+    final pin = extractExactPinCoords(uri.toString());
 
-    // Preferir coords del lugar (!3d!4d) sobre el centro del mapa (@lat,lng).
-    final d3 = RegExp(r'!3d(-?\d+\.?\d*)!4d(-?\d+\.?\d*)')
-        .firstMatch(uri.toString());
-    if (d3 != null) {
-      lat = double.tryParse(d3.group(1)!);
-      lng = double.tryParse(d3.group(2)!);
-    }
-
-    // /place/Nombre/@lat,lng
-    final placePath = RegExp(
-      r'/place/([^/]+)/@(-?\d+\.?\d*),(-?\d+\.?\d*)',
-    ).firstMatch(uri.path);
+    final placePath = RegExp(r'/place/([^/@]+)').firstMatch(uri.path);
     if (placePath != null) {
       name = _decodeName(placePath.group(1)!);
-      lat ??= double.tryParse(placePath.group(2)!);
-      lng ??= double.tryParse(placePath.group(3)!);
     }
 
-    if (lat == null || lng == null) {
-      final at = RegExp(r'@(-?\d+\.?\d*),(-?\d+\.?\d*)')
-          .firstMatch(uri.toString());
-      if (at != null) {
-        lat = double.tryParse(at.group(1)!);
-        lng = double.tryParse(at.group(2)!);
-      }
-    }
-
+    double? qLat;
+    double? qLng;
     final q = uri.queryParameters['q'] ??
         uri.queryParameters['query'] ??
         uri.queryParameters['destination'];
@@ -306,8 +547,8 @@ class GoogleMapsLinkImporter {
       final coords =
           RegExp(r'^(-?\d+\.?\d*)\s*,\s*(-?\d+\.?\d*)$').firstMatch(q);
       if (coords != null) {
-        lat ??= double.tryParse(coords.group(1)!);
-        lng ??= double.tryParse(coords.group(2)!);
+        qLat = double.tryParse(coords.group(1)!);
+        qLng = double.tryParse(coords.group(2)!);
       } else {
         name ??= q;
         address ??= q;
@@ -324,11 +565,28 @@ class GoogleMapsLinkImporter {
       }
     }
 
+    if (pin != null) {
+      return GoogleMapsImportResult(
+        name: name,
+        lat: pin.$1,
+        lng: pin.$2,
+        addressLine: address,
+        hasExactPin: true,
+      );
+    }
+    if (_validCoord(qLat, qLng)) {
+      return GoogleMapsImportResult(
+        name: name,
+        lat: qLat,
+        lng: qLng,
+        addressLine: address,
+        hasExactPin: true,
+      );
+    }
     return GoogleMapsImportResult(
       name: name,
-      lat: lat,
-      lng: lng,
       addressLine: address,
+      hasExactPin: false,
     );
   }
 

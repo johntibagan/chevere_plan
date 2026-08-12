@@ -130,12 +130,7 @@ class _PlanBuilderPageState extends ConsumerState<PlanBuilderPage> {
   }
 
   Future<void> _runSearch() async {
-    final l10n = context.l10n;
     final text = _queryCtrl.text.trim();
-    if (!_advanced && text.isEmpty) {
-      AppToast.show(context, l10n.searchQueryRequired, error: true);
-      return;
-    }
     setState(() {
       _searching = true;
       _searched = true;
@@ -151,7 +146,7 @@ class _PlanBuilderPageState extends ConsumerState<PlanBuilderPage> {
         locationQuery: _advanced
             ? (locationExtra.isNotEmpty
                 ? locationExtra
-                : (text.isNotEmpty ? text : null))
+                : null)
             : null,
         lat: _advanced ? loc.$1 : null,
         lng: _advanced ? loc.$2 : null,
@@ -162,9 +157,11 @@ class _PlanBuilderPageState extends ConsumerState<PlanBuilderPage> {
         budgetMax: _advanced ? _parseNum(_budgetMaxCtrl.text) : null,
         includePublic: _includePublic,
       );
+      // forceNetwork: la caché SWR vacía bloqueaba sitios recién completados.
       final hits = await ref.read(swrLoaderProvider).load<List<SearchHit>>(
-            key: CacheKeys.search(filters.cacheKey),
+            key: CacheKeys.search('plans|${filters.cacheKey}'),
             ttl: CacheTtl.search,
+            forceNetwork: true,
             decode: (payload) {
               final list = payload as List? ?? const [];
               return list
@@ -178,7 +175,9 @@ class _PlanBuilderPageState extends ConsumerState<PlanBuilderPage> {
           );
       if (!mounted) return;
       setState(() {
-        _hits = hits;
+        _hits = hits
+            .where((h) => h.lat != null && h.lng != null)
+            .toList(growable: false);
         _searching = false;
         _tab = _PlanBuilderTab.results;
       });
@@ -346,6 +345,20 @@ class _PlanBuilderPageState extends ConsumerState<PlanBuilderPage> {
         AppSpacing.xxl,
       ),
       children: [
+        Text(
+          l10n.planSearchCompleteOnlyHint,
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: AppColors.muted,
+              ),
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        Text(
+          l10n.planSearchEmptyQueryHint,
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: AppColors.muted,
+              ),
+        ),
+        const SizedBox(height: AppSpacing.sm),
         Align(
           alignment: Alignment.centerRight,
           child: TextButton(
@@ -357,7 +370,7 @@ class _PlanBuilderPageState extends ConsumerState<PlanBuilderPage> {
           controller: _queryCtrl,
           decoration: InputDecoration(
             labelText: _advanced ? l10n.searchLabelText : l10n.actionSearch,
-            hintText: l10n.searchHintPlace,
+            hintText: l10n.planSearchHint,
             border: const OutlineInputBorder(),
             suffixIcon: FieldActionIcon(
               icon: Icons.search,

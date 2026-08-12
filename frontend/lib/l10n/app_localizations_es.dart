@@ -206,6 +206,19 @@ class AppLocalizationsEs extends AppLocalizations {
   String get siteDetailLocation => 'Ubicación';
 
   @override
+  String get siteDetailOpenInMaps => 'Ver en Maps';
+
+  @override
+  String get siteDetailDirections => 'Cómo llegar';
+
+  @override
+  String get siteDetailNoCoords => 'Este sitio aún no tiene punto en el mapa.';
+
+  @override
+  String get saveNeedsMapPoint =>
+      'Guardado. Falta el punto en el mapa para marcarlo completo.';
+
+  @override
   String get siteDetailCategories => 'Categorías';
 
   @override
@@ -415,6 +428,31 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get saveMapsPasteHelper => 'maps.app.goo.gl o google.com/maps';
+
+  @override
+  String get saveMapsNeedExactPin =>
+      'No se obtuvo el punto exacto. Ábrelo en el mapa interactivo y confirma el pin.';
+
+  @override
+  String get planSearchCompleteOnlyHint =>
+      'Solo aparecen sitios completos con ubicación en el mapa.';
+
+  @override
+  String get planSearchEmptyQueryHint =>
+      'Deja el buscador vacío y toca buscar para ver todos tus sitios elegibles.';
+
+  @override
+  String get planSearchHint => 'Nombre, ciudad… o vacío = todos';
+
+  @override
+  String get planOpeningMaps => 'Preparando ruta en Maps…';
+
+  @override
+  String get saveMapsApproxPin =>
+      'Punto aproximado. Confirma o ajusta el pin en el mapa.';
+
+  @override
+  String get actionLoading => 'Cargando…';
 
   @override
   String get saveMapsNeedLink => 'Pega un enlace de Google Maps.';

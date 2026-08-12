@@ -13,19 +13,26 @@ abstract final class SavePolicies {
     Duration(days: 7),
   ];
 
+  /// Coordenadas GPS guardadas (punto en mapa). Imprescindibles para Maps y planes.
+  static bool hasCoordinates({
+    required double? latitude,
+    required double? longitude,
+  }) {
+    return latitude != null && longitude != null;
+  }
+
+  /// Ubicación usable: lat/lng. Ciudad o dirección solas no bastan para Maps.
   static bool hasLocation({
     required String? city,
     required String? addressLine,
     required double? latitude,
     required double? longitude,
   }) {
-    return (city != null && city.trim().isNotEmpty) ||
-        (addressLine != null && addressLine.trim().isNotEmpty) ||
-        (latitude != null && longitude != null);
+    return hasCoordinates(latitude: latitude, longitude: longitude);
   }
 
-  /// Completo = ≥1 categoría + ubicación (ciudad, dirección o coords).
-  /// Sin ubicación: si el usuario eligió categoría → `pending_location`;
+  /// Completo = ≥1 categoría + coords (lugar físico) o solo categoría (no físico).
+  /// Sin coords en lugar físico: si eligió categoría → `pending_location`;
   /// si no (share rápido / solo default) → `draft`.
   static SiteStatus computeStatus({
     required List<String> categoryIds,
@@ -34,15 +41,12 @@ abstract final class SavePolicies {
     required double? latitude,
     required double? longitude,
     bool categoryIsExplicit = true,
+    bool isPhysicalPlace = true,
   }) {
     final hasAnyCategory = categoryIds.isNotEmpty;
     final hasExplicitCategory = hasAnyCategory && categoryIsExplicit;
-    final located = hasLocation(
-      city: city,
-      addressLine: addressLine,
-      latitude: latitude,
-      longitude: longitude,
-    );
+    final located = !isPhysicalPlace ||
+        hasCoordinates(latitude: latitude, longitude: longitude);
 
     if (hasAnyCategory && located) return SiteStatus.complete;
     if (!located && hasExplicitCategory) return SiteStatus.pendingLocation;

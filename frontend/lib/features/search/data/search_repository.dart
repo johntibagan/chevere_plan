@@ -56,6 +56,7 @@ class SearchRepository {
     return (rows as List<dynamic>)
         .map((e) => SearchHit.fromJson(Map<String, dynamic>.from(e as Map)))
         .where((h) => PlanHoursPolicy.isOpenInWindow(siteId: h.siteId))
+        .where((h) => h.lat != null && h.lng != null)
         .toList();
   }
 
@@ -64,13 +65,15 @@ class SearchRepository {
     final uid = _client.auth.currentUser?.id;
     if (uid == null) return const [];
 
-    final q = (filters.query ?? filters.locationQuery ?? '').trim().toLowerCase();
+    final q =
+        (filters.query ?? filters.locationQuery ?? '').trim().toLowerCase();
     final hits = <SearchHit>[];
 
     final ownRows = await _client
         .from('user_saves')
         .select(
-          'site_id, sites!user_saves_site_id_fkey(id, name, city, department, estimated_price_amount, currency_code, is_public)',
+          'site_id, sites!user_saves_site_id_fkey(id, name, city, department, '
+          'estimated_price_amount, currency_code, is_public)',
         )
         .eq('user_id', uid)
         .eq('status', 'complete');
@@ -80,7 +83,16 @@ class SearchRepository {
       final site = m['sites'];
       if (site is! Map) continue;
       final s = Map<String, dynamic>.from(site);
-      final hit = _hitFromSite(s, isOwn: true);
+      final siteId = s['id'] as String?;
+      if (siteId == null) continue;
+      final coords = await _coordsFor(siteId);
+      if (coords.$1 == null || coords.$2 == null) continue;
+      final hit = _hitFromSite(
+        s,
+        isOwn: true,
+        lat: coords.$1,
+        lng: coords.$2,
+      );
       if (_matchesText(hit, q) && _matchesBudget(hit, filters)) {
         hits.add(hit);
       }
@@ -101,7 +113,14 @@ class SearchRepository {
         final s = Map<String, dynamic>.from(raw as Map);
         final id = s['id'] as String?;
         if (id == null || ownIds.contains(id)) continue;
-        final hit = _hitFromSite(s, isOwn: false);
+        final coords = await _coordsFor(id);
+        if (coords.$1 == null || coords.$2 == null) continue;
+        final hit = _hitFromSite(
+          s,
+          isOwn: false,
+          lat: coords.$1,
+          lng: coords.$2,
+        );
         if (_matchesText(hit, q) && _matchesBudget(hit, filters)) {
           hits.add(hit);
         }
@@ -111,15 +130,43 @@ class SearchRepository {
     return hits;
   }
 
-  SearchHit _hitFromSite(Map<String, dynamic> s, {required bool isOwn}) {
+  Future<(double?, double?)> _coordsFor(String siteId) async {
+    try {
+      final coords = await _client.rpc(
+        'get_site_coords',
+        params: {'p_site_id': siteId},
+      );
+      Map<String, dynamic>? row;
+      if (coords is List && coords.isNotEmpty && coords.first is Map) {
+        row = Map<String, dynamic>.from(coords.first as Map);
+      } else if (coords is Map) {
+        row = Map<String, dynamic>.from(coords);
+      }
+      if (row == null) return (null, null);
+      return (
+        (row['lat'] as num?)?.toDouble(),
+        (row['lng'] as num?)?.toDouble(),
+      );
+    } catch (_) {
+      return (null, null);
+    }
+  }
+
+  SearchHit _hitFromSite(
+    Map<String, dynamic> s, {
+    required bool isOwn,
+    double? lat,
+    double? lng,
+  }) {
     final price = s['estimated_price_amount'];
     return SearchHit(
       siteId: (s['id'] as String?) ?? '',
       name: (s['name'] as String?) ?? 'Sitio',
       city: s['city'] as String?,
       department: s['department'] as String?,
-      estimatedPriceAmount:
-          price == null ? null : (price as num).toDouble(),
+      lat: lat,
+      lng: lng,
+      estimatedPriceAmount: price == null ? null : (price as num).toDouble(),
       currencyCode: (s['currency_code'] as String?) ?? 'COP',
       isOwn: isOwn,
     );

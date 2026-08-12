@@ -39,8 +39,5 @@ Future<bool> openGoogleMapsDirections({
     originLng: originLng,
     stopsInOrder: stopsInOrder,
   );
-  if (await canLaunchUrl(uri)) {
-    return launchUrl(uri, mode: LaunchMode.externalApplication);
-  }
   return launchUrl(uri, mode: LaunchMode.externalApplication);
 }

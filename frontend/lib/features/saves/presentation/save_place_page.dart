@@ -320,12 +320,17 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
       if (!mounted) return;
       AppToast.show(
         context,
-        _cityCtrl.text.trim().isNotEmpty
-            ? context.l10n.saveLocationAppliedNamed(
-                _nameCtrl.text.trim(),
-                _cityCtrl.text.trim(),
-              )
-            : context.l10n.saveMapsNeedCity,
+        !result.hasCoords
+            ? context.l10n.saveMapsNeedExactPin
+            : !result.hasExactPin
+                ? context.l10n.saveMapsApproxPin
+                : (_cityCtrl.text.trim().isNotEmpty
+                    ? context.l10n.saveLocationAppliedNamed(
+                        _nameCtrl.text.trim(),
+                        _cityCtrl.text.trim(),
+                      )
+                    : context.l10n.saveMapsNeedCity),
+        error: !result.hasCoords,
       );
     } catch (e) {
       if (!mounted) return;
@@ -837,6 +842,8 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
                 'Quedó vinculado a un sitio público existente (posible duplicado).'
               else if (saved.status == SiteStatus.complete)
                 'Quedó completo en tu lista.'
+              else if (_isPhysical && (lat == null || lng == null))
+                l10n.saveNeedsMapPoint
               else
                 l10n.saveStatusAfterSave(saved.status.label(l10n)),
               if (!saved.isPublic) ' Privado por defecto.',

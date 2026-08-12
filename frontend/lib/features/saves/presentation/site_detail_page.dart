@@ -233,40 +233,38 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
     await launchUrl(uri, mode: LaunchMode.externalApplication);
   }
 
-  bool _canOpenGoogleMaps(SiteFicha? ficha) {
-    if (ficha == null) return false;
-    if (ficha.lat != null && ficha.lng != null) return true;
-    if (ficha.locationLine.trim().isNotEmpty) return true;
-    if (ficha.name.trim().isNotEmpty && ficha.name != 'Sin nombre') {
-      return true;
-    }
-    return false;
+  bool _hasCoords(SiteFicha? ficha) {
+    return ficha != null && ficha.lat != null && ficha.lng != null;
   }
 
-  Future<void> _openInGoogleMapsFor(SiteFicha ficha) async {
+  Future<void> _openPlaceOnMaps(SiteFicha ficha) async {
     final lat = ficha.lat;
     final lng = ficha.lng;
-    final Uri uri;
-    if (lat != null && lng != null) {
-      uri = Uri.parse(
-        'https://www.google.com/maps/dir/?api=1&destination=$lat,$lng',
-      );
-    } else {
-      final parts = <String>[
-        if (ficha.name.trim().isNotEmpty && ficha.name != 'Sin nombre')
-          ficha.name.trim(),
-        if (ficha.locationLine.trim().isNotEmpty) ficha.locationLine.trim(),
-      ];
-      final q = parts.join(', ');
-      if (q.isEmpty) {
-        if (!mounted) return;
-        AppToast.show(context, 'No hay ubicación para abrir en Maps.', error: true);
-        return;
-      }
-      uri = Uri.parse(
-        'https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent(q)}',
-      );
+    if (lat == null || lng == null) {
+      if (!mounted) return;
+      AppToast.show(context, context.l10n.siteDetailNoCoords, error: true);
+      return;
     }
+    final uri = Uri.parse(
+      'https://www.google.com/maps/search/?api=1&query=$lat,$lng',
+    );
+    final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (!ok && mounted) {
+      AppToast.show(context, 'No se pudo abrir Google Maps.', error: true);
+    }
+  }
+
+  Future<void> _openDirectionsOnMaps(SiteFicha ficha) async {
+    final lat = ficha.lat;
+    final lng = ficha.lng;
+    if (lat == null || lng == null) {
+      if (!mounted) return;
+      AppToast.show(context, context.l10n.siteDetailNoCoords, error: true);
+      return;
+    }
+    final uri = Uri.parse(
+      'https://www.google.com/maps/dir/?api=1&destination=$lat,$lng',
+    );
     final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
     if (!ok && mounted) {
       AppToast.show(context, 'No se pudo abrir Google Maps.', error: true);
@@ -428,15 +426,6 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
             onPressed: () => Navigator.of(context).pop(_outcome),
           ),
           actions: [
-            if (_canOpenGoogleMaps(ficha))
-              IconButton(
-                tooltip: 'Abrir en Google Maps',
-                icon: const Icon(Icons.map_outlined),
-                onPressed: () {
-                  final current = ficha;
-                  if (current != null) _openInGoogleMapsFor(current);
-                },
-              ),
             if (ficha?.isOwn == true)
               PopupMenuButton<String>(
                 tooltip: 'Acciones',
@@ -514,8 +503,11 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
                         onAddPhoto: ficha.isOwn ? _addPhoto : null,
                         onPhotoMenu: _onPhotoMenu,
                         onOpenLink: _openUrl,
-                        onOpenInGoogleMaps: _canOpenGoogleMaps(ficha)
-                            ? () => _openInGoogleMapsFor(ficha)
+                        onOpenPlaceOnMaps: _hasCoords(ficha)
+                            ? () => _openPlaceOnMaps(ficha)
+                            : null,
+                        onOpenDirectionsOnMaps: _hasCoords(ficha)
+                            ? () => _openDirectionsOnMaps(ficha)
                             : null,
                       ),
                       _PlaceholderTab(
@@ -544,7 +536,8 @@ class _InfoTab extends StatelessWidget {
     required this.onPhotoMenu,
     required this.onOpenLink,
     this.onAddPhoto,
-    this.onOpenInGoogleMaps,
+    this.onOpenPlaceOnMaps,
+    this.onOpenDirectionsOnMaps,
   });
 
   final SiteFicha ficha;
@@ -556,7 +549,8 @@ class _InfoTab extends StatelessWidget {
   final void Function(SitePhoto photo, String action) onPhotoMenu;
   final void Function(String? url) onOpenLink;
   final VoidCallback? onAddPhoto;
-  final VoidCallback? onOpenInGoogleMaps;
+  final VoidCallback? onOpenPlaceOnMaps;
+  final VoidCallback? onOpenDirectionsOnMaps;
 
   @override
   Widget build(BuildContext context) {
@@ -603,38 +597,49 @@ class _InfoTab extends StatelessWidget {
           onAddPhoto: onAddPhoto,
           onPhotoMenu: onPhotoMenu,
         ),
-        if (location.isNotEmpty || onOpenInGoogleMaps != null) ...[
+        if (location.isNotEmpty ||
+            onOpenPlaceOnMaps != null ||
+            onOpenDirectionsOnMaps != null) ...[
           const SizedBox(height: 20),
           _Section(
             icon: Icons.place_outlined,
             title: l10n.siteDetailLocation,
-            trailing: onOpenInGoogleMaps == null
+            trailing: (onOpenPlaceOnMaps == null &&
+                    onOpenDirectionsOnMaps == null)
                 ? null
-                : IconButton(
-                    tooltip: 'Abrir en Google Maps',
-                    onPressed: onOpenInGoogleMaps,
-                    style: IconButton.styleFrom(
-                      foregroundColor: AppColors.primary,
-                      backgroundColor:
-                          AppColors.primary.withValues(alpha: 0.12),
-                    ),
-                    icon: const Icon(Icons.map_outlined),
+                : Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (onOpenPlaceOnMaps != null)
+                        IconButton(
+                          tooltip: l10n.siteDetailOpenInMaps,
+                          onPressed: onOpenPlaceOnMaps,
+                          style: IconButton.styleFrom(
+                            foregroundColor: AppColors.primary,
+                            backgroundColor:
+                                AppColors.primary.withValues(alpha: 0.12),
+                          ),
+                          icon: const Icon(Icons.place_outlined),
+                        ),
+                      if (onOpenDirectionsOnMaps != null)
+                        IconButton(
+                          tooltip: l10n.siteDetailDirections,
+                          onPressed: onOpenDirectionsOnMaps,
+                          style: IconButton.styleFrom(
+                            foregroundColor: AppColors.primary,
+                            backgroundColor:
+                                AppColors.primary.withValues(alpha: 0.12),
+                          ),
+                          icon: const Icon(Icons.directions_outlined),
+                        ),
+                    ],
                   ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                if (location.isNotEmpty)
-                  Text(location, style: const TextStyle(color: AppColors.muted)),
-                if (onOpenInGoogleMaps != null) ...[
-                  if (location.isNotEmpty) const SizedBox(height: 10),
-                  OutlinedButton.icon(
-                    onPressed: onOpenInGoogleMaps,
-                    icon: const Icon(Icons.directions_outlined),
-                    label: const Text('Cómo llegar (Google Maps)'),
+            child: location.isNotEmpty
+                ? Text(location, style: const TextStyle(color: AppColors.muted))
+                : Text(
+                    l10n.siteDetailNoCoords,
+                    style: const TextStyle(color: AppColors.muted),
                   ),
-                ],
-              ],
-            ),
           ),
         ],
         if (ficha.categoryNames.isNotEmpty) ...[

@@ -4,7 +4,7 @@ No bloquean el uso diario. Al implementar, tacha aquí y ajusta el código.
 
 ## Captura / Maps
 
-- Autocomplete al pegar URL de Google Maps: a veces no llena ciudad, departamento ni dirección. Quedó explícitamente en espera. El usuario puede completar el selector DIVIPOLA a mano.
+- Autocomplete Maps: cadena multi-estrategia (redirect → `!3d!4d` → HTML → feature-id → geocode acotado por nombre en CO → viewport `@`). Sin Google Places API (billing). Si falla, mapa interactivo.
 
 ## Planes
 

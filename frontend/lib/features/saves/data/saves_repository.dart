@@ -40,6 +40,7 @@ class SavesRepository {
       latitude: input.latitude,
       longitude: input.longitude,
       categoryIsExplicit: input.categoryIsExplicit,
+      isPhysicalPlace: input.isPhysicalPlace,
     );
   }
 
@@ -406,6 +407,11 @@ class SavesRepository {
           'p_lat': input.latitude,
         },
       );
+      // Paradas ya en planes: alinear con el punto recién guardado.
+      await _client.from('plan_stops').update({
+        'lat': input.latitude,
+        'lng': input.longitude,
+      }).eq('site_id', siteId);
     }
 
     await _client.from('site_categories').delete().eq('site_id', siteId);
