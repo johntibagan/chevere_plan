@@ -111,7 +111,7 @@ class _HomePageState extends ConsumerState<HomePage> {
       final stale = saves
           .where(
             (s) =>
-                s.status == SiteStatus.draft &&
+                s.isIncomplete &&
                 s.createdAt != null &&
                 s.createdAt!.toUtc().isBefore(cutoff),
           )
@@ -135,9 +135,7 @@ class _HomePageState extends ConsumerState<HomePage> {
             action: SnackBarAction(
               label: l10n.actionComplete,
               onPressed: () {
-                final drafts = _saves
-                    .where((s) => s.status == SiteStatus.draft)
-                    .toList();
+                final drafts = _saves.where((s) => s.isIncomplete).toList();
                 if (drafts.isNotEmpty) _openSave(existing: drafts.first);
               },
             ),

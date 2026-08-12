@@ -32,19 +32,14 @@ class SavesRepository {
 
   String? get _uid => _client.auth.currentUser?.id;
 
-  SiteStatus computeStatus({
-    required List<String> categoryIds,
-    required String? city,
-    required String? addressLine,
-    required double? latitude,
-    required double? longitude,
-  }) {
+  SiteStatus computeStatus(SaveDraftInput input) {
     return SavePolicies.computeStatus(
-      categoryIds: categoryIds,
-      city: city,
-      addressLine: addressLine,
-      latitude: latitude,
-      longitude: longitude,
+      categoryIds: input.categoryIds,
+      city: input.city,
+      addressLine: input.addressLine,
+      latitude: input.latitude,
+      longitude: input.longitude,
+      categoryIsExplicit: input.categoryIsExplicit,
     );
   }
 
@@ -118,16 +113,17 @@ class SavesRepository {
     }
 
     final name = input.name.trim().isEmpty ? 'Sin nombre' : input.name.trim();
-    final isPublic =
-        input.isPhysicalPlace ? input.isPublic : false; // §3.6
-
-    final status = computeStatus(
-      categoryIds: input.categoryIds,
+    final located = SavePolicies.hasLocation(
       city: input.city,
       addressLine: input.addressLine,
       latitude: input.latitude,
       longitude: input.longitude,
     );
+    // Público solo con lugar físico + ubicación (§3.5 / §3.6).
+    final isPublic =
+        input.isPhysicalPlace && input.isPublic && located;
+
+    final status = computeStatus(input);
 
     // Caso: confirmar mismo sitio público existente (§5)
     if (input.linkToExistingSiteId != null) {
@@ -137,7 +133,7 @@ class SavesRepository {
         'user_id': uid,
       });
 
-      final draftRemindAt = status == SiteStatus.draft
+      final draftRemindAt = status != SiteStatus.complete
           ? DateTime.now().toUtc().add(SavePolicies.draftRemindAfter)
           : null;
 
@@ -212,7 +208,7 @@ class SavesRepository {
       });
     }
 
-    final draftRemindAt = status == SiteStatus.draft
+    final draftRemindAt = status != SiteStatus.complete
         ? DateTime.now().toUtc().add(SavePolicies.draftRemindAfter)
         : null;
 
@@ -323,7 +319,7 @@ class SavesRepository {
         .from('user_saves')
         .select(_saveSelect)
         .eq('user_id', uid)
-        .eq('status', 'draft')
+        .inFilter('status', ['draft', 'pending_location'])
         .lt('created_at', cutoff.toIso8601String());
 
     return (rows as List)
@@ -409,15 +405,15 @@ class SavesRepository {
     }
 
     final name = input.name.trim().isEmpty ? 'Sin nombre' : input.name.trim();
-    final isPublic =
-        input.isPhysicalPlace ? input.isPublic : false;
-    final status = computeStatus(
-      categoryIds: input.categoryIds,
+    final located = SavePolicies.hasLocation(
       city: input.city,
       addressLine: input.addressLine,
       latitude: input.latitude,
       longitude: input.longitude,
     );
+    final isPublic =
+        input.isPhysicalPlace && input.isPublic && located;
+    final status = computeStatus(input);
 
     await _client.from('sites').update({
       'name': name,
@@ -462,7 +458,7 @@ class SavesRepository {
       });
     }
 
-    final draftRemindAt = status == SiteStatus.draft
+    final draftRemindAt = status != SiteStatus.complete
         ? DateTime.now().toUtc().add(SavePolicies.draftRemindAfter)
         : null;
 

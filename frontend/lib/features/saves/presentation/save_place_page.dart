@@ -14,12 +14,14 @@ import '../../../core/widgets/app_network_image.dart';
 import '../../admin/data/admin_models.dart';
 import '../data/geo_place.dart';
 import '../data/google_maps_link_importer.dart';
-import '../data/link_preview_fetcher.dart';
+import '../data/place_geocoder.dart';
 import '../data/save_models.dart';
 import '../data/saves_repository.dart';
 import '../data/share_parser.dart';
 import '../data/social_link_models.dart';
+import '../data/social_place_extractor.dart';
 import '../domain/category_suggester.dart';
+import '../domain/save_policies.dart';
 import 'category_picker_sheet.dart';
 import 'location_picker_page.dart';
 import 'site_status_l10n.dart';
@@ -74,8 +76,9 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
   String? _editSaveId;
   String? _editSiteId;
   final List<SocialLinkDraft> _socialLinks = [];
-  final _previewFetcher = LinkPreviewFetcher();
+  final _socialExtractor = SocialPlaceExtractor();
   final _mapsImporter = GoogleMapsLinkImporter();
+  final _placeGeocoder = PlaceGeocoder();
   /// Si el usuario eligió/quitó categorías a mano, no sobrescribir la sugerencia.
   bool _categoriesUserTouched = false;
   bool _categoryWasAutoSuggested = false;
@@ -267,22 +270,69 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
     final draft = SocialLinkDraft(url: url, network: parsed.network);
     setState(() => _socialLinks.add(draft));
     try {
-      final preview = await _previewFetcher.fetch(url);
+      final hint = await _socialExtractor.extract(url);
       if (!mounted) return;
       setState(() {
         draft
-          ..title = preview.title
-          ..description = preview.description
-          ..imageUrl = preview.imageUrl
-          ..network = draft.network ??
-              ShareParser.parse(url).network ??
-              preview.siteName;
+          ..title = hint.title
+          ..description = hint.description
+          ..imageUrl = hint.imageUrl
+          ..network = draft.network ?? hint.network;
+        if ((_nameCtrl.text.trim().isEmpty ||
+                _nameCtrl.text.trim() == 'Sin nombre') &&
+            hint.suggestedPlaceName != null) {
+          _nameCtrl.text = hint.suggestedPlaceName!;
+        }
         _addingSocial = false;
       });
+      _maybeSuggestCategories();
+      unawaited(_tryFillLocationFromHint(hint));
     } catch (_) {
       if (!mounted) return;
       setState(() => _addingSocial = false);
     }
+  }
+
+  static final _venueCue = RegExp(
+    r'restaurante|hotel|hostal|parque|museo|finca|termales|mirador|'
+    r'cafeter[ií]a|caf[eé]|playa|plaza|iglesia|cascada|glamping|'
+    r'bar |discoteca|piscina|tejo|mercado',
+    caseSensitive: false,
+  );
+
+  bool get _hasFormLocation => SavePolicies.hasLocation(
+        city: _cityCtrl.text,
+        addressLine: _addressCtrl.text,
+        latitude: _lat,
+        longitude: _lng,
+      );
+
+  Future<void> _tryFillLocationFromHint(SocialPlaceHint hint) async {
+    final name = hint.suggestedPlaceName;
+    if (name == null || _hasFormLocation) return;
+    if (!_venueCue.hasMatch(name) && !_venueCue.hasMatch(hint.haystack)) {
+      return;
+    }
+    try {
+      final hits = await _placeGeocoder.search('$name Colombia', limit: 1);
+      if (!mounted || hits.isEmpty || _hasFormLocation) return;
+      final place = hits.first;
+      setState(() {
+        _lat ??= place.lat;
+        _lng ??= place.lng;
+        if (_cityCtrl.text.trim().isEmpty && (place.city?.isNotEmpty ?? false)) {
+          _cityCtrl.text = place.city!;
+        }
+        if (_deptCtrl.text.trim().isEmpty &&
+            (place.department?.isNotEmpty ?? false)) {
+          _deptCtrl.text = place.department!;
+        }
+        if (_addressCtrl.text.trim().isEmpty &&
+            (place.addressLine?.isNotEmpty ?? false)) {
+          _addressCtrl.text = place.addressLine!;
+        }
+      });
+    } catch (_) {}
   }
 
   String _parentName(Category c) {
@@ -497,26 +547,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
     setState(() => _pendingPhoto = File(file.path));
   }
 
-  bool _validate() {
-    // Misma regla que SavePolicies: ubicación = ciudad, dirección o coords.
-    if (_isPhysical) {
-      final hasCoords = _lat != null && _lng != null;
-      final hasCity = _cityCtrl.text.trim().isNotEmpty;
-      final hasAddress = _addressCtrl.text.trim().isNotEmpty;
-      if (!hasCoords && !hasCity && !hasAddress) {
-        setState(() {
-          _error =
-              'Indica la ubicación: elige en el mapa, o escribe ciudad/dirección.';
-        });
-        return false;
-      }
-    }
-    // Categoría: no requerida en UI; se resuelve por sugerencia / Otros al guardar.
-    return true;
-  }
-
   Future<void> _submit() async {
-    if (!_validate()) return;
     setState(() {
       _saving = true;
       _error = null;
@@ -546,6 +577,16 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
         });
       }
 
+      final onlyDefault = categoryIds.every((id) {
+        final cat = _categories.where((c) => c.id == id);
+        if (cat.isEmpty) return false;
+        final c = cat.first;
+        return c.slug == CategorySuggester.defaultChildSlug ||
+            c.slug == CategorySuggester.defaultParentSlug;
+      });
+      final categoryIsExplicit =
+          _categoriesUserTouched && !onlyDefault;
+
       final input = SaveDraftInput(
         name: name,
         sourceUrl: primaryLink?.url,
@@ -556,8 +597,9 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
         latitude: lat,
         longitude: lng,
         categoryIds: categoryIds,
-        isPublic: _isPublic,
+        isPublic: _isPublic && _hasFormLocation,
         isPhysicalPlace: _isPhysical,
+        categoryIsExplicit: categoryIsExplicit,
       );
 
       final UserSave saved;
@@ -605,9 +647,10 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
             latitude: lat,
             longitude: lng,
             categoryIds: input.categoryIds,
-            isPublic: _isPublic,
+            isPublic: input.isPublic,
             isPhysicalPlace: _isPhysical,
             linkToExistingSiteId: linkToExisting,
+            categoryIsExplicit: categoryIsExplicit,
           ),
         );
       }
@@ -656,7 +699,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
 
       if (saved.status == SiteStatus.complete) {
         await ref.read(draftReminderServiceProvider).cancelForSave(saved.id);
-      } else if (saved.status == SiteStatus.draft) {
+      } else {
         await ref.read(draftReminderServiceProvider).scheduleForSave(
           saveId: saved.id,
           title: saved.siteName,
@@ -808,10 +851,13 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
               children: [
                 // 1) Ubicación primero
                 _sectionCard(
-                  title: _isPhysical
-                      ? '1. Ubicación *'
-                      : '1. Ubicación (opcional)',
+                  title: '1. Ubicación (opcional)',
                   children: [
+                    const Text(
+                      'Si no la tienes aún, guarda igual: queda en borrador.',
+                      style: TextStyle(fontSize: 12),
+                    ),
+                    const SizedBox(height: 10),
                     SegmentedButton<bool>(
                       segments: const [
                         ButtonSegment<bool>(
@@ -1157,8 +1203,15 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
                     SwitchListTile(
                       contentPadding: EdgeInsets.zero,
                       title: const Text('Hacer público'),
+                      subtitle: Text(
+                        !_isPhysical
+                            ? 'Los contenidos no físicos quedan privados'
+                            : !_hasFormLocation
+                                ? 'Primero indica ubicación para poder publicarlo'
+                                : 'Visible para otros en la capa pública',
+                      ),
                       value: _isPublic,
-                      onChanged: _isPhysical
+                      onChanged: (_isPhysical && _hasFormLocation)
                           ? (v) => setState(() => _isPublic = v)
                           : null,
                     ),
@@ -1199,9 +1252,10 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
                         ),
                 ),
                 const SizedBox(height: 8),
-                const Text(
-                  '* Ubicación (si es físico). La categoría se sugiere o queda en Otros.',
-                  style: TextStyle(color: _kRequiredStar, fontSize: 12),
+                Text(
+                  'Puedes guardar ya: sin ubicación queda en borrador y te '
+                  'recordaremos completarlo.',
+                  style: Theme.of(context).textTheme.bodySmall,
                 ),
               ],
             ),

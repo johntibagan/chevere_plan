@@ -245,6 +245,7 @@ class SaveDraftInput {
     this.isPhysicalPlace = true,
     this.notes,
     this.linkToExistingSiteId,
+    this.categoryIsExplicit = true,
   });
 
   final String name;
@@ -261,4 +262,6 @@ class SaveDraftInput {
   final String? notes;
   /// Si el usuario confirma duplicado = mismo sitio público existente.
   final String? linkToExistingSiteId;
+  /// False si la categoría es solo el default (Otros) autoasignado.
+  final bool categoryIsExplicit;
 }

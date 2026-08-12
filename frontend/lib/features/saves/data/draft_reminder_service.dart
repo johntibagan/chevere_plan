@@ -4,7 +4,7 @@ import 'package:timezone/timezone.dart' as tz;
 
 import '../domain/save_policies.dart';
 
-/// Recordatorios locales de borradores (§3.1).
+/// Recordatorios locales de borradores / pendientes (§3.1).
 class DraftReminderService {
   DraftReminderService._();
 
@@ -31,33 +31,43 @@ class DraftReminderService {
   Future<void> scheduleForSave({
     required String saveId,
     required String title,
-    Duration delay = SavePolicies.draftRemindAfter,
+    List<Duration> delays = SavePolicies.draftRemindDelays,
   }) async {
     await init();
-    final id = saveId.hashCode & 0x7fffffff;
-    final when = tz.TZDateTime.now(tz.local).add(delay);
-    await _plugin.zonedSchedule(
-      id: id,
-      title: 'Completa tu guardado',
-      body: 'Todavía tienes un borrador: $title',
-      scheduledDate: when,
-      notificationDetails: const NotificationDetails(
-        android: AndroidNotificationDetails(
-          'draft_reminders',
-          'Recordatorios de borradores',
-          channelDescription:
-              'Te recuerda completar lugares guardados incompletos',
-          importance: Importance.defaultImportance,
-          priority: Priority.defaultPriority,
+    await cancelForSave(saveId);
+    final whenBase = tz.TZDateTime.now(tz.local);
+    for (var i = 0; i < delays.length; i++) {
+      final when = whenBase.add(delays[i]);
+      await _plugin.zonedSchedule(
+        id: _notifId(saveId, i),
+        title: 'Completa tu guardado',
+        body: 'Todavía tienes un borrador: $title',
+        scheduledDate: when,
+        notificationDetails: const NotificationDetails(
+          android: AndroidNotificationDetails(
+            'draft_reminders',
+            'Recordatorios de borradores',
+            channelDescription:
+                'Te recuerda completar lugares guardados incompletos',
+            importance: Importance.defaultImportance,
+            priority: Priority.defaultPriority,
+          ),
         ),
-      ),
-      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
-    );
+        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+      );
+    }
   }
 
   Future<void> cancelForSave(String saveId) async {
     await init();
-    final id = saveId.hashCode & 0x7fffffff;
-    await _plugin.cancel(id: id);
+    for (var i = 0; i < SavePolicies.draftRemindDelays.length; i++) {
+      await _plugin.cancel(id: _notifId(saveId, i));
+    }
+    // Id legacy (un solo aviso) por si quedó de versiones anteriores.
+    await _plugin.cancel(id: saveId.hashCode & 0x7fffffff);
+  }
+
+  static int _notifId(String saveId, int slot) {
+    return Object.hash(saveId, slot) & 0x7fffffff;
   }
 }
