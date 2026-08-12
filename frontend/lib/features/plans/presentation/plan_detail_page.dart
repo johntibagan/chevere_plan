@@ -4,6 +4,7 @@ import 'package:geolocator/geolocator.dart';
 
 import '../../../core/di/providers.dart';
 import '../../../core/errors/user_facing_error.dart';
+import '../../../core/widgets/app_toast.dart';
 import '../../../core/formatters/money_format.dart';
 import '../data/maps_export.dart';
 import '../data/plan_builder.dart';
@@ -58,9 +59,10 @@ class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _error = userFacingError(e);
+        _error = 'failed';
         _loading = false;
       });
+      AppToast.error(context, e, logContext: 'plan_detail');
     }
   }
 
@@ -132,9 +134,7 @@ class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(userFacingError(e))),
-      );
+      AppToast.error(context, e);
       await _load();
     }
   }
@@ -157,9 +157,7 @@ class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
       await _load();
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(userFacingError(e))),
-      );
+      AppToast.error(context, e);
     }
   }
 
@@ -208,9 +206,7 @@ class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
       await _load();
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(userFacingError(e))),
-      );
+      AppToast.error(context, e);
     }
   }
 
@@ -284,15 +280,11 @@ class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
         stopsInOrder: selected,
       );
       if (!ok && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text(kGenericAppError)),
-        );
+        AppToast.show(context, kGenericAppError, error: true);
       }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(userFacingError(e))),
-      );
+      AppToast.error(context, e);
     }
   }
 
@@ -347,7 +339,10 @@ class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
               ? Center(
                   child: Padding(
                     padding: const EdgeInsets.all(24),
-                    child: Text(_error!, textAlign: TextAlign.center),
+                    child: const Text(
+                      'No se pudo cargar. Intenta de nuevo.',
+                      textAlign: TextAlign.center,
+                    ),
                   ),
                 )
               : plan == null

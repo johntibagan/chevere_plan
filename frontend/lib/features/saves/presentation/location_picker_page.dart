@@ -6,7 +6,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../../core/config/env.dart';
-import '../../../core/errors/user_facing_error.dart';
+import '../../../core/widgets/app_toast.dart';
 import '../data/geo_place.dart';
 import '../data/place_geocoder.dart';
 
@@ -81,8 +81,8 @@ class _LocationPickerPageState extends State<LocationPickerPage> {
       setState(() {
         _place = GeoPlace(lat: point.latitude, lng: point.longitude);
         _busy = false;
-        _hint = userFacingError(e);
       });
+      AppToast.error(context, e, logContext: 'location_reverse');
     }
   }
 
@@ -116,8 +116,8 @@ class _LocationPickerPageState extends State<LocationPickerPage> {
         setState(() {
           _suggestions = const [];
           _busy = false;
-          _hint = userFacingError(e);
         });
+        AppToast.error(context, e, logContext: 'location_search');
       }
     });
   }

@@ -7,7 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/di/providers.dart';
-import '../../../core/errors/user_facing_error.dart';
+import '../../../core/widgets/app_toast.dart';
 import '../../../core/formatters/money_format.dart';
 import '../../../core/l10n/context_l10n.dart';
 import '../../../core/theme/app_theme.dart';
@@ -103,9 +103,10 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
         return;
       }
       setState(() {
-        _error = userFacingError(e);
+        _error = 'failed';
         _loading = false;
       });
+      AppToast.error(context, e, logContext: 'site_detail');
     }
   }
 
@@ -220,9 +221,7 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
       Navigator.of(context).pop(SiteDetailOutcome.deleted);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(userFacingError(e))),
-      );
+      AppToast.error(context, e);
     }
   }
 
@@ -261,9 +260,7 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
       final q = parts.join(', ');
       if (q.isEmpty) {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No hay ubicación para abrir en Maps.')),
-        );
+        AppToast.show(context, 'No hay ubicación para abrir en Maps.', error: true);
         return;
       }
       uri = Uri.parse(
@@ -272,9 +269,7 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
     }
     final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
     if (!ok && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No se pudo abrir Google Maps.')),
-      );
+      AppToast.show(context, 'No se pudo abrir Google Maps.', error: true);
     }
   }
 
@@ -317,14 +312,10 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
           );
       await _loadPhotos();
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Foto añadida.')),
-      );
+      AppToast.show(context, 'Foto añadida.');
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(userFacingError(e))),
-      );
+      AppToast.error(context, e);
     } finally {
       if (mounted) setState(() => _photosBusy = false);
     }
@@ -355,14 +346,10 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
       await ref.read(moderationRepositoryProvider).deletePhoto(photo);
       await _loadPhotos();
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Foto eliminada.')),
-      );
+      AppToast.show(context, 'Foto eliminada.');
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(userFacingError(e))),
-      );
+      AppToast.error(context, e);
     } finally {
       if (mounted) setState(() => _photosBusy = false);
     }
@@ -401,16 +388,10 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
             reason: reasonCtrl.text,
           );
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Reporte enviado. Un administrador lo revisará.'),
-        ),
-      );
+      AppToast.show(context, 'Reporte enviado. Un administrador lo revisará.');
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(userFacingError(e))),
-      );
+      AppToast.error(context, e);
     }
   }
 
@@ -507,7 +488,10 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Text(_error!, textAlign: TextAlign.center),
+                          const Text(
+                            'No se pudo cargar. Intenta de nuevo.',
+                            textAlign: TextAlign.center,
+                          ),
                           const SizedBox(height: 16),
                           FilledButton(
                             onPressed: _load,

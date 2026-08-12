@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/errors/user_facing_error.dart';
+import '../../../core/widgets/app_toast.dart';
 import '../../../core/l10n/context_l10n.dart';
 import '../../auth/data/profile.dart';
 import '../../auth/data/profile_repository.dart';
@@ -45,7 +46,6 @@ class _ProximityPrefsSheetState extends State<_ProximityPrefsSheet> {
   late double _radius;
   late bool _remindPublic;
   bool _saving = false;
-  String? _error;
 
   @override
   void initState() {
@@ -57,10 +57,7 @@ class _ProximityPrefsSheetState extends State<_ProximityPrefsSheet> {
   }
 
   Future<void> _save() async {
-    setState(() {
-      _saving = true;
-      _error = null;
-    });
+    setState(() => _saving = true);
     try {
       final updated = await widget.profileRepository.updateProximityPrefs(
         proximityRadiusM: _radius.round(),
@@ -69,21 +66,15 @@ class _ProximityPrefsSheetState extends State<_ProximityPrefsSheet> {
       final sync = await widget.geofenceSync.syncFromProfile(profile: updated);
       if (!mounted) return;
       if (sync == GeofenceSyncResult.needsLocationPermission) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(context.l10n.proximityNeedsLocation)),
-        );
+        AppToast.show(context, context.l10n.proximityNeedsLocation, error: true);
       } else if (sync == GeofenceSyncResult.failed) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text(kGenericAppError)),
-        );
+        AppToast.show(context, kGenericAppError, error: true);
       }
       Navigator.of(context).pop(updated);
     } catch (e) {
       if (!mounted) return;
-      setState(() {
-        _error = userFacingError(e);
-        _saving = false;
-      });
+      setState(() => _saving = false);
+      AppToast.error(context, e, logContext: 'proximity_prefs');
     }
   }
 
@@ -133,13 +124,6 @@ class _ProximityPrefsSheetState extends State<_ProximityPrefsSheet> {
                 ? null
                 : (v) => setState(() => _radius = v),
           ),
-          if (_error != null) ...[
-            const SizedBox(height: 8),
-            Text(
-              _error!,
-              style: TextStyle(color: Theme.of(context).colorScheme.error),
-            ),
-          ],
           const SizedBox(height: 16),
           FilledButton(
             onPressed: _saving ? null : _save,

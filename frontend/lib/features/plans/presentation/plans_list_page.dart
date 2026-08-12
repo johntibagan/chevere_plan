@@ -5,9 +5,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/cache/cache_ttl.dart';
 import '../../../core/di/providers.dart';
-import '../../../core/errors/user_facing_error.dart';
 import '../../../core/l10n/context_l10n.dart';
 import '../../../core/widgets/app_async_body.dart';
+import '../../../core/widgets/app_toast.dart';
 import '../../../core/widgets/app_list_card.dart';
 import '../data/plan_models.dart';
 import '../data/plans_repository.dart';
@@ -56,9 +56,13 @@ class _PlansListPageState extends ConsumerState<PlansListPage> {
     final page = async.valueOrNull;
     final plans = page?.items ?? const <Plan>[];
     final loading = async.isLoading && page == null;
-    final error = async.hasError && page == null
-        ? userFacingError(async.error!)
-        : null;
+    final error = async.hasError && page == null ? 'failed' : null;
+
+    ref.listen(plansProvider, (prev, next) {
+      if (next.hasError && !(prev?.hasError ?? false)) {
+        AppToast.error(context, next.error!);
+      }
+    });
 
     // FAB por encima de la bottom nav del shell (extendBody).
     const fabBottomClearance = 72.0;

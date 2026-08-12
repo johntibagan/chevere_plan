@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 
 import '../../../core/errors/user_facing_error.dart';
+import '../../../core/widgets/app_toast.dart';
 import '../../saves/data/geo_place.dart';
 import '../../saves/presentation/location_picker_page.dart';
 import '../data/plan_builder.dart';
@@ -26,7 +27,6 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
   bool _includePublic = false;
   bool _useCurrentLocation = true;
   bool _saving = false;
-  String? _error;
 
   @override
   void dispose() {
@@ -63,13 +63,10 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
   Future<void> _create() async {
     final location = _locationCtrl.text.trim();
     if (location.isEmpty) {
-      setState(() => _error = 'Indica una ciudad o departamento.');
+      AppToast.show(context, 'Indica una ciudad o departamento.', error: true);
       return;
     }
-    setState(() {
-      _saving = true;
-      _error = null;
-    });
+    setState(() => _saving = true);
     try {
       final budgetText = _budgetCtrl.text.trim();
       final budget = budgetText.isEmpty
@@ -123,10 +120,8 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
       );
     } catch (e) {
       if (!mounted) return;
-      setState(() {
-        _error = userFacingError(e);
-        _saving = false;
-      });
+      setState(() => _saving = false);
+      AppToast.error(context, e, logContext: 'create_plan');
     }
   }
 
@@ -209,13 +204,6 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
                       });
                     },
             ),
-          if (_error != null) ...[
-            const SizedBox(height: 12),
-            Text(
-              _error!,
-              style: TextStyle(color: Theme.of(context).colorScheme.error),
-            ),
-          ],
           const SizedBox(height: 20),
           FilledButton(
             onPressed: _saving ? null : _create,

@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/cache/cache_ttl.dart';
 import '../../../core/di/providers.dart';
-import '../../../core/errors/user_facing_error.dart';
+import '../../../core/widgets/app_toast.dart';
 import '../../../core/l10n/context_l10n.dart';
 import '../../moderation/presentation/admin_reports_page.dart';
 import '../data/admin_models.dart';
@@ -59,9 +59,10 @@ class _AdminPageState extends ConsumerState<AdminPage>
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _error = userFacingError(e);
+        _error = 'failed';
         _loading = false;
       });
+      AppToast.error(context, e, logContext: 'admin');
     }
   }
 
@@ -147,9 +148,7 @@ class _AdminPageState extends ConsumerState<AdminPage>
       await _load();
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(userFacingError(e))),
-      );
+      AppToast.error(context, e);
     }
   }
 
@@ -236,9 +235,7 @@ class _AdminPageState extends ConsumerState<AdminPage>
       await _load();
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(userFacingError(e))),
-      );
+      AppToast.error(context, e);
     }
   }
 
@@ -280,7 +277,10 @@ class _AdminPageState extends ConsumerState<AdminPage>
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text(_error!, textAlign: TextAlign.center),
+                        const Text(
+                          'No se pudo cargar. Intenta de nuevo.',
+                          textAlign: TextAlign.center,
+                        ),
                         const SizedBox(height: 12),
                         FilledButton(
                           onPressed: _load,

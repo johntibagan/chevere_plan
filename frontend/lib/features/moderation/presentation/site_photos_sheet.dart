@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
-import '../../../core/errors/user_facing_error.dart';
+import '../../../core/widgets/app_toast.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_network_image.dart';
 import '../../saves/data/saves_repository.dart';
@@ -111,9 +111,10 @@ class _SitePhotosPageState extends State<SitePhotosPage> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _error = userFacingError(e);
+        _error = 'failed';
         _loading = false;
       });
+      AppToast.error(context, e, logContext: 'site_photos');
     }
   }
 
@@ -164,9 +165,7 @@ class _SitePhotosPageState extends State<SitePhotosPage> {
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(userFacingError(e))),
-      );
+      AppToast.error(context, e);
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -202,9 +201,7 @@ class _SitePhotosPageState extends State<SitePhotosPage> {
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(userFacingError(e))),
-      );
+      AppToast.error(context, e);
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -250,9 +247,7 @@ class _SitePhotosPageState extends State<SitePhotosPage> {
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(userFacingError(e))),
-      );
+      AppToast.error(context, e);
     }
   }
 
@@ -280,7 +275,10 @@ class _SitePhotosPageState extends State<SitePhotosPage> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text(_error!, textAlign: TextAlign.center),
+                        const Text(
+                          'No se pudo cargar. Intenta de nuevo.',
+                          textAlign: TextAlign.center,
+                        ),
                         const SizedBox(height: 16),
                         FilledButton(
                           onPressed: _load,

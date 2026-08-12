@@ -41,8 +41,12 @@ class AppAsyncBody extends StatelessWidget {
               ? ListView(
                   physics: const AlwaysScrollableScrollPhysics(),
                   padding: const EdgeInsets.all(24),
-                  children: [
-                    Text(error!, textAlign: TextAlign.center),
+                  children: const [
+                    SizedBox(height: 48),
+                    Text(
+                      'No se pudo cargar. Desliza para reintentar.',
+                      textAlign: TextAlign.center,
+                    ),
                   ],
                 )
               : isEmpty

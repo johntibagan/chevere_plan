@@ -5,9 +5,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/cache/paged_items.dart';
 import '../../../core/di/providers.dart';
-import '../../../core/errors/user_facing_error.dart';
 import '../../../core/formatters/date_format.dart';
 import '../../../core/l10n/context_l10n.dart';
+import '../../../core/widgets/app_toast.dart';
 import '../../../core/prefetch/site_prefetch.dart';
 import '../../../core/widgets/app_async_body.dart';
 import '../../../core/widgets/app_list_card.dart';
@@ -49,13 +49,14 @@ class _MyRoutesPageState extends ConsumerState<MyRoutesPage> {
     final async = ref.watch(routesProvider);
     final all = async.valueOrNull ?? const <RouteHistoryEntry>[];
     final loading = async.isLoading && async.valueOrNull == null;
-    final error = async.hasError && async.valueOrNull == null
-        ? userFacingError(async.error!)
-        : null;
+    final error = async.hasError && async.valueOrNull == null ? 'failed' : null;
     final visible = all.take(_visible).toList();
     final hasMore = _visible < all.length;
 
     ref.listen(routesProvider, (prev, next) {
+      if (next.hasError && !(prev?.hasError ?? false)) {
+        AppToast.error(context, next.error!);
+      }
       next.whenData((entries) {
         ref.read(sitePrefetchProvider).scheduleVisibleSites(
               entries.map((e) => e.siteId),

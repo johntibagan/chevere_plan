@@ -4,8 +4,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../core/di/providers.dart';
-import '../../../core/errors/user_facing_error.dart';
 import '../../../core/l10n/context_l10n.dart';
+import '../../../core/widgets/app_toast.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../legal/legal_texts.dart';
 import '../../legal/presentation/legal_document_page.dart';
@@ -20,7 +20,6 @@ class LoginPage extends ConsumerStatefulWidget {
 class _LoginPageState extends ConsumerState<LoginPage> {
   bool _loading = false;
   bool _acceptedLegal = false;
-  String? _error;
 
   static const _prefsKey = 'legal_accepted_${LegalTexts.tosVersion}';
 
@@ -44,22 +43,17 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   Future<void> _onGooglePressed() async {
     final l10n = context.l10n;
     if (!_acceptedLegal) {
-      setState(() {
-        _error = l10n.loginMustAcceptLegal;
-      });
+      AppToast.show(context, l10n.loginMustAcceptLegal, error: true);
       return;
     }
 
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
+    setState(() => _loading = true);
     try {
       await _persistAccepted();
       await ref.read(authRepositoryProvider).signInWithGoogle();
     } catch (error) {
       if (!mounted) return;
-      setState(() => _error = userFacingError(error));
+      AppToast.error(context, error, logContext: 'login');
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -120,26 +114,6 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 ),
               ),
               const Spacer(flex: 3),
-              if (_error != null) ...[
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: AppColors.accent.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: AppColors.accent.withValues(alpha: 0.3),
-                    ),
-                  ),
-                  child: Text(
-                    _error!,
-                    style: const TextStyle(
-                      color: AppColors.accent,
-                      fontSize: 13,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-              ],
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [

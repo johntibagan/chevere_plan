@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/errors/user_facing_error.dart';
+import '../../../core/widgets/app_toast.dart';
 import '../../../core/formatters/date_format.dart';
 import '../../../core/l10n/context_l10n.dart';
 import '../../../core/widgets/app_async_body.dart';
@@ -54,9 +54,10 @@ class _AdminReportsPageState extends State<AdminReportsPage> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _error = userFacingError(e);
+        _error = 'failed';
         _loading = false;
       });
+      AppToast.error(context, e, logContext: 'admin_reports');
     }
   }
 
@@ -69,9 +70,7 @@ class _AdminReportsPageState extends State<AdminReportsPage> {
       await _load();
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(userFacingError(e))),
-      );
+      AppToast.error(context, e);
     }
   }
 

@@ -5,8 +5,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/cache/session_cache_cleanup.dart';
 import '../../../core/di/providers.dart';
-import '../../../core/errors/user_facing_error.dart';
 import '../../../core/l10n/context_l10n.dart';
+import '../../../core/widgets/app_toast.dart';
 import '../../../core/prefetch/site_prefetch.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/visibility_badge.dart';
@@ -148,9 +148,10 @@ class _HomePageState extends ConsumerState<HomePage> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _error = userFacingError(e);
         _loading = false;
+        _error = 'failed';
       });
+      AppToast.error(context, e, logContext: 'home_load');
     }
   }
 

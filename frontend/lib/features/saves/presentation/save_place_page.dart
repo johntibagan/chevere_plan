@@ -8,8 +8,8 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../../core/cache/cache_ttl.dart';
 import '../../../core/di/providers.dart';
-import '../../../core/errors/user_facing_error.dart';
 import '../../../core/l10n/context_l10n.dart';
+import '../../../core/widgets/app_toast.dart';
 import '../../../core/widgets/app_network_image.dart';
 import '../../admin/data/admin_models.dart';
 import '../data/geo_place.dart';
@@ -70,7 +70,6 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
   bool _useGoogleLink = false;
   bool _locationDetailsExpanded = false;
   int _locationPanelEpoch = 0;
-  String? _error;
   File? _pendingPhoto;
   String? _pendingMapImageUrl;
   String? _editSaveId;
@@ -172,10 +171,8 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
       }
     } catch (e) {
       if (!mounted) return;
-      setState(() {
-        _error = userFacingError(e);
-        _loadingCats = false;
-      });
+      setState(() => _loadingCats = false);
+      AppToast.error(context, e, logContext: 'save_place_bootstrap');
     }
   }
 
@@ -194,13 +191,10 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
   Future<void> _importFromGoogleMaps() async {
     final text = _mapsCtrl.text.trim();
     if (text.isEmpty) {
-      setState(() => _error = 'Pega un enlace de Google Maps.');
+      AppToast.show(context, 'Pega un enlace de Google Maps.', error: true);
       return;
     }
-    setState(() {
-      _importingMaps = true;
-      _error = null;
-    });
+    setState(() => _importingMaps = true);
     try {
       final result = await _mapsImporter.importFromText(text);
       if (!mounted) return;
@@ -232,23 +226,18 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
       });
       _maybeSuggestCategories(force: true);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            result.hasCoords
-                ? 'Datos de Google Maps aplicados (nombre, ubicación'
-                    '${result.staticMapUrl != null ? ', mapa' : ''}'
-                    ', categoría).'
-                : 'Se leyó el enlace; completa ciudad o elige en el mapa.',
-          ),
-        ),
+      AppToast.show(
+        context,
+        result.hasCoords
+            ? 'Datos de Google Maps aplicados (nombre, ubicación'
+                '${result.staticMapUrl != null ? ', mapa' : ''}'
+                ', categoría).'
+            : 'Se leyó el enlace; completa ciudad o elige en el mapa.',
       );
     } catch (e) {
       if (!mounted) return;
-      setState(() {
-        _importingMaps = false;
-        _error = userFacingError(e);
-      });
+      setState(() => _importingMaps = false);
+      AppToast.error(context, e, logContext: 'import_maps');
     }
   }
 
@@ -256,17 +245,14 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
     final parsed = ShareParser.parse(raw);
     final url = parsed.url ?? raw.trim();
     if (url.isEmpty || !url.startsWith('http')) {
-      setState(() => _error = 'Pega un enlace http(s) válido.');
+      AppToast.show(context, 'Pega un enlace http(s) válido.', error: true);
       return;
     }
     if (_socialLinks.any((l) => l.url == url)) {
-      setState(() => _error = 'Ese enlace ya está en la lista.');
+      AppToast.show(context, 'Ese enlace ya está en la lista.', error: true);
       return;
     }
-    setState(() {
-      _addingSocial = true;
-      _error = null;
-    });
+    setState(() => _addingSocial = true);
     final draft = SocialLinkDraft(url: url, network: parsed.network);
     setState(() => _socialLinks.add(draft));
     try {
@@ -417,9 +403,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
         });
       } catch (e) {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(userFacingError(e))),
-        );
+        AppToast.error(context, e, logContext: 'categories');
         return;
       }
     }
@@ -438,12 +422,10 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
 
     if (_categories.isEmpty) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'No hay categorías. Aplica el seed SQL (migración 2 y 10) en Supabase.',
-          ),
-        ),
+      AppToast.show(
+        context,
+        'No hay categorías. Aplica el seed SQL (migración 2 y 10) en Supabase.',
+        error: true,
       );
       return;
     }
@@ -548,10 +530,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
   }
 
   Future<void> _submit() async {
-    setState(() {
-      _saving = true;
-      _error = null;
-    });
+    setState(() => _saving = true);
     try {
       final lat = _lat;
       final lng = _lng;
@@ -563,11 +542,13 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
 
       final categoryIds = _resolvedCategoryIds();
       if (categoryIds.isEmpty) {
-        setState(() {
-          _saving = false;
-          _error =
-              'No hay categorías en la base. Aplica el seed / reseed de categorías.';
-        });
+        setState(() => _saving = false);
+        if (!mounted) return;
+        AppToast.show(
+          context,
+          'No hay categorías en la base. Aplica el seed / reseed de categorías.',
+          error: true,
+        );
         return;
       }
       if (_selectedCategoryIds.isEmpty) {
@@ -678,12 +659,10 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
           );
         } catch (e) {
           if (!mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                'Lugar guardado, pero la foto no se subió: ${userFacingError(e)}',
-              ),
-            ),
+          AppToast.show(
+            context,
+            'Lugar guardado, pero la foto no se subió. Puedes añadirla después.',
+            error: true,
           );
         }
       }
@@ -752,10 +731,8 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
       Navigator.pop(context, saved);
     } catch (e) {
       if (!mounted) return;
-      setState(() {
-        _error = userFacingError(e);
-        _saving = false;
-      });
+      setState(() => _saving = false);
+      AppToast.error(context, e, logContext: 'save_place_submit');
     }
   }
 
@@ -1227,15 +1204,6 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
                   ],
                 ),
 
-                if (_error != null) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    _error!,
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.error,
-                    ),
-                  ),
-                ],
                 const SizedBox(height: 12),
                 FilledButton(
                   onPressed: _saving ? null : _submit,

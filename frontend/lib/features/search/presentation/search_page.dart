@@ -4,7 +4,7 @@ import 'package:geolocator/geolocator.dart';
 
 import '../../../core/cache/paged_items.dart';
 import '../../../core/di/providers.dart';
-import '../../../core/errors/user_facing_error.dart';
+import '../../../core/widgets/app_toast.dart';
 import '../../../core/formatters/money_format.dart';
 import '../../../core/l10n/context_l10n.dart';
 import '../../../core/prefetch/site_prefetch.dart';
@@ -37,7 +37,6 @@ class _SearchPageState extends ConsumerState<SearchPage> {
   bool _includePublic = true;
   bool _useMyLocation = false;
   bool _loading = false;
-  String? _error;
   List<SearchHit> _hits = const [];
   bool _searched = false;
   int _visibleCount = PagedItems.defaultPageSize;
@@ -83,15 +82,14 @@ class _SearchPageState extends ConsumerState<SearchPage> {
   void _invalidateResults() {
     _hits = const [];
     _searched = false;
-    _error = null;
     _visibleCount = PagedItems.defaultPageSize;
   }
 
   Future<void> _runSearch() async {
     final text = _queryCtrl.text.trim();
     if (!_advanced && text.isEmpty) {
+      AppToast.show(context, context.l10n.searchQueryRequired, error: true);
       setState(() {
-        _error = context.l10n.searchQueryRequired;
         _hits = const [];
         _searched = true;
       });
@@ -100,7 +98,6 @@ class _SearchPageState extends ConsumerState<SearchPage> {
 
     setState(() {
       _loading = true;
-      _error = null;
       _searched = true;
       _hits = const [];
       _visibleCount = PagedItems.defaultPageSize;
@@ -139,10 +136,8 @@ class _SearchPageState extends ConsumerState<SearchPage> {
           );
     } catch (e, st) {
       if (!mounted) return;
-      setState(() {
-        _error = userFacingError(e, stackTrace: st, context: 'search');
-        _loading = false;
-      });
+      setState(() => _loading = false);
+      AppToast.error(context, e, stackTrace: st, logContext: 'search');
     }
   }
 
@@ -161,7 +156,6 @@ class _SearchPageState extends ConsumerState<SearchPage> {
             onPressed: () {
               setState(() {
                 _advanced = !_advanced;
-                _error = null;
                 _hits = const [];
                 _searched = false;
               });
@@ -349,7 +343,6 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                             _includePublic = true;
                             _hits = const [];
                             _searched = false;
-                            _error = null;
                           });
                         },
                   child: const Text('Limpiar'),
@@ -376,15 +369,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
           ),
           const SizedBox(height: 16),
           const Divider(),
-          if (_error != null)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              child: Text(
-                _error!,
-                style: TextStyle(color: Theme.of(context).colorScheme.error),
-              ),
-            )
-          else if (!_searched)
+          if (!_searched)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 12),
               child: Text(l10n.searchEmptyHint),
