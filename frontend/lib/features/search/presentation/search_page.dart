@@ -112,10 +112,8 @@ class _SearchPageState extends ConsumerState<SearchPage> {
       final filters = SearchFilters(
         query: text.isEmpty ? null : text,
         categoryId: _advanced ? _categoryId : null,
-        locationQuery: _advanced
-            ? (locationExtra.isNotEmpty
-                ? locationExtra
-                : (text.isNotEmpty ? text : null))
+        locationQuery: _advanced && locationExtra.isNotEmpty
+            ? locationExtra
             : null,
         lat: _advanced ? loc.$1 : null,
         lng: _advanced ? loc.$2 : null,
@@ -130,6 +128,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
       final hits = await ref.read(swrLoaderProvider).load<List<SearchHit>>(
             key: CacheKeys.search(filters.cacheKey),
             ttl: CacheTtl.search,
+            forceNetwork: true,
             decode: (payload) {
               final list = payload as List? ?? const [];
               return list

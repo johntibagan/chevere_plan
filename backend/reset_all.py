@@ -1,13 +1,22 @@
 #!/usr/bin/env python3
-"""Borra datos de la app, reaplica migraciones + DIVIPOLA, deja root.
+"""Reset de datos Chevere Plan.
 
-  cd C:\\workspace\\chevere_plan\\backend
+Solo datos de usuario (rápido):
   python reset_all.py
+  Conserva DIVIPOLA + sitios de carga masiva (external_id).
+  Root único: johnftm.proyectos@gmail.com
+
+Cero absoluto + reseeding (lento):
+  python reset_all.py --full
+  Nuke schema → migraciones → regenera/aplica DIVIPOLA →
+  carga masiva de sitios (JSON actual) → root único.
 """
 
 from __future__ import annotations
 
+import argparse
 import os
+import subprocess
 import sys
 import time
 from pathlib import Path
@@ -16,7 +25,11 @@ ROOT = Path(__file__).resolve().parent
 SUPA = ROOT / "supabase"
 MIGRATIONS = SUPA / "migrations"
 SCRIPTS = SUPA / "scripts"
-ROOT_EMAIL = "johnftmovil@gmail.com"
+REPO = ROOT.parent
+
+ROOT_EMAIL = "johnftm.proyectos@gmail.com"
+CATALOG_OWNER_EMAIL = ROOT_EMAIL
+CATALOG_JSON = REPO / "docs" / "data" / "colombia_departamentos_municipios_sitios.json"
 
 
 def _load_dotenv(path: Path) -> None:
@@ -33,15 +46,13 @@ def _load_dotenv(path: Path) -> None:
             os.environ[key] = val
 
 
-def _ensure_psycopg():
+def _ensure_psycopg() -> None:
     try:
         import psycopg  # noqa: F401
         return
     except ImportError:
         pass
     print("Instalando psycopg...", flush=True)
-    import subprocess
-
     subprocess.check_call(
         [sys.executable, "-m", "pip", "install", "psycopg[binary]"],
     )
@@ -111,7 +122,6 @@ def iter_sql_statements(script: str):
 def _ipv4_addrs(host: str) -> list[str]:
     import re
     import socket
-    import subprocess
 
     ips: list[str] = []
     try:
@@ -173,8 +183,12 @@ def _connect(url: str):
         targets = [dict(cfg, hostaddr=ip) for ip in addrs] or [cfg]
         for t in targets:
             try:
-                conninfo = make_conninfo(**{k: str(v) for k, v in t.items() if v is not None})
-                return psycopg.connect(conninfo, autocommit=False, connect_timeout=15)
+                conninfo = make_conninfo(
+                    **{k: str(v) for k, v in t.items() if v is not None}
+                )
+                return psycopg.connect(
+                    conninfo, autocommit=False, connect_timeout=15
+                )
             except psycopg.Error as exc:
                 last_exc = exc
                 continue
@@ -204,7 +218,9 @@ def _run_file(conn, path: Path) -> int:
 
 
 def _db_url() -> str:
-    url = (os.environ.get("SUPABASE_DB_URL") or os.environ.get("DATABASE_URL") or "").strip()
+    url = (
+        os.environ.get("SUPABASE_DB_URL") or os.environ.get("DATABASE_URL") or ""
+    ).strip()
     if not url:
         print(
             "Falta SUPABASE_DB_URL en backend/.env "
@@ -215,7 +231,8 @@ def _db_url() -> str:
     return url
 
 
-def _assign_root(conn, email: str) -> None:
+def _assign_sole_root(conn, email: str) -> None:
+    """Solo [email] queda root; cualquier otro root pasa a user."""
     with conn.cursor() as cur:
         cur.execute(
             """
@@ -230,30 +247,110 @@ def _assign_root(conn, email: str) -> None:
         cur.execute(
             """
             update public.profiles
+            set role = 'user'
+            where role = 'root'
+              and id <> coalesce(
+                (select id from auth.users where email = %s),
+                '00000000-0000-0000-0000-000000000000'::uuid
+              )
+            """,
+            (email,),
+        )
+        demoted = cur.rowcount
+        cur.execute(
+            """
+            update public.profiles
             set role = 'root'
             where id = (select id from auth.users where email = %s)
             """,
             (email,),
         )
-        updated = cur.rowcount
-    if updated == 0:
+        if cur.rowcount == 0:
+            print(
+                f"  aviso: {email} aun no esta en Auth. Entra con Google y vuelve a correr.",
+                flush=True,
+            )
+        else:
+            print(f"  root unico = {email}", flush=True)
+        if demoted:
+            print(f"  otros root degradados a user: {demoted}", flush=True)
+
+
+def _reassign_catalog_owner(conn, email: str) -> None:
+    with conn.cursor() as cur:
+        cur.execute("select id from auth.users where email = %s", (email,))
+        row = cur.fetchone()
+        if row is None:
+            print(
+                f"  aviso: no reasigne catalogo; {email} no esta en Auth.",
+                flush=True,
+            )
+            return
+        owner_id = row[0]
+        cur.execute(
+            """
+            update public.sites
+            set created_by = %s, updated_at = now()
+            where external_id is not null
+              and created_by is distinct from %s
+            """,
+            (owner_id, owner_id),
+        )
         print(
-            f"  aviso: {email} aún no está en Auth. Entra con Google y vuelve a correr este script.",
+            f"  catalogo created_by -> {email} ({cur.rowcount} filas)",
             flush=True,
         )
-    else:
-        print(f"  root = {email}", flush=True)
 
 
-def _plan() -> list[tuple[str, Path]]:
+def _refresh_divipola_sql() -> Path:
+    """Regenera 05_sync_divipola.sql desde datos.gov.co; si falla, usa el existente."""
+    out = SCRIPTS / "05_sync_divipola.sql"
+    py = SCRIPTS / "05_sync_divipola.py"
+    print("> regenerando DIVIPOLA desde datos.gov.co ...", flush=True)
+    try:
+        subprocess.check_call(
+            [sys.executable, str(py), "--sql", "-o", str(out)],
+            cwd=str(SCRIPTS),
+        )
+        print("  DIVIPOLA SQL regenerado", flush=True)
+    except Exception as exc:
+        print(
+            f"  aviso: no se regenero desde API ({exc}); uso SQL existente",
+            flush=True,
+        )
+    if not out.is_file():
+        raise SystemExit(f"Falta {out}")
+    return out
+
+
+def _import_mass_sites() -> None:
+    if not CATALOG_JSON.is_file():
+        raise SystemExit(f"Falta dataset: {CATALOG_JSON}")
+    importer = SCRIPTS / "06_import_public_sites.py"
+    print(f"> carga masiva sitios desde {CATALOG_JSON.name} ...", flush=True)
+    subprocess.check_call(
+        [
+            sys.executable,
+            str(importer),
+            str(CATALOG_JSON),
+            "--owner-email",
+            CATALOG_OWNER_EMAIL,
+        ],
+        cwd=str(ROOT),
+    )
+
+
+def _plan_user_data() -> list[tuple[str, Path]]:
+    return [("wipe user data", SCRIPTS / "01_wipe_user_data.sql")]
+
+
+def _plan_full() -> list[tuple[str, Path]]:
     files: list[tuple[str, Path]] = [
         ("nuke", SCRIPTS / "00_nuke.sql"),
     ]
     for p in sorted(MIGRATIONS.glob("*.sql")):
         files.append((f"mig {p.name}", p))
-    div = SCRIPTS / "05_sync_divipola.sql"
-    if div.is_file():
-        files.append(("divipola", div))
+    # DIVIPOLA path se inserta en main tras regenerar
     return files
 
 
@@ -263,14 +360,46 @@ def main() -> int:
         sys.stderr.reconfigure(encoding="utf-8", errors="replace")
     except Exception:
         pass
+
+    parser = argparse.ArgumentParser(
+        description=(
+            "Reset Chevere Plan. Default=solo usuarios; "
+            "--full=cero + DIVIPOLA + carga masiva."
+        ),
+    )
+    parser.add_argument(
+        "--full",
+        action="store_true",
+        help=(
+            "Nuke total + migraciones + actualiza DIVIPOLA + "
+            "carga masiva de sitios + root unico."
+        ),
+    )
+    args = parser.parse_args()
+
     _load_dotenv(ROOT / ".env")
-    plan = _plan()
-    print("Reset: borra datos, remigra, DIVIPOLA, root.")
+    plan = _plan_full() if args.full else _plan_user_data()
+
+    if args.full:
+        print(
+            "Reset FULL (cero): nuke + migraciones + DIVIPOLA + "
+            f"carga masiva + root={ROOT_EMAIL}"
+        )
+    else:
+        print(
+            "Reset usuarios: borra sitios/planes/saves/fotos de usuarios; "
+            "conserva DIVIPOLA + sitios masivos; "
+            f"root={ROOT_EMAIL}"
+        )
+
     for label, path in plan:
         if not path.is_file():
             print(f"  FALTA {path}", file=sys.stderr)
             return 1
         print(f"  - {label}")
+    if args.full:
+        print("  - divipola (regenerar + aplicar)")
+        print(f"  - import masivo ({CATALOG_JSON.name})")
 
     _ensure_psycopg()
     url = _db_url()
@@ -284,17 +413,36 @@ def main() -> int:
             conn.commit()
             print(f"  ok ({n})", flush=True)
 
-        print(f"> root {ROOT_EMAIL} ...", flush=True)
-        _assign_root(conn, ROOT_EMAIL)
+        if args.full:
+            # Cerrar conn mientras regeneramos DIVIPOLA (puede tardar)
+            conn.close()
+            div_path = _refresh_divipola_sql()
+            conn = _connect(url)
+            print("> aplicando DIVIPOLA ...", flush=True)
+            n = _run_file(conn, div_path)
+            conn.commit()
+            print(f"  ok ({n})", flush=True)
+            conn.close()
+
+            _import_mass_sites()
+            conn = _connect(url)
+
+        print(f"> root unico {ROOT_EMAIL} ...", flush=True)
+        _assign_sole_root(conn, ROOT_EMAIL)
+        print(f"> catalogo owner {CATALOG_OWNER_EMAIL} ...", flush=True)
+        _reassign_catalog_owner(conn, CATALOG_OWNER_EMAIL)
         conn.commit()
 
         with conn.cursor() as cur:
-            cur.execute("notify pgrst, 'reload schema';")
+            cur.execute("notify pgrst, 'reload schema'")
         conn.commit()
     finally:
-        conn.close()
+        try:
+            conn.close()
+        except Exception:
+            pass
 
-    print(f"Listo en {time.time() - t0:.1f}s. Cierra sesión en la app.")
+    print(f"Listo en {time.time() - t0:.1f}s. Cierra sesion en la app.")
     return 0
 
 
