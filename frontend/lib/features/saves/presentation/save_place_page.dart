@@ -91,6 +91,8 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
   String? _pendingMapImageUrl;
   String? _editSaveId;
   String? _editSiteId;
+  /// Visibilidad al cargar (editar): detecta público → privado.
+  bool _loadedIsPublic = false;
   final List<SocialLinkDraft> _socialLinks = [];
   final _socialExtractor = SocialPlaceExtractor();
 
@@ -225,6 +227,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
           _editSaveId = s.id;
           _editSiteId = s.siteId;
           _isPublic = s.isPublic;
+          _loadedIsPublic = s.isPublic;
           _isPhysical = s.isPhysicalPlace;
           _lat = data.latitude;
           _lng = data.longitude;
@@ -277,6 +280,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
           _editSaveId = null;
           _editSiteId = data.siteId;
           _isPublic = data.isPublic;
+          _loadedIsPublic = data.isPublic;
           _isPhysical = data.isPhysicalPlace;
           _lat = data.latitude;
           _lng = data.longitude;
@@ -782,13 +786,64 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
 
       final editSaveId = _editSaveId;
       final editSiteId = _editSiteId;
+      final wantPublic = input.isPublic;
+
+      // Público → privado: validar asociaciones de otros / catálogo.
+      if (editSiteId != null &&
+          _loadedIsPublic &&
+          !wantPublic) {
+        final blockers =
+            await widget.savesRepository.loadPrivacyBlockers(editSiteId);
+        if (blockers.blocked) {
+          if (!mounted) return;
+          setState(() => _saving = false);
+          await _showCannotMakePrivate(blockers);
+          return;
+        }
+      }
+
+      // Anti-dupe: crear (privado o público) o editar hacia/como público.
+      final shouldCheckDuplicates = _isPhysical &&
+          ((lat != null && lng != null) ||
+              (_selectedCity?.name.trim().isNotEmpty ?? false)) &&
+          ((editSaveId == null && editSiteId == null) || wantPublic);
+
+      String? linkToExisting;
+      if (shouldCheckDuplicates) {
+        final dupes = await widget.savesRepository.findPossibleDuplicates(
+          name: name,
+          city: _selectedCity?.name,
+          latitude: lat,
+          longitude: lng,
+          excludeSiteId: editSiteId,
+        );
+        if (dupes.isNotEmpty && mounted) {
+          final chosen = await _askDuplicate(dupes.first);
+          if (chosen == null) {
+            setState(() => _saving = false);
+            return;
+          }
+          if (chosen) linkToExisting = dupes.first.siteId;
+        }
+      }
 
       String resultSiteId;
       UserSave? saved;
       var isPossibleDuplicate = false;
       var status = widget.savesRepository.computeStatus(input);
 
-      if (editSaveId != null && editSiteId != null) {
+      if (editSaveId != null &&
+          editSiteId != null &&
+          linkToExisting != null) {
+        saved = await widget.savesRepository.linkSaveToExistingSite(
+          saveId: editSaveId,
+          existingSiteId: linkToExisting,
+          input: input,
+        );
+        resultSiteId = saved.siteId;
+        isPossibleDuplicate = saved.isPossibleDuplicate;
+        status = saved.status;
+      } else if (editSaveId != null && editSiteId != null) {
         saved = await widget.savesRepository.updateSave(
           saveId: editSaveId,
           siteId: editSiteId,
@@ -798,6 +853,17 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
         isPossibleDuplicate = saved.isPossibleDuplicate;
         status = saved.status;
       } else if (editSiteId != null) {
+        // Staff/creador sin save: no se puede "vincular" a otro; solo editar.
+        if (linkToExisting != null) {
+          if (!mounted) return;
+          setState(() => _saving = false);
+          AppToast.show(
+            context,
+            context.l10n.sameSiteStaffHint,
+            error: true,
+          );
+          return;
+        }
         await widget.savesRepository.updateSiteWithoutSave(
           siteId: editSiteId,
           input: input,
@@ -805,29 +871,6 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
         resultSiteId = editSiteId;
         status = widget.savesRepository.computeStatus(input);
       } else {
-        String? linkToExisting;
-        final shouldCheckDuplicates = _isPhysical &&
-            ((_isPublic) ||
-                (lat != null && lng != null) ||
-                _selectedCity != null);
-
-        if (shouldCheckDuplicates) {
-          final dupes = await widget.savesRepository.findPossibleDuplicates(
-            name: name,
-            city: _selectedCity?.name,
-            latitude: lat,
-            longitude: lng,
-          );
-          if (dupes.isNotEmpty && mounted) {
-            final chosen = await _askDuplicate(dupes.first);
-            if (chosen == null) {
-              setState(() => _saving = false);
-              return;
-            }
-            if (chosen) linkToExisting = dupes.first.siteId;
-          }
-        }
-
         saved = await widget.savesRepository.createSave(
           SaveDraftInput(
             name: name,
@@ -981,7 +1024,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
           'Encontramos un sitio público parecido:\n\n'
           '«${d.siteName}»'
           '${d.city != null ? ' — ${d.city}' : ''}$dist\n\n'
-          'No se fusiona solo: tú decides.',
+          'Si es el mismo, lo vinculamos al existente (sin crear otro).',
         ),
         actions: [
           TextButton(
@@ -995,6 +1038,26 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
             child: Text(context.l10n.sameSiteYes),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _showCannotMakePrivate(SitePrivacyBlockers blockers) {
+    final l10n = context.l10n;
+    final reason = blockers.isCatalog
+        ? l10n.privacyBlockCatalog
+        : l10n.privacyBlockOthers;
+    return showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.privacyBlockTitle),
+        content: Text(reason),
+        actions: [
+          FilledButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(l10n.actionDone),
           ),
         ],
       ),

@@ -1,0 +1,22 @@
+---
+description: Al cerrar, decir si el usuario debe hacer algo manual (SQL, reset, hot restart)
+alwaysApply: true
+---
+
+# Cierre de acción — qué debe hacer el usuario
+
+Al **terminar cada tarea** (respuesta final), una línea clara:
+
+- **Tú (manual):** … — solo si hace falta (SQL/migración no aplicada, reset, hot restart, etc.)
+- **Nada de tu lado** — si ya quedó aplicado/ejecutado aquí
+
+Sin párrafos largos. No repetir el resumen técnico solo para rellenar.
+
+## SQL / migraciones
+
+1. Crear archivo en `backend/supabase/migrations/` (compatible con `--full`).
+2. **Intentar aplicarlo** a la DB del proyecto (misma conexión/`SUPABASE_DB_URL`) cuando el cambio deba valer ya.
+3. En el cierre:
+   - Si se aplicó → `Nada de tu lado` (o solo hot restart de la app si tocó frontend).
+   - Si no se pudo aplicar → `Tú: aplica la migración …` o `reset_all.ps1 -Full` si corresponde.
+4. No asumir que “crear el .sql” = “ya está en Supabase”.

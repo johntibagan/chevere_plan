@@ -31,6 +31,9 @@ Owner catálogo / root: `johnftm.proyectos@gmail.com`.
    llama `run_import` **en la misma conexión** (no subprocess que reconecte).
 5. Tras cambiar schema/RPC: anotar en la migración lo que el frontend espera;
    no dejar el reset a medias.
+6. **Aplicar** la migración a la DB viva cuando el cambio deba usarse ya
+   (no basta con dejar el `.sql`). Si no se pudo: decirlo al cerrar
+   (ver regla `cierre-accion-manual`).
 
 ## Conexión DB
 

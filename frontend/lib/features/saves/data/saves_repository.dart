@@ -73,6 +73,7 @@ class SavesRepository {
     String? city,
     double? latitude,
     double? longitude,
+    String? excludeSiteId,
   }) async {
     if (name.trim().isEmpty) return [];
     final rows = await _client.rpc(
@@ -83,6 +84,7 @@ class SavesRepository {
         'p_lng': longitude,
         'p_city': city?.trim().isEmpty == true ? null : city?.trim(),
         'p_radius_m': SavePolicies.duplicateSearchRadiusM,
+        'p_exclude_site_id': excludeSiteId,
       },
     );
     return (rows as List)
@@ -90,6 +92,68 @@ class SavesRepository {
           (e) => PossibleDuplicate.fromJson(Map<String, dynamic>.from(e as Map)),
         )
         .toList();
+  }
+
+  /// Bloqueos al pasar un sitio público → privado.
+  Future<SitePrivacyBlockers> loadPrivacyBlockers(String siteId) async {
+    final raw = await _client.rpc(
+      'site_privacy_blockers',
+      params: {'p_site_id': siteId},
+    );
+    final map = raw is Map
+        ? Map<String, dynamic>.from(raw)
+        : Map<String, dynamic>.from(raw as Map);
+    return SitePrivacyBlockers.fromJson(map);
+  }
+
+  /// Vincula mi guardado a un sitio público existente (anti-dupe).
+  Future<UserSave> linkSaveToExistingSite({
+    required String saveId,
+    required String existingSiteId,
+    required SaveDraftInput input,
+  }) async {
+    final uid = _uid;
+    if (uid == null) {
+      throw const AppUserError('Debes iniciar sesión para guardar.');
+    }
+
+    await _client.rpc(
+      'link_save_to_existing_site',
+      params: {
+        'p_save_id': saveId,
+        'p_existing_site_id': existingSiteId,
+      },
+    );
+
+    final located = SavePolicies.hasLocation(
+      city: input.city,
+      addressLine: input.addressLine,
+      latitude: input.latitude,
+      longitude: input.longitude,
+    );
+    final isPublic =
+        input.isPhysicalPlace && input.isPublic && located;
+    final status = computeStatus(input);
+    final draftRemindAt = status != SiteStatus.complete
+        ? DateTime.now().toUtc().add(SavePolicies.draftRemindAfter)
+        : null;
+
+    final save = await _client
+        .from('user_saves')
+        .update({
+          'status': status.dbValue,
+          'is_public': isPublic,
+          'source_url': input.sourceUrl,
+          'source_network': input.sourceNetwork,
+          'notes': input.notes,
+          'draft_remind_at': draftRemindAt?.toIso8601String(),
+        })
+        .eq('id', saveId)
+        .eq('user_id', uid)
+        .select(_saveSelect)
+        .single();
+
+    return UserSave.fromJoinedJson(Map<String, dynamic>.from(save));
   }
 
   Future<UserSave> createSave(SaveDraftInput input) async {
@@ -440,6 +504,10 @@ class SavesRepository {
         input.isPhysicalPlace && input.isPublic && located;
     final status = computeStatus(input);
 
+    if (!isPublic) {
+      await _assertCanMakePrivate(siteId);
+    }
+
     await _client.from('sites').update({
       'name': name,
       'status': status.dbValue,
@@ -490,6 +558,15 @@ class SavesRepository {
     }
   }
 
+  Future<void> _assertCanMakePrivate(String siteId) async {
+    final blockers = await loadPrivacyBlockers(siteId);
+    if (blockers.blocked) {
+      throw const AppUserError(
+        'No puedes hacerlo privado: otros usuarios ya lo usan o es del catálogo.',
+      );
+    }
+  }
+
   Future<UserSave> updateSave({
     required String saveId,
     required String siteId,
@@ -510,6 +587,10 @@ class SavesRepository {
     final isPublic =
         input.isPhysicalPlace && input.isPublic && located;
     final status = computeStatus(input);
+
+    if (!isPublic) {
+      await _assertCanMakePrivate(siteId);
+    }
 
     await _client.from('sites').update({
       'name': name,

@@ -59,6 +59,33 @@ class PossibleDuplicate {
   }
 }
 
+/// Resultado de [SavesRepository.loadPrivacyBlockers].
+class SitePrivacyBlockers {
+  const SitePrivacyBlockers({
+    required this.blocked,
+    this.isCatalog = false,
+    this.otherSaves = 0,
+    this.otherContributors = 0,
+    this.otherPlanStops = 0,
+  });
+
+  final bool blocked;
+  final bool isCatalog;
+  final int otherSaves;
+  final int otherContributors;
+  final int otherPlanStops;
+
+  factory SitePrivacyBlockers.fromJson(Map<String, dynamic> json) {
+    return SitePrivacyBlockers(
+      blocked: json['blocked'] as bool? ?? false,
+      isCatalog: json['is_catalog'] as bool? ?? false,
+      otherSaves: (json['other_saves'] as num?)?.toInt() ?? 0,
+      otherContributors: (json['other_contributors'] as num?)?.toInt() ?? 0,
+      otherPlanStops: (json['other_plan_stops'] as num?)?.toInt() ?? 0,
+    );
+  }
+}
+
 
 /// Persona ligada a un sitio (creador o contribuidor).
 class SitePerson {

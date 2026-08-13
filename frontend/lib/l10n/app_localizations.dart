@@ -1192,6 +1192,30 @@ abstract class AppLocalizations {
   /// **'Sí, es el mismo'**
   String get sameSiteYes;
 
+  /// No description provided for @sameSiteStaffHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Hay un sitio público parecido. Edítalo desde su ficha o crea el tuyo como nuevo.'**
+  String get sameSiteStaffHint;
+
+  /// No description provided for @privacyBlockTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'No se puede hacer privado'**
+  String get privacyBlockTitle;
+
+  /// No description provided for @privacyBlockCatalog.
+  ///
+  /// In es, this message translates to:
+  /// **'Este sitio es del catálogo público y debe seguir visible para todos.'**
+  String get privacyBlockCatalog;
+
+  /// No description provided for @privacyBlockOthers.
+  ///
+  /// In es, this message translates to:
+  /// **'Otros usuarios ya lo guardaron, aportaron o lo usan en planes. Mientras eso exista, debe seguir público.'**
+  String get privacyBlockOthers;
+
   /// No description provided for @locationPickerTitle.
   ///
   /// In es, this message translates to:

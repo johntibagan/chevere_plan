@@ -607,6 +607,21 @@ class AppLocalizationsEs extends AppLocalizations {
   String get sameSiteYes => 'Sí, es el mismo';
 
   @override
+  String get sameSiteStaffHint =>
+      'Hay un sitio público parecido. Edítalo desde su ficha o crea el tuyo como nuevo.';
+
+  @override
+  String get privacyBlockTitle => 'No se puede hacer privado';
+
+  @override
+  String get privacyBlockCatalog =>
+      'Este sitio es del catálogo público y debe seguir visible para todos.';
+
+  @override
+  String get privacyBlockOthers =>
+      'Otros usuarios ya lo guardaron, aportaron o lo usan en planes. Mientras eso exista, debe seguir público.';
+
+  @override
   String get locationPickerTitle => 'Elegir ubicación';
 
   @override
