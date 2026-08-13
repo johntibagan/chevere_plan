@@ -175,6 +175,13 @@ class SearchRepository {
       isPublic: a.isPublic || b.isPublic,
       isCatalog: a.isCatalog || b.isCatalog,
       isLinked: a.isLinked || b.isLinked,
+      updatedAt: () {
+        final ta = a.updatedAt;
+        final tb = b.updatedAt;
+        if (ta == null) return tb;
+        if (tb == null) return ta;
+        return ta.isAfter(tb) ? ta : tb;
+      }(),
     );
   }
 

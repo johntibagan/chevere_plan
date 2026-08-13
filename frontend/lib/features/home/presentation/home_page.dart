@@ -9,7 +9,6 @@ import '../../../core/l10n/context_l10n.dart';
 import '../../../core/widgets/app_toast.dart';
 import '../../../core/prefetch/site_prefetch.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../../core/widgets/visibility_badge.dart';
 import '../../admin/presentation/admin_page.dart';
 import '../../auth/data/profile.dart';
 import '../../moderation/presentation/admin_reports_page.dart';
@@ -796,10 +795,6 @@ class _SaveCard extends StatelessWidget {
                               runSpacing: 4,
                               crossAxisAlignment: WrapCrossAlignment.center,
                               children: [
-                                VisibilityBadge(
-                                  isPublic: save.isPublic,
-                                  compact: true,
-                                ),
                                 Text(
                                   [
                                     save.status.label(l10n),

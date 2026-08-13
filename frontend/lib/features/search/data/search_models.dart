@@ -13,6 +13,7 @@ class SearchHit {
     this.estimatedPriceAmount,
     this.currencyCode = 'COP',
     this.distanceKm,
+    this.updatedAt,
   });
 
   final String siteId;
@@ -29,10 +30,12 @@ class SearchHit {
   /// Mi guardado apunta a un sitio público existente (anti-dupe).
   final bool isLinked;
   final double? distanceKm;
+  final DateTime? updatedAt;
 
   factory SearchHit.fromJson(Map<String, dynamic> json) {
     final price = json['estimated_price_amount'];
     final dist = json['distance_km'];
+    final updated = json['updated_at'];
     return SearchHit(
       siteId: json['site_id'] as String,
       name: (json['name'] as String?) ?? 'Sitio',
@@ -48,6 +51,7 @@ class SearchHit {
       isCatalog: json['is_catalog'] as bool? ?? false,
       isLinked: json['is_linked'] as bool? ?? false,
       distanceKm: dist == null ? null : (dist as num).toDouble(),
+      updatedAt: updated is String ? DateTime.tryParse(updated) : null,
     );
   }
 
@@ -65,6 +69,7 @@ class SearchHit {
         'is_catalog': isCatalog,
         'is_linked': isLinked,
         'distance_km': distanceKm,
+        'updated_at': updatedAt?.toIso8601String(),
       };
 
   SearchHit copyWith({
@@ -81,6 +86,7 @@ class SearchHit {
     bool? isCatalog,
     bool? isLinked,
     double? distanceKm,
+    DateTime? updatedAt,
   }) {
     return SearchHit(
       siteId: siteId ?? this.siteId,
@@ -96,6 +102,7 @@ class SearchHit {
       isCatalog: isCatalog ?? this.isCatalog,
       isLinked: isLinked ?? this.isLinked,
       distanceKm: distanceKm ?? this.distanceKm,
+      updatedAt: updatedAt ?? this.updatedAt,
     );
   }
 }
@@ -136,6 +143,6 @@ class SearchFilters {
         budgetMin?.toString() ?? '',
         budgetMax?.toString() ?? '',
         includePublic ? '1' : '0',
-        'v2', // bust cache tras tags is_linked / is_catalog
+        'v3', // bust: updated_at + borde color sin texto Público
       ].join('|');
 }

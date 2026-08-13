@@ -6,13 +6,12 @@ import '../../../core/cache/cache_ttl.dart';
 import '../../../core/cache/paged_items.dart';
 import '../../../core/di/providers.dart';
 import '../../../core/widgets/app_toast.dart';
+import '../../../core/formatters/date_format.dart';
 import '../../../core/formatters/money_format.dart';
 import '../../../core/l10n/context_l10n.dart';
 import '../../../core/prefetch/site_prefetch.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../../core/widgets/app_list_card.dart';
 import '../../../core/widgets/field_action_icon.dart';
-import '../../../core/widgets/visibility_badge.dart';
 import '../../admin/data/admin_models.dart';
 import '../../saves/data/site_ficha.dart';
 import '../../saves/presentation/open_site_detail.dart';
@@ -391,76 +390,145 @@ class _SearchPageState extends ConsumerState<SearchPage> {
               final hasMore = _visibleCount < _hits.length;
               return [
                 ...visible.map(
-                  (h) => AppListCard(
-                    child: ListTile(
-                      title: Text(h.name),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const SizedBox(height: 4),
-                          Text(
-                            [
-                              if (h.city != null && h.city!.isNotEmpty) h.city!,
-                              if (h.department != null &&
-                                  h.department!.isNotEmpty)
-                                h.department!,
-                              if (h.estimatedPriceAmount != null)
-                                formatMoney(
-                                  h.estimatedPriceAmount!,
-                                  currencyCode: h.currencyCode,
+                  (h) {
+                    final accent =
+                        h.isPublic ? AppColors.success : AppColors.purple;
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Material(
+                        color: AppColors.surface,
+                        clipBehavior: Clip.antiAlias,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          side: BorderSide(
+                            color: accent.withValues(alpha: 0.4),
+                          ),
+                        ),
+                        child: InkWell(
+                          onTap: () async {
+                            final outcome = await openSiteDetail(
+                              context,
+                              hit: h,
+                              siteId: h.siteId,
+                            );
+                            if (outcome != SiteDetailOutcome.none &&
+                                mounted) {
+                              await _runSearch();
+                            }
+                          },
+                          child: IntrinsicHeight(
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                Container(width: 4, color: accent),
+                                Expanded(
+                                  child: Padding(
+                                    padding: const EdgeInsets.fromLTRB(
+                                      12,
+                                      12,
+                                      8,
+                                      12,
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          h.name,
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.w700,
+                                            fontSize: 15,
+                                            color: AppColors.foreground,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          [
+                                            if (h.city != null &&
+                                                h.city!.isNotEmpty)
+                                              h.city!,
+                                            if (h.department != null &&
+                                                h.department!.isNotEmpty)
+                                              h.department!,
+                                            if (h.estimatedPriceAmount != null)
+                                              formatMoney(
+                                                h.estimatedPriceAmount!,
+                                                currencyCode: h.currencyCode,
+                                              ),
+                                            if (h.distanceKm != null)
+                                              '${h.distanceKm!.toStringAsFixed(1)} km',
+                                          ].join(' · '),
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(
+                                            fontSize: 12,
+                                            color: AppColors.muted,
+                                          ),
+                                        ),
+                                        if (h.isOwn ||
+                                            h.isLinked ||
+                                            h.isCatalog) ...[
+                                          const SizedBox(height: 6),
+                                          Wrap(
+                                            spacing: 6,
+                                            runSpacing: 4,
+                                            children: [
+                                              if (h.isOwn)
+                                                _SearchTag(
+                                                  label: l10n.labelOwn,
+                                                  color: AppColors.primary,
+                                                ),
+                                              if (h.isLinked)
+                                                _SearchTag(
+                                                  label: l10n.labelLinked,
+                                                  color: AppColors.purple,
+                                                ),
+                                              if (h.isCatalog)
+                                                _SearchTag(
+                                                  label: l10n.labelCatalog,
+                                                  color: AppColors.catServ,
+                                                ),
+                                            ],
+                                          ),
+                                        ],
+                                      ],
+                                    ),
+                                  ),
                                 ),
-                              if (h.distanceKm != null)
-                                '${h.distanceKm!.toStringAsFixed(1)} km',
-                            ].join(' · '),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: AppColors.muted,
+                                Padding(
+                                  padding: const EdgeInsets.only(right: 10),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      if (h.updatedAt != null)
+                                        Text(
+                                          formatDateDmY(h.updatedAt!),
+                                          style: const TextStyle(
+                                            fontSize: 11,
+                                            color: AppColors.mutedDark,
+                                          ),
+                                        ),
+                                      const SizedBox(width: 4),
+                                      const Text(
+                                        '>',
+                                        style: TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.w600,
+                                          color: AppColors.muted,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                          const SizedBox(height: 6),
-                          Wrap(
-                            spacing: 6,
-                            runSpacing: 4,
-                            children: [
-                              VisibilityBadge(
-                                isPublic: h.isPublic,
-                                compact: true,
-                              ),
-                              if (h.isOwn)
-                                _SearchTag(
-                                  label: l10n.labelOwn,
-                                  color: AppColors.primary,
-                                ),
-                              if (h.isLinked)
-                                _SearchTag(
-                                  label: l10n.labelLinked,
-                                  color: AppColors.purple,
-                                ),
-                              if (h.isCatalog)
-                                _SearchTag(
-                                  label: l10n.labelCatalog,
-                                  color: AppColors.catServ,
-                                ),
-                            ],
-                          ),
-                        ],
+                        ),
                       ),
-                      isThreeLine: true,
-                      trailing: const Icon(Icons.chevron_right),
-                      onTap: () async {
-                        final outcome = await openSiteDetail(
-                          context,
-                          hit: h,
-                          siteId: h.siteId,
-                        );
-                        if (outcome != SiteDetailOutcome.none && mounted) {
-                          await _runSearch();
-                        }
-                      },
-                    ),
-                  ),
+                    );
+                  },
                 ),
                 if (hasMore)
                   TextButton(

@@ -1,0 +1,19 @@
+---
+description: No redundar privacidad (color vs texto) ni señales visuales duplicadas
+alwaysApply: true
+---
+
+# UI — sin redundancia (privacidad y señales)
+
+## Privacidad pública / privada
+
+- **Color = significado.** Verde (`AppColors.success`) = público; morado (`AppColors.purple`) = privado.
+- Si la tarjeta/lista ya lleva **borde o franja** de ese color, **no** repetir la palabra «Público» / «Privado» ni un badge con ese texto.
+- Si hace falta un indicador sin borde (p. ej. ficha densa), usar **solo icono** (`Icons.public` / `Icons.lock_outline`) del mismo color, con `Tooltip` para accesibilidad. Nunca icono + etiqueta del mismo concepto.
+- Sí se permiten etiquetas **distintas** del color (Tuyo, Vinculado, Catálogo, estado de borrador, etc.).
+
+## Otras señales
+
+- No duplicar la misma idea en dos canales a la vez (ej. color + texto idéntico, icono + label sin aportar).
+- Listas clicables: señal clara de navegación (`>` / chevron) y, si aporta, **fecha** visible (creación o última actualización del sitio).
+- Ante duda: *¿quitar este texto deja igual de claro el significado?* Si sí, quítalo.

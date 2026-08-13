@@ -8,7 +8,6 @@ import '../../../core/l10n/context_l10n.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_network_image.dart';
 import '../../../core/widgets/app_toast.dart';
-import '../../../core/widgets/visibility_badge.dart';
 import '../data/site_review_models.dart';
 import 'site_review_editor_page.dart';
 
@@ -377,25 +376,14 @@ class _ReviewCard extends StatelessWidget {
                         ),
                         const SizedBox(width: 8),
                         Expanded(
-                          child: Row(
-                            children: [
-                              Flexible(
-                                child: Text(
-                                  name,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: GoogleFonts.plusJakartaSans(
-                                    fontWeight: FontWeight.w600,
-                                    color: AppColors.foreground,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 6),
-                              VisibilityBadge(
-                                isPublic: review.isPublic,
-                                compact: true,
-                              ),
-                            ],
+                          child: Text(
+                            name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: GoogleFonts.plusJakartaSans(
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.foreground,
+                            ),
                           ),
                         ),
                         Row(
