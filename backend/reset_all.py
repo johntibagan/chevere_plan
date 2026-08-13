@@ -120,15 +120,30 @@ def iter_sql_statements(script: str):
 
 
 def _ipv4_addrs(host: str) -> list[str]:
+    """Resuelve A records IPv4. En esta red getaddrinfo/nslookup a veces fallan;
+    PowerShell Resolve-DnsName suele funcionar."""
     import re
     import socket
 
+    def _is_usable(ip: str) -> bool:
+        if ip.startswith("127.") or ip.startswith("0."):
+            return False
+        # Respuestas basura del router (.bbrouter → 192.168.x).
+        if ip.startswith("192.168.") or ip.startswith("10."):
+            return False
+        if ip.startswith("169.254."):
+            return False
+        return True
+
     ips: list[str] = []
+
     try:
         for *_, sa in socket.getaddrinfo(host, 5432, socket.AF_INET):
-            ips.append(sa[0])
+            if _is_usable(sa[0]):
+                ips.append(sa[0])
     except OSError:
         pass
+
     if not ips:
         try:
             out = subprocess.check_output(
@@ -138,11 +153,50 @@ def _ipv4_addrs(host: str) -> list[str]:
                 stderr=subprocess.STDOUT,
             )
             for ip in re.findall(r"\b(\d+\.\d+\.\d+\.\d+)\b", out):
-                if ip.startswith("127.") or ip.startswith("192.168."):
-                    continue
-                ips.append(ip)
+                if _is_usable(ip):
+                    ips.append(ip)
         except (OSError, subprocess.SubprocessError):
             pass
+
+    if not ips and sys.platform.startswith("win"):
+        try:
+            # Evita search-domain del router que rompe nslookup/getaddrinfo.
+            ps = (
+                f"(Resolve-DnsName -Name '{host}' -Type A "
+                f"-ErrorAction Stop).IPAddress"
+            )
+            out = subprocess.check_output(
+                ["powershell", "-NoProfile", "-Command", ps],
+                text=True,
+                timeout=15,
+                stderr=subprocess.STDOUT,
+            )
+            for ip in re.findall(r"\b(\d+\.\d+\.\d+\.\d+)\b", out):
+                if _is_usable(ip):
+                    ips.append(ip)
+        except (OSError, subprocess.SubprocessError):
+            pass
+
+    if not ips:
+        # DNS-over-HTTPS (Cloudflare) como último recurso.
+        try:
+            import json
+            import urllib.request
+
+            req = urllib.request.Request(
+                f"https://cloudflare-dns.com/dns-query?name={host}&type=A",
+                headers={"Accept": "application/dns-json"},
+            )
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                data = json.loads(resp.read().decode("utf-8"))
+            for ans in data.get("Answer") or []:
+                if ans.get("type") == 1:
+                    ip = str(ans.get("data") or "")
+                    if _is_usable(ip):
+                        ips.append(ip)
+        except Exception:
+            pass
+
     seen: set[str] = set()
     uniq: list[str] = []
     for ip in ips:
@@ -180,7 +234,13 @@ def _connect(url: str):
     for cfg in candidates:
         h = cfg.get("host") or ""
         addrs = _ipv4_addrs(h)
-        targets = [dict(cfg, hostaddr=ip) for ip in addrs] or [cfg]
+        if addrs:
+            print(f"  DNS {h} -> {', '.join(addrs)}", flush=True)
+        # Siempre preferir hostaddr IPv4: evita que psycopg vuelva a fallar
+        # en getaddrinfo del hostname.
+        targets = [dict(cfg, hostaddr=ip) for ip in addrs]
+        if not targets:
+            targets = [cfg]
         for t in targets:
             try:
                 conninfo = make_conninfo(
@@ -194,9 +254,9 @@ def _connect(url: str):
                 continue
 
     print(
-        "No pude conectar a Postgres (esta red no tiene IPv6).\n"
-        "En Supabase: Project Settings → Database → Connect → Session pooler\n"
-        "Copia la URI y pégala en backend/.env como SUPABASE_DB_URL\n"
+        "No pude conectar a Postgres (falló DNS/resolución IPv4 del pooler).\n"
+        "Prueba: Session pooler en SUPABASE_DB_URL (backend/.env).\n"
+        "Si persiste: cambia DNS del PC a 1.1.1.1 o 8.8.8.8 y reintenta.\n"
         "Luego: powershell -File C:\\workspace\\chevere_plan\\backend\\reset_all.ps1",
         file=sys.stderr,
     )
