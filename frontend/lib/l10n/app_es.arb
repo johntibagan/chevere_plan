@@ -84,7 +84,7 @@
   "siteDetailTitle": "Sitio",
   "siteDetailTabInfo": "Info",
   "siteDetailTabReviews": "Reseñas",
-  "siteDetailTabMore": "Más",
+  "siteDetailTabMore": "Más info",
   "siteDetailLocation": "Ubicación",
   "siteDetailOpenInMaps": "Ver en Maps",
   "siteDetailDirections": "Cómo llegar",
@@ -95,6 +95,23 @@
   "siteDetailDistance": "Distancia",
   "siteDetailNotes": "Notas",
   "siteDetailAlsoShared": "También guardado por",
+  "siteDetailCreatedBy": "Creado por",
+  "siteDetailCreatedAt": "Fecha de creación",
+  "siteDetailUpdatedAt": "Última actualización",
+  "siteDetailJoinedAt": "Se sumó el {date}",
+  "@siteDetailJoinedAt": {
+    "placeholders": {
+      "date": {"type": "String"}
+    }
+  },
+  "siteDetailCatalogBadge": "Sitio del catálogo público",
+  "siteDetailYourSaveAt": "Lo guardaste el {date}",
+  "@siteDetailYourSaveAt": {
+    "placeholders": {
+      "date": {"type": "String"}
+    }
+  },
+  "siteDetailTraceEmpty": "Sin más datos de trazabilidad por ahora.",
   "siteDetailPhotos": "Fotos",
   "siteDetailSource": "Origen",
   "siteDetailNotPhysical": "No es lugar físico",

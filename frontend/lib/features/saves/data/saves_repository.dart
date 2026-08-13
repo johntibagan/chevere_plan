@@ -20,10 +20,10 @@ class SavesRepository {
       'id, user_id, site_id, status, is_public, source_url, source_network, notes, created_at, '
       'is_possible_duplicate, possible_duplicate_of_site_id, '
       'sites!user_saves_site_id_fkey(name, city, city_id, department, department_id, address_line, is_public, '
-      'is_physical_place, google_place_id, created_by, '
+      'is_physical_place, google_place_id, created_by, created_at, updated_at, external_id, '
       'profiles!sites_created_by_fkey(display_name, avatar_url), '
       'site_categories(categories(name_i18n)), '
-      'site_contributors(user_id, profiles(display_name, avatar_url)))';
+      'site_contributors(user_id, created_at, profiles(display_name, avatar_url)))';
 
   /// Select liviano para Inicio (cards): sin contributors, notes, address, etc.
   static const _saveSelectSummary =
@@ -601,10 +601,10 @@ class SavesRepository {
 
   static const _siteSelect =
       'id, name, city, department, address_line, is_public, is_physical_place, '
-      'google_place_id, created_by, '
+      'google_place_id, created_by, created_at, updated_at, external_id, '
       'profiles!sites_created_by_fkey(display_name, avatar_url), '
       'site_categories(categories(name_i18n)), '
-      'site_contributors(user_id, profiles(display_name, avatar_url))';
+      'site_contributors(user_id, created_at, profiles(display_name, avatar_url))';
 
   /// Ficha de sitio (propia o pública visible por RLS).
   Future<SiteFicha> loadSiteFicha(String siteId) async {

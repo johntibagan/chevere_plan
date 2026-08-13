@@ -451,7 +451,7 @@ abstract class AppLocalizations {
   /// No description provided for @siteDetailTabMore.
   ///
   /// In es, this message translates to:
-  /// **'Más'**
+  /// **'Más info'**
   String get siteDetailTabMore;
 
   /// No description provided for @siteDetailLocation.
@@ -513,6 +513,48 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'También guardado por'**
   String get siteDetailAlsoShared;
+
+  /// No description provided for @siteDetailCreatedBy.
+  ///
+  /// In es, this message translates to:
+  /// **'Creado por'**
+  String get siteDetailCreatedBy;
+
+  /// No description provided for @siteDetailCreatedAt.
+  ///
+  /// In es, this message translates to:
+  /// **'Fecha de creación'**
+  String get siteDetailCreatedAt;
+
+  /// No description provided for @siteDetailUpdatedAt.
+  ///
+  /// In es, this message translates to:
+  /// **'Última actualización'**
+  String get siteDetailUpdatedAt;
+
+  /// No description provided for @siteDetailJoinedAt.
+  ///
+  /// In es, this message translates to:
+  /// **'Se sumó el {date}'**
+  String siteDetailJoinedAt(String date);
+
+  /// No description provided for @siteDetailCatalogBadge.
+  ///
+  /// In es, this message translates to:
+  /// **'Sitio del catálogo público'**
+  String get siteDetailCatalogBadge;
+
+  /// No description provided for @siteDetailYourSaveAt.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo guardaste el {date}'**
+  String siteDetailYourSaveAt(String date);
+
+  /// No description provided for @siteDetailTraceEmpty.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin más datos de trazabilidad por ahora.'**
+  String get siteDetailTraceEmpty;
 
   /// No description provided for @siteDetailPhotos.
   ///

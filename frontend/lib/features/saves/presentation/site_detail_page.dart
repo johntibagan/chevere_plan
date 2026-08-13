@@ -8,6 +8,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/di/providers.dart';
 import '../../../core/widgets/app_toast.dart';
+import '../../../core/formatters/date_format.dart';
 import '../../../core/formatters/money_format.dart';
 import '../../../core/l10n/context_l10n.dart';
 import '../../../core/theme/app_theme.dart';
@@ -556,10 +557,7 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
                         title: l10n.siteDetailReviewsSoonTitle,
                         body: l10n.siteDetailReviewsSoonBody,
                       ),
-                      _PlaceholderTab(
-                        title: l10n.siteDetailMoreSoonTitle,
-                        body: l10n.siteDetailMoreSoonBody,
-                      ),
+                      _TraceabilityTab(ficha: ficha),
                     ],
                   ),
       ),
@@ -788,22 +786,153 @@ class _InfoTab extends StatelessWidget {
             ),
           ),
         ],
-        if (ficha.sharedPeople.isNotEmpty) ...[
+      ],
+    );
+  }
+}
+
+class _TraceabilityTab extends StatelessWidget {
+  const _TraceabilityTab({required this.ficha});
+
+  final SiteFicha ficha;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final creator = ficha.createdByPerson;
+    final also = ficha.alsoSharedPeople;
+    final createdAt = ficha.siteCreatedAt;
+    final updatedAt = ficha.siteUpdatedAt;
+    final ownSavedAt = ficha.ownSave?.createdAt;
+    final hasAny = creator != null ||
+        also.isNotEmpty ||
+        createdAt != null ||
+        updatedAt != null ||
+        ficha.isCatalogSite ||
+        ownSavedAt != null;
+
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+      children: [
+        if (ficha.isCatalogSite) ...[
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceElevated,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.border),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.public, size: 18, color: AppColors.primary),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    l10n.siteDetailCatalogBadge,
+                    style: GoogleFonts.plusJakartaSans(
+                      color: AppColors.foreground,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
           const SizedBox(height: 16),
+        ],
+        if (creator != null) ...[
+          _Section(
+            icon: Icons.person_outline,
+            title: l10n.siteDetailCreatedBy,
+            child: _PersonAvatar(person: creator, showJoinedHint: false),
+          ),
+          const SizedBox(height: 16),
+        ],
+        if (also.isNotEmpty) ...[
           _Section(
             icon: Icons.people_outline,
             title: l10n.siteDetailAlsoShared,
             child: Wrap(
-              spacing: 8,
-              runSpacing: 8,
+              spacing: 10,
+              runSpacing: 10,
               children: [
-                for (final person in ficha.sharedPeople)
-                  _PersonAvatar(person: person),
+                for (final person in also)
+                  _PersonAvatar(person: person, showJoinedHint: true),
               ],
             ),
           ),
+          const SizedBox(height: 16),
         ],
+        if (createdAt != null) ...[
+          _TraceRow(
+            label: l10n.siteDetailCreatedAt,
+            value: formatDateTimeShort(createdAt),
+          ),
+          const SizedBox(height: 10),
+        ],
+        if (updatedAt != null) ...[
+          _TraceRow(
+            label: l10n.siteDetailUpdatedAt,
+            value: formatDateTimeShort(updatedAt),
+          ),
+          const SizedBox(height: 10),
+        ],
+        if (ownSavedAt != null) ...[
+          _TraceRow(
+            label: l10n.siteDetailYourSaveAt(formatDateTimeShort(ownSavedAt)),
+            value: '',
+          ),
+          const SizedBox(height: 10),
+        ],
+        if (!hasAny)
+          Text(
+            l10n.siteDetailTraceEmpty,
+            style: const TextStyle(color: AppColors.muted),
+          ),
       ],
+    );
+  }
+}
+
+class _TraceRow extends StatelessWidget {
+  const _TraceRow({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 12,
+              color: AppColors.muted,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          if (value.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Text(
+              value,
+              style: GoogleFonts.plusJakartaSans(
+                color: AppColors.foreground,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ],
+      ),
     );
   }
 }
@@ -1007,16 +1136,26 @@ class _PlaceholderTab extends StatelessWidget {
 }
 
 class _PersonAvatar extends StatelessWidget {
-  const _PersonAvatar({required this.person});
+  const _PersonAvatar({
+    required this.person,
+    this.showJoinedHint = false,
+  });
 
   final SitePerson person;
+  final bool showJoinedHint;
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final url = person.avatarUrl?.trim();
     final hasUrl = url != null && url.isNotEmpty;
+    var tip = person.tooltipName;
+    if (showJoinedHint && person.joinedAt != null) {
+      tip =
+          '$tip · ${l10n.siteDetailJoinedAt(formatDateTimeShort(person.joinedAt!))}';
+    }
     return Tooltip(
-      message: person.tooltipName,
+      message: tip,
       triggerMode: TooltipTriggerMode.tap,
       child: ClipOval(
         child: SizedBox(

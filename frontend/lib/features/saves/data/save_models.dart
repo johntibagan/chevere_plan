@@ -66,11 +66,14 @@ class SitePerson {
     required this.userId,
     this.displayName,
     this.avatarUrl,
+    this.joinedAt,
   });
 
   final String userId;
   final String? displayName;
   final String? avatarUrl;
+  /// Cuándo se sumó como contribuidor (UTC).
+  final DateTime? joinedAt;
 
   String get tooltipName {
     final n = displayName?.trim();
@@ -82,6 +85,7 @@ class SitePerson {
         'user_id': userId,
         'display_name': displayName,
         'avatar_url': avatarUrl,
+        'joined_at': joinedAt?.toUtc().toIso8601String(),
       };
 
   factory SitePerson.fromCacheJson(Map<String, dynamic> json) {
@@ -89,6 +93,9 @@ class SitePerson {
       userId: json['user_id'] as String? ?? '',
       displayName: json['display_name'] as String?,
       avatarUrl: json['avatar_url'] as String?,
+      joinedAt: json['joined_at'] != null
+          ? DateTime.tryParse(json['joined_at'] as String)
+          : null,
     );
   }
 
@@ -106,32 +113,49 @@ class SitePerson {
         name = profile['display_name'] as String?;
         avatar = profile['avatar_url'] as String?;
       }
-      out.add(SitePerson(userId: uid, displayName: name, avatarUrl: avatar));
+      DateTime? joined;
+      final rawJoined = row['created_at'];
+      if (rawJoined is String) joined = DateTime.tryParse(rawJoined);
+      out.add(
+        SitePerson(
+          userId: uid,
+          displayName: name,
+          avatarUrl: avatar,
+          joinedAt: joined,
+        ),
+      );
     }
     return out;
   }
 
-  static List<SitePerson> withCreator({
+  static SitePerson? parseCreator({
     String? createdById,
     Map? creatorProfile,
-    required List<SitePerson> contributors,
   }) {
-    final out = <SitePerson>[];
-    final seen = <String>{};
-    if (createdById != null && createdById.isNotEmpty) {
-      String? name;
-      String? avatar;
-      if (creatorProfile is Map) {
-        name = creatorProfile['display_name'] as String?;
-        avatar = creatorProfile['avatar_url'] as String?;
-      }
-      out.add(SitePerson(userId: createdById, displayName: name, avatarUrl: avatar));
-      seen.add(createdById);
+    if (createdById == null || createdById.isEmpty) return null;
+    String? name;
+    String? avatar;
+    if (creatorProfile is Map) {
+      name = creatorProfile['display_name'] as String?;
+      avatar = creatorProfile['avatar_url'] as String?;
     }
-    for (final p in contributors) {
-      if (seen.add(p.userId)) out.add(p);
-    }
-    return out;
+    return SitePerson(
+      userId: createdById,
+      displayName: name,
+      avatarUrl: avatar,
+    );
+  }
+
+  /// Contribuyentes distintos del creador.
+  static List<SitePerson> alsoSharedExcludingCreator({
+    required List<SitePerson> contributors,
+    String? createdById,
+  }) {
+    if (createdById == null || createdById.isEmpty) return contributors;
+    return [
+      for (final p in contributors)
+        if (p.userId != createdById) p,
+    ];
   }
 }
 
@@ -157,7 +181,12 @@ class UserSave {
     this.possibleDuplicateOfSiteId,
     this.alsoSharedBy = const [],
     this.sharedPeople = const [],
+    this.createdByPerson,
+    this.alsoSharedPeople = const [],
     this.createdByUserId,
+    this.siteCreatedAt,
+    this.siteUpdatedAt,
+    this.isCatalogSite = false,
     this.isPhysicalPlace = true,
     this.googlePlaceId,
   });
@@ -180,10 +209,16 @@ class UserSave {
   final DateTime? createdAt;
   final bool isPossibleDuplicate;
   final String? possibleDuplicateOfSiteId;
-  /// Legacy: solo nombres (caché vieja). Preferir [sharedPeople].
+  /// Legacy: solo nombres (caché vieja). Preferir [alsoSharedPeople].
   final List<String> alsoSharedBy;
+  /// Creador + compartidos (compat).
   final List<SitePerson> sharedPeople;
+  final SitePerson? createdByPerson;
+  final List<SitePerson> alsoSharedPeople;
   final String? createdByUserId;
+  final DateTime? siteCreatedAt;
+  final DateTime? siteUpdatedAt;
+  final bool isCatalogSite;
   final bool isPhysicalPlace;
   final String? googlePlaceId;
 
@@ -210,24 +245,51 @@ class UserSave {
         'possible_duplicate_of_site_id': possibleDuplicateOfSiteId,
         'also_shared_by': alsoSharedBy,
         'shared_people': sharedPeople.map((e) => e.toCacheJson()).toList(),
+        'created_by_person': createdByPerson?.toCacheJson(),
+        'also_shared_people':
+            alsoSharedPeople.map((e) => e.toCacheJson()).toList(),
         'created_by_user_id': createdByUserId,
+        'site_created_at': siteCreatedAt?.toUtc().toIso8601String(),
+        'site_updated_at': siteUpdatedAt?.toUtc().toIso8601String(),
+        'is_catalog_site': isCatalogSite,
         'is_physical_place': isPhysicalPlace,
         'google_place_id': googlePlaceId,
       };
 
   factory UserSave.fromCacheJson(Map<String, dynamic> json) {
-    final peopleRaw = json['shared_people'] as List?;
-    final people = peopleRaw == null
-        ? const <SitePerson>[]
-        : peopleRaw
-            .whereType<Map>()
-            .map((e) => SitePerson.fromCacheJson(Map<String, dynamic>.from(e)))
-            .where((p) => p.userId.isNotEmpty)
-            .toList();
+    List<SitePerson> parsePeople(Object? raw) {
+      if (raw is! List) return const [];
+      return raw
+          .whereType<Map>()
+          .map((e) => SitePerson.fromCacheJson(Map<String, dynamic>.from(e)))
+          .where((p) => p.userId.isNotEmpty)
+          .toList();
+    }
+
+    final people = parsePeople(json['shared_people']);
+    final also = parsePeople(json['also_shared_people']);
+    final creatorRaw = json['created_by_person'];
+    final creator = creatorRaw is Map
+        ? SitePerson.fromCacheJson(Map<String, dynamic>.from(creatorRaw))
+        : null;
     final legacyNames = (json['also_shared_by'] as List?)
             ?.map((e) => '$e')
             .toList() ??
         const <String>[];
+    final createdById = json['created_by_user_id'] as String? ?? creator?.userId;
+    final resolvedAlso = also.isNotEmpty
+        ? also
+        : SitePerson.alsoSharedExcludingCreator(
+            contributors: people,
+            createdById: createdById,
+          );
+    final resolvedCreator = creator ??
+        (createdById != null
+            ? people.cast<SitePerson?>().firstWhere(
+                  (p) => p?.userId == createdById,
+                  orElse: () => null,
+                )
+            : null);
     return UserSave(
       id: json['id'] as String,
       userId: json['user_id'] as String,
@@ -256,10 +318,20 @@ class UserSave {
       alsoSharedBy: legacyNames,
       sharedPeople: people.isNotEmpty
           ? people
-          : legacyNames
-              .map((n) => SitePerson(userId: n, displayName: n))
-              .toList(),
-      createdByUserId: json['created_by_user_id'] as String?,
+          : [
+              if (resolvedCreator != null) resolvedCreator,
+              ...resolvedAlso,
+            ],
+      createdByPerson: resolvedCreator,
+      alsoSharedPeople: resolvedAlso,
+      createdByUserId: createdById,
+      siteCreatedAt: json['site_created_at'] != null
+          ? DateTime.tryParse(json['site_created_at'] as String)
+          : null,
+      siteUpdatedAt: json['site_updated_at'] != null
+          ? DateTime.tryParse(json['site_updated_at'] as String)
+          : null,
+      isCatalogSite: json['is_catalog_site'] as bool? ?? false,
       isPhysicalPlace: json['is_physical_place'] as bool? ?? true,
       googlePlaceId: json['google_place_id'] as String?,
     );
@@ -281,13 +353,22 @@ class UserSave {
     }
     final createdBy = site['created_by'] as String?;
     final creatorProf = site['profiles'];
-    final people = SitePerson.withCreator(
+    final contribs = SitePerson.parseContributorRows(
+      site['site_contributors'] as List?,
+    );
+    final creator = SitePerson.parseCreator(
       createdById: createdBy,
       creatorProfile: creatorProf is Map ? creatorProf : null,
-      contributors: SitePerson.parseContributorRows(
-        site['site_contributors'] as List?,
-      ),
     );
+    final also = SitePerson.alsoSharedExcludingCreator(
+      contributors: contribs,
+      createdById: createdBy,
+    );
+    final people = [
+      if (creator != null) creator,
+      ...also,
+    ];
+    final ext = site['external_id'] as String?;
     return UserSave(
       id: json['id'] as String,
       userId: json['user_id'] as String,
@@ -310,9 +391,18 @@ class UserSave {
       isPossibleDuplicate: json['is_possible_duplicate'] as bool? ?? false,
       possibleDuplicateOfSiteId:
           json['possible_duplicate_of_site_id'] as String?,
-      alsoSharedBy: people.map((p) => p.tooltipName).toList(),
+      alsoSharedBy: also.map((p) => p.tooltipName).toList(),
       sharedPeople: people,
+      createdByPerson: creator,
+      alsoSharedPeople: also,
       createdByUserId: createdBy,
+      siteCreatedAt: site['created_at'] != null
+          ? DateTime.tryParse(site['created_at'] as String)
+          : null,
+      siteUpdatedAt: site['updated_at'] != null
+          ? DateTime.tryParse(site['updated_at'] as String)
+          : null,
+      isCatalogSite: ext != null && ext.trim().isNotEmpty,
       isPhysicalPlace: site['is_physical_place'] as bool? ?? true,
       googlePlaceId: site['google_place_id'] as String?,
     );

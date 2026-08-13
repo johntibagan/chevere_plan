@@ -200,7 +200,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get siteDetailTabReviews => 'Reseñas';
 
   @override
-  String get siteDetailTabMore => 'Más';
+  String get siteDetailTabMore => 'Más info';
 
   @override
   String get siteDetailLocation => 'Ubicación';
@@ -232,6 +232,31 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get siteDetailAlsoShared => 'También guardado por';
+
+  @override
+  String get siteDetailCreatedBy => 'Creado por';
+
+  @override
+  String get siteDetailCreatedAt => 'Fecha de creación';
+
+  @override
+  String get siteDetailUpdatedAt => 'Última actualización';
+
+  @override
+  String siteDetailJoinedAt(String date) {
+    return 'Se sumó el $date';
+  }
+
+  @override
+  String get siteDetailCatalogBadge => 'Sitio del catálogo público';
+
+  @override
+  String siteDetailYourSaveAt(String date) {
+    return 'Lo guardaste el $date';
+  }
+
+  @override
+  String get siteDetailTraceEmpty => 'Sin más datos de trazabilidad por ahora.';
 
   @override
   String get siteDetailPhotos => 'Fotos';
