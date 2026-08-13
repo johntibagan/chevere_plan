@@ -396,12 +396,16 @@ class UserSave {
       ...also,
     ];
     final ext = site['external_id'] as String?;
+    // La ficha refleja el sitio: si el lugar es público, no mostrar «Privado»
+    // por un user_save desfasado (p. ej. tras vincular).
+    final sitePublic = site['is_public'] as bool?;
+    final savePublic = json['is_public'] as bool? ?? false;
     return UserSave(
       id: json['id'] as String,
       userId: json['user_id'] as String,
       siteId: json['site_id'] as String,
       status: SiteStatus.fromDb(json['status'] as String?),
-      isPublic: json['is_public'] as bool? ?? false,
+      isPublic: sitePublic ?? savePublic,
       siteName: (site['name'] as String?) ?? 'Sin nombre',
       sourceUrl: json['source_url'] as String?,
       sourceNetwork: json['source_network'] as String?,

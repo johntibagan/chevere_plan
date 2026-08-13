@@ -22,6 +22,7 @@ import '../../features/saves/data/place_geocoder.dart';
 import '../../features/saves/data/save_models.dart';
 import '../../features/saves/data/saves_repository.dart';
 import '../../features/saves/data/site_ficha.dart';
+import '../../features/saves/data/site_reviews_repository.dart';
 import '../../features/search/data/search_repository.dart';
 import '../cache/cache_ttl.dart';
 import '../cache/entity_cache_store.dart';
@@ -51,6 +52,10 @@ final profileRepositoryProvider = Provider<ProfileRepository>((ref) {
 
 final savesRepositoryProvider = Provider<SavesRepository>((ref) {
   return SavesRepository(client: ref.watch(supabaseClientProvider));
+});
+
+final siteReviewsRepositoryProvider = Provider<SiteReviewsRepository>((ref) {
+  return SiteReviewsRepository(client: ref.watch(supabaseClientProvider));
 });
 
 final adminRepositoryProvider = Provider<AdminRepository>((ref) {

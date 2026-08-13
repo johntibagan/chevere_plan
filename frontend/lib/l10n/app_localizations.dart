@@ -1189,13 +1189,37 @@ abstract class AppLocalizations {
   /// No description provided for @sameSiteYes.
   ///
   /// In es, this message translates to:
-  /// **'Sí, es el mismo'**
+  /// **'Usarlo y reseñar'**
   String get sameSiteYes;
+
+  /// No description provided for @sameSiteReviewPublic.
+  ///
+  /// In es, this message translates to:
+  /// **'Usarlo + reseña pública'**
+  String get sameSiteReviewPublic;
+
+  /// No description provided for @sameSiteJournalPrivate.
+  ///
+  /// In es, this message translates to:
+  /// **'Usarlo + bitácora privada'**
+  String get sameSiteJournalPrivate;
+
+  /// No description provided for @sameSiteKeepEditing.
+  ///
+  /// In es, this message translates to:
+  /// **'Seguir editando'**
+  String get sameSiteKeepEditing;
+
+  /// No description provided for @sameSiteHardBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Ya existe un sitio público parecido. Para evitar duplicados, úsalo (quedarás como «compartido por»). Elige si tu comentario es público (promedio) o una bitácora solo para ti.'**
+  String get sameSiteHardBody;
 
   /// No description provided for @sameSiteStaffHint.
   ///
   /// In es, this message translates to:
-  /// **'Hay un sitio público parecido. Edítalo desde su ficha o crea el tuyo como nuevo.'**
+  /// **'Hay un sitio público parecido. Edítalo desde su ficha; no creamos duplicados.'**
   String get sameSiteStaffHint;
 
   /// No description provided for @privacyBlockTitle.
@@ -1215,6 +1239,90 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Otros usuarios ya lo guardaron, aportaron o lo usan en planes. Mientras eso exista, debe seguir público.'**
   String get privacyBlockOthers;
+
+  /// No description provided for @reviewEditorTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Tu reseña'**
+  String get reviewEditorTitle;
+
+  /// No description provided for @reviewRatingLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Puntuación'**
+  String get reviewRatingLabel;
+
+  /// No description provided for @reviewCommentLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Comentario'**
+  String get reviewCommentLabel;
+
+  /// No description provided for @reviewAddPhoto.
+  ///
+  /// In es, this message translates to:
+  /// **'Foto'**
+  String get reviewAddPhoto;
+
+  /// No description provided for @reviewSave.
+  ///
+  /// In es, this message translates to:
+  /// **'Guardar reseña'**
+  String get reviewSave;
+
+  /// No description provided for @reviewMaxPhotos.
+  ///
+  /// In es, this message translates to:
+  /// **'Máximo 3 fotos por reseña.'**
+  String get reviewMaxPhotos;
+
+  /// No description provided for @reviewEmpty.
+  ///
+  /// In es, this message translates to:
+  /// **'Aún no hay reseñas. Sé el primero.'**
+  String get reviewEmpty;
+
+  /// No description provided for @reviewWrite.
+  ///
+  /// In es, this message translates to:
+  /// **'Escribir reseña'**
+  String get reviewWrite;
+
+  /// No description provided for @reviewEditMine.
+  ///
+  /// In es, this message translates to:
+  /// **'Editar mi reseña'**
+  String get reviewEditMine;
+
+  /// No description provided for @reviewMakePublic.
+  ///
+  /// In es, this message translates to:
+  /// **'Reseña pública'**
+  String get reviewMakePublic;
+
+  /// No description provided for @reviewPublicHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Visible en la ficha y cuenta para el promedio'**
+  String get reviewPublicHint;
+
+  /// No description provided for @reviewPrivateHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Solo tú la ves (bitácora / historial)'**
+  String get reviewPrivateHint;
+
+  /// No description provided for @reviewPrivateBadge.
+  ///
+  /// In es, this message translates to:
+  /// **'Privada'**
+  String get reviewPrivateBadge;
+
+  /// No description provided for @reviewAvg.
+  ///
+  /// In es, this message translates to:
+  /// **'{avg} · {count} reseñas'**
+  String reviewAvg(String avg, int count);
 
   /// No description provided for @locationPickerTitle.
   ///

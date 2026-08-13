@@ -32,6 +32,12 @@ begin
   if to_regclass('public.user_saves') is not null then
     truncate table public.user_saves restart identity cascade;
   end if;
+  if to_regclass('public.site_review_photos') is not null then
+    truncate table public.site_review_photos restart identity cascade;
+  end if;
+  if to_regclass('public.site_reviews') is not null then
+    truncate table public.site_reviews restart identity cascade;
+  end if;
 
   -- Solo sitios de usuario (sin external_id). Catálogo masivo se conserva.
   if to_regclass('public.sites') is not null then

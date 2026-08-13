@@ -214,6 +214,8 @@ begin
   update public.user_saves
   set
     site_id = p_existing_site_id,
+    is_public = true,
+    status = 'complete',
     is_possible_duplicate = true,
     possible_duplicate_of_site_id = p_existing_site_id,
     updated_at = now()

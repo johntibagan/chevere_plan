@@ -99,11 +99,11 @@ Propuesta de árbol (Google Places / OSM tourism·leisure·amenity + MINCIT gast
 ## 5. Capa social y anti-duplicados
 
 - Guardado público = visible para otros usuarios y disponible para búsquedas/planes de terceros (mediante checkbox "incluir guardados públicos").
-- **Detección de duplicados**: coincidencia de coordenadas GPS (radio ~50-100 m) + similitud de nombre.
-  - Al detectar posible duplicado, se le pregunta al usuario si es el mismo sitio o uno nuevo (no se fusiona automáticamente).
-- Si un usuario decide hacer público un sitio que ya existe públicamente:
-  - Se mantiene el registro original, añadiendo "compartido también por [usuario]".
-  - El registro del segundo usuario queda marcado como "posible duplicado", con opción de eliminarlo desde su lado.
+- **Cero sitios públicos duplicados.** Detección por coordenadas (~50–100 m) + similitud de nombre.
+  - Si ya existe un sitio público parecido: se **vincula** al existente (“compartido también por”) y se pregunta si quiere **reseña pública** o **bitácora privada**. **No** se crea otro sitio.
+  - El chequeo se reitera al guardar; si sigue habiendo match, solo se puede vincular+reseñar o cancelar.
+- El **creador** del sitio público (y admin/root) puede editar la ficha; descartar quita el guardado/aporte del usuario sin borrar el sitio si otros lo usan.
+- Catálogo masivo (`external_id`) no se hace privado.
 
 ---
 
@@ -174,9 +174,9 @@ Propuesta de árbol (Google Places / OSM tourism·leisure·amenity + MINCIT gast
 ## 8. Ficha del sitio (tarjeta pública)
 
 ### 8.1 Datos base (gratuitos, alimentados por la comunidad)
-- Nombre, dirección, fotos (máx. 15), categorías.
+- Nombre, dirección, fotos de galería (máx. 15 por sitio), categorías.
+- **Reseñas:** cada usuario puede dejar **una** reseña por sitio (editable): comentario, puntuación 1–5 estrellas, hasta **3 fotos** propias de la reseña. En un sitio **público**, la reseña puede ser **pública** (visible en ficha y cuenta para el promedio) o **privada** (bitácora / historial solo del autor). Trazabilidad: usuario, fecha de creación y última edición. El promedio en ficha usa solo reseñas públicas.
 - **Rango de precio público**: promedio calculado a partir de reportes de precio que dejan los propios usuarios (o "gratis" si aplica). Requiere un mínimo de reportes distintos antes de mostrarse, para evitar manipulación.
-- Sin sistema de estrellas ni comentarios en el MVP (queda para fase futura).
 
 ### 8.2 Ficha enriquecida por el dueño del negocio (de pago)
 
@@ -355,7 +355,7 @@ Sección exclusiva para **root y administradores**, con las siguientes capacidad
 ### Fase 3 — Expansión
 - iOS.
 - Moderación automática (filtros de texto, SafeSearch de imágenes, sistema de "strikes").
-- Sistema de reseñas/calificaciones para sitios.
+- ~~Sistema de reseñas/calificaciones para sitios.~~ (adelantado; ver §8.1)
 - Presupuestos/paquetes promocionales para negocios.
 - Expansión geográfica fuera de Colombia (sujeto a validación de éxito y marco legal de cada país).
 

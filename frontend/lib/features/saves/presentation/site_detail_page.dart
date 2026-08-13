@@ -21,6 +21,7 @@ import '../data/save_models.dart';
 import '../data/site_ficha.dart';
 import '../data/social_link_models.dart';
 import 'save_place_page.dart';
+import 'site_reviews_tab.dart';
 import 'site_status_l10n.dart';
 import 'social_link_preview_card.dart';
 
@@ -553,9 +554,10 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
                             ? () => _openDirectionsOnMaps(ficha)
                             : null,
                       ),
-                      _PlaceholderTab(
-                        title: l10n.siteDetailReviewsSoonTitle,
-                        body: l10n.siteDetailReviewsSoonBody,
+                      SiteReviewsTab(
+                        siteId: widget.siteId,
+                        siteName: ficha.name,
+                        siteIsPublic: ficha.isPublic,
                       ),
                       _TraceabilityTab(ficha: ficha),
                     ],
@@ -618,6 +620,7 @@ class _InfoTab extends StatelessWidget {
           runSpacing: 8,
           children: [
             VisibilityBadge(
+              // Privacidad del lugar (sites), no del checkbox del form al vincular.
               isPublic: ficha.isOwn ? ficha.isPublic : true,
             ),
             if (ficha.isOwn && ficha.ownSave != null)
@@ -1088,48 +1091,6 @@ class _PhotoTile extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _PlaceholderTab extends StatelessWidget {
-  const _PlaceholderTab({required this.title, required this.body});
-
-  final String title;
-  final String body;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(
-              Icons.construction_outlined,
-              size: 40,
-              color: AppColors.muted,
-            ),
-            const SizedBox(height: 12),
-            Text(
-              title,
-              textAlign: TextAlign.center,
-              style: GoogleFonts.plusJakartaSans(
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-                color: AppColors.foreground,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              body,
-              textAlign: TextAlign.center,
-              style: const TextStyle(color: AppColors.muted),
-            ),
-          ],
-        ),
       ),
     );
   }

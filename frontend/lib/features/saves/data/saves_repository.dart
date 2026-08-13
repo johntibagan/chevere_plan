@@ -125,28 +125,15 @@ class SavesRepository {
       },
     );
 
-    final located = SavePolicies.hasLocation(
-      city: input.city,
-      addressLine: input.addressLine,
-      latitude: input.latitude,
-      longitude: input.longitude,
-    );
-    final isPublic =
-        input.isPhysicalPlace && input.isPublic && located;
-    final status = computeStatus(input);
-    final draftRemindAt = status != SiteStatus.complete
-        ? DateTime.now().toUtc().add(SavePolicies.draftRemindAfter)
-        : null;
-
     final save = await _client
         .from('user_saves')
         .update({
-          'status': status.dbValue,
-          'is_public': isPublic,
+          'status': 'complete',
+          'is_public': true,
           'source_url': input.sourceUrl,
           'source_network': input.sourceNetwork,
           'notes': input.notes,
-          'draft_remind_at': draftRemindAt?.toIso8601String(),
+          'draft_remind_at': null,
         })
         .eq('id', saveId)
         .eq('user_id', uid)
@@ -175,9 +162,21 @@ class SavesRepository {
 
     final status = computeStatus(input);
 
-    // Caso: confirmar mismo sitio público existente (§5)
+    // Caso: vincular a sitio público existente (cero duplicados).
+    // No crea sitio; no toca sites.is_public; el guardado queda público como el sitio.
     if (input.linkToExistingSiteId != null) {
       final existingId = input.linkToExistingSiteId!;
+      final siteRow = await _client
+          .from('sites')
+          .select('id, is_public, status')
+          .eq('id', existingId)
+          .maybeSingle();
+      if (siteRow == null || siteRow['is_public'] != true) {
+        throw const AppUserError(
+          'El sitio a vincular ya no está público. Intenta de nuevo.',
+        );
+      }
+
       await _client.from('site_contributors').upsert({
         'site_id': existingId,
         'user_id': uid,
@@ -192,8 +191,8 @@ class SavesRepository {
           .upsert({
             'user_id': uid,
             'site_id': existingId,
-            'status': status.dbValue,
-            'is_public': isPublic,
+            'status': 'complete',
+            'is_public': true,
             'source_url': input.sourceUrl,
             'source_network': input.sourceNetwork,
             'notes': input.notes,

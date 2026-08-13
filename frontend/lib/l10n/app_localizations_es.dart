@@ -604,11 +604,24 @@ class AppLocalizationsEs extends AppLocalizations {
   String get sameSiteNew => 'Es uno nuevo';
 
   @override
-  String get sameSiteYes => 'Sí, es el mismo';
+  String get sameSiteYes => 'Usarlo y reseñar';
+
+  @override
+  String get sameSiteReviewPublic => 'Usarlo + reseña pública';
+
+  @override
+  String get sameSiteJournalPrivate => 'Usarlo + bitácora privada';
+
+  @override
+  String get sameSiteKeepEditing => 'Seguir editando';
+
+  @override
+  String get sameSiteHardBody =>
+      'Ya existe un sitio público parecido. Para evitar duplicados, úsalo (quedarás como «compartido por»). Elige si tu comentario es público (promedio) o una bitácora solo para ti.';
 
   @override
   String get sameSiteStaffHint =>
-      'Hay un sitio público parecido. Edítalo desde su ficha o crea el tuyo como nuevo.';
+      'Hay un sitio público parecido. Edítalo desde su ficha; no creamos duplicados.';
 
   @override
   String get privacyBlockTitle => 'No se puede hacer privado';
@@ -620,6 +633,51 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get privacyBlockOthers =>
       'Otros usuarios ya lo guardaron, aportaron o lo usan en planes. Mientras eso exista, debe seguir público.';
+
+  @override
+  String get reviewEditorTitle => 'Tu reseña';
+
+  @override
+  String get reviewRatingLabel => 'Puntuación';
+
+  @override
+  String get reviewCommentLabel => 'Comentario';
+
+  @override
+  String get reviewAddPhoto => 'Foto';
+
+  @override
+  String get reviewSave => 'Guardar reseña';
+
+  @override
+  String get reviewMaxPhotos => 'Máximo 3 fotos por reseña.';
+
+  @override
+  String get reviewEmpty => 'Aún no hay reseñas. Sé el primero.';
+
+  @override
+  String get reviewWrite => 'Escribir reseña';
+
+  @override
+  String get reviewEditMine => 'Editar mi reseña';
+
+  @override
+  String get reviewMakePublic => 'Reseña pública';
+
+  @override
+  String get reviewPublicHint =>
+      'Visible en la ficha y cuenta para el promedio';
+
+  @override
+  String get reviewPrivateHint => 'Solo tú la ves (bitácora / historial)';
+
+  @override
+  String get reviewPrivateBadge => 'Privada';
+
+  @override
+  String reviewAvg(String avg, int count) {
+    return '$avg · $count reseñas';
+  }
 
   @override
   String get locationPickerTitle => 'Elegir ubicación';

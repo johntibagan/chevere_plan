@@ -36,6 +36,5 @@ No bloquean el uso diario. Al implementar, tacha aquí y ajusta el código.
 
 ## Mis notas
 - Trazabilidad: Todo debe tener fecha/usuario de creacion y fecha/usuario edicion, y demas campos necesarios para trazabilidades
-- En lo sitios incluir reseñas, igual debe tener Trazabilidad
-- En los sitios incluir puntuacion con estrellas, y se va a mostrar el promedio para los publicos.
+- ~~Reseñas / estrellas / promedio en sitios~~ (site_reviews)
 - En el sitio incluir.

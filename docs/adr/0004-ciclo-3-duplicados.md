@@ -1,18 +1,19 @@
-# ADR 0004 — Ciclo 3: privacidad, anti-duplicados, atribución
+# ADR 0004 — Anti-duplicados, atribución y reseñas
 
 ## Contexto
 
-Especificación §5; prompt Ciclo 3. Privado por defecto ya en Ciclo 2.
+Especificación §5 y §8.1. Objetivo de producto: **no tener sitios públicos duplicados**.
 
 ## Decisiones
 
 1. **Radio de duplicado:** 100 m (`ST_DWithin` sobre `geography`).
-2. **Nombre:** extensión `pg_trgm`; umbral `similarity(lower(name), lower(input)) >= 0.35`, o igualdad normalizada. Sin coords: mismo criterio + `city` ILIKE.
-3. **Confirmación manual:** diálogo “¿Es el mismo sitio?” → *Sí, es el mismo* | *Es uno nuevo*. Nunca fusionar solo.
-4. **Si elige el mismo (y público):** el `user_save` apunta al `site_id` original; fila en `site_contributors` (“compartido también por”); `user_saves.is_possible_duplicate = true` con opción de descartar su guardado.
-5. **Si elige uno nuevo:** se crea sitio propio como hasta ahora.
-6. **Coords en guardado:** RPC `set_site_location(site_id, lng, lat)` para poblar PostGIS (el cliente no manda WKT crudo).
+2. **Nombre:** extensión `pg_trgm`; umbral `similarity >= 0.35` (con coords) o `>= 0.45` + ciudad (sin coords).
+3. **Si hay match público:** no se crea otro sitio. El usuario **vincula** su guardado al `site_id` existente, entra en `site_contributors` (“compartido también por”) y elige **reseña pública** (promedio) o **bitácora privada**.
+4. **Chequeo doble:** aviso al detectar datos suficientes y **reiteración al guardar**. Si sigue el match: vincular (público/privado) o cancelar (sin “crear uno nuevo”).
+5. **Reseñas:** tabla `site_reviews` (1 por usuario/sitio, `is_public`) + `site_review_photos` (máx. 3). Promedio solo con reseñas públicas.
+6. **Privilegios de ficha:** creador del sitio público y staff editan; descartar = quitar guardado/aporte propio sin borrar el sitio si hay asociaciones de terceros.
+7. **Coords:** RPC `set_site_location(site_id, lng, lat)`.
 
-## Ciclo 2 — cierre
+## Historial
 
-Entregable OK (share → borrador → lista). Aplazado: editar borrador in-app, Places API, autocomplete textual de categorías.
+- Ciclo 3 inicial permitía “Es uno nuevo”; reemplazado por política de cero duplicados públicos + reseñas.
