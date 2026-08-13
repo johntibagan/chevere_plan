@@ -20,9 +20,10 @@ class SavesRepository {
       'id, user_id, site_id, status, is_public, source_url, source_network, notes, created_at, '
       'is_possible_duplicate, possible_duplicate_of_site_id, '
       'sites!user_saves_site_id_fkey(name, city, city_id, department, department_id, address_line, is_public, '
-      'is_physical_place, google_place_id, '
+      'is_physical_place, google_place_id, created_by, '
+      'profiles!sites_created_by_fkey(display_name, avatar_url), '
       'site_categories(categories(name_i18n)), '
-      'site_contributors(user_id, profiles(display_name)))';
+      'site_contributors(user_id, profiles(display_name, avatar_url)))';
 
   /// Select liviano para Inicio (cards): sin contributors, notes, address, etc.
   static const _saveSelectSummary =
@@ -365,6 +366,130 @@ class SavesRepository {
     return (lat, lng);
   }
 
+  /// Precarga para que admin/root editen un sitio del catálogo (sin guardado propio).
+  Future<SiteEditData> loadSiteForStaffEdit(String siteId) async {
+    final row = await _client
+        .from('sites')
+        .select(
+          'id, name, city, city_id, department, department_id, address_line, '
+          'is_public, is_physical_place, google_place_id',
+        )
+        .eq('id', siteId)
+        .maybeSingle();
+
+    if (row == null) {
+      throw const AppUserError('No se encontró el sitio.');
+    }
+
+    final catRows = await _client
+        .from('site_categories')
+        .select('category_id')
+        .eq('site_id', siteId);
+    final categoryIds = (catRows as List)
+        .map((e) => (e as Map)['category_id'] as String)
+        .toList();
+
+    double? lat;
+    double? lng;
+    try {
+      final coords = await _client.rpc(
+        'get_site_coords',
+        params: {'p_site_id': siteId},
+      );
+      final parsed = _parseSiteCoords(coords);
+      lat = parsed.$1;
+      lng = parsed.$2;
+    } catch (_) {}
+
+    final m = Map<String, dynamic>.from(row);
+    return SiteEditData(
+      siteId: m['id'] as String,
+      name: (m['name'] as String?) ?? 'Sitio',
+      city: m['city'] as String?,
+      cityId: m['city_id'] as String?,
+      department: m['department'] as String?,
+      departmentId: m['department_id'] as String?,
+      addressLine: m['address_line'] as String?,
+      isPublic: m['is_public'] as bool? ?? true,
+      isPhysicalPlace: m['is_physical_place'] as bool? ?? true,
+      googlePlaceId: m['google_place_id'] as String?,
+      categoryIds: categoryIds,
+      latitude: lat,
+      longitude: lng,
+    );
+  }
+
+  /// Actualiza solo el sitio (creador o admin/root). No toca `user_saves`.
+  Future<void> updateSiteWithoutSave({
+    required String siteId,
+    required SaveDraftInput input,
+  }) async {
+    final uid = _uid;
+    if (uid == null) {
+      throw const AppUserError('Debes iniciar sesión para guardar.');
+    }
+
+    final name = input.name.trim().isEmpty ? 'Sin nombre' : input.name.trim();
+    final located = SavePolicies.hasLocation(
+      city: input.city,
+      addressLine: input.addressLine,
+      latitude: input.latitude,
+      longitude: input.longitude,
+    );
+    final isPublic =
+        input.isPhysicalPlace && input.isPublic && located;
+    final status = computeStatus(input);
+
+    await _client.from('sites').update({
+      'name': name,
+      'status': status.dbValue,
+      'is_public': isPublic,
+      'is_physical_place': input.isPhysicalPlace,
+      'address_line': input.addressLine?.trim(),
+      'city': input.city?.trim(),
+      'city_id': input.cityId,
+      'department': input.department?.trim(),
+      'department_id': input.departmentId,
+    }).eq('id', siteId);
+
+    if (input.latitude != null && input.longitude != null) {
+      await _client.rpc(
+        'set_site_location',
+        params: {
+          'p_site_id': siteId,
+          'p_lng': input.longitude,
+          'p_lat': input.latitude,
+        },
+      );
+      await _client.from('plan_stops').update({
+        'lat': input.latitude,
+        'lng': input.longitude,
+      }).eq('site_id', siteId);
+    }
+
+    await _client.from('site_categories').delete().eq('site_id', siteId);
+    if (input.categoryIds.isNotEmpty) {
+      await _client.from('site_categories').insert(
+            input.categoryIds
+                .map(
+                  (cid) => {
+                    'site_id': siteId,
+                    'category_id': cid,
+                    'added_by': uid,
+                  },
+                )
+                .toList(),
+          );
+    }
+
+    if (isPublic) {
+      await _client.from('site_contributors').upsert({
+        'site_id': siteId,
+        'user_id': uid,
+      });
+    }
+  }
+
   Future<UserSave> updateSave({
     required String saveId,
     required String siteId,
@@ -476,9 +601,10 @@ class SavesRepository {
 
   static const _siteSelect =
       'id, name, city, department, address_line, is_public, is_physical_place, '
-      'google_place_id, '
+      'google_place_id, created_by, '
+      'profiles!sites_created_by_fkey(display_name, avatar_url), '
       'site_categories(categories(name_i18n)), '
-      'site_contributors(user_id, profiles(display_name))';
+      'site_contributors(user_id, profiles(display_name, avatar_url))';
 
   /// Ficha de sitio (propia o pública visible por RLS).
   Future<SiteFicha> loadSiteFicha(String siteId) async {

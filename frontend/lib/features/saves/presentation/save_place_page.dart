@@ -40,12 +40,18 @@ class SavePlacePage extends ConsumerStatefulWidget {
     super.key,
     this.initialSharedText,
     this.existingSaveId,
+    this.existingSiteId,
     required this.savesRepository,
-  });
+  }) : assert(
+          existingSaveId == null || existingSiteId == null,
+          'Usar existingSaveId o existingSiteId, no ambos',
+        );
 
   final String? initialSharedText;
   /// Si viene, carga y actualiza ese guardado (completar borrador / editar).
   final String? existingSaveId;
+  /// Admin/root o creador sin guardado: edita sitio sin `user_saves`.
+  final String? existingSiteId;
   final SavesRepository savesRepository;
 
   @override
@@ -98,16 +104,23 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
   bool _categoriesUserTouched = false;
   bool _categoryWasAutoSuggested = false;
 
-  bool get _isEditing => _editSaveId != null;
+  bool get _isEditing => _editSaveId != null || _editSiteId != null;
+  bool get _isStaffSiteEdit =>
+      _editSaveId == null && _editSiteId != null;
 
-  void _bindGeoFromSave(UserSave s) {
+  void _bindGeo({
+    String? departmentId,
+    String? cityId,
+    String? department,
+    String? city,
+  }) {
     final cat = _geoCatalog;
     if (cat == null) return;
-    if (s.departmentId != null) {
-      _selectedDept = cat.departmentById(s.departmentId!);
+    if (departmentId != null) {
+      _selectedDept = cat.departmentById(departmentId);
     }
-    if (s.cityId != null) {
-      _selectedCity = cat.cityById(s.cityId!);
+    if (cityId != null) {
+      _selectedCity = cat.cityById(cityId);
       if (_selectedCity != null) {
         _selectedDept ??= cat.departmentById(_selectedCity!.departmentId);
       }
@@ -115,8 +128,8 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
     if (_selectedDept == null || _selectedCity == null) {
       final m = GeoFuzzy.match(
         catalog: cat,
-        departmentHint: s.department,
-        cityHint: s.city,
+        departmentHint: department,
+        cityHint: city,
       );
       _selectedDept ??= m.department;
       if (_selectedDept != null) {
@@ -193,13 +206,19 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
       });
 
       final saveId = widget.existingSaveId;
+      final siteIdOnly = widget.existingSiteId;
       if (saveId != null) {
         final data = await widget.savesRepository.loadForEdit(saveId);
         if (!mounted) return;
         final s = data.save;
         _nameCtrl.text = s.siteName == 'Sin nombre' ? '' : s.siteName;
         _addressCtrl.text = s.addressLine ?? '';
-        _bindGeoFromSave(s);
+        _bindGeo(
+          departmentId: s.departmentId,
+          cityId: s.cityId,
+          department: s.department,
+          city: s.city,
+        );
         final links = await widget.savesRepository.listSocialLinks(s.siteId);
         if (!mounted) return;
         setState(() {
@@ -237,6 +256,49 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
               ),
             );
           }
+          _loadingCats = false;
+        });
+      } else if (siteIdOnly != null) {
+        final data =
+            await widget.savesRepository.loadSiteForStaffEdit(siteIdOnly);
+        if (!mounted) return;
+        _nameCtrl.text = data.name == 'Sin nombre' ? '' : data.name;
+        _addressCtrl.text = data.addressLine ?? '';
+        _bindGeo(
+          departmentId: data.departmentId,
+          cityId: data.cityId,
+          department: data.department,
+          city: data.city,
+        );
+        final links =
+            await widget.savesRepository.listSocialLinks(data.siteId);
+        if (!mounted) return;
+        setState(() {
+          _editSaveId = null;
+          _editSiteId = data.siteId;
+          _isPublic = data.isPublic;
+          _isPhysical = data.isPhysicalPlace;
+          _lat = data.latitude;
+          _lng = data.longitude;
+          _selectedCategoryIds
+            ..clear()
+            ..addAll(data.categoryIds);
+          _categoriesUserTouched = data.categoryIds.isNotEmpty;
+          _categoryWasAutoSuggested = false;
+          _socialLinks
+            ..clear()
+            ..addAll(
+              links.map(
+                (l) => SocialLinkDraft(
+                  url: l.url,
+                  network: l.network,
+                  title: l.title,
+                  description: l.description,
+                  imageUrl: l.imageUrl,
+                  existingId: l.id,
+                ),
+              ),
+            );
           _loadingCats = false;
         });
       } else {
@@ -718,9 +780,13 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
         categoryIsExplicit: categoryIsExplicit,
       );
 
-      final UserSave saved;
       final editSaveId = _editSaveId;
       final editSiteId = _editSiteId;
+
+      String resultSiteId;
+      UserSave? saved;
+      var isPossibleDuplicate = false;
+      var status = widget.savesRepository.computeStatus(input);
 
       if (editSaveId != null && editSiteId != null) {
         saved = await widget.savesRepository.updateSave(
@@ -728,6 +794,16 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
           siteId: editSiteId,
           input: input,
         );
+        resultSiteId = saved.siteId;
+        isPossibleDuplicate = saved.isPossibleDuplicate;
+        status = saved.status;
+      } else if (editSiteId != null) {
+        await widget.savesRepository.updateSiteWithoutSave(
+          siteId: editSiteId,
+          input: input,
+        );
+        resultSiteId = editSiteId;
+        status = widget.savesRepository.computeStatus(input);
       } else {
         String? linkToExisting;
         final shouldCheckDuplicates = _isPhysical &&
@@ -771,6 +847,9 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
             categoryIsExplicit: categoryIsExplicit,
           ),
         );
+        resultSiteId = saved.siteId;
+        isPossibleDuplicate = saved.isPossibleDuplicate;
+        status = saved.status;
       }
 
       if (_pendingPhoto == null &&
@@ -791,7 +870,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
       if (_pendingPhoto != null) {
         try {
           await widget.savesRepository.uploadPhoto(
-            siteId: saved.siteId,
+            siteId: resultSiteId,
             file: _pendingPhoto!,
           );
         } catch (e) {
@@ -813,56 +892,65 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
           );
         }
         await widget.savesRepository.replaceSocialLinks(
-          siteId: saved.siteId,
+          siteId: resultSiteId,
           links: linksToSave,
         );
       } catch (_) {
         // Tabla puede no existir aún si no aplicaron migración 12.
       }
 
-      if (saved.status == SiteStatus.complete) {
-        await ref.read(draftReminderServiceProvider).cancelForSave(saved.id);
-      } else {
-        await ref.read(draftReminderServiceProvider).scheduleForSave(
-          saveId: saved.id,
-          title: saved.siteName,
-        );
+      if (saved != null) {
+        if (saved.status == SiteStatus.complete) {
+          await ref.read(draftReminderServiceProvider).cancelForSave(saved.id);
+        } else {
+          await ref.read(draftReminderServiceProvider).scheduleForSave(
+            saveId: saved.id,
+            title: saved.siteName,
+          );
+        }
       }
 
       if (!mounted) return;
-      ref.invalidate(mySavesProvider);
-      final uid = ref.read(supabaseClientProvider).auth.currentUser?.id;
-      if (uid != null) {
-        unawaited(
-          ref
-              .read(entityCacheStoreProvider)
-              .invalidate(CacheKeys.mySavesSummary(uid)),
-        );
+      if (!_isStaffSiteEdit) {
+        ref.invalidate(mySavesProvider);
+        final uid = ref.read(supabaseClientProvider).auth.currentUser?.id;
+        if (uid != null) {
+          unawaited(
+            ref
+                .read(entityCacheStoreProvider)
+                .invalidate(CacheKeys.mySavesSummary(uid)),
+          );
+        }
       }
-      if (saved.siteId.isNotEmpty) {
+      if (resultSiteId.isNotEmpty) {
         unawaited(
           ref
               .read(entityCacheStoreProvider)
-              .invalidate(CacheKeys.siteFicha(saved.siteId)),
+              .invalidate(CacheKeys.siteFicha(resultSiteId)),
         );
-        ref.invalidate(siteFichaProvider(saved.siteId));
+        ref.invalidate(siteFichaProvider(resultSiteId));
       }
       final l10n = context.l10n;
+      final isPublicResult = saved?.isPublic ??
+          (input.isPhysicalPlace && input.isPublic && _hasFormLocation);
       await showDialog<void>(
         context: context,
         builder: (context) => AlertDialog(
           title: Text(_isEditing ? '¡Actualizado!' : '¡Lugar guardado!'),
           content: Text(
             [
-              if (saved.isPossibleDuplicate)
+              if (_isStaffSiteEdit)
+                'Cambios del sitio guardados.'
+              else if (isPossibleDuplicate)
                 'Quedó vinculado a un sitio público existente (posible duplicado).'
-              else if (saved.status == SiteStatus.complete)
+              else if (status == SiteStatus.complete)
                 'Quedó completo en tu lista.'
               else if (_isPhysical && (lat == null || lng == null))
                 l10n.saveNeedsMapPoint
               else
-                l10n.saveStatusAfterSave(saved.status.label(l10n)),
-              if (!saved.isPublic) ' Privado por defecto.',
+                l10n.saveStatusAfterSave(status.label(l10n)),
+              if (!_isStaffSiteEdit && !isPublicResult)
+                ' Privado por defecto.',
             ].join(),
           ),
           actions: [
@@ -874,7 +962,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
         ),
       );
       if (!mounted) return;
-      Navigator.pop(context, saved);
+      Navigator.pop(context, saved ?? resultSiteId);
     } catch (e) {
       if (!mounted) return;
       setState(() => _saving = false);

@@ -323,21 +323,22 @@ def _refresh_divipola_sql() -> Path:
     return out
 
 
-def _import_mass_sites() -> None:
+def _import_mass_sites(conn) -> None:
+    """Carga masiva en la misma conexión (evita reconectar al pooler)."""
     if not CATALOG_JSON.is_file():
         raise SystemExit(f"Falta dataset: {CATALOG_JSON}")
+    import importlib.util
+
     importer = SCRIPTS / "06_import_public_sites.py"
-    print(f"> carga masiva sitios desde {CATALOG_JSON.name} ...", flush=True)
-    subprocess.check_call(
-        [
-            sys.executable,
-            str(importer),
-            str(CATALOG_JSON),
-            "--owner-email",
-            CATALOG_OWNER_EMAIL,
-        ],
-        cwd=str(ROOT),
+    spec = importlib.util.spec_from_file_location(
+        "import_public_sites", importer
     )
+    if spec is None or spec.loader is None:
+        raise SystemExit(f"No se pudo cargar {importer}")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    print(f"> carga masiva sitios desde {CATALOG_JSON.name} ...", flush=True)
+    mod.run_import(conn, CATALOG_JSON, owner_email=CATALOG_OWNER_EMAIL)
 
 
 def _plan_user_data() -> list[tuple[str, Path]]:
@@ -414,18 +415,14 @@ def main() -> int:
             print(f"  ok ({n})", flush=True)
 
         if args.full:
-            # Cerrar conn mientras regeneramos DIVIPOLA (puede tardar)
-            conn.close()
+            # Misma conexión para DIVIPOLA + import: no cerrar/reconectar
+            # (el pooler a veces falla DNS/IPv6 en un segundo connect).
             div_path = _refresh_divipola_sql()
-            conn = _connect(url)
             print("> aplicando DIVIPOLA ...", flush=True)
             n = _run_file(conn, div_path)
             conn.commit()
             print(f"  ok ({n})", flush=True)
-            conn.close()
-
-            _import_mass_sites()
-            conn = _connect(url)
+            _import_mass_sites(conn)
 
         print(f"> root unico {ROOT_EMAIL} ...", flush=True)
         _assign_sole_root(conn, ROOT_EMAIL)

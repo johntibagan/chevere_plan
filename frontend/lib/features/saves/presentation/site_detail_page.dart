@@ -47,12 +47,20 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
   bool _loading = true;
   String? _error;
   var _outcome = SiteDetailOutcome.none;
+  bool _isStaff = false;
+  String? _uid;
 
   List<SitePhoto> _photos = const [];
   final Map<String, String> _photoUrls = {};
   bool _photosLoading = true;
   bool _photosBusy = false;
   List<SiteSocialLink> _socialLinks = const [];
+
+  bool get _canEditSite {
+    final f = _ficha;
+    if (f == null) return false;
+    return f.isOwn || f.isCreatorOf(_uid) || _isStaff;
+  }
 
   @override
   void initState() {
@@ -65,7 +73,21 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
       _ficha = SiteFicha.fromSearchHit(widget.initialHit!);
       _loading = false;
     }
+    _loadStaffFlag();
     _load();
+  }
+
+  Future<void> _loadStaffFlag() async {
+    try {
+      final client = ref.read(supabaseClientProvider);
+      final uid = client.auth.currentUser?.id;
+      final p = await ref.read(profileRepositoryProvider).fetchCurrent();
+      if (!mounted) return;
+      setState(() {
+        _uid = uid;
+        _isStaff = p?.role.isStaff ?? false;
+      });
+    } catch (_) {}
   }
 
   @override
@@ -176,12 +198,16 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
   }
 
   Future<void> _edit() async {
-    final save = _ficha?.ownSave;
-    if (save == null) return;
-    final result = await Navigator.of(context).push<UserSave>(
+    final ficha = _ficha;
+    if (ficha == null || !_canEditSite) return;
+    final save = ficha.ownSave;
+    final editSiteOnly =
+        save == null && (ficha.isCreatorOf(_uid) || _isStaff);
+    final result = await Navigator.of(context).push<Object?>(
       MaterialPageRoute(
         builder: (_) => SavePlacePage(
-          existingSaveId: save.id,
+          existingSaveId: save?.id,
+          existingSiteId: editSiteOnly ? ficha.siteId : null,
           savesRepository: ref.read(savesRepositoryProvider),
         ),
       ),
@@ -436,7 +462,7 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
             onPressed: () => Navigator.of(context).pop(_outcome),
           ),
           actions: [
-            if (ficha?.isOwn == true)
+            if (_canEditSite)
               PopupMenuButton<String>(
                 tooltip: 'Acciones',
                 onSelected: (v) {
@@ -457,15 +483,16 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
                       title: Text(l10n.actionEdit),
                     ),
                   ),
-                  PopupMenuItem(
-                    value: 'discard',
-                    child: ListTile(
-                      dense: true,
-                      contentPadding: EdgeInsets.zero,
-                      leading: const Icon(Icons.delete_outline),
-                      title: Text(l10n.actionDiscard),
+                  if (ficha?.isOwn == true)
+                    PopupMenuItem(
+                      value: 'discard',
+                      child: ListTile(
+                        dense: true,
+                        contentPadding: EdgeInsets.zero,
+                        leading: const Icon(Icons.delete_outline),
+                        title: Text(l10n.actionDiscard),
+                      ),
                     ),
-                  ),
                 ],
               ),
           ],
@@ -510,7 +537,12 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
                         photosLoading: _photosLoading,
                         photosBusy: _photosBusy,
                         socialLinks: _socialLinks,
-                        onAddPhoto: ficha.isOwn ? _addPhoto : null,
+                        onAddPhoto:
+                            (ficha.isOwn ||
+                                    ficha.isCreatorOf(_uid) ||
+                                    _isStaff)
+                                ? _addPhoto
+                                : null,
                         onPhotoMenu: _onPhotoMenu,
                         onOpenLink: _openUrl,
                         onOpenPlaceOnMaps: _canOpenMaps(ficha)
@@ -756,14 +788,18 @@ class _InfoTab extends StatelessWidget {
             ),
           ),
         ],
-        if (ficha.alsoSharedBy.isNotEmpty) ...[
+        if (ficha.sharedPeople.isNotEmpty) ...[
           const SizedBox(height: 16),
           _Section(
             icon: Icons.people_outline,
             title: l10n.siteDetailAlsoShared,
-            child: Text(
-              ficha.alsoSharedBy.join(', '),
-              style: const TextStyle(color: AppColors.muted),
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                for (final person in ficha.sharedPeople)
+                  _PersonAvatar(person: person),
+              ],
             ),
           ),
         ],
@@ -964,6 +1000,40 @@ class _PlaceholderTab extends StatelessWidget {
               style: const TextStyle(color: AppColors.muted),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PersonAvatar extends StatelessWidget {
+  const _PersonAvatar({required this.person});
+
+  final SitePerson person;
+
+  @override
+  Widget build(BuildContext context) {
+    final url = person.avatarUrl?.trim();
+    final hasUrl = url != null && url.isNotEmpty;
+    return Tooltip(
+      message: person.tooltipName,
+      triggerMode: TooltipTriggerMode.tap,
+      child: ClipOval(
+        child: SizedBox(
+          width: 36,
+          height: 36,
+          child: hasUrl
+              ? AppNetworkImage(
+                  url: url,
+                  width: 36,
+                  height: 36,
+                  cacheKey: 'avatar:${person.userId}',
+                  fit: BoxFit.cover,
+                )
+              : const ColoredBox(
+                  color: AppColors.surfaceElevated,
+                  child: Icon(Icons.person, size: 20, color: AppColors.muted),
+                ),
         ),
       ),
     );

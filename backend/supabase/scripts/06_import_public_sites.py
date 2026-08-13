@@ -368,6 +368,141 @@ def upsert_batch(
     return inserted, updated, skipped, unmatched, missing_cats
 
 
+
+def run_import(
+    conn,
+    path: Path,
+    *,
+    owner_email: str = "johnftm.proyectos@gmail.com",
+    dry_run: bool = False,
+    sites_only: bool = False,
+    municipalities_only: bool = False,
+    min_confidence: str = "medium",
+) -> int:
+    """Importa sitios usando una conexion ya abierta (p. ej. reset --full)."""
+    path = path if path.is_file() else resolve_path(path)
+    sites_raw, munis_raw = load_dataset(path)
+    min_rank = CONF_RANK[min_confidence]
+    sites = [
+        s
+        for s in sites_raw
+        if CONF_RANK.get(str(s.get("confidence") or "medium").lower(), 0) >= min_rank
+    ]
+    muni_sites = [] if sites_only else municipalities_as_sites(munis_raw)
+    if municipalities_only:
+        sites = []
+
+    print(f"Archivo: {path}")
+    print(f"Atractivos (sites[]): {len(sites)}")
+    print(f"Municipios → sitios: {len(muni_sites)} (ej. Tunja = co-muni-15001)")
+    print("departments[] del JSON no se importan (ya viven en DIVIPOLA)")
+
+    with conn.cursor() as cur:
+        ensure_external_id_column(cur)
+        conn.commit()
+
+        cur.execute(
+            "select id from auth.users where email = %s",
+            (owner_email,),
+        )
+        row = cur.fetchone()
+        owner_id = row[0] if row else None
+        if owner_id is None:
+            print(f"aviso: {owner_email} no en Auth")
+        else:
+            cur.execute(
+                """
+                insert into public.profiles (id, display_name, role)
+                select id,
+                       coalesce(raw_user_meta_data->>'full_name', email),
+                       'user'
+                from auth.users
+                where id = %s
+                on conflict (id) do nothing
+                """,
+                (owner_id,),
+            )
+            print(f"owner = {owner_email}")
+        conn.commit()
+
+        cur.execute(
+            """
+            select id, name, name_norm from public.departments
+            where country_code = 'CO' and is_active
+            """
+        )
+        depts = list(cur.fetchall())
+        dept_by_norm: dict[str, tuple[str, str]] = {}
+        for did, name, name_norm in depts:
+            dept_by_norm[fold(name)] = (str(did), name)
+            dept_by_norm[fold(name_norm)] = (str(did), name)
+
+        cur.execute(
+            """
+            select c.id, c.name, c.department_id
+            from public.cities c
+            join public.departments d on d.id = c.department_id
+            where c.is_active and d.country_code = 'CO'
+            """
+        )
+        all_cities: list[tuple[str, str, str]] = []
+        cities_by_dept: dict[str, list[tuple[str, str]]] = {}
+        for cid, cname, did in cur.fetchall():
+            cid_s, did_s = str(cid), str(did)
+            all_cities.append((cid_s, cname, did_s))
+            cities_by_dept.setdefault(did_s, []).append((cid_s, cname))
+
+        cur.execute("select id, slug from public.categories where is_active")
+        cat_by_slug = {slug: cid for cid, slug in cur.fetchall()}
+
+    total_i = total_u = total_s = 0
+    all_unmatched: list[str] = []
+    all_missing: set[str] = set()
+
+    for label, rows in (("atractivos", sites), ("municipios", muni_sites)):
+        if not rows:
+            continue
+        print(f"> importando {label} ({len(rows)}) ...", flush=True)
+        i, u, sk, unmatched, missing = upsert_batch(
+            conn,
+            rows=rows,
+            dry_run=dry_run,
+            owner_id=owner_id,
+            dept_by_norm=dept_by_norm,
+            cities_by_dept=cities_by_dept,
+            all_cities=all_cities,
+            cat_by_slug=cat_by_slug,
+            label=label,
+        )
+        print(f"  {label}: insert={i} update={u} skip={sk}")
+        total_i += i
+        total_u += u
+        total_s += sk
+        all_unmatched.extend(unmatched)
+        all_missing |= missing
+
+    print(f"Listo total: insert={total_i} update={total_u} skip={total_s}")
+    if all_missing:
+        print(f"Slugs desconocidos: {sorted(all_missing)}")
+    if all_unmatched:
+        print(f"Geo sin match ({len(all_unmatched)}), muestra:")
+        for line in all_unmatched[:20]:
+            print(f"  - {line}")
+    if dry_run:
+        print("(dry-run: no se escribió nada)")
+    else:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                select name, city, department from public.sites
+                where external_id = 'co-muni-15001'
+                limit 3
+                """
+            )
+            print("check Tunja:", cur.fetchall())
+    return 0
+
+
 def main() -> int:
     try:
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -388,139 +523,26 @@ def main() -> int:
     parser.add_argument(
         "--owner-email",
         default="johnftm.proyectos@gmail.com",
-        help="created_by de sitios masivos (default: catálogo / root proyectos)",
+        help="created_by de sitios masivos",
     )
     args = parser.parse_args()
 
     _load_dotenv(ROOT / ".env")
     path = resolve_path(args.path)
-    sites_raw, munis_raw = load_dataset(path)
-    min_rank = CONF_RANK[args.min_confidence]
-    sites = [
-        s
-        for s in sites_raw
-        if CONF_RANK.get(str(s.get("confidence") or "medium").lower(), 0) >= min_rank
-    ]
-    muni_sites = [] if args.sites_only else municipalities_as_sites(munis_raw)
-    if args.municipalities_only:
-        sites = []
-
-    print(f"Archivo: {path}")
-    print(f"Atractivos (sites[]): {len(sites)}")
-    print(f"Municipios → sitios: {len(muni_sites)} (ej. Tunja = co-muni-15001)")
-    print("departments[] del JSON no se importan (ya están en DIVIPOLA)")
-
     _ensure_psycopg()
     conn = _connect(_db_url())
     try:
-        with conn.cursor() as cur:
-            ensure_external_id_column(cur)
-            conn.commit()
-
-            cur.execute(
-                "select id from auth.users where email = %s",
-                (args.owner_email,),
-            )
-            row = cur.fetchone()
-            owner_id = row[0] if row else None
-            if owner_id is None:
-                print(f"aviso: {args.owner_email} no en Auth")
-            else:
-                cur.execute(
-                    """
-                    insert into public.profiles (id, display_name, role)
-                    select id,
-                           coalesce(raw_user_meta_data->>'full_name', email),
-                           'user'
-                    from auth.users
-                    where id = %s
-                    on conflict (id) do nothing
-                    """,
-                    (owner_id,),
-                )
-                print(f"owner = {args.owner_email}")
-            conn.commit()
-
-            cur.execute(
-                """
-                select id, name, name_norm from public.departments
-                where country_code = 'CO' and is_active
-                """
-            )
-            depts = list(cur.fetchall())
-            dept_by_norm: dict[str, tuple[str, str]] = {}
-            for did, name, name_norm in depts:
-                dept_by_norm[fold(name)] = (str(did), name)
-                dept_by_norm[fold(name_norm)] = (str(did), name)
-
-            cur.execute(
-                """
-                select c.id, c.name, c.department_id
-                from public.cities c
-                join public.departments d on d.id = c.department_id
-                where c.is_active and d.country_code = 'CO'
-                """
-            )
-            all_cities: list[tuple[str, str, str]] = []
-            cities_by_dept: dict[str, list[tuple[str, str]]] = {}
-            for cid, cname, did in cur.fetchall():
-                cid_s, did_s = str(cid), str(did)
-                all_cities.append((cid_s, cname, did_s))
-                cities_by_dept.setdefault(did_s, []).append((cid_s, cname))
-
-            cur.execute("select id, slug from public.categories where is_active")
-            cat_by_slug = {slug: cid for cid, slug in cur.fetchall()}
-
-        total_i = total_u = total_s = 0
-        all_unmatched: list[str] = []
-        all_missing: set[str] = set()
-
-        for label, rows in (("atractivos", sites), ("municipios", muni_sites)):
-            if not rows:
-                continue
-            print(f"> importando {label} ({len(rows)}) ...", flush=True)
-            i, u, sk, unmatched, missing = upsert_batch(
-                conn,
-                rows=rows,
-                dry_run=args.dry_run,
-                owner_id=owner_id,
-                dept_by_norm=dept_by_norm,
-                cities_by_dept=cities_by_dept,
-                all_cities=all_cities,
-                cat_by_slug=cat_by_slug,
-                label=label,
-            )
-            print(f"  {label}: insert={i} update={u} skip={sk}")
-            total_i += i
-            total_u += u
-            total_s += sk
-            all_unmatched.extend(unmatched)
-            all_missing |= missing
-
-        print(f"Listo total: insert={total_i} update={total_u} skip={total_s}")
-        if all_missing:
-            print(f"Slugs desconocidos: {sorted(all_missing)}")
-        if all_unmatched:
-            print(f"Geo sin match ({len(all_unmatched)}), muestra:")
-            for line in all_unmatched[:20]:
-                print(f"  - {line}")
-        if args.dry_run:
-            print("(dry-run: no se escribió nada)")
-        else:
-            # verificación Tunja
-            with conn.cursor() as cur:
-                cur.execute(
-                    """
-                    select name, city, department from public.sites
-                    where external_id = 'co-muni-15001'
-                       or (is_public and name ilike 'Tunja')
-                    limit 5
-                    """
-                )
-                print("check Tunja:", cur.fetchall())
+        return run_import(
+            conn,
+            path,
+            owner_email=args.owner_email,
+            dry_run=args.dry_run,
+            sites_only=args.sites_only,
+            municipalities_only=args.municipalities_only,
+            min_confidence=args.min_confidence,
+        )
     finally:
         conn.close()
-    return 0
 
 
 if __name__ == "__main__":

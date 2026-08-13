@@ -1,0 +1,52 @@
+---
+description: SQL/migraciones y reset_all — siempre validar default y --full
+globs: backend/**/*.{sql,py,ps1}
+alwaysApply: true
+---
+
+# Reset y SQL (Chevere Plan)
+
+Cualquier cambio en migraciones, scripts SQL/Python de `backend/`, o el
+catálogo masivo **debe seguir compatible con** `backend/reset_all.ps1`.
+
+## Dos modos (no romper ninguno)
+
+| Modo | Qué hace | Conserva |
+|---|---|---|
+| **Default** | Wipe datos de usuarios (`01_wipe_user_data.sql`) | DIVIPOLA + sitios con `external_id` (catálogo) |
+| **`-Full` / `--full`** | Nuke → migraciones ordenadas → DIVIPOLA → import masivo → root | Nada previo |
+
+Owner catálogo / root: `johnftm.proyectos@gmail.com`.
+
+## Checklist al tocar SQL o catálogo
+
+1. Nueva migración en `backend/supabase/migrations/` con timestamp creciente
+   (`YYYYMMDDHHMMSS_*.sql`). El `--full` aplica **todas** en orden.
+2. SQL **idempotente** donde importe (`if not exists`, `on conflict`, etc.):
+   el reset full reejecuta desde cero; scripts sueltos pueden reaplicarse.
+3. Si cambias wipe: sitios del catálogo (`external_id IS NOT NULL`) **no** se
+   borran en el reset default.
+4. Si cambias import / JSON: `06_import_public_sites.py` +
+   `docs/data/colombia_departamentos_municipios_sitios.json`; el `--full`
+   llama `run_import` **en la misma conexión** (no subprocess que reconecte).
+5. Tras cambiar schema/RPC: anotar en la migración lo que el frontend espera;
+   no dejar el reset a medias.
+
+## Conexión DB
+
+`SUPABASE_DB_URL` = Session pooler (IPv4). En `--full`, **una sola** conexión
+para nuke → migs → DIVIPOLA → import → root. No cerrar/reabrir entre pasos
+salvo fallo real: un segundo `connect` a veces falla DNS en esta red.
+
+## Probar
+
+```powershell
+# Solo usuarios (rápido, conserva catálogo)
+powershell -File backend\reset_all.ps1
+
+# Cero + DIVIPOLA + carga masiva
+powershell -File backend\reset_all.ps1 -Full
+```
+
+Si el full falla a mitad: schema/DIVIPOLA pueden estar OK y faltar solo el
+import → reintentar import in-process o `--full` de nuevo tras arreglar la red.

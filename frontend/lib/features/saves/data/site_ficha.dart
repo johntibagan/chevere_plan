@@ -15,6 +15,8 @@ class SiteFicha {
     this.notes,
     this.sourceUrl,
     this.alsoSharedBy = const [],
+    this.sharedPeople = const [],
+    this.createdByUserId,
     this.ownSave,
     this.estimatedPriceAmount,
     this.currencyCode = 'COP',
@@ -35,6 +37,8 @@ class SiteFicha {
   final String? notes;
   final String? sourceUrl;
   final List<String> alsoSharedBy;
+  final List<SitePerson> sharedPeople;
+  final String? createdByUserId;
   final UserSave? ownSave;
   final double? estimatedPriceAmount;
   final String currencyCode;
@@ -44,6 +48,11 @@ class SiteFicha {
   final String? googlePlaceId;
 
   bool get isOwn => ownSave != null;
+
+  bool isCreatorOf(String? userId) =>
+      userId != null &&
+      createdByUserId != null &&
+      createdByUserId == userId;
 
   String get locationLine {
     final parts = <String>[
@@ -66,6 +75,8 @@ class SiteFicha {
         'notes': notes,
         'source_url': sourceUrl,
         'also_shared_by': alsoSharedBy,
+        'shared_people': sharedPeople.map((e) => e.toCacheJson()).toList(),
+        'created_by_user_id': createdByUserId,
         'own_save': ownSave?.toCacheJson(),
         'estimated_price_amount': estimatedPriceAmount,
         'currency_code': currencyCode,
@@ -77,6 +88,18 @@ class SiteFicha {
 
   factory SiteFicha.fromCacheJson(Map<String, dynamic> json) {
     final ownRaw = json['own_save'];
+    final peopleRaw = json['shared_people'] as List?;
+    final people = peopleRaw == null
+        ? const <SitePerson>[]
+        : peopleRaw
+            .whereType<Map>()
+            .map((e) => SitePerson.fromCacheJson(Map<String, dynamic>.from(e)))
+            .where((p) => p.userId.isNotEmpty)
+            .toList();
+    final legacy = (json['also_shared_by'] as List?)
+            ?.map((e) => '$e')
+            .toList() ??
+        const <String>[];
     return SiteFicha(
       siteId: json['site_id'] as String,
       name: json['name'] as String? ?? 'Sitio',
@@ -91,10 +114,13 @@ class SiteFicha {
       isPhysicalPlace: json['is_physical_place'] as bool? ?? true,
       notes: json['notes'] as String?,
       sourceUrl: json['source_url'] as String?,
-      alsoSharedBy: (json['also_shared_by'] as List?)
-              ?.map((e) => '$e')
-              .toList() ??
-          const [],
+      alsoSharedBy: legacy,
+      sharedPeople: people.isNotEmpty
+          ? people
+          : legacy
+              .map((n) => SitePerson(userId: n, displayName: n))
+              .toList(),
+      createdByUserId: json['created_by_user_id'] as String?,
       ownSave: ownRaw is Map
           ? UserSave.fromCacheJson(Map<String, dynamic>.from(ownRaw))
           : null,
@@ -121,6 +147,8 @@ class SiteFicha {
       notes: save.notes,
       sourceUrl: save.sourceUrl,
       alsoSharedBy: save.alsoSharedBy,
+      sharedPeople: save.sharedPeople,
+      createdByUserId: save.createdByUserId,
       ownSave: save,
       googlePlaceId: save.googlePlaceId,
     );
@@ -156,16 +184,15 @@ class SiteFicha {
         }
       }
     }
-    final contribs = <String>[];
-    final contribRaw = site['site_contributors'] as List? ?? const [];
-    for (final row in contribRaw) {
-      if (row is! Map) continue;
-      final profile = row['profiles'];
-      if (profile is Map) {
-        final n = profile['display_name'] as String?;
-        if (n != null && n.isNotEmpty) contribs.add(n);
-      }
-    }
+    final createdBy = site['created_by'] as String?;
+    final creatorProf = site['profiles'];
+    final people = SitePerson.withCreator(
+      createdById: createdBy,
+      creatorProfile: creatorProf is Map ? creatorProf : null,
+      contributors: SitePerson.parseContributorRows(
+        site['site_contributors'] as List?,
+      ),
+    );
     return SiteFicha(
       siteId: site['id'] as String,
       name: (site['name'] as String?) ?? 'Sitio',
@@ -175,7 +202,9 @@ class SiteFicha {
       categoryNames: names,
       isPublic: site['is_public'] as bool? ?? false,
       isPhysicalPlace: site['is_physical_place'] as bool? ?? true,
-      alsoSharedBy: contribs,
+      alsoSharedBy: people.map((p) => p.tooltipName).toList(),
+      sharedPeople: people,
+      createdByUserId: createdBy,
       googlePlaceId: site['google_place_id'] as String?,
     );
   }
@@ -200,6 +229,8 @@ class SiteFicha {
       notes: notes,
       sourceUrl: sourceUrl,
       alsoSharedBy: alsoSharedBy,
+      sharedPeople: sharedPeople,
+      createdByUserId: createdByUserId,
       ownSave: ownSave,
       estimatedPriceAmount: estimatedPriceAmount ?? this.estimatedPriceAmount,
       currencyCode: currencyCode ?? this.currencyCode,

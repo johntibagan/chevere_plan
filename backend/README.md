@@ -23,8 +23,20 @@ carga masiva desde `docs/data/colombia_departamentos_municipios_sitios.json` →
 powershell -File C:\workspace\chevere_plan\backend\reset_all.ps1 -Full
 ```
 
-Requisito: `backend/.env` con `SUPABASE_DB_URL` (Session pooler).  
+Requisito: `backend/.env` con `SUPABASE_DB_URL` (Session pooler IPv4).  
+El `-Full` usa **una sola** conexión para nuke → migs → DIVIPOLA → import
+(no reabre TCP entre pasos; evita fallos DNS del pooler).  
 Después cierra sesión en la app.
+
+Si el `-Full` llegó hasta DIVIPOLA y falló solo el import, no hace falta
+nuke de nuevo: corre el import a mano y luego el reset default (root):
+
+```powershell
+cd C:\workspace\chevere_plan\backend
+python supabase\scripts\06_import_public_sites.py ..\docs\data\colombia_departamentos_municipios_sitios.json
+powershell -File .\reset_all.ps1
+```
+
 
 ## Regenerar DIVIPOLA a mano
 
