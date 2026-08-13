@@ -28,6 +28,8 @@
   "visibilityPublic": "Público",
   "visibilityPrivate": "Privado",
   "labelOwn": "Tuyo",
+  "labelLinked": "Vinculado",
+  "labelCatalog": "Catálogo",
   "homePendingBadge": "PENDIENTE",
   "homeDraftsToComplete": "{count} guardado(s) por completar",
   "@homeDraftsToComplete": {

@@ -262,6 +262,18 @@ abstract class AppLocalizations {
   /// **'Tuyo'**
   String get labelOwn;
 
+  /// No description provided for @labelLinked.
+  ///
+  /// In es, this message translates to:
+  /// **'Vinculado'**
+  String get labelLinked;
+
+  /// No description provided for @labelCatalog.
+  ///
+  /// In es, this message translates to:
+  /// **'Catálogo'**
+  String get labelCatalog;
+
   /// No description provided for @homePendingBadge.
   ///
   /// In es, this message translates to:

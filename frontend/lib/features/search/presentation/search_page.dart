@@ -9,6 +9,7 @@ import '../../../core/widgets/app_toast.dart';
 import '../../../core/formatters/money_format.dart';
 import '../../../core/l10n/context_l10n.dart';
 import '../../../core/prefetch/site_prefetch.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_list_card.dart';
 import '../../../core/widgets/field_action_icon.dart';
 import '../../../core/widgets/visibility_badge.dart';
@@ -393,29 +394,61 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                   (h) => AppListCard(
                     child: ListTile(
                       title: Text(h.name),
-                      subtitle: Text(
-                        [
-                          if (h.city != null && h.city!.isNotEmpty) h.city!,
-                          if (h.department != null && h.department!.isNotEmpty)
-                            h.department!,
-                          if (h.estimatedPriceAmount != null)
-                            formatMoney(
-                              h.estimatedPriceAmount!,
-                              currencyCode: h.currencyCode,
-                            ),
-                          if (h.distanceKm != null)
-                            '${h.distanceKm!.toStringAsFixed(1)} km',
-                          if (h.isOwn) l10n.labelOwn,
-                        ].join(' · '),
-                      ),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          if (!h.isOwn)
-                            const VisibilityBadge(isPublic: true, compact: true),
-                          const Icon(Icons.chevron_right),
+                          const SizedBox(height: 4),
+                          Text(
+                            [
+                              if (h.city != null && h.city!.isNotEmpty) h.city!,
+                              if (h.department != null &&
+                                  h.department!.isNotEmpty)
+                                h.department!,
+                              if (h.estimatedPriceAmount != null)
+                                formatMoney(
+                                  h.estimatedPriceAmount!,
+                                  currencyCode: h.currencyCode,
+                                ),
+                              if (h.distanceKm != null)
+                                '${h.distanceKm!.toStringAsFixed(1)} km',
+                            ].join(' · '),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: AppColors.muted,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Wrap(
+                            spacing: 6,
+                            runSpacing: 4,
+                            children: [
+                              VisibilityBadge(
+                                isPublic: h.isPublic,
+                                compact: true,
+                              ),
+                              if (h.isOwn)
+                                _SearchTag(
+                                  label: l10n.labelOwn,
+                                  color: AppColors.primary,
+                                ),
+                              if (h.isLinked)
+                                _SearchTag(
+                                  label: l10n.labelLinked,
+                                  color: AppColors.purple,
+                                ),
+                              if (h.isCatalog)
+                                _SearchTag(
+                                  label: l10n.labelCatalog,
+                                  color: AppColors.catServ,
+                                ),
+                            ],
+                          ),
                         ],
                       ),
+                      isThreeLine: true,
+                      trailing: const Icon(Icons.chevron_right),
                       onTap: () async {
                         final outcome = await openSiteDetail(
                           context,
@@ -445,6 +478,33 @@ class _SearchPageState extends ConsumerState<SearchPage> {
               ];
             }(),
         ],
+      ),
+    );
+  }
+}
+
+class _SearchTag extends StatelessWidget {
+  const _SearchTag({required this.label, required this.color});
+
+  final String label;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.16),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: color.withValues(alpha: 0.45)),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+          color: color,
+        ),
       ),
     );
   }

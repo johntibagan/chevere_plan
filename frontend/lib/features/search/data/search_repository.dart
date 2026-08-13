@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/logging/app_log.dart';
@@ -53,12 +55,142 @@ class SearchRepository {
     }
 
     final rows = await _client.rpc('search_sites', params: params);
-    return (rows as List<dynamic>)
+    final hits = (rows as List<dynamic>)
         .map((e) => SearchHit.fromJson(Map<String, dynamic>.from(e as Map)))
         .where((h) => PlanHoursPolicy.isOpenInWindow(siteId: h.siteId))
         .where((h) => h.lat != null && h.lng != null)
         .toList();
+    return _dedupeHits(hits);
   }
+
+  /// Un resultado por sitio; si hay copia propia + público cercanos, deja uno.
+  List<SearchHit> _dedupeHits(List<SearchHit> input) {
+    final byId = <String, SearchHit>{};
+    for (final h in input) {
+      if (h.siteId.isEmpty) continue;
+      final prev = byId[h.siteId];
+      byId[h.siteId] = prev == null ? h : _preferHit(prev, h);
+    }
+    final unique = byId.values.toList();
+    final kept = <SearchHit>[];
+    for (final h in unique) {
+      final idx = kept.indexWhere((k) => _nearDuplicate(k, h));
+      if (idx < 0) {
+        kept.add(h);
+      } else {
+        kept[idx] = _preferHit(kept[idx], h);
+      }
+    }
+    return kept;
+  }
+
+  bool _nearDuplicate(SearchHit a, SearchHit b) {
+    if (a.siteId == b.siteId) return true;
+    if (!_namesSimilar(a.name, b.name)) return false;
+    if (a.lat != null && a.lng != null && b.lat != null && b.lng != null) {
+      // Parques grandes: hasta ~1 km
+      return _approxKm(a.lat!, a.lng!, b.lat!, b.lng!) <= 1.0;
+    }
+    final ca = (a.city ?? '').trim().toLowerCase();
+    final cb = (b.city ?? '').trim().toLowerCase();
+    return ca.isNotEmpty && ca == cb;
+  }
+
+  static const _nameStop = {
+    'parque',
+    'acuatico',
+    'acuático',
+    'area',
+    'área',
+    'de',
+    'del',
+    'la',
+    'el',
+    'los',
+    'las',
+    'y',
+    'e',
+    'conservacion',
+    'conservación',
+    'centro',
+  };
+
+  String _normalizeName(String raw) {
+    var s = raw.toLowerCase().trim();
+    s = s.replaceAll(RegExp(r'[|,/.\-–—_()\[\]]+'), ' ');
+    s = s.replaceAll(RegExp(r'\s+'), ' ').trim();
+    // quitar tildes simples frecuentes
+    const map = {
+      'á': 'a',
+      'é': 'e',
+      'í': 'i',
+      'ó': 'o',
+      'ú': 'u',
+      'ü': 'u',
+      'ñ': 'n',
+    };
+    for (final e in map.entries) {
+      s = s.replaceAll(e.key, e.value);
+    }
+    return s;
+  }
+
+  bool _namesSimilar(String a, String b) {
+    final na = _normalizeName(a);
+    final nb = _normalizeName(b);
+    if (na.isEmpty || nb.isEmpty) return false;
+    if (na == nb) return true;
+    if (na.length >= 6 && nb.length >= 6 && (na.contains(nb) || nb.contains(na))) {
+      return true;
+    }
+    final ta = na
+        .split(' ')
+        .where((t) => t.length >= 4 && !_nameStop.contains(t))
+        .toSet();
+    final tb = nb
+        .split(' ')
+        .where((t) => t.length >= 4 && !_nameStop.contains(t))
+        .toSet();
+    if (ta.isEmpty || tb.isEmpty) return false;
+    final inter = ta.intersection(tb);
+    // Token distintivo (ej. piscilago)
+    if (inter.any((t) => t.length >= 6)) return true;
+    return inter.length / ta.union(tb).length >= 0.45;
+  }
+
+  /// Prefiere catálogo > público; conserva isOwn.
+  SearchHit _preferHit(SearchHit a, SearchHit b) {
+    final SearchHit primary;
+    if (a.isCatalog != b.isCatalog) {
+      primary = a.isCatalog ? a : b;
+    } else if (a.isPublic != b.isPublic) {
+      primary = a.isPublic ? a : b;
+    } else if (a.isOwn != b.isOwn) {
+      primary = a.isOwn ? a : b;
+    } else {
+      primary = a;
+    }
+    return primary.copyWith(
+      isOwn: a.isOwn || b.isOwn,
+      isPublic: a.isPublic || b.isPublic,
+      isCatalog: a.isCatalog || b.isCatalog,
+      isLinked: a.isLinked || b.isLinked,
+    );
+  }
+
+  double _approxKm(double lat1, double lng1, double lat2, double lng2) {
+    const r = 6371.0;
+    final dLat = _rad(lat2 - lat1);
+    final dLng = _rad(lng2 - lng1);
+    final a = math.sin(dLat / 2) * math.sin(dLat / 2) +
+        math.cos(_rad(lat1)) *
+            math.cos(_rad(lat2)) *
+            math.sin(dLng / 2) *
+            math.sin(dLng / 2);
+    return 2 * r * math.asin(math.sqrt(a));
+  }
+
+  double _rad(double d) => d * math.pi / 180.0;
 
   /// Fallback sin RPC: mis guardados complete (+ públicos si se pide).
   Future<List<SearchHit>> _searchLocalFallback(SearchFilters filters) async {
@@ -73,7 +205,7 @@ class SearchRepository {
         .from('user_saves')
         .select(
           'site_id, sites!user_saves_site_id_fkey(id, name, city, department, '
-          'estimated_price_amount, currency_code, is_public)',
+          'estimated_price_amount, currency_code, is_public, external_id)',
         )
         .eq('user_id', uid)
         .eq('status', 'complete');
@@ -102,7 +234,7 @@ class SearchRepository {
       final pubRows = await _client
           .from('sites')
           .select(
-            'id, name, city, department, estimated_price_amount, currency_code, is_public',
+            'id, name, city, department, estimated_price_amount, currency_code, is_public, external_id',
           )
           .eq('is_public', true)
           .not('location', 'is', null)
@@ -127,7 +259,7 @@ class SearchRepository {
       }
     }
 
-    return hits;
+    return _dedupeHits(hits);
   }
 
   Future<(double?, double?)> _coordsFor(String siteId) async {
@@ -169,6 +301,8 @@ class SearchRepository {
       estimatedPriceAmount: price == null ? null : (price as num).toDouble(),
       currencyCode: (s['currency_code'] as String?) ?? 'COP',
       isOwn: isOwn,
+      isPublic: s['is_public'] as bool? ?? false,
+      isCatalog: (s['external_id'] as String?)?.trim().isNotEmpty == true,
     );
   }
 

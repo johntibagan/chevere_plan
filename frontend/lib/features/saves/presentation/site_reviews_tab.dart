@@ -185,117 +185,125 @@ class _SiteReviewsTabState extends ConsumerState<SiteReviewsTab> {
     }
     final visible = _visible;
 
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+    return Stack(
       children: [
-        Row(
+        ListView(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 88),
           children: [
-            Expanded(
-              child: Text(
-                _summary.reviewCount > 0
-                    ? l10n.reviewAvg(
-                        _summary.avgRating.toStringAsFixed(1),
-                        _summary.reviewCount,
-                      )
-                    : l10n.reviewEmpty,
-                style: GoogleFonts.plusJakartaSans(
-                  fontWeight: FontWeight.w700,
-                  fontSize: 16,
-                  color: AppColors.foreground,
-                ),
-              ),
-            ),
-            IconButton(
-              tooltip: l10n.reviewWrite,
-              onPressed: () => _openEditor(),
-              icon: const Icon(Icons.add_comment_outlined),
-              color: AppColors.primary,
-            ),
-            PopupMenuButton<_ReviewSort>(
-              tooltip: l10n.reviewSortLabel,
-              initialValue: _sort,
-              onSelected: (v) => setState(() => _sort = v),
-              itemBuilder: (context) => [
-                for (final s in _ReviewSort.values)
-                  PopupMenuItem(
-                    value: s,
-                    child: Text(_sortLabel(s)),
-                  ),
-              ],
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.sort, size: 20, color: AppColors.muted),
-                    const SizedBox(width: 4),
-                    Flexible(
-                      child: Text(
-                        _sortLabel(_sort),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: AppColors.muted,
-                        ),
-                      ),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    _summary.reviewCount > 0
+                        ? l10n.reviewAvg(
+                            _summary.avgRating.toStringAsFixed(1),
+                            _summary.reviewCount,
+                          )
+                        : l10n.reviewEmpty,
+                    style: GoogleFonts.plusJakartaSans(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 16,
+                      color: AppColors.foreground,
                     ),
-                  ],
+                  ),
                 ),
+                PopupMenuButton<_ReviewSort>(
+                  tooltip: l10n.reviewSortLabel,
+                  initialValue: _sort,
+                  onSelected: (v) => setState(() => _sort = v),
+                  itemBuilder: (context) => [
+                    for (final s in _ReviewSort.values)
+                      PopupMenuItem(
+                        value: s,
+                        child: Text(_sortLabel(s)),
+                      ),
+                  ],
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.sort, size: 20, color: AppColors.muted),
+                        const SizedBox(width: 4),
+                        Text(
+                          _sortLabel(_sort),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: AppColors.muted,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  FilterChip(
+                    label: Text(l10n.reviewFilterAll),
+                    selected: _starFilter == null && !_mineOnly,
+                    onSelected: (_) => setState(() {
+                      _starFilter = null;
+                      _mineOnly = false;
+                    }),
+                  ),
+                  const SizedBox(width: 6),
+                  for (var star = 5; star >= 1; star--) ...[
+                    FilterChip(
+                      label: Text('$star★'),
+                      selected: _starFilter == star,
+                      onSelected: (sel) => setState(() {
+                        _starFilter = sel ? star : null;
+                      }),
+                    ),
+                    const SizedBox(width: 6),
+                  ],
+                  if (_uid != null)
+                    FilterChip(
+                      label: Text(l10n.reviewFilterMine),
+                      selected: _mineOnly,
+                      onSelected: (sel) => setState(() => _mineOnly = sel),
+                    ),
+                ],
               ),
             ),
+            const SizedBox(height: 16),
+            if (visible.isEmpty)
+              Text(
+                _reviews.isEmpty ? l10n.reviewEmpty : l10n.reviewFilterEmpty,
+                style: const TextStyle(color: AppColors.muted),
+              )
+            else
+              for (final r in visible) ...[
+                _ReviewCard(
+                  review: r,
+                  photoUrls: _urls,
+                  isMine: r.userId == _uid,
+                  onEdit: () => _openEditor(review: r),
+                  onDelete: () => _confirmDelete(r),
+                ),
+                const SizedBox(height: 12),
+              ],
           ],
         ),
-        const SizedBox(height: 8),
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: [
-              FilterChip(
-                label: Text(l10n.reviewFilterAll),
-                selected: _starFilter == null && !_mineOnly,
-                onSelected: (_) => setState(() {
-                  _starFilter = null;
-                  _mineOnly = false;
-                }),
-              ),
-              const SizedBox(width: 6),
-              for (var star = 5; star >= 1; star--) ...[
-                FilterChip(
-                  label: Text('$star★'),
-                  selected: _starFilter == star,
-                  onSelected: (sel) => setState(() {
-                    _starFilter = sel ? star : null;
-                  }),
-                ),
-                const SizedBox(width: 6),
-              ],
-              if (_uid != null)
-                FilterChip(
-                  label: Text(l10n.reviewFilterMine),
-                  selected: _mineOnly,
-                  onSelected: (sel) => setState(() => _mineOnly = sel),
-                ),
-            ],
+        Positioned(
+          right: 16,
+          bottom: 16,
+          child: FloatingActionButton(
+            heroTag: 'site_review_fab_${widget.siteId}',
+            tooltip: l10n.reviewWrite,
+            backgroundColor: AppColors.primary,
+            foregroundColor: AppColors.background,
+            onPressed: () => _openEditor(),
+            child: const Icon(Icons.add_comment, size: 28),
           ),
         ),
-        const SizedBox(height: 16),
-        if (visible.isEmpty)
-          Text(
-            _reviews.isEmpty ? l10n.reviewEmpty : l10n.reviewFilterEmpty,
-            style: const TextStyle(color: AppColors.muted),
-          )
-        else
-          for (final r in visible) ...[
-            _ReviewCard(
-              review: r,
-              photoUrls: _urls,
-              isMine: r.userId == _uid,
-              onEdit: () => _openEditor(review: r),
-              onDelete: () => _confirmDelete(r),
-            ),
-            const SizedBox(height: 12),
-          ],
       ],
     );
   }
@@ -319,127 +327,154 @@ class _ReviewCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final name = review.authorName?.trim().isNotEmpty == true
-        ? review.authorName!
-        : 'Usuario';
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
+    final name = () {
+      final n = review.authorName?.trim() ?? '';
+      if (n.isNotEmpty) return n;
+      return isMine ? 'Tú' : 'Usuario';
+    }();
+    final accent =
+        review.isPublic ? AppColors.success : AppColors.purple;
+    return Material(
+      color: AppColors.surface,
+      clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border),
+        side: BorderSide(color: accent.withValues(alpha: 0.4)),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              ClipOval(
-                child: SizedBox(
-                  width: 32,
-                  height: 32,
-                  child: (review.authorAvatarUrl ?? '').isNotEmpty
-                      ? AppNetworkImage(
-                          url: review.authorAvatarUrl!,
-                          width: 32,
-                          height: 32,
-                          cacheKey: 'avatar:${review.userId}',
-                        )
-                      : const ColoredBox(
-                          color: AppColors.surfaceElevated,
-                          child: Icon(
-                            Icons.person,
-                            size: 18,
-                            color: AppColors.muted,
-                          ),
-                        ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Row(
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Container(width: 4, color: accent),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Flexible(
-                      child: Tooltip(
-                        message: name,
-                        triggerMode: TooltipTriggerMode.tap,
-                        child: Text(
-                          isMine ? 'Tú' : 'Usuario',
-                          style: GoogleFonts.plusJakartaSans(
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.foreground,
+                    Row(
+                      children: [
+                        ClipOval(
+                          child: SizedBox(
+                            width: 32,
+                            height: 32,
+                            child: (review.authorAvatarUrl ?? '').isNotEmpty
+                                ? AppNetworkImage(
+                                    url: review.authorAvatarUrl!,
+                                    width: 32,
+                                    height: 32,
+                                    cacheKey: 'avatar:${review.userId}',
+                                  )
+                                : const ColoredBox(
+                                    color: AppColors.surfaceElevated,
+                                    child: Icon(
+                                      Icons.person,
+                                      size: 18,
+                                      color: AppColors.muted,
+                                    ),
+                                  ),
                           ),
                         ),
-                      ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Row(
+                            children: [
+                              Flexible(
+                                child: Text(
+                                  name,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: GoogleFonts.plusJakartaSans(
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.foreground,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              VisibilityBadge(
+                                isPublic: review.isPublic,
+                                compact: true,
+                              ),
+                            ],
+                          ),
+                        ),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            for (var i = 1; i <= 5; i++)
+                              Icon(
+                                i <= review.rating
+                                    ? Icons.star
+                                    : Icons.star_border,
+                                size: 16,
+                                color: AppColors.primary,
+                              ),
+                          ],
+                        ),
+                        if (isMine)
+                          PopupMenuButton<String>(
+                            icon: const Icon(
+                              Icons.more_vert,
+                              color: AppColors.muted,
+                            ),
+                            onSelected: (v) {
+                              if (v == 'edit') onEdit();
+                              if (v == 'delete') onDelete();
+                            },
+                            itemBuilder: (context) => [
+                              PopupMenuItem(
+                                value: 'edit',
+                                child: Text(l10n.reviewEditMine),
+                              ),
+                              PopupMenuItem(
+                                value: 'delete',
+                                child: Text(l10n.reviewDelete),
+                              ),
+                            ],
+                          ),
+                      ],
                     ),
-                    if (isMine && !review.isPublic) ...[
-                      const SizedBox(width: 6),
-                      const VisibilityBadge(isPublic: false, compact: true),
+                    if (review.body.trim().isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        review.body,
+                        style: const TextStyle(color: AppColors.muted),
+                      ),
                     ],
-                  ],
-                ),
-              ),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  for (var i = 1; i <= 5; i++)
-                    Icon(
-                      i <= review.rating ? Icons.star : Icons.star_border,
-                      size: 16,
-                      color: AppColors.primary,
-                    ),
-                ],
-              ),
-              if (isMine)
-                PopupMenuButton<String>(
-                  icon: const Icon(Icons.more_vert, color: AppColors.muted),
-                  onSelected: (v) {
-                    if (v == 'edit') onEdit();
-                    if (v == 'delete') onDelete();
-                  },
-                  itemBuilder: (context) => [
-                    PopupMenuItem(
-                      value: 'edit',
-                      child: Text(l10n.reviewEditMine),
-                    ),
-                    PopupMenuItem(
-                      value: 'delete',
-                      child: Text(l10n.reviewDelete),
-                    ),
-                  ],
-                ),
-            ],
-          ),
-          if (review.body.trim().isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Text(review.body, style: const TextStyle(color: AppColors.muted)),
-          ],
-          if (review.photos.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 6,
-              children: [
-                for (final p in review.photos)
-                  if (photoUrls[p.id] != null)
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(6),
-                      child: AppNetworkImage(
-                        url: photoUrls[p.id]!,
-                        width: 64,
-                        height: 64,
-                        cacheKey: p.id,
+                    if (review.photos.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 6,
+                        children: [
+                          for (final p in review.photos)
+                            if (photoUrls[p.id] != null)
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(6),
+                                child: AppNetworkImage(
+                                  url: photoUrls[p.id]!,
+                                  width: 64,
+                                  height: 64,
+                                  cacheKey: p.id,
+                                ),
+                              ),
+                        ],
+                      ),
+                    ],
+                    const SizedBox(height: 6),
+                    Text(
+                      '${formatDateTimeShort(review.createdAt)}'
+                      '${review.updatedAt.difference(review.createdAt).inSeconds.abs() > 2 ? ' · editado ${formatDateTimeShort(review.updatedAt)}' : ''}',
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: AppColors.mutedDark,
                       ),
                     ),
-              ],
+                  ],
+                ),
+              ),
             ),
           ],
-          const SizedBox(height: 6),
-          Text(
-            '${formatDateTimeShort(review.createdAt)}'
-            '${review.updatedAt.difference(review.createdAt).inSeconds.abs() > 2 ? ' · editado ${formatDateTimeShort(review.updatedAt)}' : ''}',
-            style: const TextStyle(fontSize: 11, color: AppColors.mutedDark),
-          ),
-        ],
+        ),
       ),
     );
   }

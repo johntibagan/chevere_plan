@@ -94,6 +94,12 @@ class AppLocalizationsEs extends AppLocalizations {
   String get labelOwn => 'Tuyo';
 
   @override
+  String get labelLinked => 'Vinculado';
+
+  @override
+  String get labelCatalog => 'Catálogo';
+
+  @override
   String get homePendingBadge => 'PENDIENTE';
 
   @override

@@ -3,6 +3,9 @@ class SearchHit {
     required this.siteId,
     required this.name,
     required this.isOwn,
+    this.isPublic = false,
+    this.isCatalog = false,
+    this.isLinked = false,
     this.city,
     this.department,
     this.lat,
@@ -21,6 +24,10 @@ class SearchHit {
   final double? estimatedPriceAmount;
   final String currencyCode;
   final bool isOwn;
+  final bool isPublic;
+  final bool isCatalog;
+  /// Mi guardado apunta a un sitio público existente (anti-dupe).
+  final bool isLinked;
   final double? distanceKm;
 
   factory SearchHit.fromJson(Map<String, dynamic> json) {
@@ -37,6 +44,9 @@ class SearchHit {
           price == null ? null : (price as num).toDouble(),
       currencyCode: (json['currency_code'] as String?) ?? 'COP',
       isOwn: json['is_own'] as bool? ?? false,
+      isPublic: json['is_public'] as bool? ?? false,
+      isCatalog: json['is_catalog'] as bool? ?? false,
+      isLinked: json['is_linked'] as bool? ?? false,
       distanceKm: dist == null ? null : (dist as num).toDouble(),
     );
   }
@@ -51,8 +61,43 @@ class SearchHit {
         'estimated_price_amount': estimatedPriceAmount,
         'currency_code': currencyCode,
         'is_own': isOwn,
+        'is_public': isPublic,
+        'is_catalog': isCatalog,
+        'is_linked': isLinked,
         'distance_km': distanceKm,
       };
+
+  SearchHit copyWith({
+    String? siteId,
+    String? name,
+    String? city,
+    String? department,
+    double? lat,
+    double? lng,
+    double? estimatedPriceAmount,
+    String? currencyCode,
+    bool? isOwn,
+    bool? isPublic,
+    bool? isCatalog,
+    bool? isLinked,
+    double? distanceKm,
+  }) {
+    return SearchHit(
+      siteId: siteId ?? this.siteId,
+      name: name ?? this.name,
+      city: city ?? this.city,
+      department: department ?? this.department,
+      lat: lat ?? this.lat,
+      lng: lng ?? this.lng,
+      estimatedPriceAmount: estimatedPriceAmount ?? this.estimatedPriceAmount,
+      currencyCode: currencyCode ?? this.currencyCode,
+      isOwn: isOwn ?? this.isOwn,
+      isPublic: isPublic ?? this.isPublic,
+      isCatalog: isCatalog ?? this.isCatalog,
+      isLinked: isLinked ?? this.isLinked,
+      distanceKm: distanceKm ?? this.distanceKm,
+    );
+  }
 }
 
 class SearchFilters {
@@ -91,5 +136,6 @@ class SearchFilters {
         budgetMin?.toString() ?? '',
         budgetMax?.toString() ?? '',
         includePublic ? '1' : '0',
+        'v2', // bust cache tras tags is_linked / is_catalog
       ].join('|');
 }
