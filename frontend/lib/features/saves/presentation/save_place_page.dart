@@ -392,10 +392,9 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
         staticMapUrl: result.staticMapUrl,
       );
       if (!mounted) return;
-      if (result.hasCoords) {
-        final linked = await _softCheckDuplicateAfterLocation();
-        if (linked || !mounted) return;
-      }
+      // Soft check tras pegar/importar Maps (igual que confirmar pin).
+      final linked = await _softCheckDuplicateAfterLocation();
+      if (linked || !mounted) return;
       AppToast.show(
         context,
         !result.hasCoords
@@ -731,15 +730,16 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
         return false;
       }
 
-      final chosen = await _askDuplicate(dupes.first);
+      final chosen = await _askDuplicate(dupes.first, allowCreateAnyway: false);
       if (chosen == null || !mounted) return false;
+      if (chosen == SameSiteAction.saveAnyway) return false;
 
-      await _linkExistingAndOpenReview(
+      final ok = await _linkExistingAndOpenReview(
         existingSiteId: dupes.first.siteId,
         displayName: name == 'Sin nombre' ? dupes.first.siteName : name,
         reviewIsPublic: chosen == SameSiteAction.reviewPublic,
       );
-      return true;
+      return ok;
     } catch (e) {
       if (mounted) {
         AppToast.error(context, e, logContext: 'dupe_soft_check');
@@ -748,8 +748,9 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
     }
   }
 
-  /// Vincular a sitio público existente y abrir reseña (cero duplicados).
-  Future<void> _linkExistingAndOpenReview({
+  /// Vincular a sitio público existente y abrir reseña.
+  /// `true` si vinculó OK; `false` si falló o canceló internamente.
+  Future<bool> _linkExistingAndOpenReview({
     required String existingSiteId,
     required String displayName,
     required bool reviewIsPublic,
@@ -759,13 +760,13 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
       var categoryIds = _resolvedCategoryIds();
       if (categoryIds.isEmpty) {
         setState(() => _saving = false);
-        if (!mounted) return;
+        if (!mounted) return false;
         AppToast.show(
           context,
           'No hay categorías en la base. Aplica el seed / reseed de categorías.',
           error: true,
         );
-        return;
+        return false;
       }
       if (_selectedCategoryIds.isEmpty) {
         setState(() {
@@ -824,7 +825,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
         saved = await widget.savesRepository.createSave(input);
       }
 
-      if (!mounted) return;
+      if (!mounted) return false;
       ref.invalidate(mySavesProvider);
       final uid = ref.read(supabaseClientProvider).auth.currentUser?.id;
       if (uid != null) {
@@ -856,12 +857,14 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
           ),
         ),
       );
-      if (!mounted) return;
+      if (!mounted) return true;
       Navigator.pop(context, saved);
+      return true;
     } catch (e) {
-      if (!mounted) return;
+      if (!mounted) return false;
       setState(() => _saving = false);
       AppToast.error(context, e, logContext: 'link_and_review');
+      return false;
     }
   }
 
@@ -1011,10 +1014,15 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
           excludeSiteId: editSiteId,
         );
         if (dupes.isNotEmpty && mounted) {
-          final chosen = await _askDuplicate(dupes.first);
+          final chosen = await _askDuplicate(
+            dupes.first,
+            allowCreateAnyway: true,
+          );
           if (chosen == null) return; // seguir editando
-          linkToExisting = dupes.first.siteId;
-          pendingReviewIsPublic = chosen == SameSiteAction.reviewPublic;
+          if (chosen != SameSiteAction.saveAnyway) {
+            linkToExisting = dupes.first.siteId;
+            pendingReviewIsPublic = chosen == SameSiteAction.reviewPublic;
+          }
         }
       } catch (e) {
         if (!mounted) return;
@@ -1248,7 +1256,11 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
   }
 
   /// Acción elegida, o null = seguir editando (no guardar).
-  Future<SameSiteAction?> _askDuplicate(PossibleDuplicate d) {
+  /// [allowCreateAnyway] solo en Guardar (no en soft-check de Maps/pegar).
+  Future<SameSiteAction?> _askDuplicate(
+    PossibleDuplicate d, {
+    required bool allowCreateAnyway,
+  }) {
     final dist =
         d.distanceM == null ? '' : ' · ~${d.distanceM!.round()} m';
     final l10n = context.l10n;
@@ -1263,7 +1275,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
         ),
         content: SingleChildScrollView(
           child: Text(
-            '${l10n.sameSiteHardBody}\n\n'
+            '${allowCreateAnyway ? l10n.sameSiteHardBody : l10n.sameSiteSoftBody}\n\n'
             '«${d.siteName}»'
             '${d.city != null ? ' — ${d.city}' : ''}$dist',
             style: const TextStyle(color: AppColors.muted),
@@ -1275,6 +1287,12 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
             onPressed: () => Navigator.pop(context),
             child: Text(l10n.sameSiteKeepEditing),
           ),
+          if (allowCreateAnyway)
+            TextButton(
+              onPressed: () =>
+                  Navigator.pop(context, SameSiteAction.saveAnyway),
+              child: Text(l10n.sameSiteSaveAnyway),
+            ),
           TextButton(
             onPressed: () =>
                 Navigator.pop(context, SameSiteAction.journalPrivate),

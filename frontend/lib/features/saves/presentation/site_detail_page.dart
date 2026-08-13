@@ -14,6 +14,7 @@ import '../../../core/l10n/context_l10n.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_network_image.dart';
 import '../../../core/widgets/visibility_badge.dart';
+import '../../auth/data/profile.dart';
 import '../../moderation/data/moderation_models.dart';
 import '../../search/data/search_models.dart';
 import '../data/google_maps_links.dart';
@@ -50,6 +51,7 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
   String? _error;
   var _outcome = SiteDetailOutcome.none;
   bool _isStaff = false;
+  AppRole? _staffRole;
   String? _uid;
 
   List<SitePhoto> _photos = const [];
@@ -88,8 +90,18 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
       setState(() {
         _uid = uid;
         _isStaff = p?.role.isStaff ?? false;
+        _staffRole = p?.role.isStaff == true ? p!.role : null;
       });
     } catch (_) {}
+  }
+
+  String _staffRoleLabel(BuildContext context) {
+    final l10n = context.l10n;
+    return switch (_staffRole) {
+      AppRole.root => l10n.staffRoleRoot,
+      AppRole.admin => l10n.staffRoleAdmin,
+      _ => l10n.staffRoleAdmin,
+    };
   }
 
   @override
@@ -539,6 +551,9 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
                         photosLoading: _photosLoading,
                         photosBusy: _photosBusy,
                         socialLinks: _socialLinks,
+                        isStaff: _isStaff,
+                        staffRoleLabel:
+                            _isStaff ? _staffRoleLabel(context) : null,
                         onAddPhoto:
                             (ficha.isOwn ||
                                     ficha.isCreatorOf(_uid) ||
@@ -558,6 +573,9 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
                         siteId: widget.siteId,
                         siteName: ficha.name,
                         siteIsPublic: ficha.isPublic,
+                        isStaff: _isStaff,
+                        staffRoleLabel:
+                            _isStaff ? _staffRoleLabel(context) : null,
                       ),
                       _TraceabilityTab(ficha: ficha),
                     ],
@@ -577,6 +595,8 @@ class _InfoTab extends StatelessWidget {
     required this.socialLinks,
     required this.onPhotoMenu,
     required this.onOpenLink,
+    this.isStaff = false,
+    this.staffRoleLabel,
     this.onAddPhoto,
     this.onOpenPlaceOnMaps,
     this.onOpenDirectionsOnMaps,
@@ -590,6 +610,8 @@ class _InfoTab extends StatelessWidget {
   final List<SiteSocialLink> socialLinks;
   final void Function(SitePhoto photo, String action) onPhotoMenu;
   final void Function(String? url) onOpenLink;
+  final bool isStaff;
+  final String? staffRoleLabel;
   final VoidCallback? onAddPhoto;
   final VoidCallback? onOpenPlaceOnMaps;
   final VoidCallback? onOpenDirectionsOnMaps;
@@ -606,6 +628,43 @@ class _InfoTab extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
       children: [
+        if (isStaff) ...[
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: 0.14),
+              borderRadius: BorderRadius.circular(10),
+              border:
+                  Border.all(color: AppColors.primary.withValues(alpha: 0.35)),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(
+                  Icons.shield_outlined,
+                  size: 18,
+                  color: AppColors.primary,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    l10n.staffModeBanner(
+                      staffRoleLabel ?? l10n.staffRoleAdmin,
+                    ),
+                    style: const TextStyle(
+                      fontSize: 12,
+                      height: 1.35,
+                      color: AppColors.foreground,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+        ],
         Text(
           ficha.name,
           style: GoogleFonts.plusJakartaSans(

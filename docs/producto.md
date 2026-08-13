@@ -100,7 +100,7 @@ Propuesta de árbol (Google Places / OSM tourism·leisure·amenity + MINCIT gast
 
 - Guardado público = visible para otros usuarios y disponible para búsquedas/planes de terceros (mediante checkbox "incluir guardados públicos").
 - **Cero sitios públicos duplicados.** Detección por coordenadas (~50–100 m) + similitud de nombre.
-  - Si ya existe un sitio público parecido: se **vincula** al existente (“compartido también por”) y se pregunta si quiere **reseña pública** o **bitácora privada**. **No** se crea otro sitio.
+  - Si ya existe un sitio público parecido: se ofrece **vincular** al existente (“compartido también por”) con reseña visible o bitácora privada. Al **guardar**, también se puede **guardar de todas formas** (crear el propio). En Maps / pegar enlace solo se avisa para vincular o seguir editando.
   - El chequeo se reitera al guardar; si sigue habiendo match, solo se puede vincular+reseñar o cancelar.
 - El **creador** del sitio público (y admin/root) puede editar la ficha; descartar quita el guardado/aporte del usuario sin borrar el sitio si otros lo usan.
 - Catálogo masivo (`external_id`) no se hace privado.
@@ -175,7 +175,7 @@ Propuesta de árbol (Google Places / OSM tourism·leisure·amenity + MINCIT gast
 
 ### 8.1 Datos base (gratuitos, alimentados por la comunidad)
 - Nombre, dirección, fotos de galería (máx. 15 por sitio), categorías.
-- **Reseñas:** cada usuario puede dejar **varias** reseñas por sitio (bitácora de visitas): comentario, puntuación 1–5 estrellas, hasta **3 fotos** por reseña. En un sitio **público**, cada reseña puede ser **pública** (visible en ficha y cuenta para el promedio) o **privada** (solo el autor). Trazabilidad: usuario, fecha de creación y última edición. El promedio usa solo reseñas públicas. En ficha: filtros por estrellas / mías y orden por fecha o puntuación.
+- **Reseñas:** cada usuario puede dejar **varias** reseñas por sitio (bitácora de visitas): comentario, puntuación 1–5 estrellas, hasta **3 fotos** por reseña. En un sitio **público**, cada reseña puede ser **pública** (visible en ficha y cuenta para el promedio) o **privada** (solo el autor; ni admin/root la ven). Staff sí modera sitios y reseñas **públicas**. Trazabilidad: usuario, fecha de creación y última edición. El promedio usa solo reseñas públicas. En ficha: filtros por estrellas / mías y orden por fecha o puntuación.
 - **Rango de precio público**: promedio calculado a partir de reportes de precio que dejan los propios usuarios (o "gratis" si aplica). Requiere un mínimo de reportes distintos antes de mostrarse, para evitar manipulación.
 
 ### 8.2 Ficha enriquecida por el dueño del negocio (de pago)

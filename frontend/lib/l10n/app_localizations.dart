@@ -1207,7 +1207,7 @@ abstract class AppLocalizations {
   /// No description provided for @sameSiteReviewPublic.
   ///
   /// In es, this message translates to:
-  /// **'Usarlo + reseña pública'**
+  /// **'Usarlo + reseña visible'**
   String get sameSiteReviewPublic;
 
   /// No description provided for @sameSiteJournalPrivate.
@@ -1222,11 +1222,23 @@ abstract class AppLocalizations {
   /// **'Seguir editando'**
   String get sameSiteKeepEditing;
 
+  /// No description provided for @sameSiteSaveAnyway.
+  ///
+  /// In es, this message translates to:
+  /// **'Guardar de todas formas'**
+  String get sameSiteSaveAnyway;
+
   /// No description provided for @sameSiteHardBody.
   ///
   /// In es, this message translates to:
-  /// **'Ya existe un sitio público parecido. Para evitar duplicados, úsalo (quedarás como «compartido por»). Elige si tu comentario es público (promedio) o una bitácora solo para ti.'**
+  /// **'Ya existe un sitio público parecido. Puedes usarlo (quedarás como «compartido por») o guardar el tuyo de todas formas.'**
   String get sameSiteHardBody;
+
+  /// No description provided for @sameSiteSoftBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Ya existe un sitio público parecido. Úsalo para evitar duplicados, o sigue editando.'**
+  String get sameSiteSoftBody;
 
   /// No description provided for @sameSiteStaffHint.
   ///
@@ -1333,13 +1345,13 @@ abstract class AppLocalizations {
   /// No description provided for @reviewMakePublic.
   ///
   /// In es, this message translates to:
-  /// **'Reseña pública'**
+  /// **'Visible en la ficha'**
   String get reviewMakePublic;
 
   /// No description provided for @reviewPublicHint.
   ///
   /// In es, this message translates to:
-  /// **'Visible en la ficha y cuenta para el promedio'**
+  /// **'Aparece en la ficha y cuenta para el promedio'**
   String get reviewPublicHint;
 
   /// No description provided for @reviewPrivateHint.
@@ -1351,8 +1363,38 @@ abstract class AppLocalizations {
   /// No description provided for @reviewPrivateBadge.
   ///
   /// In es, this message translates to:
-  /// **'Privada'**
+  /// **'Bitácora'**
   String get reviewPrivateBadge;
+
+  /// No description provided for @staffModeBanner.
+  ///
+  /// In es, this message translates to:
+  /// **'{role}: privilegios de dueño en sitios y contenido público (las bitácoras privadas solo las ve su autor).'**
+  String staffModeBanner(String role);
+
+  /// No description provided for @staffRoleAdmin.
+  ///
+  /// In es, this message translates to:
+  /// **'Admin'**
+  String get staffRoleAdmin;
+
+  /// No description provided for @staffRoleRoot.
+  ///
+  /// In es, this message translates to:
+  /// **'Root'**
+  String get staffRoleRoot;
+
+  /// No description provided for @visibilityTooltipPublic.
+  ///
+  /// In es, this message translates to:
+  /// **'Visible para todos'**
+  String get visibilityTooltipPublic;
+
+  /// No description provided for @visibilityTooltipPrivate.
+  ///
+  /// In es, this message translates to:
+  /// **'Solo tú'**
+  String get visibilityTooltipPrivate;
 
   /// No description provided for @reviewFilterAll.
   ///

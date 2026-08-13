@@ -24,11 +24,16 @@ class SiteReviewsTab extends ConsumerStatefulWidget {
     required this.siteId,
     required this.siteName,
     this.siteIsPublic = true,
+    this.isStaff = false,
+    this.staffRoleLabel,
   });
 
   final String siteId;
   final String siteName;
   final bool siteIsPublic;
+  /// Admin/root: privilegios sobre contenido público (no bitácoras ajenas).
+  final bool isStaff;
+  final String? staffRoleLabel;
 
   @override
   ConsumerState<SiteReviewsTab> createState() => _SiteReviewsTabState();
@@ -59,7 +64,13 @@ class _SiteReviewsTabState extends ConsumerState<SiteReviewsTab> {
     try {
       final repo = ref.read(siteReviewsRepositoryProvider);
       final summary = await repo.ratingSummary(widget.siteId);
-      final list = await repo.listForSite(widget.siteId);
+      var list = await repo.listForSite(widget.siteId);
+      // Bitácora privada: solo el autor (tampoco staff).
+      if (_uid != null) {
+        list = list
+            .where((r) => r.isPublic || r.userId == _uid)
+            .toList();
+      }
       final urls = <String, String>{};
       for (final r in list) {
         for (final p in r.photos) {
@@ -189,6 +200,14 @@ class _SiteReviewsTabState extends ConsumerState<SiteReviewsTab> {
         ListView(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 88),
           children: [
+            if (widget.isStaff) ...[
+              _StaffPrivilegesBanner(
+                message: l10n.staffModeBanner(
+                  widget.staffRoleLabel ?? l10n.staffRoleAdmin,
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
             Row(
               children: [
                 Expanded(
@@ -284,6 +303,8 @@ class _SiteReviewsTabState extends ConsumerState<SiteReviewsTab> {
                   review: r,
                   photoUrls: _urls,
                   isMine: r.userId == _uid,
+                  canManage:
+                      r.userId == _uid || (widget.isStaff && r.isPublic),
                   onEdit: () => _openEditor(review: r),
                   onDelete: () => _confirmDelete(r),
                 ),
@@ -308,11 +329,49 @@ class _SiteReviewsTabState extends ConsumerState<SiteReviewsTab> {
   }
 }
 
+class _StaffPrivilegesBanner extends StatelessWidget {
+  const _StaffPrivilegesBanner({required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: AppColors.primary.withValues(alpha: 0.14),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.35)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.shield_outlined, size: 18, color: AppColors.primary),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              message,
+              style: const TextStyle(
+                fontSize: 12,
+                height: 1.35,
+                color: AppColors.foreground,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _ReviewCard extends StatelessWidget {
   const _ReviewCard({
     required this.review,
     required this.photoUrls,
     required this.isMine,
+    required this.canManage,
     required this.onEdit,
     required this.onDelete,
   });
@@ -320,6 +379,7 @@ class _ReviewCard extends StatelessWidget {
   final SiteReview review;
   final Map<String, String> photoUrls;
   final bool isMine;
+  final bool canManage;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
 
@@ -399,7 +459,7 @@ class _ReviewCard extends StatelessWidget {
                               ),
                           ],
                         ),
-                        if (isMine)
+                        if (canManage)
                           PopupMenuButton<String>(
                             icon: const Icon(
                               Icons.more_vert,

@@ -143,6 +143,49 @@ class SavesRepository {
     return UserSave.fromJoinedJson(Map<String, dynamic>.from(save));
   }
 
+  /// Crea o actualiza mi guardado apuntando a un sitio público existente.
+  Future<UserSave> attachSaveToExistingSite({
+    required String existingSiteId,
+    String? sourceUrl,
+    String? sourceNetwork,
+    String? notes,
+  }) async {
+    if (_uid == null) {
+      throw const AppUserError('Debes iniciar sesión para guardar.');
+    }
+
+    final raw = await _client.rpc(
+      'attach_save_to_existing_site',
+      params: {
+        'p_existing_site_id': existingSiteId,
+        'p_source_url': sourceUrl,
+        'p_source_network': sourceNetwork,
+        'p_notes': notes,
+      },
+    );
+    final saveId = raw?.toString();
+    if (saveId == null || saveId.isEmpty) {
+      throw const AppUserError('No se pudo vincular al sitio existente.');
+    }
+
+    try {
+      final row = await _client
+          .from('user_saves')
+          .select(_saveSelect)
+          .eq('id', saveId)
+          .single();
+      return UserSave.fromJoinedJson(Map<String, dynamic>.from(row));
+    } catch (_) {
+      // Embed completo a veces falla; basta con el resumen para seguir a reseña.
+      final row = await _client
+          .from('user_saves')
+          .select(_saveSelectSummary)
+          .eq('id', saveId)
+          .single();
+      return UserSave.fromJoinedJson(Map<String, dynamic>.from(row));
+    }
+  }
+
   Future<UserSave> createSave(SaveDraftInput input) async {
     final uid = _uid;
     if (uid == null) {
@@ -163,47 +206,13 @@ class SavesRepository {
     final status = computeStatus(input);
 
     // Caso: vincular a sitio público existente (cero duplicados).
-    // No crea sitio; no toca sites.is_public; el guardado queda público como el sitio.
     if (input.linkToExistingSiteId != null) {
-      final existingId = input.linkToExistingSiteId!;
-      final siteRow = await _client
-          .from('sites')
-          .select('id, is_public, status')
-          .eq('id', existingId)
-          .maybeSingle();
-      if (siteRow == null || siteRow['is_public'] != true) {
-        throw const AppUserError(
-          'El sitio a vincular ya no está público. Intenta de nuevo.',
-        );
-      }
-
-      await _client.from('site_contributors').upsert({
-        'site_id': existingId,
-        'user_id': uid,
-      });
-
-      final draftRemindAt = status != SiteStatus.complete
-          ? DateTime.now().toUtc().add(SavePolicies.draftRemindAfter)
-          : null;
-
-      final save = await _client
-          .from('user_saves')
-          .upsert({
-            'user_id': uid,
-            'site_id': existingId,
-            'status': 'complete',
-            'is_public': true,
-            'source_url': input.sourceUrl,
-            'source_network': input.sourceNetwork,
-            'notes': input.notes,
-            'draft_remind_at': draftRemindAt?.toIso8601String(),
-            'is_possible_duplicate': true,
-            'possible_duplicate_of_site_id': existingId,
-          }, onConflict: 'user_id, site_id')
-          .select(_saveSelect)
-          .single();
-
-      return UserSave.fromJoinedJson(Map<String, dynamic>.from(save));
+      return attachSaveToExistingSite(
+        existingSiteId: input.linkToExistingSiteId!,
+        sourceUrl: input.sourceUrl,
+        sourceNetwork: input.sourceNetwork,
+        notes: input.notes,
+      );
     }
 
     final siteInsert = <String, dynamic>{

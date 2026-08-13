@@ -8,8 +8,8 @@ Especificación §5 y §8.1. Objetivo de producto: **no tener sitios públicos d
 
 1. **Radio de duplicado:** 100 m (`ST_DWithin` sobre `geography`).
 2. **Nombre:** extensión `pg_trgm`; umbral `similarity >= 0.35` (con coords) o `>= 0.45` + ciudad (sin coords).
-3. **Si hay match público:** no se crea otro sitio. El usuario **vincula** su guardado al `site_id` existente, entra en `site_contributors` (“compartido también por”) y elige **reseña pública** (promedio) o **bitácora privada**.
-4. **Chequeo doble:** aviso al detectar datos suficientes y **reiteración al guardar**. Si sigue el match: vincular (público/privado) o cancelar (sin “crear uno nuevo”).
+3. **Si hay match público:** se ofrece vincular al existente (“compartido también por”) con **reseña visible** o **bitácora privada**. En el **Guardar** (chequeo duro) también **“Guardar de todas formas”** (crear sitio propio). En soft-check (Maps / pegar enlace) no se ofrece crear de todas formas.
+4. **Chequeo doble:** aviso al detectar datos suficientes (Maps pin + pegar enlace Google) y **reiteración al guardar**.
 5. **Reseñas:** tabla `site_reviews` (varias por usuario/sitio, `is_public`) + `site_review_photos` (máx. 3). Promedio solo con reseñas públicas.
 6. **Privilegios de ficha:** creador del sitio público y staff editan; descartar = quitar guardado/aporte propio sin borrar el sitio si hay asociaciones de terceros.
 7. **Coords:** RPC `set_site_location(site_id, lng, lat)`.

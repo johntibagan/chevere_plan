@@ -613,7 +613,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get sameSiteYes => 'Usarlo y reseñar';
 
   @override
-  String get sameSiteReviewPublic => 'Usarlo + reseña pública';
+  String get sameSiteReviewPublic => 'Usarlo + reseña visible';
 
   @override
   String get sameSiteJournalPrivate => 'Usarlo + bitácora privada';
@@ -622,8 +622,15 @@ class AppLocalizationsEs extends AppLocalizations {
   String get sameSiteKeepEditing => 'Seguir editando';
 
   @override
+  String get sameSiteSaveAnyway => 'Guardar de todas formas';
+
+  @override
   String get sameSiteHardBody =>
-      'Ya existe un sitio público parecido. Para evitar duplicados, úsalo (quedarás como «compartido por»). Elige si tu comentario es público (promedio) o una bitácora solo para ti.';
+      'Ya existe un sitio público parecido. Puedes usarlo (quedarás como «compartido por») o guardar el tuyo de todas formas.';
+
+  @override
+  String get sameSiteSoftBody =>
+      'Ya existe un sitio público parecido. Úsalo para evitar duplicados, o sigue editando.';
 
   @override
   String get sameSiteStaffHint =>
@@ -681,17 +688,34 @@ class AppLocalizationsEs extends AppLocalizations {
   String get reviewDeleted => 'Reseña eliminada.';
 
   @override
-  String get reviewMakePublic => 'Reseña pública';
+  String get reviewMakePublic => 'Visible en la ficha';
 
   @override
   String get reviewPublicHint =>
-      'Visible en la ficha y cuenta para el promedio';
+      'Aparece en la ficha y cuenta para el promedio';
 
   @override
   String get reviewPrivateHint => 'Solo tú la ves (bitácora / historial)';
 
   @override
-  String get reviewPrivateBadge => 'Privada';
+  String get reviewPrivateBadge => 'Bitácora';
+
+  @override
+  String staffModeBanner(String role) {
+    return '$role: privilegios de dueño en sitios y contenido público (las bitácoras privadas solo las ve su autor).';
+  }
+
+  @override
+  String get staffRoleAdmin => 'Admin';
+
+  @override
+  String get staffRoleRoot => 'Root';
+
+  @override
+  String get visibilityTooltipPublic => 'Visible para todos';
+
+  @override
+  String get visibilityTooltipPrivate => 'Solo tú';
 
   @override
   String get reviewFilterAll => 'Todas';

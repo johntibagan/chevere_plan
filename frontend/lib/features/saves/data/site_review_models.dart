@@ -93,11 +93,14 @@ class SiteReview {
   }
 }
 
-/// Acción al detectar sitio público duplicado.
+  /// Acción al detectar sitio público duplicado.
 enum SameSiteAction {
   /// Vincular + reseña visible en la ficha / promedio.
   reviewPublic,
 
   /// Vincular + bitácora solo para mí.
   journalPrivate,
+
+  /// Guardar de todas formas (crear sitio propio). Solo en botón Guardar.
+  saveAnyway,
 }

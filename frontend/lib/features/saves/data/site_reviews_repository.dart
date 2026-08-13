@@ -87,6 +87,7 @@ class SiteReviewsRepository {
           .select(_reviewSelect)
           .single();
     } else {
+      // RLS: autor o staff. No filtrar por user_id aquí (bloquea moderación).
       row = await _client
           .from('site_reviews')
           .update({
@@ -95,7 +96,6 @@ class SiteReviewsRepository {
             'is_public': isPublic,
           })
           .eq('id', reviewId)
-          .eq('user_id', uid)
           .select(_reviewSelect)
           .single();
     }
@@ -156,12 +156,8 @@ class SiteReviewsRepository {
   }
 
   Future<void> deleteMyReview(String reviewId) async {
-    final uid = _uid;
-    if (uid == null) return;
-    await _client
-        .from('site_reviews')
-        .delete()
-        .eq('id', reviewId)
-        .eq('user_id', uid);
+    if (_uid == null) return;
+    // RLS: autor o staff.
+    await _client.from('site_reviews').delete().eq('id', reviewId);
   }
 }

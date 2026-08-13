@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/context_l10n.dart';
 import '../theme/app_theme.dart';
 
 /// Indicador de privacidad. Por defecto **solo icono** (el color ya comunica;
-/// no repetir «Público»/«Privado» si hay borde de color en la tarjeta).
+/// no repetir etiqueta de visibilidad si hay borde de color en la tarjeta).
 class VisibilityBadge extends StatelessWidget {
   const VisibilityBadge({
     super.key,
@@ -19,8 +20,12 @@ class VisibilityBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final color = isPublic ? AppColors.success : AppColors.purple;
-    final label = isPublic ? 'Público' : 'Privado';
+    // Accesibilidad: sin palabras «Público»/«Privado» (el color ya lo dice).
+    final tooltip = isPublic
+        ? l10n.visibilityTooltipPublic
+        : l10n.visibilityTooltipPrivate;
     final icon = isPublic ? Icons.public : Icons.lock_outline;
 
     final child = showLabel
@@ -40,7 +45,7 @@ class VisibilityBadge extends StatelessWidget {
                 Icon(icon, size: compact ? 12 : 14, color: color),
                 SizedBox(width: compact ? 4 : 6),
                 Text(
-                  label,
+                  tooltip,
                   style: TextStyle(
                     fontSize: compact ? 11 : 12,
                     fontWeight: FontWeight.w700,
@@ -53,7 +58,7 @@ class VisibilityBadge extends StatelessWidget {
         : Icon(icon, size: compact ? 16 : 18, color: color);
 
     return Tooltip(
-      message: label,
+      message: tooltip,
       child: child,
     );
   }
