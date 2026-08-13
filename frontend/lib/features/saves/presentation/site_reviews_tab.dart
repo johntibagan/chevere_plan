@@ -12,6 +12,13 @@ import '../../../core/widgets/visibility_badge.dart';
 import '../data/site_review_models.dart';
 import 'site_review_editor_page.dart';
 
+enum _ReviewSort {
+  newest,
+  oldest,
+  ratingHigh,
+  ratingLow,
+}
+
 class SiteReviewsTab extends ConsumerStatefulWidget {
   const SiteReviewsTab({
     super.key,
@@ -35,6 +42,11 @@ class _SiteReviewsTabState extends ConsumerState<SiteReviewsTab> {
   List<SiteReview> _reviews = const [];
   final Map<String, String> _urls = {};
   String? _uid;
+
+  /// null = todas las estrellas.
+  int? _starFilter;
+  bool _mineOnly = false;
+  _ReviewSort _sort = _ReviewSort.newest;
 
   @override
   void initState() {
@@ -72,18 +84,97 @@ class _SiteReviewsTabState extends ConsumerState<SiteReviewsTab> {
     }
   }
 
-  Future<void> _openEditor({SiteReview? mine}) async {
+  List<SiteReview> get _visible {
+    var list = List<SiteReview>.from(_reviews);
+    if (_starFilter != null) {
+      list = list.where((r) => r.rating == _starFilter).toList();
+    }
+    if (_mineOnly && _uid != null) {
+      list = list.where((r) => r.userId == _uid).toList();
+    }
+    switch (_sort) {
+      case _ReviewSort.newest:
+        list.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      case _ReviewSort.oldest:
+        list.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+      case _ReviewSort.ratingHigh:
+        list.sort((a, b) {
+          final c = b.rating.compareTo(a.rating);
+          return c != 0 ? c : b.createdAt.compareTo(a.createdAt);
+        });
+      case _ReviewSort.ratingLow:
+        list.sort((a, b) {
+          final c = a.rating.compareTo(b.rating);
+          return c != 0 ? c : b.createdAt.compareTo(a.createdAt);
+        });
+    }
+    return list;
+  }
+
+  Future<void> _openEditor({SiteReview? review}) async {
     final ok = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
         builder: (_) => SiteReviewEditorPage(
           siteId: widget.siteId,
           siteName: widget.siteName,
-          initialReview: mine,
+          initialReview: review,
           siteIsPublic: widget.siteIsPublic,
         ),
       ),
     );
     if (ok == true) await _load();
+  }
+
+  Future<void> _confirmDelete(SiteReview review) async {
+    final l10n = context.l10n;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        title: Text(
+          l10n.reviewDeleteTitle,
+          style: const TextStyle(color: AppColors.foreground),
+        ),
+        content: Text(
+          l10n.reviewDeleteBody,
+          style: const TextStyle(color: AppColors.muted),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(l10n.actionCancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(l10n.reviewDelete),
+          ),
+        ],
+      ),
+    );
+    if (ok != true || !mounted) return;
+    try {
+      await ref.read(siteReviewsRepositoryProvider).deleteMyReview(review.id);
+      if (!mounted) return;
+      AppToast.show(context, l10n.reviewDeleted);
+      await _load();
+    } catch (e) {
+      if (!mounted) return;
+      AppToast.error(context, e, logContext: 'review_delete');
+    }
+  }
+
+  String _sortLabel(_ReviewSort sort) {
+    final l10n = context.l10n;
+    switch (sort) {
+      case _ReviewSort.newest:
+        return l10n.reviewSortNewest;
+      case _ReviewSort.oldest:
+        return l10n.reviewSortOldest;
+      case _ReviewSort.ratingHigh:
+        return l10n.reviewSortRatingHigh;
+      case _ReviewSort.ratingLow:
+        return l10n.reviewSortRatingLow;
+    }
   }
 
   @override
@@ -92,43 +183,116 @@ class _SiteReviewsTabState extends ConsumerState<SiteReviewsTab> {
     if (_loading) {
       return const Center(child: CircularProgressIndicator());
     }
-    final SiteReview? mine = () {
-      if (_uid == null) return null;
-      for (final r in _reviews) {
-        if (r.userId == _uid) return r;
-      }
-      return null;
-    }();
+    final visible = _visible;
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
       children: [
-        if (_summary.reviewCount > 0)
-          Text(
-            l10n.reviewAvg(
-              _summary.avgRating.toStringAsFixed(1),
-              _summary.reviewCount,
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                _summary.reviewCount > 0
+                    ? l10n.reviewAvg(
+                        _summary.avgRating.toStringAsFixed(1),
+                        _summary.reviewCount,
+                      )
+                    : l10n.reviewEmpty,
+                style: GoogleFonts.plusJakartaSans(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 16,
+                  color: AppColors.foreground,
+                ),
+              ),
             ),
-            style: GoogleFonts.plusJakartaSans(
-              fontWeight: FontWeight.w700,
-              fontSize: 16,
-              color: AppColors.foreground,
+            IconButton(
+              tooltip: l10n.reviewWrite,
+              onPressed: () => _openEditor(),
+              icon: const Icon(Icons.add_comment_outlined),
+              color: AppColors.primary,
             ),
+            PopupMenuButton<_ReviewSort>(
+              tooltip: l10n.reviewSortLabel,
+              initialValue: _sort,
+              onSelected: (v) => setState(() => _sort = v),
+              itemBuilder: (context) => [
+                for (final s in _ReviewSort.values)
+                  PopupMenuItem(
+                    value: s,
+                    child: Text(_sortLabel(s)),
+                  ),
+              ],
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.sort, size: 20, color: AppColors.muted),
+                    const SizedBox(width: 4),
+                    Flexible(
+                      child: Text(
+                        _sortLabel(_sort),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: AppColors.muted,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: [
+              FilterChip(
+                label: Text(l10n.reviewFilterAll),
+                selected: _starFilter == null && !_mineOnly,
+                onSelected: (_) => setState(() {
+                  _starFilter = null;
+                  _mineOnly = false;
+                }),
+              ),
+              const SizedBox(width: 6),
+              for (var star = 5; star >= 1; star--) ...[
+                FilterChip(
+                  label: Text('$star★'),
+                  selected: _starFilter == star,
+                  onSelected: (sel) => setState(() {
+                    _starFilter = sel ? star : null;
+                  }),
+                ),
+                const SizedBox(width: 6),
+              ],
+              if (_uid != null)
+                FilterChip(
+                  label: Text(l10n.reviewFilterMine),
+                  selected: _mineOnly,
+                  onSelected: (sel) => setState(() => _mineOnly = sel),
+                ),
+            ],
           ),
-        const SizedBox(height: 12),
-        FilledButton.tonal(
-          onPressed: () => _openEditor(mine: mine),
-          child: Text(mine == null ? l10n.reviewWrite : l10n.reviewEditMine),
         ),
         const SizedBox(height: 16),
-        if (_reviews.isEmpty)
-          Text(l10n.reviewEmpty, style: const TextStyle(color: AppColors.muted))
+        if (visible.isEmpty)
+          Text(
+            _reviews.isEmpty ? l10n.reviewEmpty : l10n.reviewFilterEmpty,
+            style: const TextStyle(color: AppColors.muted),
+          )
         else
-          for (final r in _reviews) ...[
+          for (final r in visible) ...[
             _ReviewCard(
               review: r,
               photoUrls: _urls,
               isMine: r.userId == _uid,
+              onEdit: () => _openEditor(review: r),
+              onDelete: () => _confirmDelete(r),
             ),
             const SizedBox(height: 12),
           ],
@@ -142,14 +306,19 @@ class _ReviewCard extends StatelessWidget {
     required this.review,
     required this.photoUrls,
     required this.isMine,
+    required this.onEdit,
+    required this.onDelete,
   });
 
   final SiteReview review;
   final Map<String, String> photoUrls;
   final bool isMine;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final name = review.authorName?.trim().isNotEmpty == true
         ? review.authorName!
         : 'Usuario';
@@ -178,7 +347,11 @@ class _ReviewCard extends StatelessWidget {
                         )
                       : const ColoredBox(
                           color: AppColors.surfaceElevated,
-                          child: Icon(Icons.person, size: 18, color: AppColors.muted),
+                          child: Icon(
+                            Icons.person,
+                            size: 18,
+                            color: AppColors.muted,
+                          ),
                         ),
                 ),
               ),
@@ -201,7 +374,7 @@ class _ReviewCard extends StatelessWidget {
                     ),
                     if (isMine && !review.isPublic) ...[
                       const SizedBox(width: 6),
-                      VisibilityBadge(isPublic: false, compact: true),
+                      const VisibilityBadge(isPublic: false, compact: true),
                     ],
                   ],
                 ),
@@ -217,6 +390,24 @@ class _ReviewCard extends StatelessWidget {
                     ),
                 ],
               ),
+              if (isMine)
+                PopupMenuButton<String>(
+                  icon: const Icon(Icons.more_vert, color: AppColors.muted),
+                  onSelected: (v) {
+                    if (v == 'edit') onEdit();
+                    if (v == 'delete') onDelete();
+                  },
+                  itemBuilder: (context) => [
+                    PopupMenuItem(
+                      value: 'edit',
+                      child: Text(l10n.reviewEditMine),
+                    ),
+                    PopupMenuItem(
+                      value: 'delete',
+                      child: Text(l10n.reviewDelete),
+                    ),
+                  ],
+                ),
             ],
           ),
           if (review.body.trim().isNotEmpty) ...[

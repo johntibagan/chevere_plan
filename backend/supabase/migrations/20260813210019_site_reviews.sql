@@ -1,4 +1,4 @@
--- Reseñas por sitio: 1 por usuario, estrellas, hasta 3 fotos, trazabilidad.
+-- Reseñas por sitio: varias por usuario (bitácora), estrellas, hasta 3 fotos.
 -- is_public: reseña pública (promedio) vs bitácora privada.
 
 create table if not exists public.site_reviews (
@@ -9,12 +9,17 @@ create table if not exists public.site_reviews (
   rating smallint not null check (rating between 1 and 5),
   is_public boolean not null default false,
   created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now(),
-  unique (site_id, user_id)
+  updated_at timestamptz not null default now()
 );
 
 create index if not exists site_reviews_site_id_idx
   on public.site_reviews (site_id, updated_at desc);
+
+create index if not exists site_reviews_site_rating_idx
+  on public.site_reviews (site_id, rating, created_at desc);
+
+create index if not exists site_reviews_site_created_idx
+  on public.site_reviews (site_id, created_at desc);
 
 drop trigger if exists site_reviews_set_updated_at on public.site_reviews;
 create trigger site_reviews_set_updated_at

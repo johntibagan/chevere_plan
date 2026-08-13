@@ -82,11 +82,12 @@ class _SiteReviewEditorPageState extends ConsumerState<SiteReviewEditorPage> {
   Future<void> _save() async {
     setState(() => _saving = true);
     try {
-      await ref.read(siteReviewsRepositoryProvider).upsertReview(
+      await ref.read(siteReviewsRepositoryProvider).saveReview(
             siteId: widget.siteId,
             body: _body.text,
             rating: _rating,
             isPublic: _canChoosePrivacy && _isPublic,
+            reviewId: widget.initialReview?.id,
             newPhotos: _newPhotos,
           );
       if (!mounted) return;

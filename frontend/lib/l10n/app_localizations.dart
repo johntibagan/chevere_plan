@@ -1291,8 +1291,32 @@ abstract class AppLocalizations {
   /// No description provided for @reviewEditMine.
   ///
   /// In es, this message translates to:
-  /// **'Editar mi reseña'**
+  /// **'Editar'**
   String get reviewEditMine;
+
+  /// No description provided for @reviewDelete.
+  ///
+  /// In es, this message translates to:
+  /// **'Eliminar'**
+  String get reviewDelete;
+
+  /// No description provided for @reviewDeleteTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Eliminar reseña?'**
+  String get reviewDeleteTitle;
+
+  /// No description provided for @reviewDeleteBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Se borrará esta reseña y sus fotos. No se puede deshacer.'**
+  String get reviewDeleteBody;
+
+  /// No description provided for @reviewDeleted.
+  ///
+  /// In es, this message translates to:
+  /// **'Reseña eliminada.'**
+  String get reviewDeleted;
 
   /// No description provided for @reviewMakePublic.
   ///
@@ -1317,6 +1341,54 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Privada'**
   String get reviewPrivateBadge;
+
+  /// No description provided for @reviewFilterAll.
+  ///
+  /// In es, this message translates to:
+  /// **'Todas'**
+  String get reviewFilterAll;
+
+  /// No description provided for @reviewFilterMine.
+  ///
+  /// In es, this message translates to:
+  /// **'Mías'**
+  String get reviewFilterMine;
+
+  /// No description provided for @reviewFilterEmpty.
+  ///
+  /// In es, this message translates to:
+  /// **'Ninguna reseña con ese filtro.'**
+  String get reviewFilterEmpty;
+
+  /// No description provided for @reviewSortLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Ordenar'**
+  String get reviewSortLabel;
+
+  /// No description provided for @reviewSortNewest.
+  ///
+  /// In es, this message translates to:
+  /// **'Más recientes'**
+  String get reviewSortNewest;
+
+  /// No description provided for @reviewSortOldest.
+  ///
+  /// In es, this message translates to:
+  /// **'Más antiguas'**
+  String get reviewSortOldest;
+
+  /// No description provided for @reviewSortRatingHigh.
+  ///
+  /// In es, this message translates to:
+  /// **'Mejor puntuación'**
+  String get reviewSortRatingHigh;
+
+  /// No description provided for @reviewSortRatingLow.
+  ///
+  /// In es, this message translates to:
+  /// **'Peor puntuación'**
+  String get reviewSortRatingLow;
 
   /// No description provided for @reviewAvg.
   ///

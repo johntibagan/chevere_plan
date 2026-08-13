@@ -40,31 +40,29 @@ class SiteReviewsRepository {
         .from('site_reviews')
         .select(_reviewSelect)
         .eq('site_id', siteId)
-        .order('updated_at', ascending: false);
+        .order('created_at', ascending: false);
 
     return (rows as List)
         .map((e) => SiteReview.fromJson(Map<String, dynamic>.from(e as Map)))
         .toList();
   }
 
-  Future<SiteReview?> myReview(String siteId) async {
-    final uid = _uid;
-    if (uid == null) return null;
+  Future<SiteReview> getById(String reviewId) async {
     final row = await _client
         .from('site_reviews')
         .select(_reviewSelect)
-        .eq('site_id', siteId)
-        .eq('user_id', uid)
-        .maybeSingle();
-    if (row == null) return null;
+        .eq('id', reviewId)
+        .single();
     return SiteReview.fromJson(Map<String, dynamic>.from(row));
   }
 
-  Future<SiteReview> upsertReview({
+  /// Crea reseña nueva o actualiza [reviewId] si se pasa.
+  Future<SiteReview> saveReview({
     required String siteId,
     required String body,
     required int rating,
     required bool isPublic,
+    String? reviewId,
     List<File> newPhotos = const [],
   }) async {
     final uid = _uid;
@@ -75,9 +73,8 @@ class SiteReviewsRepository {
       throw const AppUserError('La puntuación debe ser entre 1 y 5 estrellas.');
     }
 
-    final existing = await myReview(siteId);
     final Map<String, dynamic> row;
-    if (existing == null) {
+    if (reviewId == null) {
       row = await _client
           .from('site_reviews')
           .insert({
@@ -97,7 +94,7 @@ class SiteReviewsRepository {
             'rating': rating,
             'is_public': isPublic,
           })
-          .eq('id', existing.id)
+          .eq('id', reviewId)
           .eq('user_id', uid)
           .select(_reviewSelect)
           .single();
@@ -114,7 +111,7 @@ class SiteReviewsRepository {
       await _uploadPhoto(reviewId: review.id, file: file, sortOrder: order);
       order++;
     }
-    return (await myReview(siteId)) ?? review;
+    return getById(review.id);
   }
 
   Future<void> _uploadPhoto({

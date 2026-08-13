@@ -175,7 +175,7 @@ Propuesta de árbol (Google Places / OSM tourism·leisure·amenity + MINCIT gast
 
 ### 8.1 Datos base (gratuitos, alimentados por la comunidad)
 - Nombre, dirección, fotos de galería (máx. 15 por sitio), categorías.
-- **Reseñas:** cada usuario puede dejar **una** reseña por sitio (editable): comentario, puntuación 1–5 estrellas, hasta **3 fotos** propias de la reseña. En un sitio **público**, la reseña puede ser **pública** (visible en ficha y cuenta para el promedio) o **privada** (bitácora / historial solo del autor). Trazabilidad: usuario, fecha de creación y última edición. El promedio en ficha usa solo reseñas públicas.
+- **Reseñas:** cada usuario puede dejar **varias** reseñas por sitio (bitácora de visitas): comentario, puntuación 1–5 estrellas, hasta **3 fotos** por reseña. En un sitio **público**, cada reseña puede ser **pública** (visible en ficha y cuenta para el promedio) o **privada** (solo el autor). Trazabilidad: usuario, fecha de creación y última edición. El promedio usa solo reseñas públicas. En ficha: filtros por estrellas / mías y orden por fecha o puntuación.
 - **Rango de precio público**: promedio calculado a partir de reportes de precio que dejan los propios usuarios (o "gratis" si aplica). Requiere un mínimo de reportes distintos antes de mostrarse, para evitar manipulación.
 
 ### 8.2 Ficha enriquecida por el dueño del negocio (de pago)

@@ -659,7 +659,20 @@ class AppLocalizationsEs extends AppLocalizations {
   String get reviewWrite => 'Escribir reseña';
 
   @override
-  String get reviewEditMine => 'Editar mi reseña';
+  String get reviewEditMine => 'Editar';
+
+  @override
+  String get reviewDelete => 'Eliminar';
+
+  @override
+  String get reviewDeleteTitle => '¿Eliminar reseña?';
+
+  @override
+  String get reviewDeleteBody =>
+      'Se borrará esta reseña y sus fotos. No se puede deshacer.';
+
+  @override
+  String get reviewDeleted => 'Reseña eliminada.';
 
   @override
   String get reviewMakePublic => 'Reseña pública';
@@ -673,6 +686,30 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get reviewPrivateBadge => 'Privada';
+
+  @override
+  String get reviewFilterAll => 'Todas';
+
+  @override
+  String get reviewFilterMine => 'Mías';
+
+  @override
+  String get reviewFilterEmpty => 'Ninguna reseña con ese filtro.';
+
+  @override
+  String get reviewSortLabel => 'Ordenar';
+
+  @override
+  String get reviewSortNewest => 'Más recientes';
+
+  @override
+  String get reviewSortOldest => 'Más antiguas';
+
+  @override
+  String get reviewSortRatingHigh => 'Mejor puntuación';
+
+  @override
+  String get reviewSortRatingLow => 'Peor puntuación';
 
   @override
   String reviewAvg(String avg, int count) {
