@@ -76,6 +76,8 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
 
   double? _lat;
   double? _lng;
+  /// Había pin persistido al abrir (editar). Si lo quitan, hay que borrar en DB.
+  bool _hadStoredCoords = false;
 
   List<Category> _categories = [];
   final Set<String> _selectedCategoryIds = {};
@@ -233,6 +235,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
           _isPhysical = s.isPhysicalPlace;
           _lat = data.latitude;
           _lng = data.longitude;
+          _hadStoredCoords = data.latitude != null && data.longitude != null;
           _selectedCategoryIds
             ..clear()
             ..addAll(data.categoryIds);
@@ -286,6 +289,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
           _isPhysical = data.isPhysicalPlace;
           _lat = data.latitude;
           _lng = data.longitude;
+          _hadStoredCoords = data.latitude != null && data.longitude != null;
           _selectedCategoryIds
             ..clear()
             ..addAll(data.categoryIds);
@@ -371,6 +375,38 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
     if (!_isEditing) _maybeSuggestCategories(force: true);
   }
 
+  /// Pregunta si persistir lat/lng (Maps por nombre suele mostrar la ficha).
+  Future<bool> _confirmSaveExactPin() async {
+    final l10n = context.l10n;
+    final keep = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        title: Text(
+          l10n.saveExactPinTitle,
+          style: const TextStyle(color: AppColors.foreground),
+        ),
+        content: Text(
+          l10n.saveExactPinBody,
+          style: const TextStyle(color: AppColors.muted),
+        ),
+        actionsAlignment: MainAxisAlignment.start,
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(l10n.saveExactPinNo),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(l10n.saveExactPinYes),
+          ),
+        ],
+      ),
+    );
+    return keep ?? false;
+  }
+
   Future<void> _importFromGoogleMaps() async {
     final text = _mapsCtrl.text.trim();
     if (text.isEmpty) {
@@ -392,24 +428,37 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
         staticMapUrl: result.staticMapUrl,
       );
       if (!mounted) return;
+      if (result.hasCoords) {
+        final keepPin = await _confirmSaveExactPin();
+        if (!mounted) return;
+        if (keepPin != true) {
+          setState(() {
+            _lat = null;
+            _lng = null;
+          });
+        }
+      }
       // Soft check tras pegar/importar Maps (igual que confirmar pin).
       final linked = await _softCheckDuplicateAfterLocation();
       if (linked || !mounted) return;
+      final droppedPin = result.hasCoords && _lat == null;
       AppToast.show(
         context,
-        !result.hasCoords
-            ? (Env.hasGoogleMapsKey
-                ? context.l10n.saveMapsNeedExactPin
-                : context.l10n.saveMapsNeedGoogleKey)
-            : !result.hasExactPin
-                ? context.l10n.saveMapsApproxPin
-                : (_cityCtrl.text.trim().isNotEmpty
-                    ? context.l10n.saveLocationAppliedNamed(
-                        _nameCtrl.text.trim(),
-                        _cityCtrl.text.trim(),
-                      )
-                    : context.l10n.saveMapsNeedCity),
-        error: !result.hasCoords,
+        droppedPin
+            ? context.l10n.saveLocationApplied
+            : !result.hasCoords
+                ? (Env.hasGoogleMapsKey
+                    ? context.l10n.saveMapsNeedExactPin
+                    : context.l10n.saveMapsNeedGoogleKey)
+                : !result.hasExactPin
+                    ? context.l10n.saveMapsApproxPin
+                    : (_cityCtrl.text.trim().isNotEmpty
+                        ? context.l10n.saveLocationAppliedNamed(
+                            _nameCtrl.text.trim(),
+                            _cityCtrl.text.trim(),
+                          )
+                        : context.l10n.saveMapsNeedCity),
+        error: !result.hasCoords && !droppedPin,
       );
     } catch (e) {
       if (!mounted) return;
@@ -973,6 +1022,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
       isPublic: _isPublic && _hasFormLocation,
       isPhysicalPlace: _isPhysical,
       categoryIsExplicit: categoryIsExplicit,
+      clearLocation: _hadStoredCoords && (lat == null || lng == null),
     );
 
     final editSaveId = _editSaveId;
@@ -1491,6 +1541,30 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
                         ),
                       ],
                     ],
+                    SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: Text(l10n.saveExactPinSwitch),
+                      subtitle: Text(
+                        l10n.saveExactPinSwitchHint,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: AppColors.onImageMuted,
+                        ),
+                      ),
+                      value: _lat != null && _lng != null,
+                      onChanged: _saving
+                          ? null
+                          : (v) async {
+                              if (!v) {
+                                setState(() {
+                                  _lat = null;
+                                  _lng = null;
+                                });
+                                return;
+                              }
+                              await _openMap();
+                            },
+                    ),
                     Theme(
                       data: Theme.of(context)
                           .copyWith(dividerColor: Colors.transparent),

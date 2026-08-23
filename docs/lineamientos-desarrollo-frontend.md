@@ -1,6 +1,6 @@
 # Lineamientos de desarrollo — Frontend Chevere Plan
 
-> Documento vivo. Cursor lo carga vía `.cursor/rules/frontend-lineamientos.mdc` **antes de cualquier ajuste en `frontend/`**. Complementa (no reemplaza) a [`producto.md`](producto.md).
+> Documento vivo. Cursor lo carga vía `.cursor/rules/frontend-lineamientos.mdc` **antes de cualquier ajuste en `frontend/`**. Comportamiento actual: [`aplicacion-actual.md`](aplicacion-actual.md). Visión: [`producto.md`](producto.md). No inventar features que no estén en la app.
 
 ## 1. Principio general
 

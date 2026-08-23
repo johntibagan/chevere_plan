@@ -922,6 +922,42 @@ abstract class AppLocalizations {
   /// **'Quitar ubicación'**
   String get saveLocationClear;
 
+  /// No description provided for @saveExactPinTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Guardar el punto exacto?'**
+  String get saveExactPinTitle;
+
+  /// No description provided for @saveExactPinBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Por nombre, Maps suele mostrar la ficha del lugar (fotos y reseñas). Guarda el pin solo si necesitas el punto preciso: entrada, mirador, finca, etc.'**
+  String get saveExactPinBody;
+
+  /// No description provided for @saveExactPinNo.
+  ///
+  /// In es, this message translates to:
+  /// **'No, solo el lugar'**
+  String get saveExactPinNo;
+
+  /// No description provided for @saveExactPinYes.
+  ///
+  /// In es, this message translates to:
+  /// **'Sí, guardar pin'**
+  String get saveExactPinYes;
+
+  /// No description provided for @saveExactPinSwitch.
+  ///
+  /// In es, this message translates to:
+  /// **'Punto exacto en el mapa'**
+  String get saveExactPinSwitch;
+
+  /// No description provided for @saveExactPinSwitchHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Si está apagado, Maps abre la ficha por nombre. Enciéndelo para rutas y el pin preciso.'**
+  String get saveExactPinSwitchHint;
+
   /// No description provided for @saveMapsPasteLabel.
   ///
   /// In es, this message translates to:

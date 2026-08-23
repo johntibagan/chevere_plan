@@ -9,7 +9,7 @@ alwaysApply: true
 
 No hardcodear países, departamentos ni ciudades en lógica de negocio.
 El catálogo vive en Supabase (`countries`, `departments`, `cities`), se
-sincroniza desde DIVIPOLA/DANE con `scripts/05_sync_divipola.py`, y la app
+sincroniza desde DIVIPOLA/DANE con `backend/supabase/scripts/05_sync_divipola.py`, y la app
 lo cachea en Hive (TTL 30/90 días). El selector filtra **solo esa caché**.
 
 Nombre/dirección/coords pueden salir de Maps; ciudad y departamento se

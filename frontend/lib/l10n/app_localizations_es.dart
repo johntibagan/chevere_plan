@@ -455,6 +455,26 @@ class AppLocalizationsEs extends AppLocalizations {
   String get saveLocationClear => 'Quitar ubicación';
 
   @override
+  String get saveExactPinTitle => '¿Guardar el punto exacto?';
+
+  @override
+  String get saveExactPinBody =>
+      'Por nombre, Maps suele mostrar la ficha del lugar (fotos y reseñas). Guarda el pin solo si necesitas el punto preciso: entrada, mirador, finca, etc.';
+
+  @override
+  String get saveExactPinNo => 'No, solo el lugar';
+
+  @override
+  String get saveExactPinYes => 'Sí, guardar pin';
+
+  @override
+  String get saveExactPinSwitch => 'Punto exacto en el mapa';
+
+  @override
+  String get saveExactPinSwitchHint =>
+      'Si está apagado, Maps abre la ficha por nombre. Enciéndelo para rutas y el pin preciso.';
+
+  @override
   String get saveMapsPasteLabel => 'Pegar enlace de Google Maps';
 
   @override

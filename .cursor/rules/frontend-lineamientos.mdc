@@ -5,7 +5,7 @@ alwaysApply: true
 
 # Frontend — obligatorio antes de tocar código
 
-Si el trabajo toca `frontend/` (Dart, widgets, `.arb`, tests, `pubspec`), **leer y cumplir** [`docs/lineamientos-desarrollo-frontend.md`](docs/lineamientos-desarrollo-frontend.md). Complementa [`docs/producto.md`](docs/producto.md). No inventar comportamiento.
+Si el trabajo toca `frontend/` (Dart, widgets, `.arb`, tests, `pubspec`), **leer y cumplir** [`docs/lineamientos-desarrollo-frontend.md`](docs/lineamientos-desarrollo-frontend.md). Comportamiento real: [`docs/aplicacion-actual.md`](docs/aplicacion-actual.md). Visión: [`docs/producto.md`](docs/producto.md). No inventar comportamiento.
 
 ## Prioridad
 

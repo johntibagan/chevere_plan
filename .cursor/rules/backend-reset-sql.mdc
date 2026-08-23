@@ -20,8 +20,13 @@ Owner catálogo / root: `johnftm.proyectos@gmail.com`.
 
 ## Checklist al tocar SQL o catálogo
 
-1. Nueva migración en `backend/supabase/migrations/` con timestamp creciente
-   (`YYYYMMDDHHMMSS_*.sql`). El `--full` aplica **todas** en orden.
+1. Baseline actual (como si el proyecto naciera hoy), en este orden:
+   `20260808000001_schema.sql` → `…02_seed.sql` → `…03_storage.sql`.
+   Cambios nuevos: otra migración con timestamp **posterior** a esas tres.
+   El `--full` aplica **todas** en orden. No reintroducir parches ya incluidos
+   en el schema (search, reviews, anti-dupe, `clear_site_location`, etc.).
+   Un merge de datos one-shot (p. ej. unir dos sitios del catálogo) **no** va
+   en migraciones: el import masivo recrea el catálogo.
 2. SQL **idempotente** donde importe (`if not exists`, `on conflict`, etc.):
    el reset full reejecuta desde cero; scripts sueltos pueden reaplicarse.
 3. Si cambias wipe: sitios del catálogo (`external_id IS NOT NULL`) **no** se

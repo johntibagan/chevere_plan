@@ -506,6 +506,7 @@ class SaveDraftInput {
     this.notes,
     this.linkToExistingSiteId,
     this.categoryIsExplicit = true,
+    this.clearLocation = false,
   });
 
   final String name;
@@ -526,4 +527,6 @@ class SaveDraftInput {
   final String? linkToExistingSiteId;
   /// False si la categoría es solo el default (Otros) autoasignado.
   final bool categoryIsExplicit;
+  /// Al editar: quitar coords guardadas (ficha por nombre en Maps).
+  final bool clearLocation;
 }

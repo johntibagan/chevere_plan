@@ -30,7 +30,8 @@ Detalles: [backend/README.md](backend/README.md).
 | Doc | Qué es |
 |-----|--------|
 | [docs/README.md](docs/README.md) | Índice |
-| [docs/producto.md](docs/producto.md) | Especificación de producto |
+| [docs/aplicacion-actual.md](docs/aplicacion-actual.md) | Qué hace la app hoy |
+| [docs/producto.md](docs/producto.md) | Visión / especificación amplia |
 | [docs/lineamientos-desarrollo-frontend.md](docs/lineamientos-desarrollo-frontend.md) | Cómo construir el frontend |
 | [docs/setup/01-flutter-android.md](docs/setup/01-flutter-android.md) | Flutter + Android |
 | [docs/setup/02-supabase.md](docs/setup/02-supabase.md) | Supabase, Google Auth, reset |

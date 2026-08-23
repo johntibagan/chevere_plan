@@ -236,16 +236,7 @@ class SavesRepository {
 
     final siteId = site['id'] as String;
 
-    if (input.latitude != null && input.longitude != null) {
-      await _client.rpc(
-        'set_site_location',
-        params: {
-          'p_site_id': siteId,
-          'p_lng': input.longitude,
-          'p_lat': input.latitude,
-        },
-      );
-    }
+    await _syncSiteLocation(siteId: siteId, input: input);
 
     if (input.categoryIds.isNotEmpty) {
       await _client.from('site_categories').insert(
@@ -528,20 +519,7 @@ class SavesRepository {
       'department_id': input.departmentId,
     }).eq('id', siteId);
 
-    if (input.latitude != null && input.longitude != null) {
-      await _client.rpc(
-        'set_site_location',
-        params: {
-          'p_site_id': siteId,
-          'p_lng': input.longitude,
-          'p_lat': input.latitude,
-        },
-      );
-      await _client.from('plan_stops').update({
-        'lat': input.latitude,
-        'lng': input.longitude,
-      }).eq('site_id', siteId);
-    }
+    await _syncSiteLocation(siteId: siteId, input: input);
 
     await _client.from('site_categories').delete().eq('site_id', siteId);
     if (input.categoryIds.isNotEmpty) {
@@ -612,21 +590,7 @@ class SavesRepository {
       'department_id': input.departmentId,
     }).eq('id', siteId);
 
-    if (input.latitude != null && input.longitude != null) {
-      await _client.rpc(
-        'set_site_location',
-        params: {
-          'p_site_id': siteId,
-          'p_lng': input.longitude,
-          'p_lat': input.latitude,
-        },
-      );
-      // Paradas ya en planes: alinear con el punto recién guardado.
-      await _client.from('plan_stops').update({
-        'lat': input.latitude,
-        'lng': input.longitude,
-      }).eq('site_id', siteId);
-    }
+    await _syncSiteLocation(siteId: siteId, input: input);
 
     await _client.from('site_categories').delete().eq('site_id', siteId);
     if (input.categoryIds.isNotEmpty) {
@@ -773,5 +737,32 @@ class SavesRepository {
           rows,
           onConflict: 'site_id,url',
         );
+  }
+
+  Future<void> _syncSiteLocation({
+    required String siteId,
+    required SaveDraftInput input,
+  }) async {
+    if (input.latitude != null && input.longitude != null) {
+      await _client.rpc(
+        'set_site_location',
+        params: {
+          'p_site_id': siteId,
+          'p_lng': input.longitude,
+          'p_lat': input.latitude,
+        },
+      );
+      await _client.from('plan_stops').update({
+        'lat': input.latitude,
+        'lng': input.longitude,
+      }).eq('site_id', siteId);
+      return;
+    }
+    if (input.clearLocation) {
+      await _client.rpc(
+        'clear_site_location',
+        params: {'p_site_id': siteId},
+      );
+    }
   }
 }

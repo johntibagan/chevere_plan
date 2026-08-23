@@ -1,10 +1,6 @@
--- Ciclo 2: recordatorios de borrador + policies Storage site-photos
+-- Storage: bucket privado site-photos. Path {user_id}/{site_id}/{filename}.
+-- Lectura: dueño del path, staff, o foto de un sitio público/propio.
 
-alter table public.user_saves
-  add column if not exists draft_remind_at timestamptz,
-  add column if not exists last_draft_reminder_at timestamptz;
-
--- Storage: bucket esperado `site-photos` (creado en setup). Policies para usuarios autenticados.
 insert into storage.buckets (id, name, public)
 values ('site-photos', 'site-photos', false)
 on conflict (id) do nothing;
@@ -14,7 +10,6 @@ drop policy if exists site_photos_storage_insert on storage.objects;
 drop policy if exists site_photos_storage_update on storage.objects;
 drop policy if exists site_photos_storage_delete on storage.objects;
 
--- Path convention: {user_id}/{site_id}/{filename}
 create policy site_photos_storage_select on storage.objects
   for select to authenticated
   using (
@@ -22,6 +17,17 @@ create policy site_photos_storage_select on storage.objects
     and (
       (storage.foldername(name))[1] = auth.uid()::text
       or public.is_staff()
+      or exists (
+        select 1
+        from public.site_photos sp
+        join public.sites s on s.id = sp.site_id
+        where sp.storage_path = name
+          and (
+            s.is_public
+            or s.created_by = auth.uid()
+            or public.is_staff()
+          )
+      )
     )
   );
 

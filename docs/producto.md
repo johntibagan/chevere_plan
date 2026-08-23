@@ -1,6 +1,10 @@
 # Especificación de producto
 
-Fuente de **qué** debe hacer la app. Lo técnico operativo está en [README](README.md) y [setup](setup/02-supabase.md).
+Fuente de **qué debería hacer** la app a mediano plazo (incluye ideas aún no construidas).
+
+**Lo que ya existe hoy**, con flujos y límites reales: [`aplicacion-actual.md`](aplicacion-actual.md).
+
+Lo técnico operativo está en [README](README.md) y [setup](setup/02-supabase.md).
 
 **Versión:** 1.0 (concepto vivo) · Colombia · Android primero
 

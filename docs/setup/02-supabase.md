@@ -26,7 +26,8 @@ keytool -list -v -keystore "$env:USERPROFILE\.android\debug.keystore" -alias and
 
 ## Reset de la base
 
-Un comando: borra datos de la app, reaplica migraciones + DIVIPOLA, deja `johnftmovil@gmail.com` como root (conserva el login de Google).
+- Default: borra datos de **usuarios**; conserva DIVIPOLA y sitios de catálogo (`external_id`).
+- `-Full`: nuke → 3 migraciones (schema, categorías/transporte, storage) → DIVIPOLA → JSON masivo → root `johnftm.proyectos@gmail.com` (conserva logins de Google en Auth).
 
 1. Copia `backend/.env.example` → `backend/.env`
 2. Pega **SUPABASE_DB_URL**: Dashboard → Database → Connect → **Session pooler** (Windows no enruta IPv6 de la URI directa).
@@ -38,7 +39,7 @@ powershell -File C:\workspace\chevere_plan\backend\reset_all.ps1
 
 Luego cierra sesión en la app (caché Hive).
 
-El seed de categorías y transporte va en la migración `000002`. DIVIPOLA se carga desde `backend/supabase/scripts/05_sync_divipola.sql`.
+El seed de categorías y transporte va en `20260808000002_seed.sql`. DIVIPOLA se carga desde `backend/supabase/scripts/05_sync_divipola.sql`.
 
 Para regenerar DIVIPOLA desde datos.gov.co:
 
