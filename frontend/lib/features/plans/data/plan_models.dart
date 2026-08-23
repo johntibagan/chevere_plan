@@ -88,6 +88,44 @@ class Plan {
   List<PlanStop> get pendingStops =>
       stops.where((s) => !s.isVisited).toList();
 
+  Plan copyWith({List<PlanStop>? stops}) {
+    return Plan(
+      id: id,
+      userId: userId,
+      title: title,
+      locationQuery: locationQuery,
+      includePublic: includePublic,
+      status: status,
+      stops: stops ?? this.stops,
+      startLat: startLat,
+      startLng: startLng,
+      maxBudgetAmount: maxBudgetAmount,
+      currencyCode: currencyCode,
+      listedStopCount: listedStopCount,
+    );
+  }
+
+  /// Nuevo orden de paradas tras drag-and-drop ([ReorderableListView.onReorderItem]).
+  static List<PlanStop> reorderedStops({
+    required List<PlanStop> stops,
+    required int oldIndex,
+    required int newIndex,
+  }) {
+    if (oldIndex < 0 ||
+        oldIndex >= stops.length ||
+        newIndex < 0 ||
+        newIndex >= stops.length ||
+        oldIndex == newIndex) {
+      return stops;
+    }
+    final next = List<PlanStop>.of(stops);
+    final moved = next.removeAt(oldIndex);
+    next.insert(newIndex, moved);
+    return [
+      for (var i = 0; i < next.length; i++) next[i].copyWith(sortOrder: i),
+    ];
+  }
+
   Map<String, dynamic> toCacheJson() => {
         'id': id,
         'user_id': userId,

@@ -847,6 +847,13 @@ class AppLocalizationsEs extends AppLocalizations {
   String get planRemoveStop => 'Quitar del plan';
 
   @override
+  String get planReorderStop => 'Reordenar';
+
+  @override
+  String get planReorderHint =>
+      'Arrastra el ícono para cambiar el orden de los sitios.';
+
+  @override
   String get planNoPendingStops => 'No hay sitios pendientes para Maps.';
 
   @override

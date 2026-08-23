@@ -246,6 +246,33 @@ class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
     }
   }
 
+  int _reorderSeq = 0;
+
+  Future<void> _reorderStops(int oldIndex, int newIndex) async {
+    final plan = _plan;
+    if (plan == null) return;
+    final next = Plan.reorderedStops(
+      stops: plan.stops,
+      oldIndex: oldIndex,
+      newIndex: newIndex,
+    );
+    if (identical(next, plan.stops)) return;
+    setState(() => _plan = plan.copyWith(stops: next));
+    final seq = ++_reorderSeq;
+    try {
+      await widget.repository.reorderStops(
+        planId: widget.planId,
+        ordered: next,
+      );
+      if (seq != _reorderSeq || !mounted) return;
+      await _invalidatePlansCache();
+    } catch (e) {
+      if (!mounted) return;
+      AppToast.error(context, e, logContext: 'plan_reorder_stops');
+      await _load();
+    }
+  }
+
   Future<void> _showMoreMenu() async {
     final l10n = context.l10n;
     await showModalBottomSheet<void>(
@@ -353,6 +380,7 @@ class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
                         ),
                         onToggleVisited: _busy ? null : _toggleVisited,
                         onRemove: _busy ? null : _removeStop,
+                        onReorder: _busy ? null : _reorderStops,
                       ),
                     ),
                   ],

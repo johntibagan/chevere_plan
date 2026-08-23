@@ -1636,6 +1636,18 @@ abstract class AppLocalizations {
   /// **'Quitar del plan'**
   String get planRemoveStop;
 
+  /// No description provided for @planReorderStop.
+  ///
+  /// In es, this message translates to:
+  /// **'Reordenar'**
+  String get planReorderStop;
+
+  /// No description provided for @planReorderHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Arrastra el ícono para cambiar el orden de los sitios.'**
+  String get planReorderHint;
+
   /// No description provided for @planNoPendingStops.
   ///
   /// In es, this message translates to:

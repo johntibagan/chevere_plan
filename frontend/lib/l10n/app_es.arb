@@ -334,6 +334,8 @@
   "planMarkDone": "Marcar como hecho",
   "planMarkPending": "Marcar pendiente",
   "planRemoveStop": "Quitar del plan",
+  "planReorderStop": "Reordenar",
+  "planReorderHint": "Arrastra el ícono para cambiar el orden de los sitios.",
   "planNoPendingStops": "No hay sitios pendientes para Maps.",
   "planStopsMissingCoords": "Algún sitio pendiente no tiene ubicación.",
   "planNeedLocation": "Activa la ubicación para usar tu posición como inicio.",

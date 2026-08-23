@@ -252,6 +252,33 @@ class _PlanBuilderPageState extends ConsumerState<PlanBuilderPage> {
     }
   }
 
+  int _reorderSeq = 0;
+
+  Future<void> _reorderStops(int oldIndex, int newIndex) async {
+    final plan = _plan;
+    if (plan == null) return;
+    final next = Plan.reorderedStops(
+      stops: plan.stops,
+      oldIndex: oldIndex,
+      newIndex: newIndex,
+    );
+    if (identical(next, plan.stops)) return;
+    setState(() => _plan = plan.copyWith(stops: next));
+    final seq = ++_reorderSeq;
+    try {
+      await widget.repository.reorderStops(
+        planId: widget.planId,
+        ordered: next,
+      );
+      if (seq != _reorderSeq || !mounted) return;
+      await _invalidatePlansCache();
+    } catch (e) {
+      if (!mounted) return;
+      AppToast.error(context, e, logContext: 'plan_builder_reorder');
+      await _loadPlan();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
@@ -324,6 +351,7 @@ class _PlanBuilderPageState extends ConsumerState<PlanBuilderPage> {
                         ),
                         onToggleVisited: _mutating ? null : _toggleVisited,
                         onRemove: _mutating ? null : _removeStop,
+                        onReorder: _mutating ? null : _reorderStops,
                       ),
                   },
                 ),
