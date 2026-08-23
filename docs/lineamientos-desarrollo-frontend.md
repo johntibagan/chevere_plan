@@ -1,6 +1,6 @@
 # Lineamientos de desarrollo — Frontend Chevere Plan
 
-> Documento vivo. Cursor lo carga vía `.cursor/rules/frontend-lineamientos.mdc` **antes de cualquier ajuste en `frontend/`**. Comportamiento actual: [`aplicacion-actual.md`](aplicacion-actual.md). Visión: [`producto.md`](producto.md). No inventar features que no estén en la app.
+> Cursor: `.cursor/rules/frontend-lineamientos.mdc`. App hoy: [`aplicacion-actual.md`](aplicacion-actual.md). No romper: [`invariantes.md`](invariantes.md). No inventar features. Todo cambio de comportamiento actualiza esos docs **en el mismo pase**.
 
 ## 1. Principio general
 
@@ -57,7 +57,7 @@ Esta es la sección más crítica del documento. Ninguna funcionalidad nueva se 
 
 ## 6. UX — pantallas intuitivas y formularios rápidos
 
-- El **formulario de crear/editar sitios** es la pantalla más sensible de toda la app: debe ser lo más simple, intuitivo y rápido de llenar posible. Menos campos visibles por defecto, campos avanzados/opcionales colapsados u ocultos hasta que se necesiten, valores pre-llenados por detección automática siempre que exista (ubicación, categoría) dejando al usuario solo confirmar o corregir.
+- El **formulario de crear/editar sitios** es la pantalla más sensible. No romper: [`invariantes.md`](invariantes.md). Pocos campos, prellenado, confirmar. Acciones **dentro** del campo (`suffixIcon`: pegar, buscar), no botones sueltos.
 - **Botones de ayuda contextual dentro de los campos**, no como elementos separados que ocupan espacio aparte:
   - Campo para pegar un enlace (Instagram/TikTok/Google Maps/etc.): icono de "pegar" (clipboard) dentro del propio campo (`suffixIcon`) que, al tocarlo, pega el contenido del portapapeles **y dispara automáticamente** la acción asociada (ej. pegar un link de Google Maps ejecuta de inmediato la búsqueda/geocodificación, sin un botón "Buscar" adicional después).
   - Campos de búsqueda: el ícono de lupa vive dentro del propio campo de texto (`suffixIcon`/`prefixIcon`) y funciona como botón real (`onTap`), no solo decorativo — evita un botón "Buscar" separado que ocupa espacio y un tap adicional.
@@ -68,9 +68,9 @@ Esta es la sección más crítica del documento. Ninguna funcionalidad nueva se 
 
 ## 7. Cómo trabajar (aplica a todos los ciclos)
 
-1. Releer las secciones relevantes de la especificación y de este documento antes de empezar.
+1. Releer [`aplicacion-actual.md`](aplicacion-actual.md), [`invariantes.md`](invariantes.md) y este documento antes de empezar.
 2. Proponer brevemente el enfoque técnico antes de escribir código, especialmente si hay una decisión de arquitectura no trivial.
 3. Implementar en pasos pequeños y verificables, no todo el ciclo de una sola vez.
 4. Señalar explícitamente cualquier supuesto tomado por falta de detalle.
-5. Al cerrar cada ciclo: resumen de qué se implementó, qué archivos se tocaron, y qué debo probar/medir manualmente en el celular antes de seguir (tiempos de carga, comportamiento sin conexión, etc.).
-6. No pasar al siguiente ciclo hasta que el actual esté confirmado como cerrado.
+5. Al cerrar: qué cambió, qué probar en el celular, y **docs al día** (`aplicacion-actual.md` / `invariantes.md` si cambió comportamiento o un contrato).
+6. No dar por cerrado un cambio de producto sin esa actualización de docs.

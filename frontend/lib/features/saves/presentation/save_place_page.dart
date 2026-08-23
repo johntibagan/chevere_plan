@@ -375,38 +375,6 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
     if (!_isEditing) _maybeSuggestCategories(force: true);
   }
 
-  /// Pregunta si persistir lat/lng (Maps por nombre suele mostrar la ficha).
-  Future<bool> _confirmSaveExactPin() async {
-    final l10n = context.l10n;
-    final keep = await showDialog<bool>(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppColors.surface,
-        title: Text(
-          l10n.saveExactPinTitle,
-          style: const TextStyle(color: AppColors.foreground),
-        ),
-        content: Text(
-          l10n.saveExactPinBody,
-          style: const TextStyle(color: AppColors.muted),
-        ),
-        actionsAlignment: MainAxisAlignment.start,
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(l10n.saveExactPinNo),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text(l10n.saveExactPinYes),
-          ),
-        ],
-      ),
-    );
-    return keep ?? false;
-  }
-
   Future<void> _importFromGoogleMaps() async {
     final text = _mapsCtrl.text.trim();
     if (text.isEmpty) {
@@ -428,37 +396,30 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
         staticMapUrl: result.staticMapUrl,
       );
       if (!mounted) return;
-      if (result.hasCoords) {
-        final keepPin = await _confirmSaveExactPin();
+      // Enlace de Maps = el usuario ya eligió el lugar. Conservar coords.
+      // No preguntar "¿punto exacto?": eso tiraba el pin y bloqueaba Público.
+      if (!result.hasCoords && (result.name ?? '').trim().length >= 2) {
+        await _tryGeocodeImportedName(result.name!.trim());
         if (!mounted) return;
-        if (keepPin != true) {
-          setState(() {
-            _lat = null;
-            _lng = null;
-          });
-        }
       }
-      // Soft check tras pegar/importar Maps (igual que confirmar pin).
       final linked = await _softCheckDuplicateAfterLocation();
       if (linked || !mounted) return;
-      final droppedPin = result.hasCoords && _lat == null;
+      final hasPin = _lat != null && _lng != null;
       AppToast.show(
         context,
-        droppedPin
-            ? context.l10n.saveLocationApplied
-            : !result.hasCoords
-                ? (Env.hasGoogleMapsKey
-                    ? context.l10n.saveMapsNeedExactPin
-                    : context.l10n.saveMapsNeedGoogleKey)
-                : !result.hasExactPin
-                    ? context.l10n.saveMapsApproxPin
-                    : (_cityCtrl.text.trim().isNotEmpty
-                        ? context.l10n.saveLocationAppliedNamed(
-                            _nameCtrl.text.trim(),
-                            _cityCtrl.text.trim(),
-                          )
-                        : context.l10n.saveMapsNeedCity),
-        error: !result.hasCoords && !droppedPin,
+        !hasPin
+            ? (Env.hasGoogleMapsKey
+                ? context.l10n.saveMapsNeedExactPin
+                : context.l10n.saveMapsNeedGoogleKey)
+            : !result.hasExactPin && result.hasCoords
+                ? context.l10n.saveMapsApproxPin
+                : (_cityCtrl.text.trim().isNotEmpty
+                    ? context.l10n.saveLocationAppliedNamed(
+                        _nameCtrl.text.trim(),
+                        _cityCtrl.text.trim(),
+                      )
+                    : context.l10n.saveMapsNeedCity),
+        error: !hasPin,
       );
     } catch (e) {
       if (!mounted) return;
@@ -537,6 +498,27 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
     r'bar |discoteca|piscina|tejo|mercado',
     caseSensitive: false,
   );
+
+  /// Si el enlace de Maps trajo nombre pero no pin, geocodifica una vez.
+  Future<void> _tryGeocodeImportedName(String name) async {
+    if (_hasFormLocation) return;
+    try {
+      final hits = await _placeGeocoder.search('$name Colombia', limit: 1);
+      if (!mounted || hits.isEmpty || _hasFormLocation) return;
+      final place = hits.first;
+      setState(() {
+        _lat ??= place.lat;
+        _lng ??= place.lng;
+        if (_selectedDept == null && _selectedCity == null) {
+          _applyGeoHints(department: place.department, city: place.city);
+        }
+        if (_addressCtrl.text.trim().isEmpty &&
+            (place.addressLine?.isNotEmpty ?? false)) {
+          _addressCtrl.text = place.addressLine!;
+        }
+      });
+    } catch (_) {}
+  }
 
   bool get _hasFormLocation => SavePolicies.hasLocation(
         city: _selectedCity?.name,

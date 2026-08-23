@@ -1,0 +1,26 @@
+---
+description: Al tocar una funcionalidad, actualizar docs en el mismo cambio
+alwaysApply: true
+---
+
+# Documentación en el mismo pase
+
+Si el código **cambia comportamiento** (flujo, reglas, textos, qué se puede/no se puede), **en el mismo trabajo** actualizar docs. No dejarlo “para después”.
+
+## Qué archivo
+
+| Tipo de cambio | Actualizar |
+|---|---|
+| Qué hace la app / un flujo / un límite | [`docs/aplicacion-actual.md`](docs/aplicacion-actual.md) |
+| Algo que **nunca** debe romperse | [`docs/invariantes.md`](docs/invariantes.md) y la regla `.cursor/rules/` de esa zona si existe |
+| Cómo se escribe frontend (caché, errores, forms) | [`docs/lineamientos-desarrollo-frontend.md`](docs/lineamientos-desarrollo-frontend.md) |
+| Reset / migraciones | [`docs/invariantes.md`](docs/invariantes.md) + `backend/README.md` si cambia el comando |
+
+## Cómo
+
+- Misma pasada que el código, no un commit/docs suelto “luego”.
+- Frases cortas, sin tecnicismos de más. Si una regla nueva es de **no romper**, va a invariantes (o sección nueva ahí), no a un markdown extra.
+- **No** reescribir `docs/adr/` ni usar `docs/producto.md` como especificación de lo implementado.
+- Si no cambió comportamiento (refactor, typo), no hace falta tocar docs.
+
+Sin esto el cambio no está cerrado.

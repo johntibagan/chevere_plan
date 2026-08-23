@@ -1,10 +1,9 @@
-# Especificación de producto
+# Especificación de producto (archivo)
 
-Fuente de **qué debería hacer** la app a mediano plazo (incluye ideas aún no construidas).
+**No usar para implementar.** Visión antigua / backlog.  
+App de hoy: [`aplicacion-actual.md`](aplicacion-actual.md). Contratos: [`invariantes.md`](invariantes.md).
 
-**Lo que ya existe hoy**, con flujos y límites reales: [`aplicacion-actual.md`](aplicacion-actual.md).
-
-Lo técnico operativo está en [README](README.md) y [setup](setup/02-supabase.md).
+Setup: [setup/02-supabase.md](setup/02-supabase.md).
 
 **Versión:** 1.0 (concepto vivo) · Colombia · Android primero
 

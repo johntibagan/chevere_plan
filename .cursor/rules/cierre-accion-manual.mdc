@@ -10,6 +10,8 @@ Al **terminar cada tarea** (respuesta final), una línea clara:
 - **Tú (manual):** … — solo si hace falta (SQL/migración no aplicada, reset, hot restart, etc.)
 - **Nada de tu lado** — si ya quedó aplicado/ejecutado aquí
 
+Si cambió comportamiento y no actualizaste [`docs/aplicacion-actual.md`](docs/aplicacion-actual.md) / [`docs/invariantes.md`](docs/invariantes.md), el trabajo **no está cerrado**.
+
 Sin párrafos largos. No repetir el resumen técnico solo para rellenar.
 
 ## SQL / migraciones

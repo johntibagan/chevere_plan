@@ -1,6 +1,7 @@
-# ADRs (histórico)
+# ADRs (archivo)
 
-Decisiones ya aplicadas. No son una guía de setup.
+Decisiones ya tomadas. **No reescribir. No usar como spec de la app actual.**  
+Hoy: [`../aplicacion-actual.md`](../aplicacion-actual.md) · no romper: [`../invariantes.md`](../invariantes.md).
 
 | ADR | Ciclo |
 |-----|--------|

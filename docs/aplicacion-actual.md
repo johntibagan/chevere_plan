@@ -1,8 +1,8 @@
 # Chevere Plan — lo que hace la app hoy
 
-Documento de producto **según el código actual**. No describe ideas futuras: solo lo que un usuario (o un admin) puede hacer ya.
+Documento de producto **según el código**. Solo lo que un usuario o admin puede hacer **ya**. Se actualiza en el **mismo cambio** que el código.
 
-Si algo está en [`producto.md`](producto.md) y no aquí, **aún no está implementado**.
+Qué no romper: [`invariantes.md`](invariantes.md).
 
 ---
 
@@ -58,7 +58,7 @@ Es el corazón de la app.
 - Reabrir un guardado incompleto desde Inicio
 - **Compartir** un enlace desde otra app (Maps, Instagram, etc.): se intenta leer nombre, ciudad y coordenadas
 
-Podés pegar un link de Maps **dentro del campo** (icono de pegar): la app busca el lugar y precarga. Si el link trae coordenadas, pregunta **si querés guardar el punto exacto** o solo el lugar (nombre/dirección). Si elegiste el pin en el mapa interactivo, no pregunta: ya decidiste el punto. Hay un interruptor **Punto exacto en el mapa**. Si al editar lo apagás, se quitan las coordenadas del sitio (Maps abrirá por nombre, no por pin).
+Podés pegar un link de Maps **dentro del campo** (opción desde enlace / icono pegar): la app rellena nombre, ciudad y **pin**. Eso cuenta como lugar ya elegido: **no** se pregunta “¿punto exacto?” ni se tiran las coordenadas. **Público** queda habilitado si hay pin. El mapa interactivo tampoco pregunta: el usuario ya confirmó el punto. El interruptor **Punto exacto en el mapa** es opt-out explícito (apagarlo quita coords y bloquea Público en lugar físico). Contrato: [`invariantes.md`](invariantes.md).
 
 ### Qué pedís (poco, con ayuda en el campo)
 

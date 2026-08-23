@@ -1,16 +1,14 @@
 # Documentación
 
-Empieza por el [README de la raíz](../README.md).
+Solo dos fuentes de producto:
 
-| Carpeta / archivo | Uso |
-|-------------------|-----|
-| [aplicacion-actual.md](aplicacion-actual.md) | Qué hace la app **hoy** (negocio + flujos; fuente de verdad de comportamiento) |
-| [producto.md](producto.md) | Visión / backlog (incluye lo no implementado) |
-| [lineamientos-desarrollo-frontend.md](lineamientos-desarrollo-frontend.md) | Cómo construir el frontend (obligatorio para Cursor) |
-| [setup/](setup/) | Cómo dejar el entorno listo (una vez) |
-| [pendientes.md](pendientes.md) | Huecos conocidos, no bloquean el MVP |
-| [google-maps-setup.md](google-maps-setup.md) | Places + Maps SDK: keys, cupos, anti-fugas |
-| [e2e.md](e2e.md) | Tests Patrol en Android físico |
-| [adr/](adr/) | Por qué se decidió X en cada ciclo |
+| | Documento |
+|---|---|
+| **Cómo está la app hoy** (se actualiza con cada cambio de comportamiento) | [aplicacion-actual.md](aplicacion-actual.md) |
+| **Qué no se toca** | [invariantes.md](invariantes.md) |
 
-Los ADRs no se reescriben: son el diario de decisiones. Lo operativo vive en setup + READMEs.
+Al implementar: código **y** esos docs en el mismo pase (regla Cursor `docs-al-cambiar.mdc`).
+
+**Para construir:** [lineamientos-desarrollo-frontend.md](lineamientos-desarrollo-frontend.md) · [setup/](setup/) · [../backend/README.md](../backend/README.md)
+
+**Archivo** (no implementar desde ahí): [producto.md](producto.md) · [adr/](adr/) · [pendientes.md](pendientes.md) · [e2e.md](e2e.md) · [google-maps-setup.md](google-maps-setup.md)

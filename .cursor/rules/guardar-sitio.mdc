@@ -1,0 +1,23 @@
+---
+description: Pantalla Guardar sitio — no romper Maps/enlace, pin ni Público
+globs: frontend/lib/features/saves/**/*.dart
+alwaysApply: true
+---
+
+# Guardar sitio (corazón de la app)
+
+Antes de cambiar captura de lugares, leer [`docs/invariantes.md`](docs/invariantes.md) (sección Guardar sitio). Si cambia el flujo, actualizar también [`docs/aplicacion-actual.md`](docs/aplicacion-actual.md).
+
+## Prohibido
+
+- Tras **pegar / importar / compartir un enlace de Google Maps**, preguntar “¿guardar el punto exacto?” o poner `_lat`/`_lng` en null.
+- Bloquear **Público** si el enlace ya autocompletó el lugar: hay que **conservar (o geocodificar) coords**.
+- Tratar el mapa interactivo como si no hubiera pin: el usuario ya lo confirmó.
+
+## Obligatorio
+
+- Enlace Maps = el usuario ya eligió el sitio. Pin se queda. Público habilitado si hay lat/lng.
+- El interruptor “Punto exacto” solo cambia coords si el usuario lo toca. Apagarlo bloquea Público (lugar físico): no apagarlo en silencio.
+- Crear y editar = misma pantalla. DIVIPOLA por id. Pegar dentro del campo.
+
+Si el cambio no deja pegar un link de Maps y publicar **sin** abrir el mapa otra vez, no está listo.
