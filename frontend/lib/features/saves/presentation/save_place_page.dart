@@ -1841,29 +1841,11 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
         title: Text(
           _isEditing ? l10n.savePlaceEditTitle : l10n.savePlaceTitle,
         ),
-        actions: [
-          if (!_loadingCats)
-            TextButton(
-              onPressed: (_saving || !nameOk) ? null : _submit,
-              child: _saving
-                  ? const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : Text(
-                      _isEditing
-                          ? l10n.savePlaceSubmitEdit
-                          : l10n.savePlaceSubmit,
-                      style: const TextStyle(fontWeight: FontWeight.w800),
-                    ),
-            ),
-        ],
       ),
       body: _loadingCats
           ? const Center(child: CircularProgressIndicator())
           : ListView(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
               children: [
                 _locationSection(l10n),
                 _nameSection(l10n),
@@ -1872,6 +1854,34 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
                   if (_openExtras.contains(extra)) _extraSection(l10n, extra),
                 _addExtraChips(l10n),
               ],
+            ),
+      bottomNavigationBar: _loadingCats
+          ? null
+          : Material(
+              color: AppColors.surface,
+              child: SafeArea(
+                top: false,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
+                  child: FilledButton(
+                    onPressed: (_saving || !nameOk) ? null : _submit,
+                    style: FilledButton.styleFrom(
+                      minimumSize: const Size.fromHeight(52),
+                    ),
+                    child: _saving
+                        ? const SizedBox(
+                            width: 22,
+                            height: 22,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : Text(
+                            _isEditing
+                                ? l10n.savePlaceSubmitEdit
+                                : l10n.savePlaceSubmit,
+                          ),
+                  ),
+                ),
+              ),
             ),
     );
   }

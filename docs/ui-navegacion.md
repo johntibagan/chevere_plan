@@ -16,8 +16,9 @@ Contratos que no se pueden romper: [`invariantes.md`](invariantes.md).
 1. Tratar cada pantalla de la §6 como un **frame Android** (390×844 lógico, o el viewport del Motorola del dueño).
 2. Respetar **tokens** (§3) y **señales** (§4). No introducir tema claro ni iOS-only.
 3. Mejorar jerarquía, ritmo, fotos, iconografía y microcopy **sin** agregar flujos (favoritos = solo el corazón; no hay IA, no hay admin en Rutas).
-4. Las fotos de sitios **casi nunca llegan a las listas**: hoy hay **portada ilustrada por defecto**. Un rediseño puede proponer recortes, máscaras y empty-photo más ricos; el producto aún no rellena `imageUrl` en home/búsqueda/planes.
-5. Entregar frames nombrados como las pantallas de la §6 para mapear 1:1 a widgets Flutter.
+4. **Guardar lugar:** el CTA **Guardar** va **abajo**, ancho, al alcance del pulgar. El Make a veces lo pone en el AppBar: **no replicar eso**.
+5. Las fotos de sitios **casi nunca llegan a las listas**: hoy hay **portada ilustrada por defecto**. Un rediseño puede proponer recortes, máscaras y empty-photo más ricos; el producto aún no rellena `imageUrl` en home/búsqueda/planes.
+6. Entregar frames nombrados como las pantallas de la §6 para mapear 1:1 a widgets Flutter.
 
 ---
 
@@ -230,7 +231,7 @@ Tab activo: icono + label `primary`. Inactivo: `mutedDark`, label 10 px.
 
 ### 6.4 Guardar / editar — `SavePlacePage` (misma pantalla)
 
-- AppBar con **Guardar** (único CTA; no hay botón duplicado abajo).
+- AppBar solo con título (atrás del sistema). **Guardar** / **Guardar cambios** es un `FilledButton` **fijo abajo**, ancho, un solo CTA. **No** copiar el Make si lo pone arriba.
 - Siempre: **Ubicación** (pegar Maps + preview del mapa + switch punto exacto, misma card) → **Nombre** (`*`) → **Público** (icono verde/morado + switch; deshabilitado sin pin en físico).
 - Extra: chips `+` **Añadir sección** (no sheet): Detalles, Enlaces, Categorías, Fotos, Lugar físico.
 - Editar / completar borrador: todas las secciones abiertas.

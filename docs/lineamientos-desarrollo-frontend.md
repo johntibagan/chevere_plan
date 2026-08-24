@@ -73,7 +73,7 @@ Esta es la sección más crítica del documento. Ninguna funcionalidad nueva se 
 
 ## 6. UX — pantallas intuitivas y formularios rápidos
 
-- El **formulario de crear/editar sitios** es la pantalla más sensible. No romper: [`invariantes.md`](invariantes.md). Pocos campos, prellenado, confirmar. Acciones **dentro** del campo (`suffixIcon`: pegar, buscar), no botones sueltos.
+- El **formulario de crear/editar sitios** es la pantalla más sensible. No romper: [`invariantes.md`](invariantes.md). Pocos campos, prellenado, confirmar. Acciones **dentro** del campo (`suffixIcon`: pegar, buscar), no botones sueltos. El CTA **Guardar** va **abajo** (ancho, un solo botón), no en el AppBar.
 - **Botones de ayuda contextual dentro de los campos**, no como elementos separados que ocupan espacio aparte:
   - Campo para pegar un enlace (Instagram/TikTok/Google Maps/etc.): icono de "pegar" (clipboard) dentro del propio campo (`suffixIcon`) que, al tocarlo, pega el contenido del portapapeles **y dispara automáticamente** la acción asociada (ej. pegar un link de Google Maps ejecuta de inmediato la búsqueda/geocodificación, sin un botón "Buscar" adicional después).
   - Campos de búsqueda: el ícono de lupa vive dentro del propio campo de texto (`suffixIcon`/`prefixIcon`) y funciona como botón real (`onTap`), no solo decorativo — evita un botón "Buscar" separado que ocupa espacio y un tap adicional.
