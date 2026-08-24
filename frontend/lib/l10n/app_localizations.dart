@@ -103,7 +103,7 @@ abstract class AppLocalizations {
   /// No description provided for @appTagline.
   ///
   /// In es, this message translates to:
-  /// **'Guarda lugares y arma planes\nen Colombia.'**
+  /// **'Guarda, organiza y descubre los mejores planes de Colombia'**
   String get appTagline;
 
   /// No description provided for @navHome.
@@ -193,7 +193,7 @@ abstract class AppLocalizations {
   /// No description provided for @loginAcceptLegal.
   ///
   /// In es, this message translates to:
-  /// **'Acepto los documentos legales del MVP.'**
+  /// **'Acepto los'**
   String get loginAcceptLegal;
 
   /// No description provided for @loginTerms.
@@ -463,7 +463,7 @@ abstract class AppLocalizations {
   /// No description provided for @routesTitle.
   ///
   /// In es, this message translates to:
-  /// **'Rutas'**
+  /// **'Mis rutas'**
   String get routesTitle;
 
   /// No description provided for @routesEmpty.
@@ -1057,7 +1057,7 @@ abstract class AppLocalizations {
   /// No description provided for @routesHistoryHeading.
   ///
   /// In es, this message translates to:
-  /// **'Historial de lugares'**
+  /// **'Historial'**
   String get routesHistoryHeading;
 
   /// No description provided for @saveLocationSection.

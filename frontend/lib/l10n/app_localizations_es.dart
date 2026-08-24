@@ -12,7 +12,8 @@ class AppLocalizationsEs extends AppLocalizations {
   String get appTitle => 'Chevere Plan';
 
   @override
-  String get appTagline => 'Guarda lugares y arma planes\nen Colombia.';
+  String get appTagline =>
+      'Guarda, organiza y descubre los mejores planes de Colombia';
 
   @override
   String get navHome => 'Inicio';
@@ -57,7 +58,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get greetingEvening => 'Buenas noches';
 
   @override
-  String get loginAcceptLegal => 'Acepto los documentos legales del MVP.';
+  String get loginAcceptLegal => 'Acepto los';
 
   @override
   String get loginTerms => 'Términos de Uso';
@@ -207,7 +208,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get plansCreateFab => 'Armar plan';
 
   @override
-  String get routesTitle => 'Rutas';
+  String get routesTitle => 'Mis rutas';
 
   @override
   String get routesEmpty =>
@@ -526,7 +527,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get routesStatPlans => 'Planes';
 
   @override
-  String get routesHistoryHeading => 'Historial de lugares';
+  String get routesHistoryHeading => 'Historial';
 
   @override
   String get saveLocationSection => 'Ubicación';

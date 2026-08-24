@@ -43,7 +43,7 @@ sequenceDiagram
 | **Explorar** | Búsqueda de sitios (cabecera Figma, chips de categoría, grilla/lista). Misma lógica: texto obligatorio en modo simple, filtros avanzados, incluir públicos |
 | **+ (centro)** | Guardar o completar un lugar (crear y editar son la **misma pantalla**) |
 | **Planes** | Tus itinerarios (tarjeta de crear + lista; **un solo** CTA, sin FAB duplicado) |
-| **Rutas** | Historial de paradas visitadas (stats del listado ya cargado + línea de tiempo). Admin no vive acá |
+| **Rutas** | Historial de paradas visitadas (stats del listado + timeline Make). Admin no vive acá |
 
 Los tabs que ya abriste se quedan en memoria para que cambiar de pestaña se sienta instantáneo. Las listas pintan caché primero y refrescan detrás.
 

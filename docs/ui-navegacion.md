@@ -186,12 +186,11 @@ Todo el texto de producto está en `app_es.arb` (i18n).
 
 ### 6.1 Login — `LoginPage`
 
-- Fondo `background`, padding horizontal 24.
-- Logo 72×72, radio 20, **gradiente primary**.
-- Título app (Jakarta) + claim.
-- Checkbox legales (links a `LegalDocumentPage` fullscreen).
-- Botón Google (outlined/filled según estado) deshabilitado hasta aceptar.
-- No hay registro email/password.
+- Fondo `background`, padding horizontal 24, contenido centrado.
+- Logo 72×72, radio 20, **gradiente primary**, pin de mapa.
+- Título app (Jakarta ExtraBold 28) + claim.
+- Checkbox custom (cuadrado 20, check al aceptar) + texto con links a `LegalDocumentPage` (términos y privacidad).
+- Botón Google blanco cuando los legales están aceptados; apagado si no. Sigue siendo **solo Google**.
 
 ### 6.2 Shell — `HomePage`
 
@@ -275,8 +274,11 @@ Tabs internos: buscar / resultados / añadidos. Reutiliza filtros de búsqueda. 
 
 ### 6.10 Rutas — `MyRoutesPage`
 
-- Header + 3 stats (visitados / ciudades / planes) calculados **en cliente** del historial.
-- Timeline vertical: punto primary, línea, card surface, tap → detalle del plan.
+- `TabScreenHeader` “Mis rutas” + subtítulo.
+- 3 `AppStatCard` (visitados / ciudades / planes) calculados **en cliente** del historial. Colores: primary / success / purple.
+- `AppSectionLabel` “Historial”.
+- Timeline: nodo check verde + `SiteCover` 40×40 + nombre y ciudad/fecha. Tap → detalle del plan.
+- Solo aparecen paradas **ya visitadas** (no se inventan pendientes).
 - **No** hay escudo admin aquí.
 
 ### 6.11 Admin / reportes / legales / mapa
@@ -330,12 +332,11 @@ Orden sugerido para que un rediseño aporte:
 
 1. **Ficha de sitio** y **builder de plan** — las más “Material default”.
 2. **Fotos reales** en listas (composición: ratio, overlay, fallback). Hoy el fallback es ilustración genérica.
-3. **Login** — logo/claim; poco pulido Make.
-4. **Admin / reportes** — densidad y tablas.
-5. Unificar **AppBar vs header in-body** (Inicio/Explorar/Planes/Rutas vs Guardar/Ficha/Admin).
-6. FAB de plan vs barra Maps: dos CTAs; Figma puede proponer una sola zona de acciones.
-7. El corazón **sí** es favorito (tap funcional). No rediseñarlo como “es tuyo”.
-8. **No diseñar aún:** lista/filtro de favoritos, onboarding extra, tema claro, IA, tab Admin, envío a Maps desde ficha de sitio, cálculo de transporte en el itinerario.
+3. **Admin / reportes** — densidad y tablas.
+4. Unificar **AppBar vs header in-body** (Inicio/Explorar/Planes/Rutas vs Guardar/Ficha/Admin).
+5. FAB de plan vs barra Maps: dos CTAs; Figma puede proponer una sola zona de acciones.
+6. El corazón **sí** es favorito (tap funcional). No rediseñarlo como “es tuyo”.
+7. **No diseñar aún:** lista/filtro de favoritos, onboarding extra, tema claro, IA, tab Admin, envío a Maps desde ficha de sitio, cálculo de transporte en el itinerario.
 
 ---
 

@@ -10,7 +10,10 @@ import '../../../core/l10n/context_l10n.dart';
 import '../../../core/prefetch/site_prefetch.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_async_body.dart';
+import '../../../core/widgets/app_section_label.dart';
+import '../../../core/widgets/app_stat_card.dart';
 import '../../../core/widgets/app_toast.dart';
+import '../../../core/widgets/site_cover.dart';
 import '../../../core/widgets/tab_screen_header.dart';
 import '../../plans/presentation/plan_detail_page.dart';
 import '../data/route_models.dart';
@@ -98,23 +101,26 @@ class _MyRoutesPageState extends ConsumerState<MyRoutesPage> {
                       return Row(
                         children: [
                           Expanded(
-                            child: _StatTile(
+                            child: AppStatCard(
                               value: '${all.length}',
                               label: l10n.routesStatVisited,
+                              valueColor: AppColors.primary,
                             ),
                           ),
                           const SizedBox(width: 8),
                           Expanded(
-                            child: _StatTile(
+                            child: AppStatCard(
                               value: '$cities',
                               label: l10n.routesStatCities,
+                              valueColor: AppColors.success,
                             ),
                           ),
                           const SizedBox(width: 8),
                           Expanded(
-                            child: _StatTile(
+                            child: AppStatCard(
                               value: '$planCount',
                               label: l10n.routesStatPlans,
+                              valueColor: AppColors.purple,
                             ),
                           ),
                         ],
@@ -122,15 +128,8 @@ class _MyRoutesPageState extends ConsumerState<MyRoutesPage> {
                     }
                     if (index == 1) {
                       return Padding(
-                        padding: const EdgeInsets.fromLTRB(0, 20, 0, 12),
-                        child: Text(
-                          l10n.routesHistoryHeading,
-                          style: const TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w800,
-                            color: AppColors.foreground,
-                          ),
-                        ),
+                        padding: const EdgeInsets.only(top: 20),
+                        child: AppSectionLabel(text: l10n.routesHistoryHeading),
                       );
                     }
                     if (all.isEmpty) {
@@ -180,47 +179,6 @@ class _MyRoutesPageState extends ConsumerState<MyRoutesPage> {
   }
 }
 
-class _StatTile extends StatelessWidget {
-  const _StatTile({required this.value, required this.label});
-
-  final String value;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Column(
-        children: [
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w800,
-              color: AppColors.primary,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.w600,
-              color: AppColors.muted,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class _RouteTimelineTile extends StatelessWidget {
   const _RouteTimelineTile({
     required this.entry,
@@ -234,37 +192,51 @@ class _RouteTimelineTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return IntrinsicHeight(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          SizedBox(
-            width: 20,
-            child: Column(
-              children: [
-                Container(
-                  width: 10,
-                  height: 10,
-                  decoration: const BoxDecoration(
-                    color: AppColors.primary,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-                if (!isLast)
-                  Expanded(
-                    child: Container(
-                      width: 2,
-                      margin: const EdgeInsets.symmetric(vertical: 4),
-                      color: AppColors.primary.withValues(alpha: 0.35),
+    final place = [
+      if (entry.city != null && entry.city!.isNotEmpty) entry.city!,
+      formatDateDmY(entry.visitedAt),
+    ].join(' · ');
+
+    return Padding(
+      padding: EdgeInsets.only(bottom: isLast ? 0 : 10),
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            SizedBox(
+              width: 32,
+              child: Column(
+                children: [
+                  Container(
+                    width: 32,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      color: AppColors.success.withValues(alpha: 0.08),
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: AppColors.success.withValues(alpha: 0.25),
+                        width: 2,
+                      ),
+                    ),
+                    child: const Icon(
+                      Icons.check_rounded,
+                      size: 14,
+                      color: AppColors.success,
                     ),
                   ),
-              ],
+                  if (!isLast)
+                    Expanded(
+                      child: Container(
+                        width: 1,
+                        margin: const EdgeInsets.symmetric(vertical: 4),
+                        color: AppColors.border,
+                      ),
+                    ),
+                ],
+              ),
             ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Padding(
-              padding: EdgeInsets.only(bottom: isLast ? 0 : 12),
+            const SizedBox(width: 12),
+            Expanded(
               child: Material(
                 color: AppColors.surface,
                 shape: RoundedRectangleBorder(
@@ -275,9 +247,18 @@ class _RouteTimelineTile extends StatelessWidget {
                   onTap: onTap,
                   borderRadius: BorderRadius.circular(12),
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(12, 10, 8, 10),
+                    padding: const EdgeInsets.all(10),
                     child: Row(
                       children: [
+                        const ClipRRect(
+                          borderRadius: BorderRadius.all(Radius.circular(8)),
+                          child: SizedBox(
+                            width: 40,
+                            height: 40,
+                            child: SiteCover(),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -287,33 +268,23 @@ class _RouteTimelineTile extends StatelessWidget {
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: const TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w800,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
                                   color: AppColors.foreground,
                                 ),
                               ),
                               const SizedBox(height: 2),
                               Text(
-                                [
-                                  entry.planTitle,
-                                  if (entry.city != null &&
-                                      entry.city!.isNotEmpty)
-                                    entry.city!,
-                                  formatDateDmY(entry.visitedAt),
-                                ].join(' · '),
-                                maxLines: 2,
+                                place.isEmpty ? entry.planTitle : place,
+                                maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: const TextStyle(
-                                  fontSize: 11,
-                                  color: AppColors.muted,
+                                  fontSize: 10,
+                                  color: AppColors.mutedDark,
                                 ),
                               ),
                             ],
                           ),
-                        ),
-                        const Icon(
-                          Icons.chevron_right,
-                          color: AppColors.muted,
                         ),
                       ],
                     ),
@@ -321,8 +292,8 @@ class _RouteTimelineTile extends StatelessWidget {
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
