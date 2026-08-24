@@ -526,10 +526,10 @@ class _PlanBuilderPageState extends ConsumerState<PlanBuilderPage> {
               children: [
                 ClipRRect(
                   borderRadius: BorderRadius.circular(8),
-                  child: const SizedBox(
+                  child: SizedBox(
                     width: 44,
                     height: 44,
-                    child: SiteCover(),
+                    child: SiteCover(seed: h.siteId),
                   ),
                 ),
                 const SizedBox(width: 10),

@@ -37,6 +37,7 @@ import '../domain/category_suggester.dart';
 import '../domain/save_policies.dart';
 import 'category_picker_sheet.dart';
 import 'location_picker_page.dart';
+import 'same_site_picker_page.dart';
 import 'site_review_editor_page.dart';
 import 'site_status_l10n.dart';
 import 'social_link_preview_card.dart';
@@ -715,7 +716,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
     );
     if (place == null || !mounted) return;
     _fillFromPlace(
-      name: place.name,
+      name: place.name ?? place.displayName,
       city: place.city,
       department: place.department,
       address: place.addressLine ?? place.displayName,
@@ -739,11 +740,11 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
     final lng = _lng;
     final city = _selectedCity?.name;
     if ((lat == null || lng == null) &&
-        (city == null || city.trim().isEmpty)) {
+        (city == null || city.trim().isEmpty) &&
+        (_googlePlaceId == null || _googlePlaceId!.trim().isEmpty)) {
       return false;
     }
     final name = _nameCtrl.text.trim();
-    if (name.isEmpty) return false;
     try {
       final dupes = await widget.savesRepository.findPossibleDuplicates(
         name: name,
@@ -751,6 +752,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
         latitude: lat,
         longitude: lng,
         excludeSiteId: _editSiteId,
+        googlePlaceId: _googlePlaceId,
       );
       if (dupes.isEmpty || !mounted) return false;
 
@@ -778,14 +780,23 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
         return false;
       }
 
-      final chosen = await _askDuplicate(dupes.first, allowCreateAnyway: false);
+      final chosen = await _askDuplicate(dupes, allowCreateAnyway: false);
       if (chosen == null || !mounted) return false;
-      if (chosen == SameSiteAction.saveAnyway) return false;
+      if (chosen.action == SameSiteAction.saveAnyway) return false;
+      final siteId = chosen.siteId;
+      if (siteId == null) return false;
+      PossibleDuplicate match = dupes.first;
+      for (final d in dupes) {
+        if (d.siteId == siteId) {
+          match = d;
+          break;
+        }
+      }
 
       final ok = await _linkExistingAndOpenReview(
-        existingSiteId: dupes.first.siteId,
-        displayName: name == 'Sin nombre' ? dupes.first.siteName : name,
-        reviewIsPublic: chosen == SameSiteAction.reviewPublic,
+        existingSiteId: siteId,
+        displayName: name == 'Sin nombre' ? match.siteName : name,
+        reviewIsPublic: chosen.action == SameSiteAction.reviewPublic,
       );
       return ok;
     } catch (e) {
@@ -1056,16 +1067,20 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
           latitude: lat,
           longitude: lng,
           excludeSiteId: editSiteId,
+          googlePlaceId: _googlePlaceId,
         );
         if (dupes.isNotEmpty && mounted) {
           final chosen = await _askDuplicate(
-            dupes.first,
+            dupes,
             allowCreateAnyway: true,
           );
-          if (chosen == null) return; // seguir editando
-          if (chosen != SameSiteAction.saveAnyway) {
-            linkToExisting = dupes.first.siteId;
-            pendingReviewIsPublic = chosen == SameSiteAction.reviewPublic;
+          if (chosen == null) return; // seguir con el mío
+          if (chosen.action != SameSiteAction.saveAnyway) {
+            final siteId = chosen.siteId;
+            if (siteId == null) return;
+            linkToExisting = siteId;
+            pendingReviewIsPublic =
+                chosen.action == SameSiteAction.reviewPublic;
           }
         }
       } catch (e) {
@@ -1301,59 +1316,19 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
     }
   }
 
-  /// Acción elegida, o null = seguir editando (no guardar).
+  /// Acción elegida, o null = seguir con el mío (no guardar / no vincular).
   /// [allowCreateAnyway] solo en Guardar (no en soft-check de Maps/pegar).
-  Future<SameSiteAction?> _askDuplicate(
-    PossibleDuplicate d, {
+  Future<SameSitePick?> _askDuplicate(
+    List<PossibleDuplicate> matches, {
     required bool allowCreateAnyway,
   }) {
-    final dist =
-        d.distanceM == null ? '' : ' · ~${d.distanceM!.round()} m';
-    final l10n = context.l10n;
-    return showDialog<SameSiteAction>(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppColors.surface,
-        title: Text(
-          l10n.sameSiteTitle,
-          style: const TextStyle(color: AppColors.foreground),
+    if (matches.isEmpty) return Future<SameSitePick?>.value(null);
+    return Navigator.of(context).push<SameSitePick>(
+      MaterialPageRoute(
+        builder: (_) => SameSitePickerPage(
+          matches: matches,
+          allowCreateAnyway: allowCreateAnyway,
         ),
-        content: SingleChildScrollView(
-          child: Text(
-            '${allowCreateAnyway ? l10n.sameSiteHardBody : l10n.sameSiteSoftBody}\n\n'
-            '«${d.siteName}»'
-            '${d.city != null ? ' — ${d.city}' : ''}$dist',
-            style: const TextStyle(color: AppColors.muted),
-          ),
-        ),
-        actionsAlignment: MainAxisAlignment.start,
-        actions: [
-          TextButton(
-            key: WidgetKeys.dupeKeepEditing,
-            onPressed: () => Navigator.pop(context),
-            child: Text(l10n.sameSiteKeepEditing),
-          ),
-          if (allowCreateAnyway)
-            TextButton(
-              key: WidgetKeys.dupeSaveAnyway,
-              onPressed: () =>
-                  Navigator.pop(context, SameSiteAction.saveAnyway),
-              child: Text(l10n.sameSiteSaveAnyway),
-            ),
-          TextButton(
-            key: WidgetKeys.dupeJournal,
-            onPressed: () =>
-                Navigator.pop(context, SameSiteAction.journalPrivate),
-            child: Text(l10n.sameSiteJournalPrivate),
-          ),
-          FilledButton(
-            key: WidgetKeys.dupeReview,
-            onPressed: () =>
-                Navigator.pop(context, SameSiteAction.reviewPublic),
-            child: Text(l10n.sameSiteReviewPublic),
-          ),
-        ],
       ),
     );
   }
@@ -1545,6 +1520,9 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
                     cacheKey: _pendingMapImageUrl == null
                         ? null
                         : 'map:$_pendingMapImageUrl',
+                    categoryHint: _selectedCategories.isEmpty
+                        ? null
+                        : _selectedCategories.first.nameEs,
                   ),
                   Align(
                     alignment: Alignment.bottomLeft,

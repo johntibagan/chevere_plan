@@ -4,7 +4,7 @@ import '../data/save_models.dart';
 abstract final class SavePolicies {
   static const int maxPhotosPerSite = 15;
   static const Duration draftRemindAfter = Duration(hours: 24);
-  static const double duplicateSearchRadiusM = 100;
+  static const double duplicateSearchRadiusM = 250;
 
   /// Recordatorios locales espaciados hasta completar o descartar (§3.1).
   static const List<Duration> draftRemindDelays = [

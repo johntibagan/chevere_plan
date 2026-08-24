@@ -37,7 +37,7 @@ Login Google **no** se automatiza. Usá `E2E_SUPABASE_REFRESH_TOKEN` (cuenta de 
 | Archivo | Cubierto en device (con sesión) |
 |---------|----------------------------------|
 | `p1_saves_test.dart` | FAB+nombre, Guardar disabled, Público sin pin, pin mapa, punto exacto apagado por default, share simulado, Maps paste si `E2E_MAPS_URL` |
-| `p1_privacy_test.dart` | Default privado; duplicado suave/hard si el RPC matchea |
+| `p1_privacy_test.dart` | Default privado; lista de coincidencias (suave/hard) si el RPC matchea |
 | `p1_plans_test.dart` | Crear plan → builder; toggle incluir públicos |
 | `p1_routes_test.dart` | Tab Rutas sin crash ni admin |
 | `p1_search_test.dart` | Query Explorar |

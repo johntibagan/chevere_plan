@@ -39,8 +39,8 @@ sequenceDiagram
 
 | Sitio | Qué ves |
 |---|---|
-| **Inicio** | Saludo + título, campana (cercanía), **banner de recuerdo cercano** (abre preferencias de radio), aviso de borradores, **guardados recientes** (carrusel), **populares cerca** (caché por celda GPS ~2 km, no se vuelve a buscar al reentrar a Inicio), **acciones rápidas**. Tarjetas con portada, corazón de favorito, badge de red si hay origen, verde/morado visibilidad |
-| **Explorar** | Búsqueda de sitios (cabecera Figma, chips de categoría, grilla/lista). Misma lógica: texto obligatorio en modo simple, filtros avanzados, incluir públicos |
+| **Inicio** | Saludo + título, campana, banner de recuerdo, borradores, **Vista** (lista / 2 / 3 / 4, aplica a recientes y populares), esas dos secciones y **acciones rápidas** (se pliegan). **Ver más** abre Explorar. Portada: foto o ilustración de categoría padre; borde verde/morado. |
+| **Explorar** | Búsqueda de sitios (cabecera Figma, chips de categoría, lista o cuadrícula 2/3/4). Misma lógica: texto obligatorio en modo simple, filtros avanzados, incluir públicos |
 | **+ (centro)** | Guardar o completar un lugar (crear y editar son la **misma pantalla**) |
 | **Planes** | Tus itinerarios (tarjeta de crear + lista; **un solo** CTA, sin FAB duplicado) |
 | **Rutas** | Historial de paradas visitadas (stats del listado + timeline Make). Admin no vive acá |
@@ -96,8 +96,8 @@ Los borradores viejos avisan en Inicio (“completalo”). Hay recordatorios loc
 flowchart TD
   A[Ver lugar o link] --> B[Formulario Guardar]
   B --> C{¿Hay sitio público parecido?}
-  C -->|Aviso suave Maps/pegar| D[Vincular reseña / bitácora / seguir editando]
-  C -->|Al tocar Guardar| E[Igual que D + opción Guardar de todas formas]
+  C -->|Aviso suave Maps/pegar| D[Lista de coincidencias: elegir o seguir]
+  C -->|Al tocar Guardar| E[Misma lista + Guardar de todas formas]
   E --> F[Tu lista]
   D --> F
   C -->|No| G{¿Datos mínimos?}
@@ -113,9 +113,9 @@ flowchart TD
 
 La app no quiere dos fichas públicas del mismo parque a 80 metros.
 
-- Busca por **nombre parecido** + **ciudad** y/o **radio** alrededor del pin (radio amplio para catálogo).
-- **Aviso suave** al pegar Maps o elegir pin: podés vincularte al existente o seguir editando. **No** aparece “guardar de todas formas”.
-- **Al Guardar**: además podés **crear el tuyo público igual** (“de todas formas”).
+- Busca públicos **y tus propios** (aunque sean privados): mismo Place ID, pin cercano (~250 m), nombre parecido hasta 2,5 km, o misma ciudad + nombre.
+- **Aviso suave** al pegar Maps o elegir pin: ves **la lista** de sitios parecidos. Tocás la fila para **abrir la ficha** (igual que en Explorar). El círculo marca cuál usar (reseña o bitácora) o seguís con el tuyo. **No** aparece “guardar de todas formas”.
+- **Al Guardar**: la misma lista, más **crear el tuyo público igual** (“de todas formas”).
 - Vincular:
   - **Reseña visible** en el sitio público (o)
   - **Bitácora privada** (solo vos)
@@ -152,7 +152,7 @@ Reportar foto inadecuada: el primer reporte avisa a staff (lista de reportes abi
 
 Filtros: texto, categoría, lugar (texto), radio desde GPS, grupo de transporte, rango de presupuesto, incluir o no **públicos de otros**.
 
-Resultados: tuyos, públicos, de catálogo, o **vinculados** (tu save apunta a un público existente). Se ordenan por relevancia/recencia.
+Resultados: tuyos, públicos, de catálogo, o **vinculados** (tu save apunta a un público existente). Se ordenan por relevancia/recencia. Vista: lista o cuadrícula 2/3/4 (la misma que en Inicio).
 
 El filtro de “horario” en la UI **no recorta** resultados reales todavía (los sitios no tienen horarios de apertura cargados).
 
@@ -203,6 +203,10 @@ En Inicio, el banner **Recuerdo cercano** (y la campana) abre una hoja corta: ra
 El teléfono registra geocercas (tope práctico ~100, priorizando los tuyos). Si entrás al radio, notificación tipo recuerdo. Pedir ubicación “siempre” y el gasto de batería aún se pueden pulir.
 
 **Populares cerca** (Inicio) usa la misma idea de “celda”: guarda los 4 públicos del radio de 25 km junto con el punto GPS. Al volver a Inicio pinta esa lista al toque. Solo vuelve a consultar GPS fino + búsqueda si te moviste más de ~2 km (el tope de radio de recuerdos), si la caché tiene más de 24 h, o si deslizás para refrescar.
+
+En Inicio, arriba de **Guardados recientes**, elegís **lista** o **cuadrícula de 2, 3 o 4**; vale para recientes y populares (y Explorar usa la misma preferencia). Las secciones se **pliegan** tocando el título. **Ver más** abre **Explorar**.
+
+Sin foto: ilustración de la **categoría padre**. Con fotos: primera en listas; **carrusel** en la ficha. El borde/franja verde o morado sigue marcando público o privado.
 
 ```mermaid
 flowchart TD

@@ -63,7 +63,7 @@ Público es **sección siempre visible**. Sin pin, el interruptor se muestra **d
 - Depto → ciudad (DIVIPOLA, ids, no listas en Dart).
 - Crear: categoría default Otros. Editar: no pisar categorías cargadas.
 - Pegar = icono **dentro** del campo, no botón “Buscar” aparte.
-- Anti-dupe: suave al Maps/pin; en Guardar, “de todas formas”. Vincular + reseña o bitácora.
+- Anti-dupe: suave al Maps/pin; en Guardar, “de todas formas”. Lista de coincidencias (públicos + los tuyos; Place ID, pin ~250 m, nombre/ciudad). Fila abre la ficha. Vincular + reseña o bitácora.
 
 Alto riesgo: `save_place_page.dart`, `google_maps_link_importer.dart`, `save_policies.dart`, `saves_repository.dart`, `location_picker_page.dart`.
 
@@ -76,6 +76,7 @@ Alto riesgo: `save_place_page.dart`, `google_maps_link_importer.dart`, `save_pol
 - Listas clicables: chevron; fecha si aporta.
 - Errores en UI: mensaje de negocio o **"Error en la app. Intenta de nuevo."** Nunca SQL, PostgREST, stacks, keys.
 - Modales: nada de barrier sin contenido. Fotos del sitio en la ficha, no en sheet.
+- Portada: si hay fotos, la ficha las muestra en **carrusel** y las listas solo la **primera**. Sin foto, ilustración de la **categoría padre** (si hay varias, la primera y su padre). Mismo criterio en card y ficha. Bordes/franja verde-morado de visibilidad se mantienen.
 
 ## Datos
 

@@ -459,7 +459,11 @@ class _PlanHero extends StatelessWidget {
       child: Stack(
         fit: StackFit.expand,
         children: [
-          const SiteCover(),
+          SiteCover(
+            seed: plan.stops.isNotEmpty
+                ? plan.stops.first.siteId
+                : plan.id,
+          ),
           const DecoratedBox(
             decoration: BoxDecoration(
               gradient: LinearGradient(

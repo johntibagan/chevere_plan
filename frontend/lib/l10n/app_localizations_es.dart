@@ -138,7 +138,10 @@ class AppLocalizationsEs extends AppLocalizations {
   String get homeRecentSaves => 'Guardados recientes';
 
   @override
-  String get homeSeeAll => 'Ver todos';
+  String get homeSeeAll => 'Ver más';
+
+  @override
+  String get homeFeedView => 'Vista';
 
   @override
   String get homePopularNearby => 'Populares cerca';
@@ -503,6 +506,18 @@ class AppLocalizationsEs extends AppLocalizations {
   String get searchViewList => 'Lista';
 
   @override
+  String get feedLayoutList => 'Lista';
+
+  @override
+  String get feedLayoutGrid2 => 'Cuadrícula 2';
+
+  @override
+  String get feedLayoutGrid3 => 'Cuadrícula 3';
+
+  @override
+  String get feedLayoutGrid4 => 'Cuadrícula 4';
+
+  @override
   String get plansSubtitle => 'Tus itinerarios guardados';
 
   @override
@@ -808,7 +823,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get sameSiteJournalPrivate => 'Usarlo + bitácora privada';
 
   @override
-  String get sameSiteKeepEditing => 'Seguir editando';
+  String get sameSiteKeepEditing => 'Seguir con el mío';
 
   @override
   String get sameSiteSaveAnyway => 'Guardar de todas formas';
@@ -820,6 +835,25 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get sameSiteSoftBody =>
       'Ya existe un sitio público parecido. Úsalo para evitar duplicados, o sigue editando.';
+
+  @override
+  String get sameSitePickHint =>
+      'Tocá una fila para ver la ficha (fotos, mapa, reseñas). El círculo marca cuál usar.';
+
+  @override
+  String get sameSiteHardPickHint =>
+      'Mirá la ficha si dudás. Podés usarlo o guardar el tuyo de todas formas.';
+
+  @override
+  String get sameSiteTapForDetail => 'Ver ficha';
+
+  @override
+  String get sameSiteMarkThis => 'Marcar este';
+
+  @override
+  String sameSiteMetersAway(int meters) {
+    return 'a $meters m';
+  }
 
   @override
   String get sameSiteStaffHint =>

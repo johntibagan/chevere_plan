@@ -35,6 +35,8 @@ abstract final class WidgetKeys {
   static const dupeSaveAnyway = Key('dupe_save_anyway');
   static const dupeJournal = Key('dupe_journal');
   static const dupeReview = Key('dupe_review');
+  static const dupePicker = Key('dupe_picker');
+  static Key dupeMatch(String siteId) => Key('dupe_match_$siteId');
   static const privacyBlockDialog = Key('privacy_block_dialog');
 
   static const locationPicker = Key('location_picker');

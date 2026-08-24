@@ -17,7 +17,7 @@ Contratos que no se pueden romper: [`invariantes.md`](invariantes.md).
 2. Respetar **tokens** (§3) y **señales** (§4). No introducir tema claro ni iOS-only.
 3. Mejorar jerarquía, ritmo, fotos, iconografía y microcopy **sin** agregar flujos (favoritos = solo el corazón; no hay IA, no hay admin en Rutas).
 4. **Guardar lugar:** el CTA **Guardar** va **abajo**, ancho, al alcance del pulgar. El Make a veces lo pone en el AppBar: **no replicar eso**.
-5. Las fotos de sitios **casi nunca llegan a las listas**: hoy hay **portada ilustrada por defecto**. Un rediseño puede proponer recortes, máscaras y empty-photo más ricos; el producto aún no rellena `imageUrl` en home/búsqueda/planes.
+5. Las fotos de sitios: en listas la **primera**; en la ficha **carrusel**. Sin foto, ilustración de la **categoría padre**.
 6. Entregar frames nombrados como las pantallas de la §6 para mapear 1:1 a widgets Flutter.
 
 ---
@@ -213,10 +213,11 @@ Tab activo: icono + label `primary`. Inactivo: `mutedDark`, label 10 px.
 1. Saludo 11 mutedDark + título app 22 ExtraBold. Campana (proximidad, punto accent) + logout. Staff: avatar initial → Admin.
 2. Banner **Recuerdo cercano** (gradiente primary, abre sheet de radio).
 3. Aviso de **borradores** (card naranja, no el gradiente).
-4. **Guardados recientes**: carrusel ~208 px. “Ver todos” expande a 5+.
-5. **Populares cerca**: grid 2 col, franja de visibilidad. Vacío / sin GPS: texto muted.
-6. **Acciones rápidas**: 3 tiles (cerca, más guardados, por categoría) — cambian de tab o listan; no son pantallas nuevas.
-7. Padding bottom grande por `extendBody`.
+4. **Vista** (lista / 2 / 3 / 4) arriba, aplica a recientes y populares.
+5. **Guardados recientes**: misma vista (hasta 5). El título pliega. **Ver más** abre Explorar.
+6. **Populares cerca**: mismo plegado y misma vista. **Ver más** abre Explorar. Vacío / sin GPS: texto muted.
+7. **Acciones rápidas**: se pliegan igual; los tres atajos también van a Explorar.
+8. Padding bottom grande por `extendBody`.
 
 ### 6.3 Explorar — `SearchPage`
 
@@ -225,7 +226,7 @@ Tab activo: icono + label `primary`. Inactivo: `mutedDark`, label 10 px.
 - Chips: `AppSelectChip` (Todos + raíces DB). **No disparan búsqueda solas.**
 - Switch incluir públicos; limpiar.
 - Avanzado (scroll): ubicación extra, categoría (incluye hijas), transporte, presupuesto min/max, GPS + radio km, texto de horario (placeholder, **no filtra**).
-- Tras buscar: `{n} resultados` + `AppViewModeToggle` grilla/lista.
+- Tras buscar: `{n} resultados` + `AppFeedLayoutToggle` (lista / 2 / 3 / 4; misma preferencia que Inicio).
 - Grilla: `HomePopularCard(showOriginRow: true)`. Lista: `HomeSearchListCard` (misma ficha: franja, origen, corazón).
 - Modo simple: **query obligatorio**.
 
@@ -238,6 +239,7 @@ Tab activo: icono + label `primary`. Inactivo: `mutedDark`, label 10 px.
 - Share-in: además abre Enlaces.
 - Categorías: `CategoryPickerPage` **fullscreen dialog**, no sheet.
 - Mapa grande: `LocationPickerPage`.
+- Coincidencia: `SameSitePickerPage`. Fila abre `SiteDetailPage` (chevron); el círculo selecciona.
 - Ayuda: icono `i`, no párrafos.
 - Tras guardar: pop (no pantalla “¡Guardado!”).
 
@@ -308,6 +310,8 @@ Chips internos: buscar / resultados / añadidos. `AppSearchField` + filtros avan
 |---|---|---|
 | Login | Google OK | Shell |
 | Shell FAB / Inicio borrador | | `SavePlacePage` (crear o editar) |
+| `SavePlacePage` | coincidencia | `SameSitePickerPage` |
+| `SameSitePickerPage` | fila / chevron | `SiteDetailPage` (atrás vuelve a la lista) |
 | Share OS | | `SavePlacePage` |
 | Card sitio (inicio, explorar, plan) | | `SiteDetailPage` |
 | Inicio campana | | Sheet proximidad |

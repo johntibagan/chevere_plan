@@ -11,6 +11,7 @@ import '../../../core/widgets/app_toast.dart';
 import '../../../core/prefetch/site_prefetch.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/testing/widget_keys.dart';
+import '../../../core/widgets/app_feed_layout_toggle.dart';
 import '../../admin/presentation/admin_page.dart';
 import '../../auth/data/profile.dart';
 import '../../moderation/presentation/admin_reports_page.dart';
@@ -25,7 +26,6 @@ import '../../saves/data/site_ficha.dart';
 import '../../saves/domain/save_policies.dart';
 import '../../saves/presentation/open_site_detail.dart';
 import '../../saves/presentation/save_place_page.dart';
-import '../../saves/presentation/site_status_l10n.dart';
 
 /// Shell Figma: Inicio | Explorar | [+] Guardar | Planes | Rutas
 class HomePage extends ConsumerStatefulWidget {
@@ -40,14 +40,11 @@ class HomePage extends ConsumerStatefulWidget {
 class _HomePageState extends ConsumerState<HomePage> {
   Profile? _profile;
   List<UserSave> _saves = [];
-  bool _hasMoreSaves = false;
-  bool _loadingMoreSaves = false;
   String? _error;
   bool _loading = true;
   int _tab = 0; // 0 inicio, 1 explorar, 2 planes, 3 rutas
   DateTime? _exitArmedAt;
   static const _exitWindow = Duration(seconds: 2);
-  bool _showAllRecent = false;
 
   /// Instancias cacheadas: se crean al primer toque (lazy) y se reutilizan.
   Widget? _exploreTab;
@@ -146,8 +143,6 @@ class _HomePageState extends ConsumerState<HomePage> {
       setState(() {
         _profile = profile;
         _saves = saves;
-        _hasMoreSaves = page.hasMore;
-        _loadingMoreSaves = page.loadingMore;
         _loading = false;
       });
       ref.read(sitePrefetchProvider).scheduleVisibleSites(
@@ -238,8 +233,6 @@ class _HomePageState extends ConsumerState<HomePage> {
         if (!mounted) return;
         setState(() {
           _saves = page.items;
-          _hasMoreSaves = page.hasMore;
-          _loadingMoreSaves = page.loadingMore;
           _loading = false;
         });
         ref.read(sitePrefetchProvider).scheduleVisibleSites(
@@ -291,12 +284,9 @@ class _HomePageState extends ConsumerState<HomePage> {
               loading: _loading,
               error: _error,
               saves: _saves,
-              hasMoreSaves: _hasMoreSaves,
-              loadingMoreSaves: _loadingMoreSaves,
               nearby: nearbyHits,
               nearbyLoading: nearbyLoading,
               nearbyNeedGps: nearbyNeedGps,
-              showAllRecent: _showAllRecent,
               profile: _profile,
               onRefresh: () async {
                 await Future.wait([
@@ -304,13 +294,9 @@ class _HomePageState extends ConsumerState<HomePage> {
                   ref.read(homeNearbyProvider.notifier).refresh(force: true),
                 ]);
               },
-              onLoadMoreSaves: () =>
-                  ref.read(mySavesProvider.notifier).loadMore(),
               onOpenSave: _openSave,
               onOpenSite: _openSite,
               onOpenHit: _openHit,
-              onSeeAllRecent: () =>
-                  setState(() => _showAllRecent = !_showAllRecent),
               onProximity: _openProximityPrefs,
               onAdmin: () {
                 Navigator.of(context).push(
@@ -459,7 +445,7 @@ class _ChevereBottomNav extends StatelessWidget {
   }
 }
 
-class _InicioTab extends StatelessWidget {
+class _InicioTab extends ConsumerWidget {
   const _InicioTab({
     required this.greeting,
     required this.name,
@@ -468,19 +454,14 @@ class _InicioTab extends StatelessWidget {
     required this.loading,
     required this.error,
     required this.saves,
-    required this.hasMoreSaves,
-    required this.loadingMoreSaves,
     required this.nearby,
     required this.nearbyLoading,
     required this.nearbyNeedGps,
-    required this.showAllRecent,
     required this.profile,
     required this.onRefresh,
-    required this.onLoadMoreSaves,
     required this.onOpenSave,
     required this.onOpenSite,
     required this.onOpenHit,
-    required this.onSeeAllRecent,
     required this.onProximity,
     required this.onAdmin,
     required this.onReports,
@@ -495,19 +476,14 @@ class _InicioTab extends StatelessWidget {
   final bool loading;
   final String? error;
   final List<UserSave> saves;
-  final bool hasMoreSaves;
-  final bool loadingMoreSaves;
   final List<SearchHit> nearby;
   final bool nearbyLoading;
   final bool nearbyNeedGps;
-  final bool showAllRecent;
   final Profile? profile;
   final Future<void> Function() onRefresh;
-  final Future<void> Function() onLoadMoreSaves;
   final Future<void> Function({String? shared, UserSave? existing}) onOpenSave;
   final Future<void> Function({UserSave? existing}) onOpenSite;
   final Future<void> Function(SearchHit hit) onOpenHit;
-  final VoidCallback onSeeAllRecent;
   final VoidCallback onProximity;
   final VoidCallback onAdmin;
   final VoidCallback onReports;
@@ -515,9 +491,11 @@ class _InicioTab extends StatelessWidget {
   final VoidCallback onExplore;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
     final drafts = saves.where((s) => s.isIncomplete).toList();
+    final sections = ref.watch(homeSectionsOpenProvider);
+    final layout = ref.watch(feedLayoutProvider);
 
     return RefreshIndicator(
       color: AppColors.primary,
@@ -739,186 +717,174 @@ class _InicioTab extends StatelessWidget {
               ),
             ),
           SliverToBoxAdapter(
-            child: HomeSectionHeader(
-              title: l10n.homeRecentSaves,
-              actionLabel: saves.isEmpty ? null : l10n.homeSeeAll,
-              onAction: saves.isEmpty ? null : onSeeAllRecent,
-            ),
-          ),
-          if (loading)
-            const SliverToBoxAdapter(
-              child: Padding(
-                padding: EdgeInsets.symmetric(vertical: 24),
-                child: Center(child: CircularProgressIndicator()),
-              ),
-            )
-          else if (error != null)
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                child: Text(
-                  error!,
-                  style: const TextStyle(color: AppColors.accent),
-                ),
-              ),
-            )
-          else if (saves.isEmpty)
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-                child: Text(
-                  l10n.homeEmptySaves,
-                  style: const TextStyle(color: AppColors.muted),
-                ),
-              ),
-            )
-          else
-            SliverToBoxAdapter(
-              child: SizedBox(
-                height: 208,
-                child: ListView.separated(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                  scrollDirection: Axis.horizontal,
-                  itemCount: (showAllRecent ? saves : saves.take(5)).length,
-                  separatorBuilder: (_, _) => const SizedBox(width: 12),
-                  itemBuilder: (context, i) {
-                    final subset =
-                        showAllRecent ? saves : saves.take(5).toList();
-                    final s = subset[i];
-                    return HomeRecentRailCard(
-                      key: WidgetKeys.homeSaveCard(s.id),
-                      save: s,
-                      onTap: () => onOpenSite(existing: s),
-                    );
-                  },
-                ),
-              ),
-            ),
-          if (showAllRecent && saves.length > 5)
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-              sliver: SliverList.separated(
-                itemCount: (saves.length - 5) + (hasMoreSaves ? 1 : 0),
-                separatorBuilder: (_, _) => const SizedBox(height: 10),
-                itemBuilder: (context, i) {
-                  final rest = saves.skip(5).toList();
-                  if (i >= rest.length) {
-                    return Center(
-                      child: loadingMoreSaves
-                          ? const SizedBox(
-                              width: 24,
-                              height: 24,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : TextButton(
-                              onPressed: onLoadMoreSaves,
-                              child: Text(context.l10n.actionLoadMore),
-                            ),
-                    );
-                  }
-                  final s = rest[i];
-                  return _SaveCard(
-                    save: s,
-                    onTap: () => onOpenSite(existing: s),
-                  );
-                },
-              ),
-            ),
-          SliverToBoxAdapter(
-            child: HomeSectionHeader(
-              title: l10n.homePopularNearby,
-              actionLabel: l10n.homeExploreLink,
-              onAction: onExplore,
-            ),
-          ),
-          SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-              child: nearbyLoading
-                  ? const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 24),
-                      child: Center(child: CircularProgressIndicator()),
-                    )
-                  : nearbyNeedGps
-                      ? Text(
-                          l10n.homeNearbyNeedGps,
-                          style: const TextStyle(color: AppColors.muted),
-                        )
-                      : nearby.isEmpty
-                          ? Text(
-                              l10n.homeNearbyEmpty,
-                              style: const TextStyle(color: AppColors.muted),
-                            )
-                          : GridView.builder(
-                              shrinkWrap: true,
-                              physics: const NeverScrollableScrollPhysics(),
-                              itemCount: nearby.length,
-                              gridDelegate:
-                                  const SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: 2,
-                                mainAxisSpacing: 10,
-                                crossAxisSpacing: 10,
-                                childAspectRatio: 1.05,
-                              ),
-                              itemBuilder: (context, i) {
-                                final hit = nearby[i];
-                                return HomePopularCard(
-                                  hit: hit,
-                                  onTap: () => onOpenHit(hit),
-                                );
-                              },
-                            ),
-            ),
-          ),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+              child: Row(
                 children: [
-                  Text(
-                    l10n.homeQuickActions,
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.foreground,
+                  Expanded(
+                    child: Text(
+                      l10n.homeFeedView,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.mutedDark,
+                      ),
                     ),
                   ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: HomeQuickAction(
-                          icon: Icons.near_me_rounded,
-                          color: AppColors.accent,
-                          label: l10n.homeActionNearMe,
-                          onTap: onExplore,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: HomeQuickAction(
-                          icon: Icons.trending_up_rounded,
-                          color: AppColors.primary,
-                          label: l10n.homeActionMostSaved,
-                          onTap: onSeeAllRecent,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: HomeQuickAction(
-                          icon: Icons.sell_outlined,
-                          color: AppColors.purple,
-                          label: l10n.homeActionByCategory,
-                          onTap: onExplore,
-                        ),
-                      ),
-                    ],
+                  AppFeedLayoutToggle(
+                    value: layout,
+                    onChanged: (v) =>
+                        ref.read(feedLayoutProvider.notifier).setLayout(v),
+                    listTooltip: l10n.feedLayoutList,
+                    grid2Tooltip: l10n.feedLayoutGrid2,
+                    grid3Tooltip: l10n.feedLayoutGrid3,
+                    grid4Tooltip: l10n.feedLayoutGrid4,
                   ),
                 ],
               ),
             ),
           ),
+          SliverToBoxAdapter(
+            child: HomeSectionHeader(
+              title: l10n.homeRecentSaves,
+              expanded: sections.recent,
+              onToggleExpanded: () => ref
+                  .read(homeSectionsOpenProvider.notifier)
+                  .setOpen(sections.copyWith(recent: !sections.recent)),
+              actionLabel: l10n.homeSeeAll,
+              onAction: onExplore,
+            ),
+          ),
+          if (sections.recent) ...[
+            if (loading)
+              const SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(vertical: 24),
+                  child: Center(child: CircularProgressIndicator()),
+                ),
+              )
+            else if (error != null)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                  child: Text(
+                    error!,
+                    style: const TextStyle(color: AppColors.accent),
+                  ),
+                ),
+              )
+            else if (saves.isEmpty)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                  child: Text(
+                    l10n.homeEmptySaves,
+                    style: const TextStyle(color: AppColors.muted),
+                  ),
+                ),
+              )
+            else
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                  child: HomeFeedHits(
+                    hits: [
+                      for (final s in saves.take(5)) hitFromSave(s),
+                    ],
+                    layout: layout,
+                    onTap: (hit) {
+                      final save = saves.firstWhere(
+                        (s) => s.siteId == hit.siteId,
+                      );
+                      onOpenSite(existing: save);
+                    },
+                  ),
+                ),
+              ),
+          ],
+          SliverToBoxAdapter(
+            child: HomeSectionHeader(
+              title: l10n.homePopularNearby,
+              expanded: sections.popular,
+              onToggleExpanded: () => ref
+                  .read(homeSectionsOpenProvider.notifier)
+                  .setOpen(sections.copyWith(popular: !sections.popular)),
+              actionLabel: l10n.homeSeeAll,
+              onAction: onExplore,
+            ),
+          ),
+          if (sections.popular)
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                child: nearbyLoading
+                    ? const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 24),
+                        child: Center(child: CircularProgressIndicator()),
+                      )
+                    : nearbyNeedGps
+                        ? Text(
+                            l10n.homeNearbyNeedGps,
+                            style: const TextStyle(color: AppColors.muted),
+                          )
+                        : nearby.isEmpty
+                            ? Text(
+                                l10n.homeNearbyEmpty,
+                                style: const TextStyle(color: AppColors.muted),
+                              )
+                            : HomeFeedHits(
+                                hits: nearby,
+                                layout: layout,
+                                onTap: onOpenHit,
+                              ),
+              ),
+            ),
+          SliverToBoxAdapter(
+            child: HomeSectionHeader(
+              title: l10n.homeQuickActions,
+              expanded: sections.quick,
+              onToggleExpanded: () => ref
+                  .read(homeSectionsOpenProvider.notifier)
+                  .setOpen(sections.copyWith(quick: !sections.quick)),
+            ),
+          ),
+          if (sections.quick)
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: HomeQuickAction(
+                        icon: Icons.near_me_rounded,
+                        color: AppColors.accent,
+                        label: l10n.homeActionNearMe,
+                        onTap: onExplore,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: HomeQuickAction(
+                        icon: Icons.trending_up_rounded,
+                        color: AppColors.primary,
+                        label: l10n.homeActionMostSaved,
+                        onTap: onExplore,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: HomeQuickAction(
+                        icon: Icons.sell_outlined,
+                        color: AppColors.purple,
+                        label: l10n.homeActionByCategory,
+                        onTap: onExplore,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          const SliverToBoxAdapter(child: SizedBox(height: 100)),
         ],
       ),
     );
@@ -934,109 +900,6 @@ class _InicioTab extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.all(10),
           child: Icon(icon, size: 20, color: AppColors.muted),
-        ),
-      ),
-    );
-  }
-}
-
-class _SaveCard extends StatelessWidget {
-  const _SaveCard({
-    required this.save,
-    required this.onTap,
-  });
-
-  final UserSave save;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
-    final accent = save.isPublic ? AppColors.success : AppColors.purple;
-    return Material(
-      color: AppColors.surface,
-      clipBehavior: Clip.antiAlias,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: accent.withValues(alpha: 0.4)),
-      ),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: onTap,
-        child: IntrinsicHeight(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Container(width: 4, color: accent),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 52,
-                        height: 52,
-                        decoration: BoxDecoration(
-                          color: AppColors.surfaceElevated,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Icon(
-                          save.isIncomplete
-                              ? Icons.edit_note_rounded
-                              : Icons.place_outlined,
-                          color: save.isIncomplete
-                              ? AppColors.primary
-                              : AppColors.muted,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              save.siteName,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w700,
-                                fontSize: 14,
-                              ),
-                            ),
-                            const SizedBox(height: 6),
-                            Wrap(
-                              spacing: 6,
-                              runSpacing: 4,
-                              crossAxisAlignment: WrapCrossAlignment.center,
-                              children: [
-                                Text(
-                                  [
-                                    save.status.label(l10n),
-                                    if (save.city != null &&
-                                        save.city!.isNotEmpty)
-                                      save.city!,
-                                    if (save.categoryNames.isNotEmpty)
-                                      save.categoryNames.first,
-                                  ].join(' · '),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    fontSize: 11,
-                                    color: AppColors.muted,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                      const Icon(Icons.chevron_right, color: AppColors.muted),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
         ),
       ),
     );

@@ -4,6 +4,7 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../features/admin/data/admin_models.dart';
@@ -30,12 +31,14 @@ import '../../features/saves/data/site_reviews_repository.dart';
 import '../../features/home/data/device_location.dart';
 import '../../features/home/data/home_nearby_snapshot.dart';
 import '../../features/home/domain/home_nearby_policies.dart';
+import '../../features/home/domain/home_sections_open.dart';
 import '../../features/search/data/search_models.dart';
 import '../../features/search/data/search_repository.dart';
 import '../cache/cache_ttl.dart';
 import '../cache/entity_cache_store.dart';
 import '../cache/paged_items.dart';
 import '../cache/swr_loader.dart';
+import '../prefs/feed_layout.dart';
 
 /// Cliente Supabase compartido (inyectable en tests).
 final supabaseClientProvider = Provider<SupabaseClient>((ref) {
@@ -60,6 +63,11 @@ final profileRepositoryProvider = Provider<ProfileRepository>((ref) {
 
 final savesRepositoryProvider = Provider<SavesRepository>((ref) {
   return SavesRepository(client: ref.watch(supabaseClientProvider));
+});
+
+final coverSignedUrlProvider =
+    FutureProvider.family<String?, String>((ref, path) async {
+  return ref.watch(savesRepositoryProvider).signedPhotoUrl(path);
 });
 
 final favoritesRepositoryProvider = Provider<FavoritesRepository>((ref) {
@@ -767,4 +775,56 @@ class HomeNearbyNotifier extends AsyncNotifier<HomeNearbySnapshot> {
 final homeNearbyProvider =
     AsyncNotifierProvider<HomeNearbyNotifier, HomeNearbySnapshot>(
   HomeNearbyNotifier.new,
+);
+
+class FeedLayoutNotifier extends Notifier<FeedLayout> {
+  static const _prefsKey = 'feed_layout';
+
+  @override
+  FeedLayout build() {
+    Future.microtask(_hydrate);
+    return FeedLayout.grid2;
+  }
+
+  Future<void> _hydrate() async {
+    final prefs = await SharedPreferences.getInstance();
+    final next = FeedLayout.fromStorage(prefs.getString(_prefsKey));
+    if (next != state) state = next;
+  }
+
+  Future<void> setLayout(FeedLayout layout) async {
+    state = layout;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_prefsKey, layout.storageKey);
+  }
+}
+
+final feedLayoutProvider =
+    NotifierProvider<FeedLayoutNotifier, FeedLayout>(FeedLayoutNotifier.new);
+
+class HomeSectionsOpenNotifier extends Notifier<HomeSectionsOpen> {
+  static const _prefsKey = 'home_sections_open';
+
+  @override
+  HomeSectionsOpen build() {
+    Future.microtask(_hydrate);
+    return const HomeSectionsOpen();
+  }
+
+  Future<void> _hydrate() async {
+    final prefs = await SharedPreferences.getInstance();
+    final next = HomeSectionsOpen.decode(prefs.getString(_prefsKey));
+    if (next.encode() != state.encode()) state = next;
+  }
+
+  Future<void> setOpen(HomeSectionsOpen next) async {
+    state = next;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_prefsKey, next.encode());
+  }
+}
+
+final homeSectionsOpenProvider =
+    NotifierProvider<HomeSectionsOpenNotifier, HomeSectionsOpen>(
+  HomeSectionsOpenNotifier.new,
 );

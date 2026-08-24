@@ -14,6 +14,10 @@ class SearchHit {
     this.currencyCode = 'COP',
     this.distanceKm,
     this.updatedAt,
+    this.categoryNames = const [],
+    this.coverStoragePath,
+    this.isIncomplete = false,
+    this.sourceNetwork,
   });
 
   final String siteId;
@@ -31,6 +35,10 @@ class SearchHit {
   final bool isLinked;
   final double? distanceKm;
   final DateTime? updatedAt;
+  final List<String> categoryNames;
+  final String? coverStoragePath;
+  final bool isIncomplete;
+  final String? sourceNetwork;
 
   factory SearchHit.fromJson(Map<String, dynamic> json) {
     final price = json['estimated_price_amount'];
@@ -52,6 +60,14 @@ class SearchHit {
       isLinked: json['is_linked'] as bool? ?? false,
       distanceKm: dist == null ? null : (dist as num).toDouble(),
       updatedAt: updated is String ? DateTime.tryParse(updated) : null,
+      categoryNames: (json['category_names'] as List?)
+              ?.map((e) => '$e')
+              .where((e) => e.isNotEmpty)
+              .toList() ??
+          const [],
+      coverStoragePath: json['cover_storage_path'] as String?,
+      isIncomplete: json['is_incomplete'] as bool? ?? false,
+      sourceNetwork: json['source_network'] as String?,
     );
   }
 
@@ -70,6 +86,10 @@ class SearchHit {
         'is_linked': isLinked,
         'distance_km': distanceKm,
         'updated_at': updatedAt?.toIso8601String(),
+        'category_names': categoryNames,
+        'cover_storage_path': coverStoragePath,
+        'is_incomplete': isIncomplete,
+        'source_network': sourceNetwork,
       };
 
   SearchHit copyWith({
@@ -87,6 +107,10 @@ class SearchHit {
     bool? isLinked,
     double? distanceKm,
     DateTime? updatedAt,
+    List<String>? categoryNames,
+    String? coverStoragePath,
+    bool? isIncomplete,
+    String? sourceNetwork,
   }) {
     return SearchHit(
       siteId: siteId ?? this.siteId,
@@ -103,6 +127,10 @@ class SearchHit {
       isLinked: isLinked ?? this.isLinked,
       distanceKm: distanceKm ?? this.distanceKm,
       updatedAt: updatedAt ?? this.updatedAt,
+      categoryNames: categoryNames ?? this.categoryNames,
+      coverStoragePath: coverStoragePath ?? this.coverStoragePath,
+      isIncomplete: isIncomplete ?? this.isIncomplete,
+      sourceNetwork: sourceNetwork ?? this.sourceNetwork,
     );
   }
 }
@@ -143,6 +171,6 @@ class SearchFilters {
         budgetMin?.toString() ?? '',
         budgetMax?.toString() ?? '',
         includePublic ? '1' : '0',
-        'v3', // bust: updated_at + borde color sin texto Público
+        'v4', // cover + categorías padre
       ].join('|');
 }

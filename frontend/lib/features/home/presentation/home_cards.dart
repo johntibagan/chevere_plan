@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../../../core/di/providers.dart';
 import '../../../core/formatters/money_format.dart';
 import '../../../core/l10n/context_l10n.dart';
+import '../../../core/prefs/feed_layout.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/testing/widget_keys.dart';
 import '../../../core/widgets/site_cover.dart';
 import '../../../core/widgets/site_origin_tags.dart';
 import '../../../core/widgets/visibility_badge.dart';
+import '../../admin/data/admin_models.dart';
 import '../../saves/data/save_models.dart';
 import '../../saves/presentation/favorite_heart_button.dart';
 import '../../search/data/search_models.dart';
@@ -21,22 +25,25 @@ String homeSavedAgo(AppLocalizations l10n, DateTime? at) {
   return l10n.homeSavedWeeksAgo((days / 7).floor().clamp(1, 99));
 }
 
-Color homeCategoryTint(String? name) {
-  final n = (name ?? '').toLowerCase();
-  if (n.contains('gastro') || n.contains('comida') || n.contains('bar')) {
-    return AppColors.catGastro;
-  }
-  if (n.contains('aloj') || n.contains('hotel')) return AppColors.catAloj;
-  if (n.contains('natur') || n.contains('parque')) return AppColors.catNat;
-  if (n.contains('cult') || n.contains('museo')) return AppColors.catCult;
-  if (n.contains('entreten') || n.contains('música') || n.contains('musica')) {
-    return AppColors.catEnt;
-  }
-  if (n.contains('compra')) return AppColors.catComp;
-  if (n.contains('evento')) return AppColors.catEven;
-  if (n.contains('serv')) return AppColors.catServ;
-  if (n.contains('deporte')) return AppColors.catDeporte;
-  return AppColors.primary;
+Color homeCategoryTint(String? name) =>
+    SiteCoverFamily.resolve(hint: name).accent;
+
+SearchHit hitFromSave(UserSave save) {
+  return SearchHit(
+    siteId: save.siteId,
+    name: save.siteName,
+    isOwn: true,
+    isPublic: save.isPublic,
+    isCatalog: save.isCatalogSite,
+    isLinked: save.isPossibleDuplicate,
+    city: save.city,
+    department: save.department,
+    categoryNames: save.categoryNames,
+    coverStoragePath: save.coverStoragePath,
+    isIncomplete: save.isIncomplete,
+    sourceNetwork: save.sourceNetwork,
+    updatedAt: save.siteUpdatedAt ?? save.createdAt,
+  );
 }
 
 class HomeSectionHeader extends StatelessWidget {
@@ -45,28 +52,64 @@ class HomeSectionHeader extends StatelessWidget {
     required this.title,
     this.actionLabel,
     this.onAction,
+    this.trailing,
+    this.expanded,
+    this.onToggleExpanded,
   });
 
   final String title;
   final String? actionLabel;
   final VoidCallback? onAction;
+  final Widget? trailing;
+  /// Si hay [onToggleExpanded], el título pliega/despliega la sección.
+  final bool? expanded;
+  final VoidCallback? onToggleExpanded;
 
   @override
   Widget build(BuildContext context) {
+    final canToggle = onToggleExpanded != null;
+    final isOpen = expanded ?? true;
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
       child: Row(
         children: [
           Expanded(
-            child: Text(
-              title,
-              style: GoogleFonts.plusJakartaSans(
-                fontSize: 13,
-                fontWeight: FontWeight.w800,
-                color: AppColors.foreground,
+            child: InkWell(
+              onTap: onToggleExpanded,
+              borderRadius: BorderRadius.circular(8),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        title,
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.foreground,
+                        ),
+                      ),
+                    ),
+                    if (canToggle) ...[
+                      const SizedBox(width: 4),
+                      Icon(
+                        isOpen
+                            ? Icons.expand_less_rounded
+                            : Icons.expand_more_rounded,
+                        size: 20,
+                        color: AppColors.mutedDark,
+                      ),
+                    ],
+                  ],
+                ),
               ),
             ),
           ),
+          if (trailing != null) ...[
+            trailing!,
+            const SizedBox(width: 8),
+          ],
           if (actionLabel != null && onAction != null)
             InkWell(
               onTap: onAction,
@@ -192,7 +235,10 @@ class HomeRecentRailCard extends StatelessWidget {
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
-                    const SiteCover(),
+                    SiteCover(
+                      categoryHint: cat,
+                      seed: save.siteId,
+                    ),
                     const SiteCoverScrim(bottomOpacity: 0.75),
                     Positioned(
                       top: 8,
@@ -290,34 +336,48 @@ class HomeRecentRailCard extends StatelessWidget {
   }
 }
 
-/// Grilla Figma 2 columnas: franja de visibilidad, foto 100px, nombre y precio.
-class HomePopularCard extends StatelessWidget {
+/// Grilla: franja + borde de visibilidad, foto o ilustración padre.
+class HomePopularCard extends ConsumerWidget {
   const HomePopularCard({
     super.key,
     required this.hit,
     required this.onTap,
     this.showOriginRow = false,
+    this.photoHeight = 100,
+    this.showPlaceOnCover = true,
   });
 
   final SearchHit hit;
   final VoidCallback onTap;
   /// Explorar: visibilidad + Tuyo/Vinculado/Catálogo. Inicio: solo nombre/precio.
   final bool showOriginRow;
+  final double photoHeight;
+  final bool showPlaceOnCover;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = context.l10n;
     final price = hit.estimatedPriceAmount;
     final origin = SiteOriginTags(
       isOwn: hit.isOwn,
       isLinked: hit.isLinked,
       isCatalog: hit.isCatalog,
     );
+    final cats = ref.watch(
+      categoriesProvider.select((a) => a.valueOrNull ?? const <Category>[]),
+    );
+    final hint = Category.parentNameEs(cats, hit.categoryNames);
+    final path = hit.coverStoragePath?.trim();
+    final signed = (path == null || path.isEmpty)
+        ? null
+        : ref.watch(coverSignedUrlProvider(path)).valueOrNull;
+    final vis = hit.isPublic ? AppColors.success : AppColors.purple;
     return Material(
       color: AppColors.surface,
       clipBehavior: Clip.antiAlias,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: const BorderSide(color: AppColors.border),
+        side: BorderSide(color: vis.withValues(alpha: 0.55)),
       ),
       child: InkWell(
         onTap: onTap,
@@ -325,11 +385,15 @@ class HomePopularCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             SizedBox(
-              height: 100,
+              height: photoHeight,
               child: Stack(
                 fit: StackFit.expand,
                 children: [
-                  const SiteCover(),
+                  SiteCover(
+                    imageUrl: signed,
+                    cacheKey: path,
+                    categoryHint: hint,
+                  ),
                   const SiteCoverScrim(),
                   Positioned(
                     left: 0,
@@ -339,36 +403,71 @@ class HomePopularCard extends StatelessWidget {
                   ),
                   Positioned(
                     top: 6,
-                    right: 6,
-                    child: FavoriteHeartButton(siteId: hit.siteId),
-                  ),
-                  Positioned(
-                    left: 10,
-                    bottom: 6,
-                    right: 36,
+                    left: 8,
                     child: Row(
                       children: [
-                        const Icon(
-                          Icons.place,
-                          size: 9,
-                          color: AppColors.primary,
-                        ),
-                        const SizedBox(width: 4),
-                        Expanded(
-                          child: Text(
-                            hit.city ?? hit.department ?? '',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w500,
-                              color: AppColors.onImage,
+                        HomeSourceBadge(network: hit.sourceNetwork),
+                        if (hit.isIncomplete) ...[
+                          if (hit.sourceNetwork != null &&
+                              hit.sourceNetwork!.isNotEmpty)
+                            const SizedBox(width: 4),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.primarySoft.withValues(
+                                alpha: 0.22,
+                              ),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              l10n.statusDraft,
+                              style: const TextStyle(
+                                fontSize: 9,
+                                fontWeight: FontWeight.w800,
+                                color: AppColors.primarySoft,
+                              ),
                             ),
                           ),
-                        ),
+                        ],
                       ],
                     ),
                   ),
+                  Positioned(
+                    top: 6,
+                    right: 6,
+                    child: FavoriteHeartButton(siteId: hit.siteId),
+                  ),
+                  if (showPlaceOnCover)
+                    Positioned(
+                      left: 10,
+                      bottom: 6,
+                      right: 36,
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.place,
+                            size: 9,
+                            color: AppColors.primary,
+                          ),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              hit.city ?? hit.department ?? '',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w500,
+                                color: AppColors.onImage,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                 ],
               ),
             ),
@@ -433,7 +532,7 @@ class HomePopularCard extends StatelessWidget {
 }
 
 /// Fila de Explorar: misma ficha que la grilla, en formato lista.
-class HomeSearchListCard extends StatelessWidget {
+class HomeSearchListCard extends ConsumerWidget {
   const HomeSearchListCard({
     super.key,
     required this.hit,
@@ -444,7 +543,7 @@ class HomeSearchListCard extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final origin = SiteOriginTags(
       isOwn: hit.isOwn,
       isLinked: hit.isLinked,
@@ -455,6 +554,15 @@ class HomeSearchListCard extends StatelessWidget {
       if (hit.department != null && hit.department!.isNotEmpty) hit.department!,
     ].join(' · ');
     final price = hit.estimatedPriceAmount;
+    final cats = ref.watch(
+      categoriesProvider.select((a) => a.valueOrNull ?? const <Category>[]),
+    );
+    final hint = Category.parentNameEs(cats, hit.categoryNames);
+    final path = hit.coverStoragePath?.trim();
+    final signed = (path == null || path.isEmpty)
+        ? null
+        : ref.watch(coverSignedUrlProvider(path)).valueOrNull;
+    final vis = hit.isPublic ? AppColors.success : AppColors.purple;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
@@ -463,7 +571,7 @@ class HomeSearchListCard extends StatelessWidget {
         clipBehavior: Clip.antiAlias,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
-          side: const BorderSide(color: AppColors.border),
+          side: BorderSide(color: vis.withValues(alpha: 0.55)),
         ),
         child: InkWell(
           onTap: onTap,
@@ -472,14 +580,18 @@ class HomeSearchListCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 VisibilityStripe(isPublic: hit.isPublic),
-                const Padding(
-                  padding: EdgeInsets.fromLTRB(8, 10, 0, 10),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(8, 10, 0, 10),
                   child: ClipRRect(
-                    borderRadius: BorderRadius.all(Radius.circular(8)),
+                    borderRadius: const BorderRadius.all(Radius.circular(8)),
                     child: SizedBox(
                       width: 80,
                       height: 80,
-                      child: SiteCover(),
+                      child: SiteCover(
+                        imageUrl: signed,
+                        cacheKey: path,
+                        categoryHint: hint,
+                      ),
                     ),
                   ),
                 ),
@@ -627,6 +739,59 @@ class HomeQuickAction extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class HomeFeedHits extends StatelessWidget {
+  const HomeFeedHits({
+    super.key,
+    required this.hits,
+    required this.layout,
+    required this.onTap,
+    this.showOriginRow = false,
+  });
+
+  final List<SearchHit> hits;
+  final FeedLayout layout;
+  final void Function(SearchHit hit) onTap;
+  final bool showOriginRow;
+
+  @override
+  Widget build(BuildContext context) {
+    if (layout.isList) {
+      return Column(
+        children: [
+          for (final hit in hits)
+            HomeSearchListCard(
+              hit: hit,
+              onTap: () => onTap(hit),
+            ),
+        ],
+      );
+    }
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: hits.length,
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: layout.crossAxisCount,
+        mainAxisSpacing: 10,
+        crossAxisSpacing: 10,
+        childAspectRatio: layout.childAspectRatio(
+          showOriginRow: showOriginRow,
+        ),
+      ),
+      itemBuilder: (context, i) {
+        final hit = hits[i];
+        return HomePopularCard(
+          hit: hit,
+          onTap: () => onTap(hit),
+          showOriginRow: showOriginRow,
+          photoHeight: layout.photoHeight(showOriginRow: showOriginRow),
+          showPlaceOnCover: layout != FeedLayout.grid4,
+        );
+      },
     );
   }
 }

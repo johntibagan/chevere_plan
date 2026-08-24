@@ -228,6 +228,7 @@ class UserSave {
     this.isPhysicalPlace = true,
     this.googlePlaceId,
     this.useExactPin = false,
+    this.coverStoragePath,
   });
 
   final String id;
@@ -262,6 +263,7 @@ class UserSave {
   final String? googlePlaceId;
   /// Maps: true = pin lat/lng; false = ficha/búsqueda del lugar.
   final bool useExactPin;
+  final String? coverStoragePath;
 
   bool get isIncomplete => status != SiteStatus.complete;
 
@@ -296,6 +298,7 @@ class UserSave {
         'is_physical_place': isPhysicalPlace,
         'google_place_id': googlePlaceId,
         'use_exact_pin': useExactPin,
+        'cover_storage_path': coverStoragePath,
       };
 
   factory UserSave.fromCacheJson(Map<String, dynamic> json) {
@@ -377,6 +380,7 @@ class UserSave {
       isPhysicalPlace: json['is_physical_place'] as bool? ?? true,
       googlePlaceId: json['google_place_id'] as String?,
       useExactPin: parsePgBool(json['use_exact_pin']),
+      coverStoragePath: json['cover_storage_path'] as String?,
     );
   }
 
@@ -453,8 +457,26 @@ class UserSave {
       isPhysicalPlace: site['is_physical_place'] as bool? ?? true,
       googlePlaceId: site['google_place_id'] as String?,
       useExactPin: parsePgBool(site['use_exact_pin']),
+      coverStoragePath: firstCoverStoragePath(site['site_photos']),
     );
   }
+}
+
+String? firstCoverStoragePath(Object? raw) {
+  if (raw is! List || raw.isEmpty) return null;
+  final rows = <Map<String, dynamic>>[];
+  for (final e in raw) {
+    if (e is Map) rows.add(Map<String, dynamic>.from(e));
+  }
+  if (rows.isEmpty) return null;
+  rows.sort((a, b) {
+    final sa = (a['sort_order'] as num?)?.toInt() ?? 0;
+    final sb = (b['sort_order'] as num?)?.toInt() ?? 0;
+    return sa.compareTo(sb);
+  });
+  final path = rows.first['storage_path'] as String?;
+  if (path == null || path.trim().isEmpty) return null;
+  return path.trim();
 }
 
 /// Datos para editar un guardado existente.

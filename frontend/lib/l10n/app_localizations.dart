@@ -343,8 +343,14 @@ abstract class AppLocalizations {
   /// No description provided for @homeSeeAll.
   ///
   /// In es, this message translates to:
-  /// **'Ver todos'**
+  /// **'Ver más'**
   String get homeSeeAll;
+
+  /// No description provided for @homeFeedView.
+  ///
+  /// In es, this message translates to:
+  /// **'Vista'**
+  String get homeFeedView;
 
   /// No description provided for @homePopularNearby.
   ///
@@ -1006,6 +1012,30 @@ abstract class AppLocalizations {
   /// **'Lista'**
   String get searchViewList;
 
+  /// No description provided for @feedLayoutList.
+  ///
+  /// In es, this message translates to:
+  /// **'Lista'**
+  String get feedLayoutList;
+
+  /// No description provided for @feedLayoutGrid2.
+  ///
+  /// In es, this message translates to:
+  /// **'Cuadrícula 2'**
+  String get feedLayoutGrid2;
+
+  /// No description provided for @feedLayoutGrid3.
+  ///
+  /// In es, this message translates to:
+  /// **'Cuadrícula 3'**
+  String get feedLayoutGrid3;
+
+  /// No description provided for @feedLayoutGrid4.
+  ///
+  /// In es, this message translates to:
+  /// **'Cuadrícula 4'**
+  String get feedLayoutGrid4;
+
   /// No description provided for @plansSubtitle.
   ///
   /// In es, this message translates to:
@@ -1561,7 +1591,7 @@ abstract class AppLocalizations {
   /// No description provided for @sameSiteKeepEditing.
   ///
   /// In es, this message translates to:
-  /// **'Seguir editando'**
+  /// **'Seguir con el mío'**
   String get sameSiteKeepEditing;
 
   /// No description provided for @sameSiteSaveAnyway.
@@ -1581,6 +1611,36 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Ya existe un sitio público parecido. Úsalo para evitar duplicados, o sigue editando.'**
   String get sameSiteSoftBody;
+
+  /// No description provided for @sameSitePickHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Tocá una fila para ver la ficha (fotos, mapa, reseñas). El círculo marca cuál usar.'**
+  String get sameSitePickHint;
+
+  /// No description provided for @sameSiteHardPickHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Mirá la ficha si dudás. Podés usarlo o guardar el tuyo de todas formas.'**
+  String get sameSiteHardPickHint;
+
+  /// No description provided for @sameSiteTapForDetail.
+  ///
+  /// In es, this message translates to:
+  /// **'Ver ficha'**
+  String get sameSiteTapForDetail;
+
+  /// No description provided for @sameSiteMarkThis.
+  ///
+  /// In es, this message translates to:
+  /// **'Marcar este'**
+  String get sameSiteMarkThis;
+
+  /// No description provided for @sameSiteMetersAway.
+  ///
+  /// In es, this message translates to:
+  /// **'a {meters} m'**
+  String sameSiteMetersAway(int meters);
 
   /// No description provided for @sameSiteStaffHint.
   ///

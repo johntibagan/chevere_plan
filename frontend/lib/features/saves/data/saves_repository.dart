@@ -23,6 +23,7 @@ class SavesRepository {
       'is_physical_place, google_place_id, use_exact_pin, created_by, created_at, updated_at, external_id, '
       'profiles!sites_created_by_fkey(display_name, avatar_url), '
       'site_categories(categories(name_i18n)), '
+      'site_photos(storage_path, sort_order), '
       'site_contributors(user_id, created_at, profiles(display_name, avatar_url)))';
 
   /// Select liviano para Inicio (cards): sin contributors, notes, address, etc.
@@ -30,7 +31,8 @@ class SavesRepository {
       'id, user_id, site_id, status, is_public, created_at, '
       'sites!user_saves_site_id_fkey(name, city, use_exact_pin, '
       'google_place_id, '
-      'site_categories(categories(name_i18n)))';
+      'site_categories(categories(name_i18n)), '
+      'site_photos(storage_path, sort_order))';
 
   String? get _uid => _client.auth.currentUser?.id;
 
@@ -75,17 +77,25 @@ class SavesRepository {
     double? latitude,
     double? longitude,
     String? excludeSiteId,
+    String? googlePlaceId,
   }) async {
-    if (name.trim().isEmpty) return [];
+    final n = name.trim();
+    final pid = googlePlaceId?.trim();
+    if (n.isEmpty &&
+        (latitude == null || longitude == null) &&
+        (pid == null || pid.isEmpty)) {
+      return [];
+    }
     final rows = await _client.rpc(
       'find_possible_duplicate_sites',
       params: {
-        'p_name': name.trim(),
+        'p_name': n,
         'p_lat': latitude,
         'p_lng': longitude,
         'p_city': city?.trim().isEmpty == true ? null : city?.trim(),
         'p_radius_m': SavePolicies.duplicateSearchRadiusM,
         'p_exclude_site_id': excludeSiteId,
+        'p_google_place_id': (pid == null || pid.isEmpty) ? null : pid,
       },
     );
     return (rows as List)
@@ -291,6 +301,16 @@ class SavesRepository {
         .select('id')
         .eq('site_id', siteId);
     return (rows as List).length;
+  }
+
+  Future<String?> signedPhotoUrl(String storagePath) async {
+    final p = storagePath.trim();
+    if (p.isEmpty) return null;
+    try {
+      return await _client.storage.from('site-photos').createSignedUrl(p, 3600);
+    } catch (_) {
+      return null;
+    }
   }
 
   Future<void> uploadPhoto({

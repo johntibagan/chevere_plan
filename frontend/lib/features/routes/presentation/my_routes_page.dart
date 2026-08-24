@@ -254,12 +254,12 @@ class _RouteTimelineTile extends StatelessWidget {
                     padding: const EdgeInsets.all(10),
                     child: Row(
                       children: [
-                        const ClipRRect(
-                          borderRadius: BorderRadius.all(Radius.circular(8)),
+                        ClipRRect(
+                          borderRadius: const BorderRadius.all(Radius.circular(8)),
                           child: SizedBox(
                             width: 40,
                             height: 40,
-                            child: SiteCover(),
+                            child: SiteCover(seed: entry.siteId),
                           ),
                         ),
                         const SizedBox(width: 10),

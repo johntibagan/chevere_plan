@@ -93,7 +93,7 @@ class SiteReview {
   }
 }
 
-  /// Acción al detectar sitio público duplicado.
+/// Acción al detectar sitio público duplicado.
 enum SameSiteAction {
   /// Vincular + reseña visible en la ficha / promedio.
   reviewPublic,
@@ -103,4 +103,12 @@ enum SameSiteAction {
 
   /// Guardar de todas formas (crear sitio propio). Solo en botón Guardar.
   saveAnyway,
+}
+
+/// Resultado del picker: acción + sitio elegido (si vincula).
+class SameSitePick {
+  const SameSitePick({required this.action, this.siteId});
+
+  final SameSiteAction action;
+  final String? siteId;
 }

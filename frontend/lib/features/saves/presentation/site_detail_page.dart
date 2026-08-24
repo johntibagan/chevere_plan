@@ -18,6 +18,7 @@ import '../../../core/widgets/site_cover.dart';
 import '../../../core/widgets/site_origin_tags.dart';
 import '../../../core/widgets/tab_screen_header.dart';
 import '../../../core/widgets/visibility_badge.dart';
+import '../../admin/data/admin_models.dart';
 import '../../auth/data/profile.dart';
 import '../../moderation/data/moderation_models.dart';
 import '../../search/data/search_models.dart';
@@ -556,14 +557,20 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
-                    SiteCover(
-                      imageUrl: _photoUrls.values
-                              .where((u) => u.isNotEmpty)
-                              .isEmpty
-                          ? null
-                          : _photoUrls.values
-                              .firstWhere((u) => u.isNotEmpty),
-                      cacheKey: _photos.isEmpty ? null : _photos.first.id,
+                    SiteCoverCarousel(
+                      imageUrls: [
+                        for (final p in _photos)
+                          if ((_photoUrls[p.id] ?? '').isNotEmpty)
+                            _photoUrls[p.id]!,
+                      ],
+                      categoryHint: Category.parentNameEs(
+                        ref.watch(
+                          categoriesProvider.select(
+                            (a) => a.valueOrNull ?? const <Category>[],
+                          ),
+                        ),
+                        ficha.categoryNames,
+                      ),
                     ),
                     const SiteCoverScrim(),
                     Align(

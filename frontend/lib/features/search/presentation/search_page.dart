@@ -12,7 +12,8 @@ import '../../../core/prefetch/site_prefetch.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_search_field.dart';
 import '../../../core/widgets/app_select_chip.dart';
-import '../../../core/widgets/app_view_mode_toggle.dart';
+import '../../../core/prefs/feed_layout.dart';
+import '../../../core/widgets/app_feed_layout_toggle.dart';
 import '../../../core/widgets/tab_screen_header.dart';
 import '../../admin/data/admin_models.dart';
 import '../../home/presentation/home_cards.dart';
@@ -45,7 +46,6 @@ class _SearchPageState extends ConsumerState<SearchPage> {
   bool _loading = false;
   List<SearchHit> _hits = const [];
   bool _searched = false;
-  bool _gridView = true;
   int _visibleCount = PagedItems.defaultPageSize;
 
   @override
@@ -199,6 +199,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
 
     final visible = _hits.take(_visibleCount).toList();
     final hasMore = _visibleCount < _hits.length;
+    final layout = ref.watch(feedLayoutProvider);
 
     return Scaffold(
       body: SafeArea(
@@ -468,14 +469,15 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                                       ),
                                     ),
                                   ),
-                                  AppViewModeToggle(
-                                    gridSelected: _gridView,
-                                    onGrid: () =>
-                                        setState(() => _gridView = true),
-                                    onList: () =>
-                                        setState(() => _gridView = false),
-                                    gridTooltip: l10n.searchViewGrid,
-                                    listTooltip: l10n.searchViewList,
+                                  AppFeedLayoutToggle(
+                                    value: layout,
+                                    onChanged: (v) => ref
+                                        .read(feedLayoutProvider.notifier)
+                                        .setLayout(v),
+                                    listTooltip: l10n.feedLayoutList,
+                                    grid2Tooltip: l10n.feedLayoutGrid2,
+                                    grid3Tooltip: l10n.feedLayoutGrid3,
+                                    grid4Tooltip: l10n.feedLayoutGrid4,
                                   ),
                                 ],
                               ),
@@ -498,16 +500,17 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                         child: Text(l10n.searchNoResults),
                       ),
                     )
-                  else if (_gridView)
+                  else if (!layout.isList)
                     SliverPadding(
                       padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
                       sliver: SliverGrid(
                         gridDelegate:
-                            const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
+                            SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: layout.crossAxisCount,
                           mainAxisSpacing: 12,
                           crossAxisSpacing: 12,
-                          childAspectRatio: 1.05,
+                          childAspectRatio:
+                              layout.childAspectRatio(showOriginRow: true),
                         ),
                         delegate: SliverChildBuilderDelegate(
                           (context, index) {
@@ -516,6 +519,10 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                               hit: h,
                               onTap: () => _openHit(h),
                               showOriginRow: true,
+                              photoHeight: layout.photoHeight(
+                                showOriginRow: true,
+                              ),
+                              showPlaceOnCover: layout != FeedLayout.grid4,
                             );
                           },
                           childCount: visible.length,

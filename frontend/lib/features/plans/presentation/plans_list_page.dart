@@ -211,7 +211,7 @@ class _PlanCard extends StatelessWidget {
               child: Stack(
                 fit: StackFit.expand,
                 children: [
-                  const SiteCover(),
+                  SiteCover(seed: plan.id),
                   const SiteCoverScrim(bottomOpacity: 0.8),
                   Positioned(
                     top: 8,

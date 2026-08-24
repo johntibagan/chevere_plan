@@ -25,6 +25,26 @@ class Category {
 
   bool get isRoot => parentId == null;
 
+  /// Primera categoría del sitio → nombre de la padre (o ella si ya es raíz).
+  static String? parentNameEs(List<Category> catalog, List<String> names) {
+    if (names.isEmpty) return null;
+    final first = names.first.trim();
+    if (first.isEmpty) return null;
+    Category? found;
+    for (final c in catalog) {
+      if (c.nameEs.trim().toLowerCase() == first.toLowerCase()) {
+        found = c;
+        break;
+      }
+    }
+    if (found == null) return first;
+    if (found.parentId == null) return found.nameEs;
+    for (final p in catalog) {
+      if (p.id == found.parentId) return p.nameEs;
+    }
+    return found.nameEs;
+  }
+
   Map<String, dynamic> toCacheJson() => {
         'id': id,
         'parent_id': parentId,
