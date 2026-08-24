@@ -63,4 +63,16 @@ void main() {
     );
     expect(s, SiteStatus.complete);
   });
+
+  test('nombre + default Otros sin coords → draft no pending_location', () {
+    final s = SavePolicies.computeStatus(
+      categoryIds: ['otros-id'],
+      city: null,
+      addressLine: null,
+      latitude: null,
+      longitude: null,
+      categoryIsExplicit: false,
+    );
+    expect(s, SiteStatus.draft);
+  });
 }

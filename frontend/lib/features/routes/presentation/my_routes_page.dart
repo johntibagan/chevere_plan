@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/cache/paged_items.dart';
 import '../../../core/di/providers.dart';
+import '../../../core/testing/widget_keys.dart';
+import '../domain/route_stats.dart';
 import '../../../core/formatters/date_format.dart';
 import '../../../core/l10n/context_l10n.dart';
 import '../../../core/prefetch/site_prefetch.dart';
@@ -57,12 +59,7 @@ class _MyRoutesPageState extends ConsumerState<MyRoutesPage> {
     final visible = all.take(_visible).toList();
     final hasMore = _visible < all.length;
 
-    final cities = all
-        .map((e) => e.city?.trim() ?? '')
-        .where((c) => c.isNotEmpty)
-        .toSet()
-        .length;
-    final planCount = all.map((e) => e.planId).toSet().length;
+    final stats = RouteStats.fromEntries(all);
 
     ref.listen(routesProvider, (prev, next) {
       if (next.hasError && !(prev?.hasError ?? false)) {
@@ -76,6 +73,7 @@ class _MyRoutesPageState extends ConsumerState<MyRoutesPage> {
     });
 
     return Scaffold(
+      key: WidgetKeys.routesPage,
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -102,7 +100,8 @@ class _MyRoutesPageState extends ConsumerState<MyRoutesPage> {
                         children: [
                           Expanded(
                             child: AppStatCard(
-                              value: '${all.length}',
+                              key: WidgetKeys.routesStatVisited,
+                              value: '${stats.visited}',
                               label: l10n.routesStatVisited,
                               valueColor: AppColors.primary,
                             ),
@@ -110,7 +109,8 @@ class _MyRoutesPageState extends ConsumerState<MyRoutesPage> {
                           const SizedBox(width: 8),
                           Expanded(
                             child: AppStatCard(
-                              value: '$cities',
+                              key: WidgetKeys.routesStatCities,
+                              value: '${stats.cities}',
                               label: l10n.routesStatCities,
                               valueColor: AppColors.success,
                             ),
@@ -118,7 +118,8 @@ class _MyRoutesPageState extends ConsumerState<MyRoutesPage> {
                           const SizedBox(width: 8),
                           Expanded(
                             child: AppStatCard(
-                              value: '$planCount',
+                              key: WidgetKeys.routesStatPlans,
+                              value: '${stats.plans}',
                               label: l10n.routesStatPlans,
                               valueColor: AppColors.purple,
                             ),
@@ -135,6 +136,7 @@ class _MyRoutesPageState extends ConsumerState<MyRoutesPage> {
                     if (all.isEmpty) {
                       return Text(
                         l10n.routesEmpty,
+                        key: WidgetKeys.routesEmpty,
                         style: const TextStyle(
                           fontSize: 13,
                           color: AppColors.muted,
@@ -155,6 +157,7 @@ class _MyRoutesPageState extends ConsumerState<MyRoutesPage> {
                     final e = visible[itemIndex];
                     final isLast = itemIndex == visible.length - 1 && !hasMore;
                     return _RouteTimelineTile(
+                      key: WidgetKeys.routesItem(e.stopId),
                       entry: e,
                       isLast: isLast,
                       onTap: () {
@@ -181,6 +184,7 @@ class _MyRoutesPageState extends ConsumerState<MyRoutesPage> {
 
 class _RouteTimelineTile extends StatelessWidget {
   const _RouteTimelineTile({
+    super.key,
     required this.entry,
     required this.isLast,
     required this.onTap,

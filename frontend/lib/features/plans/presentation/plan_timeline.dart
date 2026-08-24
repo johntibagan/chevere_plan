@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/l10n/context_l10n.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/testing/widget_keys.dart';
 import '../data/plan_models.dart';
 
 /// Línea de tiempo minimalista de paradas del plan.
@@ -243,6 +244,7 @@ class _StopTile extends StatelessWidget {
                       ReorderableDragStartListener(
                         index: dragIndex!,
                         child: Padding(
+                          key: WidgetKeys.planReorderHandle,
                           padding: const EdgeInsets.only(top: 8),
                           child: Tooltip(
                             message: l10n.planReorderStop,

@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 
 import '../../../core/cache/cache_ttl.dart';
 import '../../../core/di/providers.dart';
+import '../../../core/testing/widget_keys.dart';
 import '../../../core/l10n/context_l10n.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_form_card.dart';
@@ -99,6 +100,7 @@ class _CreatePlanPageState extends ConsumerState<CreatePlanPage> {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     return Scaffold(
+      key: WidgetKeys.createPlanPage,
       appBar: AppBar(title: Text(l10n.planCreateTitle)),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
@@ -112,6 +114,7 @@ class _CreatePlanPageState extends ConsumerState<CreatePlanPage> {
           const SizedBox(height: 20),
           AppSectionLabel(text: l10n.planTitleOptional, bottom: 8),
           TextField(
+            key: WidgetKeys.createPlanTitle,
             controller: _titleCtrl,
             textCapitalization: TextCapitalization.sentences,
             textInputAction: TextInputAction.next,
@@ -120,6 +123,7 @@ class _CreatePlanPageState extends ConsumerState<CreatePlanPage> {
           const SizedBox(height: 16),
           AppSectionLabel(text: l10n.planStatZone, bottom: 8),
           TextField(
+            key: WidgetKeys.createPlanZone,
             controller: _zoneCtrl,
             textCapitalization: TextCapitalization.words,
             decoration: _fieldDec(hint: l10n.planZoneHint),
@@ -151,6 +155,7 @@ class _CreatePlanPageState extends ConsumerState<CreatePlanPage> {
                   ),
                 ),
                 Switch(
+                  key: WidgetKeys.createPlanIncludePublic,
                   value: _includePublic,
                   onChanged: (v) => setState(() => _includePublic = v),
                 ),
@@ -160,6 +165,7 @@ class _CreatePlanPageState extends ConsumerState<CreatePlanPage> {
           const SizedBox(height: 16),
           AppSectionLabel(text: l10n.planStatBudget, bottom: 8),
           TextField(
+            key: WidgetKeys.createPlanBudget,
             controller: _budgetCtrl,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             decoration: _fieldDec(hint: l10n.searchBudgetMax).copyWith(
@@ -172,6 +178,7 @@ class _CreatePlanPageState extends ConsumerState<CreatePlanPage> {
           ),
           const SizedBox(height: 24),
           FilledButton(
+            key: WidgetKeys.createPlanNext,
             onPressed: _saving ? null : _next,
             child: _saving
                 ? const SizedBox(

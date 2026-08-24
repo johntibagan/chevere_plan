@@ -6,6 +6,7 @@ import '../helpers/app_harness.dart';
 void main() {
   patrolTest(
     'P0 smoke: la app arranca y muestra Login, Home o error de config',
+    tags: ['smoke', 'critical'],
     ($) async {
       await pumpChevereApp($);
       final shown = await waitForLoginHomeOrBootstrapError($);

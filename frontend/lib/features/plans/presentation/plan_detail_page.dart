@@ -5,6 +5,7 @@ import 'package:geolocator/geolocator.dart';
 
 import '../../../core/cache/cache_ttl.dart';
 import '../../../core/di/providers.dart';
+import '../../../core/testing/widget_keys.dart';
 import '../../../core/errors/user_facing_error.dart';
 import '../../../core/formatters/money_format.dart';
 import '../../../core/l10n/context_l10n.dart';
@@ -198,6 +199,7 @@ class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
             child: Text(l10n.actionCancel),
           ),
           FilledButton(
+            key: WidgetKeys.planDeleteConfirm,
             onPressed: () => Navigator.pop(ctx, true),
             child: Text(l10n.actionDelete),
           ),
@@ -307,6 +309,7 @@ class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
                 },
               ),
               ListTile(
+                key: WidgetKeys.planMenuDelete,
                 leading: const Icon(Icons.delete_outline),
                 title: Text(l10n.actionDelete),
                 onTap: () {
@@ -328,6 +331,7 @@ class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
     final plan = _plan;
 
     return Scaffold(
+      key: WidgetKeys.planDetail,
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : plan == null
@@ -350,6 +354,7 @@ class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
                     ),
                     Expanded(
                       child: PlanTimeline(
+                        key: WidgetKeys.planTimeline,
                         stops: plan.stops,
                         emptyLabel: l10n.planTimelineEmpty,
                         bottomPadding: 24,
@@ -395,6 +400,7 @@ class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
                             ),
                             const SizedBox(width: 8),
                             AppSquareIconButton(
+                              key: WidgetKeys.planDetailAdd,
                               icon: Icons.add,
                               tooltip: l10n.planMenuAddSites,
                               selected: true,
@@ -462,6 +468,7 @@ class _PlanHero extends StatelessWidget {
                       ),
                       const Spacer(),
                       IconButton(
+                        key: WidgetKeys.planDetailMore,
                         onPressed: onMore,
                         icon: const Icon(Icons.more_vert),
                         style: IconButton.styleFrom(
@@ -530,6 +537,7 @@ class _PlanStatsRow extends StatelessWidget {
         children: [
           Expanded(
             child: AppStatCard(
+              key: WidgetKeys.planStatStops,
               value: '${plan.stops.length}',
               label: l10n.planStatStops,
               valueColor: AppColors.accent,
@@ -538,6 +546,7 @@ class _PlanStatsRow extends StatelessWidget {
           const SizedBox(width: 8),
           Expanded(
             child: AppStatCard(
+              key: WidgetKeys.planStatBudget,
               value: budget,
               label: l10n.planStatBudget,
               valueColor: AppColors.success,

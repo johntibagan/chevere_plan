@@ -9,6 +9,7 @@ import '../helpers/fakes/failing_profile_repository.dart';
 void main() {
   patrolTest(
     'P0 regla 8: fallo técnico solo muestra mensaje genérico',
+    tags: ['smoke'],
     ($) async {
       final technical = StateError(
         'PostgrestException: relation "profiles" does not exist (42P01)',

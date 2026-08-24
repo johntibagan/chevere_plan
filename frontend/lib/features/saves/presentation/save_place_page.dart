@@ -10,6 +10,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../../core/cache/cache_ttl.dart';
 import '../../../core/config/env.dart';
 import '../../../core/di/providers.dart';
+import '../../../core/testing/widget_keys.dart';
 import '../../../core/l10n/context_l10n.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_form_card.dart';
@@ -1308,21 +1309,25 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
         actionsAlignment: MainAxisAlignment.start,
         actions: [
           TextButton(
+            key: WidgetKeys.dupeKeepEditing,
             onPressed: () => Navigator.pop(context),
             child: Text(l10n.sameSiteKeepEditing),
           ),
           if (allowCreateAnyway)
             TextButton(
+              key: WidgetKeys.dupeSaveAnyway,
               onPressed: () =>
                   Navigator.pop(context, SameSiteAction.saveAnyway),
               child: Text(l10n.sameSiteSaveAnyway),
             ),
           TextButton(
+            key: WidgetKeys.dupeJournal,
             onPressed: () =>
                 Navigator.pop(context, SameSiteAction.journalPrivate),
             child: Text(l10n.sameSiteJournalPrivate),
           ),
           FilledButton(
+            key: WidgetKeys.dupeReview,
             onPressed: () =>
                 Navigator.pop(context, SameSiteAction.reviewPublic),
             child: Text(l10n.sameSiteReviewPublic),
@@ -1340,6 +1345,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
     return showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
+        key: WidgetKeys.privacyBlockDialog,
         backgroundColor: AppColors.surface,
         title: Text(
           l10n.privacyBlockTitle,
@@ -1373,12 +1379,14 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
   }
 
   Widget _sectionCard({
+    Key? key,
     required String title,
     required String info,
     required List<Widget> children,
     bool required = false,
   }) {
     return Padding(
+      key: key,
       padding: const EdgeInsets.only(bottom: 12),
       child: AppFormCard(
         padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
@@ -1447,6 +1455,13 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
             children: [
               for (final extra in hidden)
                 AppSelectChip(
+                  key: switch (extra) {
+                    _SaveExtra.details => WidgetKeys.saveExtraDetails,
+                    _SaveExtra.links => WidgetKeys.saveExtraLinks,
+                    _SaveExtra.categories => WidgetKeys.saveExtraCategories,
+                    _SaveExtra.photo => WidgetKeys.saveExtraPhoto,
+                    _SaveExtra.physical => WidgetKeys.saveExtraPhysical,
+                  },
                   label: _extraTitle(l10n, extra),
                   selected: false,
                   icon: Icons.add,
@@ -1469,6 +1484,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
       info: l10n.saveInfoLocation,
       children: [
         TextField(
+          key: WidgetKeys.saveMapsField,
           controller: _mapsCtrl,
           decoration: _dec(
             l10n.saveMapsPasteLabel,
@@ -1495,6 +1511,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
           clipBehavior: Clip.antiAlias,
           borderRadius: BorderRadius.circular(12),
           child: InkWell(
+            key: WidgetKeys.saveOpenMap,
             onTap: _saving ? null : _openMap,
             child: SizedBox(
               height: 112,
@@ -1516,6 +1533,9 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
                         hasPin
                             ? l10n.saveLocationPointReady
                             : l10n.saveLocationPickMap,
+                        key: hasPin
+                            ? WidgetKeys.saveHasPin
+                            : WidgetKeys.saveNoPin,
                         style: const TextStyle(
                           color: AppColors.foreground,
                           fontWeight: FontWeight.w800,
@@ -1530,6 +1550,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
           ),
         ),
         SwitchListTile(
+          key: WidgetKeys.saveExactPinSwitch,
           contentPadding: EdgeInsets.zero,
           title: Text(l10n.saveExactPinSwitch),
           secondary: _infoTip(l10n.saveInfoExactPin),
@@ -1558,6 +1579,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
       required: true,
       children: [
         TextField(
+          key: WidgetKeys.saveNameField,
           controller: _nameCtrl,
           decoration: _dec(
             l10n.savePlaceName,
@@ -1599,6 +1621,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
             ),
             const Spacer(),
             Switch(
+              key: WidgetKeys.savePublicSwitch,
               value: isOn,
               onChanged: canPublish
                   ? (v) => setState(() => _isPublic = v)
@@ -1656,6 +1679,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
 
   Widget _linksSection(AppLocalizations l10n) {
     return _sectionCard(
+      key: WidgetKeys.saveLinksSection,
       title: l10n.saveLinksSection,
       info: l10n.saveInfoLinks,
       children: [
@@ -1837,6 +1861,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
     final l10n = context.l10n;
     final nameOk = _nameCtrl.text.trim().isNotEmpty;
     return Scaffold(
+      key: WidgetKeys.savePlacePage,
       appBar: AppBar(
         title: Text(
           _isEditing ? l10n.savePlaceEditTitle : l10n.savePlaceTitle,
@@ -1864,6 +1889,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
                   child: FilledButton(
+                    key: WidgetKeys.saveSubmit,
                     onPressed: (_saving || !nameOk) ? null : _submit,
                     style: FilledButton.styleFrom(
                       minimumSize: const Size.fromHeight(52),

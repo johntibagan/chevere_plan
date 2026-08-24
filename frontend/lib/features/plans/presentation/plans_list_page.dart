@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/cache/cache_ttl.dart';
 import '../../../core/di/providers.dart';
+import '../../../core/testing/widget_keys.dart';
 import '../../../core/formatters/money_format.dart';
 import '../../../core/l10n/context_l10n.dart';
 import '../../../core/theme/app_theme.dart';
@@ -90,6 +91,7 @@ class _PlansListPageState extends ConsumerState<PlansListPage> {
     });
 
     return Scaffold(
+      key: WidgetKeys.plansList,
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -115,6 +117,7 @@ class _PlansListPageState extends ConsumerState<PlansListPage> {
                   itemBuilder: (context, index) {
                     if (index == 0) {
                       return AppCreateCtaCard(
+                        key: WidgetKeys.plansCreateCta,
                         title: l10n.plansCreateCardTitle,
                         hint: l10n.plansCreateCardHint,
                         onTap: _openCreate,
@@ -163,6 +166,7 @@ class _PlansListPageState extends ConsumerState<PlansListPage> {
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 12),
                       child: _PlanCard(
+                        key: WidgetKeys.planCard(plans[planIndex].id),
                         plan: plans[planIndex],
                         onTap: () => _openPlan(plans[planIndex]),
                       ),
@@ -179,7 +183,7 @@ class _PlansListPageState extends ConsumerState<PlansListPage> {
 }
 
 class _PlanCard extends StatelessWidget {
-  const _PlanCard({required this.plan, required this.onTap});
+  const _PlanCard({super.key, required this.plan, required this.onTap});
 
   final Plan plan;
   final VoidCallback onTap;

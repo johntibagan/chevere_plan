@@ -5,6 +5,7 @@ import 'package:geolocator/geolocator.dart';
 import '../../../core/cache/cache_ttl.dart';
 import '../../../core/cache/paged_items.dart';
 import '../../../core/di/providers.dart';
+import '../../../core/testing/widget_keys.dart';
 import '../../../core/widgets/app_toast.dart';
 import '../../../core/l10n/context_l10n.dart';
 import '../../../core/prefetch/site_prefetch.dart';
@@ -211,6 +212,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                 children: [
                   Expanded(
                     child: AppSearchField(
+                      key: WidgetKeys.searchQuery,
                       controller: _queryCtrl,
                       hint: l10n.searchHintPlace,
                       searchTooltip: l10n.actionSearch,
@@ -420,6 +422,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           SwitchListTile(
+                            key: WidgetKeys.searchIncludePublic,
                             contentPadding: EdgeInsets.zero,
                             title: Text(l10n.searchIncludePublic),
                             value: _includePublic,

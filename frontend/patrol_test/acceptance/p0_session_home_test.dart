@@ -7,6 +7,7 @@ import '../helpers/app_harness.dart';
 void main() {
   patrolTest(
     'P0 sesión: con tokens e2e o sesión persistida llega a Home; si no, Login',
+    tags: ['smoke', 'critical'],
     ($) async {
       await pumpChevereApp($);
 

@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../core/formatters/money_format.dart';
 import '../../../core/l10n/context_l10n.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/testing/widget_keys.dart';
 import '../../../core/widgets/site_cover.dart';
 import '../../../core/widgets/site_origin_tags.dart';
 import '../../../core/widgets/visibility_badge.dart';
@@ -216,6 +217,10 @@ class HomeRecentRailCard extends StatelessWidget {
                               ),
                               child: Text(
                                 l10n.statusDraft,
+                                key: WidgetKeys.homeSaveStatus(
+                                  save.id,
+                                  save.status.name,
+                                ),
                                 style: const TextStyle(
                                   fontSize: 9,
                                   fontWeight: FontWeight.w800,

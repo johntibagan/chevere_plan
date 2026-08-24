@@ -5,6 +5,7 @@ import 'package:geolocator/geolocator.dart';
 import '../../../core/cache/cache_ttl.dart';
 import '../../../core/cache/paged_items.dart';
 import '../../../core/di/providers.dart';
+import '../../../core/testing/widget_keys.dart';
 import '../../../core/formatters/money_format.dart';
 import '../../../core/l10n/context_l10n.dart';
 import '../../../core/theme/app_theme.dart';
@@ -293,6 +294,7 @@ class _PlanBuilderPageState extends ConsumerState<PlanBuilderPage> {
     final children = categories.where((c) => !c.isRoot).toList();
 
     return Scaffold(
+      key: WidgetKeys.planBuilder,
       appBar: AppBar(
         title: Text(plan?.title ?? l10n.planCreateTitle),
         actions: [
@@ -345,6 +347,7 @@ class _PlanBuilderPageState extends ConsumerState<PlanBuilderPage> {
                       ),
                     _PlanBuilderTab.results => _buildResults(l10n),
                     _PlanBuilderTab.added => PlanTimeline(
+                        key: WidgetKeys.planTimeline,
                         stops: plan.stops,
                         emptyLabel: l10n.planTimelineEmpty,
                         onStopTap: (stop) => openSiteDetail(
@@ -397,6 +400,7 @@ class _PlanBuilderPageState extends ConsumerState<PlanBuilderPage> {
           ),
         ),
         AppSearchField(
+          key: WidgetKeys.planBuilderSearch,
           controller: _queryCtrl,
           hint: l10n.planSearchHint,
           searchTooltip: l10n.actionSearch,
@@ -443,6 +447,7 @@ class _PlanBuilderPageState extends ConsumerState<PlanBuilderPage> {
             ),
           ),
           SwitchListTile(
+            key: WidgetKeys.planBuilderIncludePublic,
             contentPadding: EdgeInsets.zero,
             title: Text(l10n.searchIncludePublic),
             value: _includePublic,
@@ -465,6 +470,7 @@ class _PlanBuilderPageState extends ConsumerState<PlanBuilderPage> {
             ),
         ] else
           SwitchListTile(
+            key: WidgetKeys.planBuilderIncludePublic,
             contentPadding: EdgeInsets.zero,
             title: Text(l10n.searchIncludePublic),
             value: _includePublic,

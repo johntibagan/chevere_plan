@@ -8,6 +8,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../../../core/config/env.dart';
 import '../../../core/di/providers.dart';
 import '../../../core/l10n/context_l10n.dart';
+import '../../../core/testing/widget_keys.dart';
 import '../../../core/widgets/app_toast.dart';
 import '../../../core/widgets/field_action_icon.dart';
 import '../data/geo_place.dart';
@@ -302,10 +303,15 @@ class _LocationPickerPageState extends ConsumerState<LocationPickerPage> {
             : l10n.locationProviderNone;
 
     return Scaffold(
+      key: WidgetKeys.locationPicker,
       appBar: AppBar(
         title: Text(l10n.locationPickerTitle),
         actions: [
-          TextButton(onPressed: _confirm, child: Text(l10n.actionUse)),
+          TextButton(
+            key: WidgetKeys.locationUseAppBar,
+            onPressed: _confirm,
+            child: Text(l10n.actionUse),
+          ),
         ],
       ),
       body: Column(
@@ -415,6 +421,7 @@ class _LocationPickerPageState extends ConsumerState<LocationPickerPage> {
                     children: [
                       Expanded(
                         child: OutlinedButton.icon(
+                          key: WidgetKeys.locationMyGps,
                           onPressed: _locating ? null : _useMyLocation,
                           icon: _locating
                               ? const SizedBox(
@@ -431,6 +438,7 @@ class _LocationPickerPageState extends ConsumerState<LocationPickerPage> {
                       const SizedBox(width: 12),
                       Expanded(
                         child: FilledButton.icon(
+                          key: WidgetKeys.locationConfirm,
                           onPressed: _confirm,
                           icon: const Icon(Icons.check),
                           label: Text(l10n.locationConfirm),

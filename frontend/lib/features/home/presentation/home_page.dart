@@ -11,6 +11,7 @@ import '../../../core/l10n/context_l10n.dart';
 import '../../../core/widgets/app_toast.dart';
 import '../../../core/prefetch/site_prefetch.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/testing/widget_keys.dart';
 import '../../admin/presentation/admin_page.dart';
 import '../../auth/data/profile.dart';
 import '../../moderation/presentation/admin_reports_page.dart';
@@ -428,6 +429,7 @@ class _ChevereBottomNav extends StatelessWidget {
                   Expanded(
                     child: Center(
                       child: GestureDetector(
+                        key: WidgetKeys.homeFabSave,
                         onTap: onGuardar,
                         child: Container(
                           width: 56,
@@ -467,8 +469,15 @@ class _ChevereBottomNav extends StatelessWidget {
   Widget _navItem(int i, IconData icon, String label) {
     final active = index == i;
     final color = active ? AppColors.primary : AppColors.mutedDark;
+    const tabKeys = [
+      WidgetKeys.homeTabInicio,
+      WidgetKeys.homeTabExplorar,
+      WidgetKeys.homeTabPlanes,
+      WidgetKeys.homeTabRutas,
+    ];
     return Expanded(
       child: InkWell(
+        key: tabKeys[i],
         onTap: () => onChanged(i),
         borderRadius: BorderRadius.circular(12),
         child: Column(
@@ -820,6 +829,7 @@ class _InicioTab extends StatelessWidget {
                         showAllRecent ? saves : saves.take(5).toList();
                     final s = subset[i];
                     return HomeRecentRailCard(
+                      key: WidgetKeys.homeSaveCard(s.id),
                       save: s,
                       onTap: () => onOpenSite(existing: s),
                     );

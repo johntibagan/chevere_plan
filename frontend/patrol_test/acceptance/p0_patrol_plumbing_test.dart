@@ -6,6 +6,7 @@ import 'package:patrol/patrol.dart';
 void main() {
   patrolTest(
     'P0 plumbing: Patrol encuentra widgets en device',
+    tags: ['smoke'],
     ($) async {
       await $.pumpWidgetAndSettle(
         const MaterialApp(

@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../core/di/providers.dart';
+import '../../../core/testing/widget_keys.dart';
 import '../../../core/l10n/context_l10n.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_toast.dart';
@@ -103,6 +104,7 @@ class _SiteReviewEditorPageState extends ConsumerState<SiteReviewEditorPage> {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     return Scaffold(
+      key: WidgetKeys.reviewEditor,
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: Text(l10n.reviewEditorTitle),
@@ -125,6 +127,7 @@ class _SiteReviewEditorPageState extends ConsumerState<SiteReviewEditorPage> {
             children: [
               for (var i = 1; i <= 5; i++)
                 IconButton(
+                  key: WidgetKeys.reviewStar(i),
                   onPressed: () => setState(() => _rating = i),
                   icon: Icon(
                     i <= _rating ? Icons.star : Icons.star_border,
@@ -135,6 +138,7 @@ class _SiteReviewEditorPageState extends ConsumerState<SiteReviewEditorPage> {
           ),
           const SizedBox(height: 12),
           TextField(
+            key: WidgetKeys.reviewBody,
             controller: _body,
             maxLines: 5,
             maxLength: 800,
@@ -146,6 +150,7 @@ class _SiteReviewEditorPageState extends ConsumerState<SiteReviewEditorPage> {
           if (_canChoosePrivacy) ...[
             const SizedBox(height: 8),
             SwitchListTile(
+              key: WidgetKeys.reviewPublicSwitch,
               contentPadding: EdgeInsets.zero,
               title: Text(
                 l10n.reviewMakePublic,
@@ -178,6 +183,7 @@ class _SiteReviewEditorPageState extends ConsumerState<SiteReviewEditorPage> {
           ),
           const SizedBox(height: 24),
           FilledButton(
+            key: WidgetKeys.reviewSubmit,
             onPressed: _saving ? null : _save,
             child: _saving
                 ? const SizedBox(

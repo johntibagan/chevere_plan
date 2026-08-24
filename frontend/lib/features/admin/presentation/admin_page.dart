@@ -10,6 +10,7 @@ import '../../../core/widgets/app_form_card.dart';
 import '../../../core/widgets/app_stat_card.dart';
 import '../../../core/widgets/app_toast.dart';
 import '../../../core/l10n/context_l10n.dart';
+import '../../../core/testing/widget_keys.dart';
 import '../../moderation/presentation/admin_reports_page.dart';
 import '../data/admin_models.dart';
 import '../data/admin_repository.dart';
@@ -258,6 +259,7 @@ class _AdminPageState extends ConsumerState<AdminPage>
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     return Scaffold(
+      key: WidgetKeys.adminPage,
       appBar: AppBar(
         title: Text(l10n.adminTitle),
         actions: [

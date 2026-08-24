@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../l10n/context_l10n.dart';
+import '../testing/widget_keys.dart';
 import '../theme/app_theme.dart';
 
 /// Tuyo / Vinculado / Catálogo — etiquetas distintas de la visibilidad (color).
@@ -30,6 +31,7 @@ class SiteOriginTags extends StatelessWidget {
         if (isOwn)
           Text(
             l10n.labelOwn,
+            key: WidgetKeys.siteOriginOwn,
             style: const TextStyle(
               fontSize: 9,
               fontWeight: FontWeight.w800,
@@ -39,6 +41,7 @@ class SiteOriginTags extends StatelessWidget {
         if (isLinked)
           Text(
             l10n.labelLinked,
+            key: WidgetKeys.siteOriginLinked,
             style: const TextStyle(
               fontSize: 9,
               fontWeight: FontWeight.w800,
@@ -48,6 +51,7 @@ class SiteOriginTags extends StatelessWidget {
         if (isCatalog)
           Text(
             l10n.labelCatalog,
+            key: WidgetKeys.siteOriginCatalog,
             style: const TextStyle(
               fontSize: 9,
               fontWeight: FontWeight.w800,

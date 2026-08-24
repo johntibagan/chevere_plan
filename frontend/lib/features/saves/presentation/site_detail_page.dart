@@ -7,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/di/providers.dart';
+import '../../../core/testing/widget_keys.dart';
 import '../../../core/widgets/app_toast.dart';
 import '../../../core/formatters/date_format.dart';
 import '../../../core/formatters/money_format.dart';
@@ -464,6 +465,7 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
         Navigator.of(context).pop(_outcome);
       },
       child: Scaffold(
+        key: WidgetKeys.siteDetailPage,
         backgroundColor: AppColors.background,
         body: Column(
           children: [
@@ -507,6 +509,7 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
                         },
                         itemBuilder: (context) => [
                           PopupMenuItem(
+                            key: WidgetKeys.siteDetailEdit,
                             value: 'edit',
                             child: ListTile(
                               dense: true,
