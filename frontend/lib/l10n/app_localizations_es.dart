@@ -574,6 +574,14 @@ class AppLocalizationsEs extends AppLocalizations {
   String get saveExactPinSwitch => 'Punto exacto en el mapa';
 
   @override
+  String get saveExactPinMapsPin =>
+      'Maps abrirá el pin (lat, lng), no el buscador.';
+
+  @override
+  String get saveExactPinMapsPlace =>
+      'Maps abrirá la ficha del lugar por nombre.';
+
+  @override
   String get saveExactPinSwitchHint =>
       'Apagado (recomendado): Maps abre la ficha del lugar por nombre. Encendido: abre el pin (lat, lng).';
 

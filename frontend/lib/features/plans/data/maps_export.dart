@@ -1,37 +1,50 @@
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../saves/data/google_maps_links.dart';
 import 'plan_models.dart';
 
-/// Deep link multi-destino (§7.3).
-/// Formato path `/maps/dir/lat,lng/lat,lng/...` — más fiable en app Android
-/// que waypoints con `|` en query.
+/// Cómo llegar: origen = tu GPS; cada parada = **nombre del sitio**.
+/// Las coords del catálogo (centroide DIVIPOLA) no van en el link:
+/// Maps las convierte en el negocio más cercano.
 Uri buildGoogleMapsDirectionsUri({
   required double originLat,
   required double originLng,
   required List<PlanStop> stopsInOrder,
 }) {
-  final withCoords = stopsInOrder
-      .where((s) => s.lat != null && s.lng != null)
+  final stops = stopsInOrder
+      .where(
+        (s) =>
+            s.siteName.trim().isNotEmpty ||
+            (s.lat != null && s.lng != null),
+      )
+      .map(
+        (s) => MapsRouteStop(
+          name: s.siteName,
+          city: s.city,
+          department: s.department,
+          googlePlaceId: s.googlePlaceId,
+          lat: s.lat,
+          lng: s.lng,
+          useExactPin: s.useExactPin,
+        ),
+      )
       .toList();
 
-  final segments = <String>[
-    '${_fmt(originLat)},${_fmt(originLng)}',
-    for (final s in withCoords) '${_fmt(s.lat!)},${_fmt(s.lng!)}',
-  ];
-
-  return Uri.parse(
-    'https://www.google.com/maps/dir/${segments.join('/')}',
+  return GoogleMapsLinks.directionsFromOrigin(
+    originLat: originLat,
+    originLng: originLng,
+    stopsInOrder: stops,
   );
 }
-
-String _fmt(double v) => v.toStringAsFixed(6);
 
 Future<bool> openGoogleMapsDirections({
   required double originLat,
   required double originLng,
   required List<PlanStop> stopsInOrder,
 }) async {
-  if (stopsInOrder.every((s) => s.lat == null || s.lng == null)) {
+  if (stopsInOrder.every(
+    (s) => s.siteName.trim().isEmpty && (s.lat == null || s.lng == null),
+  )) {
     return false;
   }
   final uri = buildGoogleMapsDirectionsUri(

@@ -287,42 +287,55 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
   }
 
   Future<void> _openPlaceOnMaps(SiteFicha ficha) async {
-    if (!_canOpenMaps(ficha)) {
-      if (!mounted) return;
-      AppToast.show(context, context.l10n.siteDetailNoCoords, error: true);
-      return;
-    }
-    final uri = GoogleMapsLinks.viewPlace(
-      name: ficha.name,
-      city: ficha.city,
-      department: ficha.department,
-      googlePlaceId: ficha.googlePlaceId,
-      lat: ficha.lat,
-      lng: ficha.lng,
-      useExactPin: ficha.useExactPin,
-    );
-    final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
-    if (!ok && mounted) {
-      AppToast.show(context, context.l10n.siteDetailOpenMapsFail, error: true);
-    }
+    await _openMapsFor(ficha, directions: false);
   }
 
   Future<void> _openDirectionsOnMaps(SiteFicha ficha) async {
+    await _openMapsFor(ficha, directions: true);
+  }
+
+  Future<void> _openMapsFor(SiteFicha ficha, {required bool directions}) async {
     if (!_canOpenMaps(ficha)) {
       if (!mounted) return;
       AppToast.show(context, context.l10n.siteDetailNoCoords, error: true);
       return;
     }
-    final uri = GoogleMapsLinks.directionsTo(
-      name: ficha.name,
-      city: ficha.city,
-      department: ficha.department,
-      googlePlaceId: ficha.googlePlaceId,
-      lat: ficha.lat,
-      lng: ficha.lng,
-      useExactPin: ficha.useExactPin,
-    );
-    final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    SiteFicha f = ficha;
+    try {
+      f = await ref.read(savesRepositoryProvider).loadSiteFicha(ficha.siteId);
+    } catch (_) {}
+    final lat = f.lat ?? ficha.lat;
+    final lng = f.lng ?? ficha.lng;
+    final exact = f.useExactPin;
+    if (exact && (lat == null || lng == null)) {
+      if (!mounted) return;
+      AppToast.show(context, context.l10n.siteDetailNoCoords, error: true);
+      return;
+    }
+    final uri = directions
+        ? GoogleMapsLinks.directionsTo(
+            name: f.name,
+            city: f.city,
+            department: f.department,
+            googlePlaceId: f.googlePlaceId,
+            lat: lat,
+            lng: lng,
+            useExactPin: exact,
+          )
+        : GoogleMapsLinks.viewPlace(
+            name: f.name,
+            city: f.city,
+            department: f.department,
+            googlePlaceId: f.googlePlaceId,
+            lat: lat,
+            lng: lng,
+            useExactPin: exact,
+          );
+    await _launchMapsUri(uri);
+  }
+
+  Future<void> _launchMapsUri(Uri httpsUri) async {
+    final ok = await launchUrl(httpsUri, mode: LaunchMode.externalApplication);
     if (!ok && mounted) {
       AppToast.show(context, context.l10n.siteDetailOpenMapsFail, error: true);
     }

@@ -724,6 +724,8 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
       googlePlaceId: place.placeId,
     );
     if (!mounted) return;
+    setState(() => _useExactPin = true);
+    if (!mounted) return;
     // Soft check: diálogo (no Toast). Si sigue editando, al Guardar se reitera.
     final linked = await _softCheckDuplicateAfterLocation();
     if (linked || !mounted) return;
@@ -1572,6 +1574,11 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
           key: WidgetKeys.saveExactPinSwitch,
           contentPadding: EdgeInsets.zero,
           title: Text(l10n.saveExactPinSwitch),
+          subtitle: Text(
+            _useExactPin
+                ? l10n.saveExactPinMapsPin
+                : l10n.saveExactPinMapsPlace,
+          ),
           secondary: _infoTip(l10n.saveInfoExactPin),
           value: _useExactPin,
           onChanged: _saving

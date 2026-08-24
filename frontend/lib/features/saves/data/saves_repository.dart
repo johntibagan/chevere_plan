@@ -28,7 +28,8 @@ class SavesRepository {
   /// Select liviano para Inicio (cards): sin contributors, notes, address, etc.
   static const _saveSelectSummary =
       'id, user_id, site_id, status, is_public, created_at, '
-      'sites!user_saves_site_id_fkey(name, city, '
+      'sites!user_saves_site_id_fkey(name, city, use_exact_pin, '
+      'google_place_id, '
       'site_categories(categories(name_i18n)))';
 
   String? get _uid => _client.auth.currentUser?.id;
@@ -478,7 +479,7 @@ class SavesRepository {
       isPublic: m['is_public'] as bool? ?? true,
       isPhysicalPlace: m['is_physical_place'] as bool? ?? true,
       googlePlaceId: m['google_place_id'] as String?,
-      useExactPin: m['use_exact_pin'] as bool? ?? false,
+      useExactPin: parsePgBool(m['use_exact_pin']),
       categoryIds: categoryIds,
       latitude: lat,
       longitude: lng,
@@ -668,22 +669,25 @@ class SavesRepository {
 
   /// Ficha de sitio (propia o pública visible por RLS).
   Future<SiteFicha> loadSiteFicha(String siteId) async {
-    SiteFicha ficha;
-    final mine = await findMineBySiteId(siteId);
-    if (mine != null) {
-      ficha = SiteFicha.fromSave(mine);
-    } else {
-      final row = await _client
-          .from('sites')
-          .select(_siteSelect)
-          .eq('id', siteId)
-          .maybeSingle();
+    final row = await _client
+        .from('sites')
+        .select(_siteSelect)
+        .eq('id', siteId)
+        .maybeSingle();
 
-      if (row == null) {
-        throw const AppUserError('No se encontró el sitio.');
-      }
-      ficha = SiteFicha.fromSiteRow(Map<String, dynamic>.from(row));
+    if (row == null) {
+      throw const AppUserError('No se encontró el sitio.');
     }
+    final siteMap = Map<String, dynamic>.from(row);
+    final fromSite = SiteFicha.fromSiteRow(siteMap);
+
+    final mine = await findMineBySiteId(siteId);
+    var ficha = mine != null
+        ? SiteFicha.fromSave(mine).copyWithMeta(
+            googlePlaceId: fromSite.googlePlaceId,
+            useExactPin: fromSite.useExactPin,
+          )
+        : fromSite;
 
     try {
       final coords = await _client.rpc(
@@ -691,9 +695,17 @@ class SavesRepository {
         params: {'p_site_id': siteId},
       );
       final parsed = _parseSiteCoords(coords);
-      return ficha.copyWithMeta(lat: parsed.$1, lng: parsed.$2);
+      return ficha.copyWithMeta(
+        lat: parsed.$1,
+        lng: parsed.$2,
+        googlePlaceId: fromSite.googlePlaceId,
+        useExactPin: fromSite.useExactPin,
+      );
     } catch (_) {
-      return ficha;
+      return ficha.copyWithMeta(
+        googlePlaceId: fromSite.googlePlaceId,
+        useExactPin: fromSite.useExactPin,
+      );
     }
   }
 

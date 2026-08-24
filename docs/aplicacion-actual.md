@@ -65,7 +65,7 @@ Es el corazón de la app.
 
 Podés pegar un link de Maps **dentro del campo** (opción desde enlace / icono pegar): la app rellena nombre, ciudad y **pin**. Eso cuenta como lugar ya elegido: **no** se pregunta “¿punto exacto?” ni se tiran las coordenadas. **Público** queda habilitado si hay pin. El mapa interactivo tampoco pregunta: el usuario ya confirmó el punto.
 
-Se guardan **las dos** ubicaciones: el **lugar** (nombre y Place ID de Google, para la ficha en Maps) y el **punto exacto** (lat/lng). El interruptor **Punto exacto en el mapa** va **apagado** por defecto: Maps abre la ficha/búsqueda del lugar. Si lo encendés, Maps abre el pin. Apagarlo **no** borra las coordenadas ni bloquea Público. Contrato: [`invariantes.md`](invariantes.md).
+Se guardan **las dos** ubicaciones: el **lugar** (nombre y Place ID) y el **punto exacto** (lat/lng). El interruptor va apagado si solo pegás un enlace. **Confirmar el pin en el mapa lo enciende.** Encendido: Maps abre con `query=lat,lng` (coords en el buscador), no el nombre ni el Place ID. Apagarlo no borra el pin ni Público. Contrato: [`invariantes.md`](invariantes.md).
 
 ### Qué ves en el formulario
 
@@ -171,7 +171,7 @@ flowchart LR
 1. Crear plan: título, zona (texto), si incluye públicos, tope de presupuesto. Hay una fila “IA” que abre **en construcción** (no arma el plan sola).
 2. El servidor propone **candidatos** de tus guardados (y públicos si marcaste).
 3. Armás paradas. En la lista “añadidos” y en el detalle, con **2+ paradas**, arrastrás el orden; se guarda.
-4. Detalle (look Figma): portada, stats de paradas/presupuesto/zona, itinerario, **Llevar a Maps**, compartir y `+` en la misma barra. Seguir: abrir ficha, marcar visitado (pasa a **Rutas**), reordenar. El `+` agrega sitios. No hay transporte inventado en stats.
+4. Detalle (look Figma): portada, stats de paradas/presupuesto/zona, itinerario, **Llevar a Maps**, compartir y `+` en la misma barra. Seguir: abrir ficha, marcar visitado (pasa a **Rutas**), reordenar. El `+` agrega sitios. No hay transporte inventado en stats. **Llevar a Maps** usa tu GPS como origen y el **nombre** de cada parada como destino (no el centroide DIVIPOLA: ese pin lo convierte Maps en el negocio más cercano). Si el sitio tiene **Punto exacto**, ahí sí manda lat/lng.
 5. Transporte “sugerido por distancia” está **parametrizado en admin** (tipos y km), pero **la app no calcula aún** el medio: la fila abre la pantalla **en construcción**.
 
 ```mermaid

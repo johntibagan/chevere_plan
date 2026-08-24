@@ -1,6 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/errors/user_facing_error.dart';
+import '../../saves/data/save_models.dart';
 import 'plan_builder.dart';
 import 'plan_hours_policy.dart';
 import 'plan_models.dart';
@@ -18,7 +19,8 @@ class PlansRepository {
       'include_public, max_budget_amount, currency_code, status, '
       'plan_stops(id, plan_id, site_id, sort_order, visited_at, '
       'estimated_price_amount, lat, lng, '
-      'sites(name, city, estimated_price_amount))';
+      'sites(name, city, department, google_place_id, use_exact_pin, '
+      'estimated_price_amount))';
 
   /// Listado liviano (cards): count de paradas sin hidratar cada stop.
   static const _planListSelect =
@@ -334,6 +336,9 @@ class PlansRepository {
               sortOrder: m['sort_order'] as int? ?? 0,
               siteName: (siteMap?['name'] as String?) ?? 'Sitio',
               city: siteMap?['city'] as String?,
+              department: siteMap?['department'] as String?,
+              googlePlaceId: siteMap?['google_place_id'] as String?,
+              useExactPin: parsePgBool(siteMap?['use_exact_pin']),
               lat: (m['lat'] as num?)?.toDouble(),
               lng: (m['lng'] as num?)?.toDouble(),
               visitedAt: visited == null

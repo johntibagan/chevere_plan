@@ -32,7 +32,7 @@ Ese diálogo **no se reintroduce**: al decir “solo el lugar” se perdía el p
 
 Abrir Maps **desde la ficha**:
 - **Lugar** (interruptor apagado, default): búsqueda / ficha (nombre + `google_place_id`).
-- **Punto exacto** (interruptor encendido): `lat,lng`.
+- **Punto exacto** (interruptor encendido): búsqueda `lat,lng` (sin nombre ni Place ID).
 
 Al pegar Maps o confirmar el mapa se **guardan las dos**. El interruptor no borra coords.
 
@@ -41,12 +41,14 @@ Al pegar Maps o confirmar el mapa se **guardan las dos**. El interruptor no borr
 | Origen | Coords (pin) | Lugar (nombre / Place ID) |
 |---|---|---|
 | Enlace / share Maps | Se conservan (o se geocodifican) | Se conservan |
-| Mapa interactivo | Se conservan | Place ID si el buscador lo trajo |
+| Mapa interactivo | Se conservan | Place ID si el buscador lo trajo. **Enciende** punto exacto |
 | Interruptor “Punto exacto” | No borra el pin. Solo elige cómo abrir Maps. Default **apagado**. Encenderlo sin pin abre el mapa. |
 
 Público en lugar físico exige **lat y lng guardados**. El interruptor apagado **no** bloquea Público.
 
 Público es **sección siempre visible**. Sin pin, el interruptor se muestra **desactivado** (no se oculta). No reaparece el diálogo de “¿punto exacto?” al pegar Maps.
+
+**Llevar a Maps** (plan): origen = GPS; destino = nombre / Place ID del sitio. Prohibido armar la ruta solo con lat/lng del catálogo (el municipio es un centroide; Maps lo pega a otro POI).
 
 ### Layout del formulario
 

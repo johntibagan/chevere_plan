@@ -26,6 +26,17 @@ enum SiteStatus {
   }
 }
 
+bool parsePgBool(Object? value, {bool orElse = false}) {
+  if (value is bool) return value;
+  if (value is num) return value != 0;
+  if (value is String) {
+    final s = value.trim().toLowerCase();
+    if (s == 'true' || s == 't' || s == '1') return true;
+    if (s == 'false' || s == 'f' || s == '0') return false;
+  }
+  return orElse;
+}
+
 class PossibleDuplicate {
   const PossibleDuplicate({
     required this.siteId,
@@ -365,7 +376,7 @@ class UserSave {
       isCatalogSite: json['is_catalog_site'] as bool? ?? false,
       isPhysicalPlace: json['is_physical_place'] as bool? ?? true,
       googlePlaceId: json['google_place_id'] as String?,
-      useExactPin: json['use_exact_pin'] as bool? ?? false,
+      useExactPin: parsePgBool(json['use_exact_pin']),
     );
   }
 
@@ -441,7 +452,7 @@ class UserSave {
       isCatalogSite: ext != null && ext.trim().isNotEmpty,
       isPhysicalPlace: site['is_physical_place'] as bool? ?? true,
       googlePlaceId: site['google_place_id'] as String?,
-      useExactPin: site['use_exact_pin'] as bool? ?? false,
+      useExactPin: parsePgBool(site['use_exact_pin']),
     );
   }
 }

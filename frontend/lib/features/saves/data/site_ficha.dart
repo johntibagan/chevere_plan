@@ -183,7 +183,7 @@ class SiteFicha {
       lat: (json['lat'] as num?)?.toDouble(),
       lng: (json['lng'] as num?)?.toDouble(),
       googlePlaceId: json['google_place_id'] as String?,
-      useExactPin: json['use_exact_pin'] as bool? ?? false,
+      useExactPin: parsePgBool(json['use_exact_pin']),
     );
   }
 
@@ -283,7 +283,7 @@ class SiteFicha {
           : null,
       isCatalogSite: ext != null && ext.trim().isNotEmpty,
       googlePlaceId: site['google_place_id'] as String?,
-      useExactPin: site['use_exact_pin'] as bool? ?? false,
+      useExactPin: parsePgBool(site['use_exact_pin']),
     );
   }
 

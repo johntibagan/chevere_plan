@@ -240,6 +240,8 @@
   "saveExactPinNo": "No, solo el lugar",
   "saveExactPinYes": "Sí, guardar pin",
   "saveExactPinSwitch": "Punto exacto en el mapa",
+  "saveExactPinMapsPin": "Maps abrirá el pin (lat, lng), no el buscador.",
+  "saveExactPinMapsPlace": "Maps abrirá la ficha del lugar por nombre.",
   "saveExactPinSwitchHint": "Apagado (recomendado): Maps abre la ficha del lugar por nombre. Encendido: abre el pin (lat, lng).",
   "saveMapsPasteLabel": "Pegar enlace de Google Maps",
   "saveLocationSearchHint": "Buscar o pegar enlace de Google Maps",

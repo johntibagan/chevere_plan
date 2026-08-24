@@ -1144,6 +1144,18 @@ abstract class AppLocalizations {
   /// **'Punto exacto en el mapa'**
   String get saveExactPinSwitch;
 
+  /// No description provided for @saveExactPinMapsPin.
+  ///
+  /// In es, this message translates to:
+  /// **'Maps abrirá el pin (lat, lng), no el buscador.'**
+  String get saveExactPinMapsPin;
+
+  /// No description provided for @saveExactPinMapsPlace.
+  ///
+  /// In es, this message translates to:
+  /// **'Maps abrirá la ficha del lugar por nombre.'**
+  String get saveExactPinMapsPlace;
+
   /// No description provided for @saveExactPinSwitchHint.
   ///
   /// In es, this message translates to:

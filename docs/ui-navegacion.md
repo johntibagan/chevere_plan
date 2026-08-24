@@ -272,7 +272,7 @@ Chips internos: buscar / resultados / añadidos. `AppSearchField` + filtros avan
 - 3 stats (`surface`, radio 12): Paradas (`accent`), Presupuesto (`success`), Zona (`primary`). Sin transporte (no está cableado).
 - Label “Itinerario” 11 extraBold mutedDark tracking.
 - `PlanTimeline`: puntos primary/success, arrastre si 2+, check visitado, borrar.
-- Barra inferior: **Llevar a Maps** + share + `+` (builder). **Sin FAB** duplicado.
+- Barra inferior: **Llevar a Maps** + share + `+` (builder). **Sin FAB** duplicado. Maps: origen GPS, destino **nombre** del sitio (no centroide).
 - Fila atenuada “Transporte entre paradas” → `ComingSoonPage` (no se calcula medio).
 - ⋮: Maps, share, eliminar (sheet).
 

@@ -34,9 +34,10 @@ void main() {
       lng: -73.3,
     );
     expect(uri.queryParameters['query'], '5.5,-73.3');
+    expect(uri.queryParameters.containsKey('query_place_id'), isFalse);
   });
 
-  test('viewPlace con useExactPin usa lat,lng aunque haya place_id', () {
+  test('viewPlace con useExactPin usa lat,lng, no el nombre', () {
     final uri = GoogleMapsLinks.viewPlace(
       name: 'Plaza de Bolívar',
       city: 'Tunja',
@@ -47,5 +48,42 @@ void main() {
     );
     expect(uri.queryParameters['query'], '5.5,-73.3');
     expect(uri.queryParameters.containsKey('query_place_id'), isFalse);
+  });
+
+  test('ruta de plan: origen GPS y destino por nombre, no centroide', () {
+    final uri = GoogleMapsLinks.directionsFromOrigin(
+      originLat: 5.54,
+      originLng: -73.36,
+      stopsInOrder: const [
+        MapsRouteStop(
+          name: 'Plaza / parque principal de Tunja',
+          city: 'Tunja',
+          department: 'Boyacá',
+          lat: 5.53988,
+          lng: -73.355539,
+        ),
+      ],
+    );
+    expect(uri.path, '/maps/dir/');
+    expect(uri.queryParameters['origin'], '5.54,-73.36');
+    expect(uri.queryParameters['destination'], contains('Plaza'));
+    expect(uri.queryParameters['destination'], contains('Tunja'));
+    expect(uri.queryParameters['destination'], isNot(contains('5.53988')));
+  });
+
+  test('ruta de plan con punto exacto usa coords en destino', () {
+    final uri = GoogleMapsLinks.directionsFromOrigin(
+      originLat: 5.0,
+      originLng: -74.0,
+      stopsInOrder: const [
+        MapsRouteStop(
+          name: 'Mi pin',
+          lat: 5.12,
+          lng: -73.45,
+          useExactPin: true,
+        ),
+      ],
+    );
+    expect(uri.queryParameters['destination'], '5.12,-73.45');
   });
 }

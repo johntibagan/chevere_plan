@@ -8,6 +8,9 @@ class PlanStop {
     this.lat,
     this.lng,
     this.city,
+    this.department,
+    this.googlePlaceId,
+    this.useExactPin = false,
     this.visitedAt,
     this.estimatedPriceAmount,
     this.siteEstimatedPriceAmount,
@@ -21,6 +24,10 @@ class PlanStop {
   final double? lat;
   final double? lng;
   final String? city;
+  final String? department;
+  final String? googlePlaceId;
+  /// Si es true, Maps usa lat/lng; si no, el nombre del lugar.
+  final bool useExactPin;
   final DateTime? visitedAt;
   final double? estimatedPriceAmount;
   final double? siteEstimatedPriceAmount;
@@ -45,6 +52,9 @@ class PlanStop {
       lat: lat,
       lng: lng,
       city: city,
+      department: department,
+      googlePlaceId: googlePlaceId,
+      useExactPin: useExactPin,
       visitedAt: clearVisited ? null : (visitedAt ?? this.visitedAt),
       estimatedPriceAmount:
           estimatedPriceAmount ?? this.estimatedPriceAmount,

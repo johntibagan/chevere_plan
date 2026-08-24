@@ -61,7 +61,7 @@ abstract final class CacheKeys {
   static String categories() => 'categories:v1';
   static String transportTypes() => 'transport_types:v1';
   static String geoCatalog() => 'geo_catalog:v1';
-  static String siteFicha(String siteId) => 'site_ficha:$siteId';
+  static String siteFicha(String siteId) => 'site_ficha_v2:$siteId';
   static String plansPage0(String uid) => 'plans_p0:$uid';
   static String routesAll(String uid) => 'routes_all:$uid';
   static String search(String fingerprint) => 'search:$fingerprint';
