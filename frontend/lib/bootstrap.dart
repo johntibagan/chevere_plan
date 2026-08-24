@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -19,7 +22,17 @@ Future<Widget> createRootApp({
   bool initLocalNotifications = true,
   List<Override> overrides = const [],
 }) async {
-  Env.assertNoServerSecrets();
+  if (Env.hasInjectedServiceRole) {
+    return ProviderScope(
+      overrides: overrides,
+      child: BootstrapErrorApp(
+        message: kReleaseMode
+            ? Env.missingConfigUserMessage
+            : 'Quitá SUPABASE_SERVICE_ROLE_KEY de frontend/.env. '
+                'Esa clave es solo para backend/.env.',
+      ),
+    );
+  }
 
   if (!Env.hasSupabaseConfig || !Env.supabaseUrlIsHttps) {
     return ProviderScope(
@@ -41,15 +54,12 @@ Future<Widget> createRootApp({
     AppLog.error('image cache', name: 'bootstrap', error: e, stackTrace: st);
   }
 
-  if (initFirebase) {
-    await Firebase.initializeApp();
-    await bootstrapFcm();
-  }
-  if (initLocalNotifications) {
-    // Proximity al final: registra onTap (payload → ficha del sitio).
-    await DraftReminderService.instance.init();
-    await ProximityReminderService.instance.init();
-  }
+  // FCM y notificaciones piden permiso: si se espera aquí, el splash nativo
+  // nunca se quita (típico tras borrar datos de la app).
+  unawaited(_initPushAndLocalNotifs(
+    initFirebase: initFirebase,
+    initLocalNotifications: initLocalNotifications,
+  ));
 
   // No usar `Supabase.instance.isInitialized`: acceder a `.instance` exige
   // que ya esté inicializado (assertion en debug).
@@ -60,7 +70,7 @@ Future<Widget> createRootApp({
       authOptions: FlutterAuthClientOptions(
         localStorage: SecureSessionStorage(supabaseUrl: Env.supabaseUrl),
       ),
-    );
+    ).timeout(const Duration(seconds: 15));
   } catch (e, st) {
     // Ya inicializado en este proceso (p. ej. test Patrol anterior).
     AppLog.debug(
@@ -75,6 +85,31 @@ Future<Widget> createRootApp({
     overrides: overrides,
     child: const CheverePlanApp(),
   );
+}
+
+Future<void> _initPushAndLocalNotifs({
+  required bool initFirebase,
+  required bool initLocalNotifications,
+}) async {
+  try {
+    await Future<void>(() async {
+      if (initFirebase) {
+        await Firebase.initializeApp();
+        await bootstrapFcm();
+      }
+      if (initLocalNotifications) {
+        await DraftReminderService.instance.init();
+        await ProximityReminderService.instance.init();
+      }
+    }).timeout(const Duration(seconds: 12));
+  } catch (e, st) {
+    AppLog.error(
+      'push/local notifs bootstrap',
+      name: 'bootstrap',
+      error: e,
+      stackTrace: st,
+    );
+  }
 }
 
 /// Pantalla de error de bootstrap (config faltante).

@@ -12,7 +12,7 @@ prácticas de cliente móvil con RLS en backend.
    asset de Flutter (antes iba dentro del APK). La plantilla es `.env.example`.
 2. **Solo claves de cliente:** `SUPABASE_ANON_KEY` / publishable, Google Web Client ID,
    Geoapify. **Prohibido** `SUPABASE_SERVICE_ROLE*` en el binario
-   (`Env.assertNoServerSecrets()` en debug).
+   (`Env.hasInjectedServiceRole` evita `runApp` con service role en el cliente).
 3. **Logs:** `AppLog` redacta JWT / Bearer / `apiKey=` en query; en release no se
    vuelca el `toString` de excepciones (solo tipo). FCM nunca loguea el token completo.
 4. **UI de errores:** `userFacingError` sigue la regla 8 (mensaje genérico al usuario).

@@ -55,22 +55,11 @@ class Env {
 
   static bool get hasGeoapifyKey => geoapifyApiKey.trim().isNotEmpty;
 
-  /// Falla en debug si alguien intenta inyectar la service role en el cliente.
-  static void assertNoServerSecrets() {
-    assert(() {
-      const serviceRole = String.fromEnvironment('SUPABASE_SERVICE_ROLE_KEY');
-      const serviceRoleAlt = String.fromEnvironment('SUPABASE_SERVICE_ROLE');
-      assert(
-        serviceRole.isEmpty && serviceRoleAlt.isEmpty,
-        'Nunca pases SUPABASE_SERVICE_ROLE(_KEY) al cliente. '
-        'Solo anon/publishable + RLS en backend.',
-      );
-      assert(
-        !supabaseAnonKey.contains('service_role'),
-        'SUPABASE_ANON_KEY parece una service role. Usa la anon/publishable.',
-      );
-      return true;
-    }());
+  /// Service role inyectada por error en `--dart-define-from-file` (cliente).
+  static bool get hasInjectedServiceRole {
+    const serviceRole = String.fromEnvironment('SUPABASE_SERVICE_ROLE_KEY');
+    const serviceRoleAlt = String.fromEnvironment('SUPABASE_SERVICE_ROLE');
+    return serviceRole.trim().isNotEmpty || serviceRoleAlt.trim().isNotEmpty;
   }
 
   /// Mensaje de bootstrap sin revelar nombres de secretos internos.
