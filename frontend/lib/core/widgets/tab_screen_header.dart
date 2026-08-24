@@ -83,3 +83,49 @@ class AppRoundIconButton extends StatelessWidget {
     return Tooltip(message: tooltip!, child: child);
   }
 }
+
+/// Botón 44×44 redondeado (filtros al lado del buscador).
+class AppSquareIconButton extends StatelessWidget {
+  const AppSquareIconButton({
+    super.key,
+    required this.icon,
+    required this.onTap,
+    this.selected = false,
+    this.tooltip,
+  });
+
+  final IconData icon;
+  final VoidCallback onTap;
+  final bool selected;
+  final String? tooltip;
+
+  @override
+  Widget build(BuildContext context) {
+    final child = SizedBox(
+      width: 44,
+      height: 44,
+      child: Material(
+        color: selected
+            ? AppColors.primary.withValues(alpha: 0.18)
+            : AppColors.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: BorderSide(
+            color: selected ? AppColors.primary : AppColors.border,
+          ),
+        ),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(12),
+          child: Icon(
+            icon,
+            size: 16,
+            color: selected ? AppColors.primary : AppColors.muted,
+          ),
+        ),
+      ),
+    );
+    if (tooltip == null) return child;
+    return Tooltip(message: tooltip!, child: child);
+  }
+}

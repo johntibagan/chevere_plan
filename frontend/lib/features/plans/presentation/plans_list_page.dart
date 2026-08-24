@@ -9,6 +9,9 @@ import '../../../core/formatters/money_format.dart';
 import '../../../core/l10n/context_l10n.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_async_body.dart';
+import '../../../core/widgets/app_create_cta_card.dart';
+import '../../../core/widgets/app_section_label.dart';
+import '../../../core/widgets/app_status_pill.dart';
 import '../../../core/widgets/app_toast.dart';
 import '../../../core/widgets/site_cover.dart';
 import '../../../core/widgets/tab_screen_header.dart';
@@ -86,19 +89,7 @@ class _PlansListPageState extends ConsumerState<PlansListPage> {
       }
     });
 
-    const fabBottomClearance = 72.0;
-
     return Scaffold(
-      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-      floatingActionButton: Padding(
-        padding: const EdgeInsets.only(bottom: fabBottomClearance),
-        child: FloatingActionButton.extended(
-          heroTag: 'plans_create_fab',
-          onPressed: _openCreate,
-          icon: const Icon(Icons.add),
-          label: Text(l10n.plansCreateFab),
-        ),
-      ),
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -116,26 +107,23 @@ class _PlansListPageState extends ConsumerState<PlansListPage> {
                 onRefresh: _refresh,
                 child: ListView.builder(
                   physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 120),
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 88),
                   itemCount: 2 +
                       (plans.isEmpty
                           ? 1
                           : plans.length + ((page?.hasMore ?? false) ? 1 : 0)),
                   itemBuilder: (context, index) {
                     if (index == 0) {
-                      return _CreatePlanCard(onTap: _openCreate);
+                      return AppCreateCtaCard(
+                        title: l10n.plansCreateCardTitle,
+                        hint: l10n.plansCreateCardHint,
+                        onTap: _openCreate,
+                      );
                     }
                     if (index == 1) {
                       return Padding(
-                        padding: const EdgeInsets.fromLTRB(0, 20, 0, 10),
-                        child: Text(
-                          l10n.plansSavedHeading,
-                          style: const TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w800,
-                            color: AppColors.foreground,
-                          ),
-                        ),
+                        padding: const EdgeInsets.only(top: 20),
+                        child: AppSectionLabel(text: l10n.plansSavedHeading),
                       );
                     }
                     if (plans.isEmpty) {
@@ -190,69 +178,6 @@ class _PlansListPageState extends ConsumerState<PlansListPage> {
   }
 }
 
-class _CreatePlanCard extends StatelessWidget {
-  const _CreatePlanCard({required this.onTap});
-
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
-    return Material(
-      color: AppColors.surface,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: AppColors.primary.withValues(alpha: 0.45)),
-      ),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withValues(alpha: 0.16),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(Icons.add_rounded, color: AppColors.primary),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      l10n.plansCreateCardTitle,
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.foreground,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      l10n.plansCreateCardHint,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: AppColors.muted,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const Icon(Icons.chevron_right, color: AppColors.muted),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 class _PlanCard extends StatelessWidget {
   const _PlanCard({required this.plan, required this.onTap});
 
@@ -283,40 +208,13 @@ class _PlanCard extends StatelessWidget {
                 fit: StackFit.expand,
                 children: [
                   const SiteCover(),
-                  const DecoratedBox(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Colors.transparent,
-                          Color(0xCC000000),
-                        ],
-                      ),
-                    ),
-                  ),
+                  const SiteCoverScrim(bottomOpacity: 0.8),
                   Positioned(
                     top: 8,
                     right: 8,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 3,
-                      ),
-                      decoration: BoxDecoration(
-                        color: isDraft
-                            ? const Color(0x99000000)
-                            : AppColors.primary,
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                      child: Text(
-                        statusLabel,
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w700,
-                          color: isDraft ? AppColors.muted : AppColors.background,
-                        ),
-                      ),
+                    child: AppStatusPill(
+                      label: statusLabel,
+                      emphasized: !isDraft,
                     ),
                   ),
                   Positioned(
@@ -361,6 +259,12 @@ class _PlanCard extends StatelessWidget {
                     ),
                     const SizedBox(width: 10),
                   ],
+                  const Icon(
+                    Icons.trending_up_rounded,
+                    size: 12,
+                    color: AppColors.primary,
+                  ),
+                  const SizedBox(width: 4),
                   Text(
                     l10n.planStopsCount(plan.stopCount),
                     style: const TextStyle(
@@ -370,6 +274,12 @@ class _PlanCard extends StatelessWidget {
                   ),
                   if (plan.maxBudgetAmount != null) ...[
                     const SizedBox(width: 10),
+                    const Icon(
+                      Icons.attach_money_rounded,
+                      size: 12,
+                      color: AppColors.success,
+                    ),
+                    const SizedBox(width: 2),
                     Text(
                       formatMoney(
                         plan.maxBudgetAmount!,

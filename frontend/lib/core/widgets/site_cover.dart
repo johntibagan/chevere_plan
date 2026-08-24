@@ -32,6 +32,27 @@ class SiteCover extends StatelessWidget {
   }
 }
 
+/// Degradado sobre la portada (títulos/meta en la foto). Una sola receta.
+class SiteCoverScrim extends StatelessWidget {
+  const SiteCoverScrim({super.key, this.bottomOpacity = 0.65});
+
+  final double bottomOpacity;
+
+  @override
+  Widget build(BuildContext context) {
+    final bottom = Color.fromRGBO(0, 0, 0, bottomOpacity);
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Colors.transparent, bottom],
+        ),
+      ),
+    );
+  }
+}
+
 /// Paisaje oscuro de relleno (Figma: siempre hay foto; si no hay, esta).
 class DefaultSiteCover extends StatelessWidget {
   const DefaultSiteCover({super.key});

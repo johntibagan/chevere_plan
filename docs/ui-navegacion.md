@@ -220,12 +220,12 @@ Tab activo: icono + label `primary`. Inactivo: `mutedDark`, label 10 px.
 ### 6.3 Explorar — `SearchPage`
 
 - `TabScreenHeader` “Explorar”.
-- Fila: `TextField` filled + `AppRoundIconButton` tune (filtros avanzados).
-- Chips horizontales: Todas + raíces de categoría (DB). **No disparan búsqueda solas.**
+- Fila: `AppSearchField` (lupa **dentro** del campo) + `AppSquareIconButton` tune (avanzado).
+- Chips: `AppSelectChip` (Todos + raíces DB). **No disparan búsqueda solas.**
 - Switch incluir públicos; limpiar.
 - Avanzado (scroll): ubicación extra, categoría (incluye hijas), transporte, presupuesto min/max, GPS + radio km, texto de horario (placeholder, **no filtra**).
-- Tras buscar: conteo + toggle grilla/lista.
-- Grilla: `HomePopularCard`. Lista: fila con franja 4 px verde/morado, tags Tuyo/Vinculado/Catálogo, fecha, `>`.
+- Tras buscar: `{n} resultados` + `AppViewModeToggle` grilla/lista.
+- Grilla: `HomePopularCard(showOriginRow: true)`. Lista: `HomeSearchListCard` (misma ficha: franja, origen, corazón).
 - Modo simple: **query obligatorio**.
 
 ### 6.4 Guardar / editar — `SavePlacePage` (misma pantalla)
@@ -250,10 +250,9 @@ Tab activo: icono + label `primary`. Inactivo: `mutedDark`, label 10 px.
 ### 6.6 Planes — lista `PlansListPage`
 
 - `TabScreenHeader` + subtítulo.
-- Card CTA “Crear un plan” (borde primary, icono add).
-- Heading “Mis planes guardados”.
-- Card de plan: portada 96 px (`SiteCover`) + status pill (Borrador muted / Próximo primary) + título overlay + fila meta (zona, N sitios, presupuesto).
-- FAB `+` / “Armar plan” — mismo flujo que la card CTA.
+- Card CTA `AppCreateCtaCard` “Crear un plan” (único punto de alta; **sin FAB** duplicado).
+- `AppSectionLabel` “Mis planes guardados”.
+- Card de plan: portada 96 px (`SiteCover` + `SiteCoverScrim`) + `AppStatusPill` + título overlay + fila meta (zona, N sitios, presupuesto).
 - Vacío: mensaje bajo el heading, CTA sigue visible.
 
 ### 6.7 Crear plan — `CreatePlanPage`
@@ -306,7 +305,7 @@ Tabs internos: buscar / resultados / añadidos. Reutiliza filtros de búsqueda. 
 | Card sitio (inicio, explorar, plan) | | `SiteDetailPage` |
 | Inicio campana | | Sheet proximidad |
 | Inicio avatar staff | | `AdminPage` |
-| Planes CTA / FAB | | `CreatePlanPage` → builder |
+| Planes CTA crear | | `CreatePlanPage` → builder |
 | Card plan / item ruta | | `PlanDetailPage` |
 | Plan `+` | | `PlanBuilderPage` |
 | Marcar visitado en plan | | Ese stop aparece en Rutas (dato, no push) |

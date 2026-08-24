@@ -185,7 +185,7 @@
   "searchAdvanced": "Avanzada",
   "searchModeGeneral": "Búsqueda general",
   "searchModeAdvanced": "Búsqueda avanzada",
-  "searchHintPlace": "Ej. Tunja",
+  "searchHintPlace": "Busca lugares, ciudades...",
   "searchLabelText": "Texto (nombre o ciudad)",
   "searchLabelLocationExtra": "Ciudad o departamento (extra)",
   "searchLabelCategory": "Categoría",
@@ -207,7 +207,7 @@
     }
   },
   "searchEmptyHint": "Escribe y pulsa la lupa o Enter.",
-  "searchResultsCount": "{count} lugares encontrados",
+  "searchResultsCount": "{count} resultados",
   "@searchResultsCount": {
     "placeholders": {
       "count": {"type": "int"}
@@ -216,9 +216,9 @@
   "searchChipAll": "Todos",
   "searchViewGrid": "Grilla",
   "searchViewList": "Lista",
-  "plansSubtitle": "Organiza tus próximas aventuras",
+  "plansSubtitle": "Tus itinerarios guardados",
   "plansCreateCardTitle": "Crear un plan",
-  "plansCreateCardHint": "Elegí una zona y armá las paradas",
+  "plansCreateCardHint": "Título, zona, paradas y presupuesto",
   "plansSavedHeading": "Mis planes guardados",
   "plansStatusUpcoming": "Próximo",
   "routesSubtitle": "Tu historial de aventuras",

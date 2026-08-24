@@ -10,6 +10,7 @@ La prioridad número uno de este proyecto es **la agilidad percibida por el usua
 
 - **Modular por feature**, con capas `data / domain / presentation` dentro de `frontend/`. Cada módulo (usuarios, guardados, planes, categorías, ubicación, moderación) debe poder testearse y modificarse de forma independiente.
 - **Inyección de dependencias con Riverpod** en toda la app. Nada de lógica de negocio dentro de widgets.
+- **Cero duplicación (diseño y funciones):** no copiar pantallas, cards, chips, CTA ni flujos. Un widget/módulo compartido; las pantallas solo componen. Si el mismo look o la misma acción aparece (o va a aparecer) en 2+ sitios, se extrae a `core/widgets` o al feature dueño (p. ej. `home_cards`). Variantes = parámetros, no un segundo archivo casi igual. Caso extremo: un layout de una sola pantalla que extraer empeora. **Prohibido** dos CTA que hacen lo mismo en la misma pantalla (card Crear + FAB Crear).
 - **Cero duplicación de código**: widgets, servicios y utilidades reutilizables antes que copiar-pegar. Si un patrón se repite 2+ veces, se extrae.
 - **Theming centralizado**: colores, tipografías y spacing como tokens de diseño (coherentes con el prototipo Figma), nunca valores sueltos hardcodeados en cada pantalla.
 - **Código legible antes que ingenioso**: nombres explícitos, funciones cortas y de una sola responsabilidad, comentarios solo donde el código no se explica solo. Preferir claridad sobre abstracciones prematuras.

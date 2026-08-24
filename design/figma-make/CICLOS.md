@@ -5,8 +5,8 @@ Un ciclo = **una pantalla o tab**. No mezclar.
 | # | Ciclo | En Make (`App.tsx`) | En Flutter |
 |---|---|---|---|
 | 1 | **Inicio** (hecho) | `InicioTab` | `home_page.dart` + `home_cards.dart` |
-| 2 | Explorar | `ExplorarTab` | `search_page.dart` |
-| 3 | Planes (lista) | `PlanesTab` | `plans_list_page.dart` |
+| 2 | **Explorar** (hecho) | `ExplorarTab` | `search_page.dart` |
+| 3 | **Planes lista** (hecho) | `PlanesTab` | `plans_list_page.dart` |
 | 4 | Rutas | `RutasTab` | `my_routes_page.dart` |
 | 5 | Login | `LoginPage` | login |
 | 6 | Guardar sitio | `SavePlacePage` | `save_place_page.dart` |
@@ -20,4 +20,4 @@ Un ciclo = **una pantalla o tab**. No mezclar.
 
 Prioridad visual del Make: ficha de sitio y armar plan; luego login; admin al final.
 
-**Ahora:** ciclo 1 Inicio aplicado en Flutter. Siguiente = **ciclo 2 Explorar**.
+**Ahora:** ciclos 1–3 (Inicio, Explorar, Planes lista) aplicados en Flutter. Siguiente = **ciclo 4 Rutas**.

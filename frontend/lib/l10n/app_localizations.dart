@@ -877,7 +877,7 @@ abstract class AppLocalizations {
   /// No description provided for @searchHintPlace.
   ///
   /// In es, this message translates to:
-  /// **'Ej. Tunja'**
+  /// **'Busca lugares, ciudades...'**
   String get searchHintPlace;
 
   /// No description provided for @searchLabelText.
@@ -979,7 +979,7 @@ abstract class AppLocalizations {
   /// No description provided for @searchResultsCount.
   ///
   /// In es, this message translates to:
-  /// **'{count} lugares encontrados'**
+  /// **'{count} resultados'**
   String searchResultsCount(int count);
 
   /// No description provided for @searchChipAll.
@@ -1003,7 +1003,7 @@ abstract class AppLocalizations {
   /// No description provided for @plansSubtitle.
   ///
   /// In es, this message translates to:
-  /// **'Organiza tus próximas aventuras'**
+  /// **'Tus itinerarios guardados'**
   String get plansSubtitle;
 
   /// No description provided for @plansCreateCardTitle.
@@ -1015,7 +1015,7 @@ abstract class AppLocalizations {
   /// No description provided for @plansCreateCardHint.
   ///
   /// In es, this message translates to:
-  /// **'Elegí una zona y armá las paradas'**
+  /// **'Título, zona, paradas y presupuesto'**
   String get plansCreateCardHint;
 
   /// No description provided for @plansSavedHeading.

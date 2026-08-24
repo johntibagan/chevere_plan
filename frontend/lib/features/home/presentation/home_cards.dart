@@ -5,6 +5,8 @@ import '../../../core/formatters/money_format.dart';
 import '../../../core/l10n/context_l10n.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/site_cover.dart';
+import '../../../core/widgets/site_origin_tags.dart';
+import '../../../core/widgets/visibility_badge.dart';
 import '../../saves/data/save_models.dart';
 import '../../saves/presentation/favorite_heart_button.dart';
 import '../../search/data/search_models.dart';
@@ -190,15 +192,7 @@ class HomeRecentRailCard extends StatelessWidget {
                   fit: StackFit.expand,
                   children: [
                     const SiteCover(),
-                    const DecoratedBox(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [Colors.transparent, Color(0xBF000000)],
-                        ),
-                      ),
-                    ),
+                    const SiteCoverScrim(bottomOpacity: 0.75),
                     Positioned(
                       top: 8,
                       left: 8,
@@ -297,15 +291,22 @@ class HomePopularCard extends StatelessWidget {
     super.key,
     required this.hit,
     required this.onTap,
+    this.showOriginRow = false,
   });
 
   final SearchHit hit;
   final VoidCallback onTap;
+  /// Explorar: visibilidad + Tuyo/Vinculado/Catálogo. Inicio: solo nombre/precio.
+  final bool showOriginRow;
 
   @override
   Widget build(BuildContext context) {
     final price = hit.estimatedPriceAmount;
-    final stripe = hit.isPublic ? AppColors.success : AppColors.purple;
+    final origin = SiteOriginTags(
+      isOwn: hit.isOwn,
+      isLinked: hit.isLinked,
+      isCatalog: hit.isCatalog,
+    );
     return Material(
       color: AppColors.surface,
       clipBehavior: Clip.antiAlias,
@@ -324,20 +325,12 @@ class HomePopularCard extends StatelessWidget {
                 fit: StackFit.expand,
                 children: [
                   const SiteCover(),
-                  const DecoratedBox(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [Colors.transparent, Color(0xA6000000)],
-                      ),
-                    ),
-                  ),
+                  const SiteCoverScrim(),
                   Positioned(
                     left: 0,
                     top: 0,
                     bottom: 0,
-                    child: Container(width: 3, color: stripe),
+                    child: VisibilityStripe(isPublic: hit.isPublic),
                   ),
                   Positioned(
                     top: 6,
@@ -379,6 +372,18 @@ class HomePopularCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  if (showOriginRow) ...[
+                    Row(
+                      children: [
+                        VisibilityBadge(isPublic: hit.isPublic, compact: true),
+                        if (origin.hasAny) ...[
+                          const SizedBox(width: 6),
+                          Expanded(child: origin),
+                        ],
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                  ],
                   Text(
                     hit.name,
                     maxLines: 1,
@@ -416,6 +421,146 @@ class HomePopularCard extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Fila de Explorar: misma ficha que la grilla, en formato lista.
+class HomeSearchListCard extends StatelessWidget {
+  const HomeSearchListCard({
+    super.key,
+    required this.hit,
+    required this.onTap,
+  });
+
+  final SearchHit hit;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final origin = SiteOriginTags(
+      isOwn: hit.isOwn,
+      isLinked: hit.isLinked,
+      isCatalog: hit.isCatalog,
+    );
+    final place = [
+      if (hit.city != null && hit.city!.isNotEmpty) hit.city!,
+      if (hit.department != null && hit.department!.isNotEmpty) hit.department!,
+    ].join(' · ');
+    final price = hit.estimatedPriceAmount;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Material(
+        color: AppColors.surface,
+        clipBehavior: Clip.antiAlias,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: const BorderSide(color: AppColors.border),
+        ),
+        child: InkWell(
+          onTap: onTap,
+          child: IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                VisibilityStripe(isPublic: hit.isPublic),
+                const Padding(
+                  padding: EdgeInsets.fromLTRB(8, 10, 0, 10),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.all(Radius.circular(8)),
+                    child: SizedBox(
+                      width: 80,
+                      height: 80,
+                      child: SiteCover(),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(10, 10, 4, 10),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            VisibilityBadge(
+                              isPublic: hit.isPublic,
+                              compact: true,
+                            ),
+                            if (origin.hasAny) ...[
+                              const SizedBox(width: 6),
+                              Expanded(child: origin),
+                            ],
+                            FavoriteHeartButton(
+                              siteId: hit.siteId,
+                              style: FavoriteHeartStyle.icon,
+                            ),
+                          ],
+                        ),
+                        Text(
+                          hit.name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.foreground,
+                          ),
+                        ),
+                        if (place.isNotEmpty)
+                          Text(
+                            place,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 10,
+                              color: AppColors.muted,
+                            ),
+                          ),
+                        const Spacer(),
+                        Row(
+                          children: [
+                            if (hit.distanceKm != null)
+                              Text(
+                                '${hit.distanceKm!.toStringAsFixed(1)} km',
+                                style: const TextStyle(
+                                  fontSize: 10,
+                                  color: AppColors.mutedDark,
+                                ),
+                              ),
+                            const Spacer(),
+                            if (price != null)
+                              Text(
+                                formatMoney(
+                                  price,
+                                  currencyCode: hit.currencyCode,
+                                ),
+                                style: const TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w800,
+                                  color: AppColors.primary,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const Padding(
+                  padding: EdgeInsets.only(right: 8),
+                  child: Icon(
+                    Icons.chevron_right,
+                    size: 16,
+                    color: AppColors.mutedDark,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );

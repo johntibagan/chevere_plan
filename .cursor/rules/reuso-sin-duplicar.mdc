@@ -1,0 +1,27 @@
+---
+description: No duplicar UI ni funciones — extraer widgets/módulos
+alwaysApply: true
+---
+
+# Reuso — sin duplicar (diseño y funciones)
+
+No copiar pantallas, cards, chips, CTA ni flujos. **Un módulo o widget compartido**; pantallas solo componen.
+
+## Cuándo extraer
+
+- El mismo look o la misma acción aparece (o va a aparecer) en **2+ sitios** → widget/servicio en `core/widgets` o en el feature dueño (`home_cards`, repos).
+- Figma y Flutter: **un** `HomePopularCard`, **un** `AppSearchField`, **un** `AppCreateCtaCard`. No un clon “para Explorar” y otro “para Inicio”.
+- Variantes: parámetros (`showOriginRow`, `filledPrimary`), no un segundo archivo casi igual.
+
+## Qué sí se puede repetir (caso extremo)
+
+- Un layout de una sola pantalla que no se reutiliza y extraerlo **empeora** la lectura.
+- Strings i18n y tokens (`AppColors`) — no “reusar” copiando hex.
+
+## Prohibido
+
+- Copiar-pegar una card y cambiar 3 líneas.
+- Dos botones/CTA que hacen **lo mismo** en la misma pantalla (p. ej. card Crear + FAB Crear).
+- Duplicar reglas de negocio en widgets; viven en repos/providers.
+
+Detalle: [`docs/lineamientos-desarrollo-frontend.md`](docs/lineamientos-desarrollo-frontend.md) §2.

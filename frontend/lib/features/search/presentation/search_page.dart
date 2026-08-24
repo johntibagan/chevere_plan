@@ -6,17 +6,16 @@ import '../../../core/cache/cache_ttl.dart';
 import '../../../core/cache/paged_items.dart';
 import '../../../core/di/providers.dart';
 import '../../../core/widgets/app_toast.dart';
-import '../../../core/formatters/date_format.dart';
-import '../../../core/formatters/money_format.dart';
 import '../../../core/l10n/context_l10n.dart';
 import '../../../core/prefetch/site_prefetch.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../../core/widgets/field_action_icon.dart';
+import '../../../core/widgets/app_search_field.dart';
+import '../../../core/widgets/app_select_chip.dart';
+import '../../../core/widgets/app_view_mode_toggle.dart';
 import '../../../core/widgets/tab_screen_header.dart';
 import '../../admin/data/admin_models.dart';
 import '../../home/presentation/home_cards.dart';
 import '../../saves/data/site_ficha.dart';
-import '../../saves/presentation/favorite_heart_button.dart';
 import '../../saves/presentation/open_site_detail.dart';
 import '../data/search_models.dart';
 import '../data/search_repository.dart';
@@ -211,26 +210,16 @@ class _SearchPageState extends ConsumerState<SearchPage> {
               child: Row(
                 children: [
                   Expanded(
-                    child: TextField(
+                    child: AppSearchField(
                       controller: _queryCtrl,
-                      decoration: _boxDec(
-                        label: _advanced
-                            ? l10n.searchLabelText
-                            : l10n.actionSearch,
-                        hint: l10n.searchHintPlace,
-                        suffix: FieldActionIcon(
-                          icon: Icons.search,
-                          tooltip: l10n.actionSearch,
-                          loading: _loading,
-                          onPressed: _loading ? null : _runSearch,
-                        ),
-                      ),
-                      textInputAction: TextInputAction.search,
-                      onSubmitted: (_) => _runSearch(),
+                      hint: l10n.searchHintPlace,
+                      searchTooltip: l10n.actionSearch,
+                      onSearch: _runSearch,
+                      loading: _loading,
                     ),
                   ),
                   const SizedBox(width: 8),
-                  AppRoundIconButton(
+                  AppSquareIconButton(
                     icon: Icons.tune_rounded,
                     selected: _advanced,
                     tooltip: _advanced
@@ -253,9 +242,10 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 children: [
-                  _CategoryChip(
+                  AppSelectChip(
                     label: l10n.searchChipAll,
                     selected: _categoryId == null,
+                    filledPrimary: true,
                     onTap: () => setState(() {
                       _categoryId = null;
                       _invalidateResults();
@@ -263,12 +253,14 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                   ),
                   ...roots.map(
                     (r) => Padding(
-                      padding: const EdgeInsets.only(left: 8),
-                      child: _CategoryChip(
+                      padding: const EdgeInsets.only(left: 6),
+                      child: AppSelectChip(
                         label: r.nameEs,
                         selected: _categoryId == r.id,
+                        accent: homeCategoryTint(r.nameEs),
                         onTap: () => setState(() {
-                          _categoryId = r.id;
+                          _categoryId =
+                              _categoryId == r.id ? null : r.id;
                           _invalidateResults();
                         }),
                       ),
@@ -459,7 +451,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                               child: Text(l10n.actionClear),
                             ),
                           ),
-                          if (_searched && _hits.isNotEmpty)
+                          if (_searched)
                             Padding(
                               padding: const EdgeInsets.only(bottom: 8),
                               child: Row(
@@ -468,26 +460,19 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                                     child: Text(
                                       l10n.searchResultsCount(_hits.length),
                                       style: const TextStyle(
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w700,
-                                        color: AppColors.foreground,
+                                        fontSize: 11,
+                                        color: AppColors.mutedDark,
                                       ),
                                     ),
                                   ),
-                                  AppRoundIconButton(
-                                    icon: Icons.grid_view_rounded,
-                                    selected: _gridView,
-                                    tooltip: l10n.searchViewGrid,
-                                    onTap: () =>
+                                  AppViewModeToggle(
+                                    gridSelected: _gridView,
+                                    onGrid: () =>
                                         setState(() => _gridView = true),
-                                  ),
-                                  const SizedBox(width: 4),
-                                  AppRoundIconButton(
-                                    icon: Icons.view_list_rounded,
-                                    selected: !_gridView,
-                                    tooltip: l10n.searchViewList,
-                                    onTap: () =>
+                                    onList: () =>
                                         setState(() => _gridView = false),
+                                    gridTooltip: l10n.searchViewGrid,
+                                    listTooltip: l10n.searchViewList,
                                   ),
                                 ],
                               ),
@@ -519,7 +504,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                           crossAxisCount: 2,
                           mainAxisSpacing: 12,
                           crossAxisSpacing: 12,
-                          childAspectRatio: 0.90,
+                          childAspectRatio: 1.05,
                         ),
                         delegate: SliverChildBuilderDelegate(
                           (context, index) {
@@ -527,6 +512,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                             return HomePopularCard(
                               hit: h,
                               onTap: () => _openHit(h),
+                              showOriginRow: true,
                             );
                           },
                           childCount: visible.length,
@@ -540,12 +526,9 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                         delegate: SliverChildBuilderDelegate(
                           (context, index) {
                             final h = visible[index];
-                            return Padding(
-                              padding: const EdgeInsets.only(bottom: 8),
-                              child: _SearchHitRow(
-                                hit: h,
-                                onTap: () => _openHit(h),
-                              ),
+                            return HomeSearchListCard(
+                              hit: h,
+                              onTap: () => _openHit(h),
                             );
                           },
                           childCount: visible.length,
@@ -576,202 +559,6 @@ class _SearchPageState extends ConsumerState<SearchPage> {
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-class _CategoryChip extends StatelessWidget {
-  const _CategoryChip({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: selected
-          ? AppColors.primary.withValues(alpha: 0.18)
-          : AppColors.surface,
-      shape: StadiumBorder(
-        side: BorderSide(
-          color: selected ? AppColors.primary : AppColors.border,
-        ),
-      ),
-      child: InkWell(
-        onTap: onTap,
-        customBorder: const StadiumBorder(),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-          child: Text(
-            label,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-              color: selected ? AppColors.primary : AppColors.muted,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _SearchHitRow extends StatelessWidget {
-  const _SearchHitRow({required this.hit, required this.onTap});
-
-  final SearchHit hit;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
-    final accent = hit.isPublic ? AppColors.success : AppColors.purple;
-    return Material(
-      color: AppColors.surface,
-      clipBehavior: Clip.antiAlias,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: accent.withValues(alpha: 0.4)),
-      ),
-      child: InkWell(
-        onTap: onTap,
-        child: IntrinsicHeight(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Container(width: 4, color: accent),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(12, 12, 8, 12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        hit.name,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w700,
-                          fontSize: 15,
-                          color: AppColors.foreground,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        [
-                          if (hit.city != null && hit.city!.isNotEmpty)
-                            hit.city!,
-                          if (hit.department != null &&
-                              hit.department!.isNotEmpty)
-                            hit.department!,
-                          if (hit.estimatedPriceAmount != null)
-                            formatMoney(
-                              hit.estimatedPriceAmount!,
-                              currencyCode: hit.currencyCode,
-                            ),
-                          if (hit.distanceKm != null)
-                            '${hit.distanceKm!.toStringAsFixed(1)} km',
-                        ].join(' · '),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: AppColors.muted,
-                        ),
-                      ),
-                      if (hit.isOwn || hit.isLinked || hit.isCatalog) ...[
-                        const SizedBox(height: 6),
-                        Wrap(
-                          spacing: 6,
-                          runSpacing: 4,
-                          children: [
-                            if (hit.isOwn)
-                              _SearchTag(
-                                label: l10n.labelOwn,
-                                color: AppColors.primary,
-                              ),
-                            if (hit.isLinked)
-                              _SearchTag(
-                                label: l10n.labelLinked,
-                                color: AppColors.purple,
-                              ),
-                            if (hit.isCatalog)
-                              _SearchTag(
-                                label: l10n.labelCatalog,
-                                color: AppColors.catServ,
-                              ),
-                          ],
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.only(right: 10),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    FavoriteHeartButton(
-                      siteId: hit.siteId,
-                      style: FavoriteHeartStyle.icon,
-                    ),
-                    if (hit.updatedAt != null)
-                      Text(
-                        formatDateDmY(hit.updatedAt!),
-                        style: const TextStyle(
-                          fontSize: 11,
-                          color: AppColors.mutedDark,
-                        ),
-                      ),
-                    const SizedBox(width: 4),
-                    const Text(
-                      '>',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.muted,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _SearchTag extends StatelessWidget {
-  const _SearchTag({required this.label, required this.color});
-
-  final String label;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.16),
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: color.withValues(alpha: 0.45)),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.w700,
-          color: color,
         ),
       ),
     );

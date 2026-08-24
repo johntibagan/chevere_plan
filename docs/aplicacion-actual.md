@@ -42,7 +42,7 @@ sequenceDiagram
 | **Inicio** | Saludo + título, campana (cercanía), **banner de recuerdo cercano** (abre preferencias de radio), aviso de borradores, **guardados recientes** (carrusel), **populares cerca**, **acciones rápidas**. Tarjetas con portada, corazón de favorito, badge de red si hay origen, verde/morado por visibilidad |
 | **Explorar** | Búsqueda de sitios (cabecera Figma, chips de categoría, grilla/lista). Misma lógica: texto obligatorio en modo simple, filtros avanzados, incluir públicos |
 | **+ (centro)** | Guardar o completar un lugar (crear y editar son la **misma pantalla**) |
-| **Planes** | Tus itinerarios (tarjeta de crear + lista; el FAB sigue abriendo el mismo flujo) |
+| **Planes** | Tus itinerarios (tarjeta de crear + lista; **un solo** CTA, sin FAB duplicado) |
 | **Rutas** | Historial de paradas visitadas (stats del listado ya cargado + línea de tiempo). Admin no vive acá |
 
 Los tabs que ya abriste se quedan en memoria para que cambiar de pestaña se sienta instantáneo. Las listas pintan caché primero y refrescan detrás.

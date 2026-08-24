@@ -431,7 +431,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get searchModeAdvanced => 'Búsqueda avanzada';
 
   @override
-  String get searchHintPlace => 'Ej. Tunja';
+  String get searchHintPlace => 'Busca lugares, ciudades...';
 
   @override
   String get searchLabelText => 'Texto (nombre o ciudad)';
@@ -486,7 +486,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String searchResultsCount(int count) {
-    return '$count lugares encontrados';
+    return '$count resultados';
   }
 
   @override
@@ -499,13 +499,13 @@ class AppLocalizationsEs extends AppLocalizations {
   String get searchViewList => 'Lista';
 
   @override
-  String get plansSubtitle => 'Organiza tus próximas aventuras';
+  String get plansSubtitle => 'Tus itinerarios guardados';
 
   @override
   String get plansCreateCardTitle => 'Crear un plan';
 
   @override
-  String get plansCreateCardHint => 'Elegí una zona y armá las paradas';
+  String get plansCreateCardHint => 'Título, zona, paradas y presupuesto';
 
   @override
   String get plansSavedHeading => 'Mis planes guardados';

@@ -63,3 +63,23 @@ class VisibilityBadge extends StatelessWidget {
     );
   }
 }
+
+/// Franja izquierda verde/morado. Usar en cards; no repetir la palabra Público/Privado.
+class VisibilityStripe extends StatelessWidget {
+  const VisibilityStripe({
+    super.key,
+    required this.isPublic,
+    this.width = 3,
+  });
+
+  final bool isPublic;
+  final double width;
+
+  @override
+  Widget build(BuildContext context) {
+    return ColoredBox(
+      color: isPublic ? AppColors.success : AppColors.purple,
+      child: SizedBox(width: width),
+    );
+  }
+}
