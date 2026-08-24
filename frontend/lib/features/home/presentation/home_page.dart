@@ -554,19 +554,30 @@ class _InicioTab extends StatelessWidget {
                             color: AppColors.foreground,
                           ),
                         ),
-                        Text(
-                          name,
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: AppColors.muted,
-                          ),
-                        ),
                       ],
                     ),
                   ),
-                  _roundIcon(
-                    icon: Icons.notifications_none_rounded,
-                    onTap: onProximity,
+                  Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      _roundIcon(
+                        icon: Icons.notifications_none_rounded,
+                        onTap: onProximity,
+                      ),
+                      if (profile != null)
+                        Positioned(
+                          top: 6,
+                          right: 6,
+                          child: Container(
+                            width: 7,
+                            height: 7,
+                            decoration: const BoxDecoration(
+                              color: AppColors.accent,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
                   const SizedBox(width: 8),
                   if (isStaff) ...[
@@ -596,7 +607,7 @@ class _InicioTab extends StatelessWidget {
               ),
             ),
           ),
-          if (drafts.isNotEmpty)
+          if (profile != null)
             SliverToBoxAdapter(
               child: Container(
                 margin: const EdgeInsets.fromLTRB(16, 4, 16, 12),
@@ -608,7 +619,7 @@ class _InicioTab extends StatelessWidget {
                   color: Colors.transparent,
                   child: InkWell(
                     borderRadius: BorderRadius.circular(16),
-                    onTap: () => onOpenSave(existing: drafts.first),
+                    onTap: onProximity,
                     child: Padding(
                       padding: const EdgeInsets.all(14),
                       child: Row(
@@ -622,7 +633,7 @@ class _InicioTab extends StatelessWidget {
                             ),
                             child: const Icon(
                               Icons.bolt_rounded,
-                              color: AppColors.onImage,
+                              color: AppColors.background,
                             ),
                           ),
                           const SizedBox(width: 12),
@@ -631,21 +642,30 @@ class _InicioTab extends StatelessWidget {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  l10n.homePendingBadge,
+                                  l10n.homeNearbyMemoryLabel.toUpperCase(),
                                   style: TextStyle(
                                     fontSize: 10,
                                     fontWeight: FontWeight.w800,
+                                    letterSpacing: 0.8,
                                     color: AppColors.background
-                                        .withValues(alpha: 0.55),
-                                    letterSpacing: 0.6,
+                                        .withValues(alpha: 0.5),
                                   ),
                                 ),
                                 Text(
-                                  l10n.homeDraftsToComplete(drafts.length),
+                                  l10n.homeNearbyMemoryTitle,
                                   style: const TextStyle(
                                     fontSize: 13,
                                     fontWeight: FontWeight.w800,
                                     color: AppColors.background,
+                                  ),
+                                ),
+                                Text(
+                                  '${l10n.homeProximityRadius(profile!.proximityRadiusM)}'
+                                  '${profile!.remindPublicSites ? l10n.homeProximityPublicSuffix : ''}',
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    color: AppColors.background
+                                        .withValues(alpha: 0.55),
                                   ),
                                 ),
                               ],
@@ -653,7 +673,7 @@ class _InicioTab extends StatelessWidget {
                           ),
                           Icon(
                             Icons.chevron_right,
-                            color: AppColors.background.withValues(alpha: 0.5),
+                            color: AppColors.background.withValues(alpha: 0.4),
                           ),
                         ],
                       ),
@@ -662,44 +682,63 @@ class _InicioTab extends StatelessWidget {
                 ),
               ),
             ),
-          if (profile != null)
+          if (drafts.isNotEmpty)
             SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                child: Row(
-                  children: [
-                    const Icon(
-                      Icons.radar_rounded,
-                      size: 14,
-                      color: AppColors.accent,
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      '${l10n.homeProximityRadius(profile!.proximityRadiusM)}'
-                      '${profile!.remindPublicSites ? l10n.homeProximityPublicSuffix : ''}',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.foreground,
+              child: Container(
+                margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                decoration: BoxDecoration(
+                  color: AppColors.primarySoft.withValues(alpha: 0.07),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: AppColors.primarySoft.withValues(alpha: 0.19),
+                  ),
+                ),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(12),
+                    onTap: () => onOpenSave(existing: drafts.first),
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.warning_amber_rounded,
+                            size: 16,
+                            color: AppColors.primarySoft,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  l10n.homeDraftsToComplete(drafts.length),
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.primarySoft,
+                                  ),
+                                ),
+                                Text(
+                                  l10n.homeDraftsHint,
+                                  style: const TextStyle(
+                                    fontSize: 10,
+                                    color: AppColors.muted,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Icon(
+                            Icons.chevron_right,
+                            size: 14,
+                            color: AppColors.primarySoft,
+                          ),
+                        ],
                       ),
                     ),
-                    const Spacer(),
-                    TextButton(
-                      onPressed: onProximity,
-                      child: Text(l10n.actionAdjust),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          if (isStaff)
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                child: OutlinedButton.icon(
-                  onPressed: onReports,
-                  icon: const Icon(Icons.flag_outlined),
-                  label: Text(l10n.homeOpenReports),
+                  ),
                 ),
               ),
             ),
@@ -740,7 +779,7 @@ class _InicioTab extends StatelessWidget {
           else
             SliverToBoxAdapter(
               child: SizedBox(
-                height: 176,
+                height: 208,
                 child: ListView.separated(
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
                   scrollDirection: Axis.horizontal,
@@ -822,7 +861,7 @@ class _InicioTab extends StatelessWidget {
                                 crossAxisCount: 2,
                                 mainAxisSpacing: 10,
                                 crossAxisSpacing: 10,
-                                childAspectRatio: 0.90,
+                                childAspectRatio: 1.05,
                               ),
                               itemBuilder: (context, i) {
                                 final hit = nearby[i];

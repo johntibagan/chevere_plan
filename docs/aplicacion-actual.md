@@ -20,7 +20,7 @@ Público y privado se distinguen por **color** (verde / morado), no hace falta r
 1. Abrís la app → pantalla de **iniciar sesión con Google**.
 2. El servidor crea un perfil (nombre, foto, rol `usuario`).
 3. Un correo concreto queda como **root** al resetear la base (dueño del catálogo masivo). Hay también rol **admin**.
-4. Admin y root ven atajos en Inicio (panel y reportes). Sobre **contenido público** actúan casi como dueños. Las **bitácoras privadas no las ven**: solo quien las escribió.
+4. Admin y root entran al **panel** desde el avatar en Inicio. Reportes viven en ese panel. Sobre **contenido público** actúan casi como dueños. Las **bitácoras privadas no las ven**: solo quien las escribió.
 
 ```mermaid
 sequenceDiagram
@@ -39,7 +39,7 @@ sequenceDiagram
 
 | Sitio | Qué ves |
 |---|---|
-| **Inicio** | Saludo, **guardados recientes** (carrusel), **populares cerca**, **acciones rápidas**. Tarjetas con portada por defecto, **corazón de favorito** (relleno si lo marcaste) y badge de red si hay origen |
+| **Inicio** | Saludo + título, campana (cercanía), **banner de recuerdo cercano** (abre preferencias de radio), aviso de borradores, **guardados recientes** (carrusel), **populares cerca**, **acciones rápidas**. Tarjetas con portada, corazón de favorito, badge de red si hay origen, verde/morado por visibilidad |
 | **Explorar** | Búsqueda de sitios (cabecera Figma, chips de categoría, grilla/lista). Misma lógica: texto obligatorio en modo simple, filtros avanzados, incluir públicos |
 | **+ (centro)** | Guardar o completar un lugar (crear y editar son la **misma pantalla**) |
 | **Planes** | Tus itinerarios (tarjeta de crear + lista; el FAB sigue abriendo el mismo flujo) |
@@ -194,7 +194,7 @@ Lista de paradas que marcaste hechas (sitio, plan, fecha). Sirve como “ya pas�
 
 ## 8. Cercanía (“recuerdos”)
 
-En Inicio, hoja corta: radio (100–2000 m) y si querés que cuenten **sitios públicos** además de los tuyos.
+En Inicio, el banner **Recuerdo cercano** (y la campana) abre una hoja corta: radio (100–2000 m) y si querés que cuenten **sitios públicos** además de los tuyos.
 
 El teléfono registra geocercas (tope práctico ~100, priorizando los tuyos). Si entrás al radio, notificación tipo recuerdo. Pedir ubicación “siempre” y el gasto de batería aún se pueden pulir.
 

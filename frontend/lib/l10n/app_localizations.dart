@@ -175,7 +175,7 @@ abstract class AppLocalizations {
   /// No description provided for @greetingMorning.
   ///
   /// In es, this message translates to:
-  /// **'Buenos días'**
+  /// **'Buenos días ☀️'**
   String get greetingMorning;
 
   /// No description provided for @greetingAfternoon.
@@ -297,6 +297,24 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **' · públicos'**
   String get homeProximityPublicSuffix;
+
+  /// No description provided for @homeNearbyMemoryLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Recuerdo cercano'**
+  String get homeNearbyMemoryLabel;
+
+  /// No description provided for @homeNearbyMemoryTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Te avisamos cuando estés cerca'**
+  String get homeNearbyMemoryTitle;
+
+  /// No description provided for @homeDraftsHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Completalo para poder compartirlo'**
+  String get homeDraftsHint;
 
   /// No description provided for @homeOpenReports.
   ///

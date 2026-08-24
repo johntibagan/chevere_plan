@@ -7,7 +7,7 @@ Contratos que no se pueden romper: [`invariantes.md`](invariantes.md).
 
 **Marca en código:** Chevere Plan (`com.chevere.plan`). El prototipo Make a veces dice “Chebre Plan”; al diseñar, usar **Chevere Plan**.
 
-**Referencia visual previa:** Figma Make [Guardados app diseño](https://www.figma.com/make/HhANLxoeQuTr5YJZnTAfG7/Guardados-app-dise%C3%B1o) (`fileKey` `HhANLxoeQuTr5YJZnTAfG7`). Lo de abajo es **lo implementado**, no el Make al 100 %.
+**Referencia visual:** Figma Make [Guardados app diseño](https://www.figma.com/make/HhANLxoeQuTr5YJZnTAfG7/Guardados-app-dise%C3%B1o) (`fileKey` `HhANLxoeQuTr5YJZnTAfG7`). Snapshot en el repo: [`design/figma-make/`](../design/figma-make/README.md). Lo de abajo es **lo implementado en Flutter**, no el Make al 100 %.
 
 ---
 
@@ -167,8 +167,8 @@ Todo el texto de producto está en `app_es.arb` (i18n).
 | `HomeSourceBadge` | `home_cards.dart` | Pastilla 2 letras, color de red. |
 | `HomeCategoryChip` | mismo | Chip 9 px, tinte por nombre de categoría. |
 | `HomeSectionHeader` | mismo | Título de sección + “ver todo” primary. |
-| `HomeRecentRailCard` | mismo | Carrusel: cover + badge red + candado + corazón + nombre/ciudad overlay. |
-| `HomePopularCard` | mismo | Grid: cover 100 px, corazón, ciudad, precio, nombre, depto, km/fecha. Borde verde/morado. |
+| `HomeRecentRailCard` | mismo | Carrusel: cover 144×176, badge red, borrador, corazón, ojo/candado, nombre/ciudad, chip categoría. |
+| `HomePopularCard` | mismo | Grid: franja verde/morado 3 px, cover 100 px, corazón, ciudad, nombre, km y precio. |
 | `HomeQuickAction` | mismo | Tile 3 acciones: icono en círculo tintado + label 10 px. |
 | `VisibilityBadge` | `visibility_badge.dart` | Icono público/privado. |
 | `AppListCard` | `app_list_card.dart` | `Card` theme, margin bottom 8. |
@@ -207,14 +207,14 @@ Barra inferior `sidebar`, borde top `border`:
 
 Tab activo: icono + label `primary`. Inactivo: `mutedDark`, label 10 px.
 
-**Inicio (`_HomeTab`)** — sin AppBar:
+**Inicio (`_InicioTab`)** — sin AppBar:
 
-1. Saludo 11 mutedDark + título app 22 + nombre 12 muted.
-2. Iconos redondos: notificaciones (abre sheet proximidad), logout. Staff: avatar initial en círculo primary 20% → Admin; flag → reportes.
-3. Banners de **borradores** (lista compacta, icono edit/place).
-4. Sección **Guardados recientes**: carrusel horizontal 176 px. “Ver todos” expande a 5+.
-5. **Populares cerca**: grid 2 col. Vacío / sin GPS: texto muted.
-6. **Acciones rápidas**: 3 `HomeQuickAction` (cerca, más guardados, por categoría) — cambian de tab o filtran; no son pantallas nuevas.
+1. Saludo 11 mutedDark + título app 22 ExtraBold. Campana (proximidad, punto accent) + logout. Staff: avatar initial → Admin.
+2. Banner **Recuerdo cercano** (gradiente primary, abre sheet de radio).
+3. Aviso de **borradores** (card naranja, no el gradiente).
+4. **Guardados recientes**: carrusel ~208 px. “Ver todos” expande a 5+.
+5. **Populares cerca**: grid 2 col, franja de visibilidad. Vacío / sin GPS: texto muted.
+6. **Acciones rápidas**: 3 tiles (cerca, más guardados, por categoría) — cambian de tab o listan; no son pantallas nuevas.
 7. Padding bottom grande por `extendBody`.
 
 ### 6.3 Explorar — `SearchPage`

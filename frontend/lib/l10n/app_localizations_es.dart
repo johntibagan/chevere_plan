@@ -48,7 +48,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get actionSearch => 'Buscar';
 
   @override
-  String get greetingMorning => 'Buenos días';
+  String get greetingMorning => 'Buenos días ☀️';
 
   @override
   String get greetingAfternoon => 'Buenas tardes';
@@ -114,6 +114,15 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get homeProximityPublicSuffix => ' · públicos';
+
+  @override
+  String get homeNearbyMemoryLabel => 'Recuerdo cercano';
+
+  @override
+  String get homeNearbyMemoryTitle => 'Te avisamos cuando estés cerca';
+
+  @override
+  String get homeDraftsHint => 'Completalo para poder compartirlo';
 
   @override
   String get homeOpenReports => 'Reportes abiertos';

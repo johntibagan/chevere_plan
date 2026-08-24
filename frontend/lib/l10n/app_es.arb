@@ -13,7 +13,7 @@
   "actionComplete": "Completar",
   "actionAdjust": "Ajustar",
   "actionSearch": "Buscar",
-  "greetingMorning": "Buenos días",
+  "greetingMorning": "Buenos días ☀️",
   "greetingAfternoon": "Buenas tardes",
   "greetingEvening": "Buenas noches",
   "loginAcceptLegal": "Acepto los documentos legales del MVP.",
@@ -44,6 +44,9 @@
     }
   },
   "homeProximityPublicSuffix": " · públicos",
+  "homeNearbyMemoryLabel": "Recuerdo cercano",
+  "homeNearbyMemoryTitle": "Te avisamos cuando estés cerca",
+  "homeDraftsHint": "Completalo para poder compartirlo",
   "homeOpenReports": "Reportes abiertos",
   "homeMySaves": "Mis guardados",
   "homeRecentSaves": "Guardados recientes",

@@ -160,7 +160,7 @@ class HomeCategoryChip extends StatelessWidget {
   }
 }
 
-/// Carrusel Figma: foto 144×176, nombre encima, categoría debajo.
+/// Carrusel Figma: foto 144×176, visibilidad + nombre, categoría debajo.
 class HomeRecentRailCard extends StatelessWidget {
   const HomeRecentRailCard({
     super.key,
@@ -173,18 +173,19 @@ class HomeRecentRailCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final cat = save.categoryNames.isNotEmpty ? save.categoryNames.first : null;
     return SizedBox(
       width: 144,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
               child: ClipRRect(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(16),
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
@@ -194,42 +195,48 @@ class HomeRecentRailCard extends StatelessWidget {
                         gradient: LinearGradient(
                           begin: Alignment.topCenter,
                           end: Alignment.bottomCenter,
-                          colors: [Colors.transparent, Color(0xCC000000)],
+                          colors: [Colors.transparent, Color(0xBF000000)],
                         ),
                       ),
                     ),
                     Positioned(
                       top: 8,
                       left: 8,
-                      child: HomeSourceBadge(network: save.sourceNetwork),
+                      child: Row(
+                        children: [
+                          HomeSourceBadge(network: save.sourceNetwork),
+                          if (save.isIncomplete) ...[
+                            if (save.sourceNetwork != null &&
+                                save.sourceNetwork!.isNotEmpty)
+                              const SizedBox(width: 4),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppColors.primarySoft.withValues(
+                                  alpha: 0.22,
+                                ),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                l10n.statusDraft,
+                                style: const TextStyle(
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.w800,
+                                  color: AppColors.primarySoft,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
                     ),
                     Positioned(
                       top: 8,
                       right: 8,
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          if (!save.isPublic)
-                            const Padding(
-                              padding: EdgeInsets.only(right: 6),
-                              child: DecoratedBox(
-                                decoration: BoxDecoration(
-                                  color: Color(0x99000000),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Padding(
-                                  padding: EdgeInsets.all(4),
-                                  child: Icon(
-                                    Icons.lock_rounded,
-                                    size: 10,
-                                    color: AppColors.purple,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          FavoriteHeartButton(siteId: save.siteId),
-                        ],
-                      ),
+                      child: FavoriteHeartButton(siteId: save.siteId),
                     ),
                     Positioned(
                       left: 8,
@@ -238,6 +245,16 @@ class HomeRecentRailCard extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          Icon(
+                            save.isPublic
+                                ? Icons.visibility_outlined
+                                : Icons.lock_rounded,
+                            size: 12,
+                            color: save.isPublic
+                                ? AppColors.success
+                                : AppColors.purple,
+                          ),
+                          const SizedBox(height: 2),
                           Text(
                             save.siteName,
                             maxLines: 1,
@@ -274,7 +291,7 @@ class HomeRecentRailCard extends StatelessWidget {
   }
 }
 
-/// Grilla Figma 2 columnas: foto 144px, nombre, barrio/ciudad, categoría y fecha.
+/// Grilla Figma 2 columnas: franja de visibilidad, foto 100px, nombre y precio.
 class HomePopularCard extends StatelessWidget {
   const HomePopularCard({
     super.key,
@@ -287,17 +304,14 @@ class HomePopularCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = context.l10n;
     final price = hit.estimatedPriceAmount;
+    final stripe = hit.isPublic ? AppColors.success : AppColors.purple;
     return Material(
       color: AppColors.surface,
       clipBehavior: Clip.antiAlias,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: BorderSide(
-          color: (hit.isPublic ? AppColors.success : AppColors.purple)
-              .withValues(alpha: 0.35),
-        ),
+        side: const BorderSide(color: AppColors.border),
       ),
       child: InkWell(
         onTap: onTap,
@@ -315,72 +329,53 @@ class HomePopularCard extends StatelessWidget {
                       gradient: LinearGradient(
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
-                        colors: [Colors.transparent, Color(0xB3000000)],
+                        colors: [Colors.transparent, Color(0xA6000000)],
                       ),
                     ),
                   ),
                   Positioned(
-                    top: 8,
-                    left: 8,
-                    child: Row(
-                      children: [
-                        if (!hit.isPublic)
-                          const Padding(
-                            padding: EdgeInsets.only(right: 6),
-                            child: Icon(
-                              Icons.lock_rounded,
-                              size: 12,
-                              color: AppColors.purple,
-                            ),
-                          ),
-                      ],
-                    ),
+                    left: 0,
+                    top: 0,
+                    bottom: 0,
+                    child: Container(width: 3, color: stripe),
                   ),
                   Positioned(
-                    top: 8,
-                    right: 8,
+                    top: 6,
+                    right: 6,
                     child: FavoriteHeartButton(siteId: hit.siteId),
                   ),
                   Positioned(
-                    left: 8,
-                    bottom: 8,
+                    left: 10,
+                    bottom: 6,
+                    right: 36,
                     child: Row(
                       children: [
                         const Icon(
                           Icons.place,
-                          size: 10,
+                          size: 9,
                           color: AppColors.primary,
                         ),
                         const SizedBox(width: 4),
-                        Text(
-                          hit.city ?? hit.department ?? '',
-                          style: const TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.onImage,
+                        Expanded(
+                          child: Text(
+                            hit.city ?? hit.department ?? '',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w500,
+                              color: AppColors.onImage,
+                            ),
                           ),
                         ),
                       ],
                     ),
                   ),
-                  if (price != null)
-                    Positioned(
-                      right: 8,
-                      bottom: 8,
-                      child: Text(
-                        formatMoney(price, currencyCode: hit.currencyCode),
-                        style: const TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.primary,
-                        ),
-                      ),
-                    ),
                 ],
               ),
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(8, 6, 8, 8),
+              padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -389,24 +384,11 @@ class HomePopularCard extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
-                      fontSize: 13,
+                      fontSize: 12,
                       fontWeight: FontWeight.w800,
                       color: AppColors.foreground,
                     ),
                   ),
-                  if (hit.department != null && hit.department!.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 2),
-                      child: Text(
-                        hit.department!,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 10,
-                          color: AppColors.muted,
-                        ),
-                      ),
-                    ),
                   const SizedBox(height: 4),
                   Row(
                     children: [
@@ -414,18 +396,20 @@ class HomePopularCard extends StatelessWidget {
                         Text(
                           '${hit.distanceKm!.toStringAsFixed(1)} km',
                           style: const TextStyle(
-                            fontSize: 9,
+                            fontSize: 10,
                             color: AppColors.mutedDark,
                           ),
                         ),
                       const Spacer(),
-                      Text(
-                        homeSavedAgo(l10n, hit.updatedAt),
-                        style: const TextStyle(
-                          fontSize: 9,
-                          color: AppColors.mutedDark,
+                      if (price != null)
+                        Text(
+                          formatMoney(price, currencyCode: hit.currencyCode),
+                          style: const TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.primary,
+                          ),
                         ),
-                      ),
                     ],
                   ),
                 ],
