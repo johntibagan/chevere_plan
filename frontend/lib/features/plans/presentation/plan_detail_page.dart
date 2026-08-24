@@ -21,6 +21,7 @@ import '../../saves/presentation/open_site_detail.dart';
 import '../data/maps_export.dart';
 import '../data/plan_models.dart';
 import '../data/plans_repository.dart';
+import 'create_plan_page.dart';
 import 'plan_builder_page.dart';
 import 'plan_timeline.dart';
 
@@ -81,6 +82,21 @@ class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
           .invalidate(CacheKeys.plansPage0(uid));
     }
     ref.invalidate(plansProvider);
+  }
+
+  Future<void> _openEdit() async {
+    final plan = _plan;
+    if (plan == null) return;
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => CreatePlanPage(
+          repository: widget.repository,
+          existing: plan,
+        ),
+      ),
+    );
+    await _load();
+    await _invalidatePlansCache();
   }
 
   Future<void> _openBuilder() async {
@@ -292,6 +308,15 @@ class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              ListTile(
+                key: WidgetKeys.planMenuEdit,
+                leading: const Icon(Icons.edit_outlined),
+                title: Text(l10n.planMenuEdit),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _openEdit();
+                },
+              ),
               ListTile(
                 leading: const Icon(Icons.map_outlined),
                 title: Text(l10n.planMenuOpenMaps),

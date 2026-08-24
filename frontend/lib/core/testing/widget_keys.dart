@@ -82,6 +82,7 @@ abstract final class WidgetKeys {
   static const planStatBudget = Key('plan_stat_budget');
   static const planDeleteConfirm = Key('plan_delete_confirm');
   static const planMenuDelete = Key('plan_menu_delete');
+  static const planMenuEdit = Key('plan_menu_edit');
 
   static const routesPage = Key('routes_page');
   static const routesEmpty = Key('routes_empty');

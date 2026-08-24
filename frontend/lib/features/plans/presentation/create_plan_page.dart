@@ -16,11 +16,17 @@ import '../data/plan_models.dart';
 import '../data/plans_repository.dart';
 import 'plan_builder_page.dart';
 
-/// Paso 1: título, zona, públicos y tope → borrador y builder.
+/// Crear o editar datos del plan (título, zona, públicos, presupuesto).
+/// Las paradas se arman en [PlanBuilderPage].
 class CreatePlanPage extends ConsumerStatefulWidget {
-  const CreatePlanPage({super.key, required this.repository});
+  const CreatePlanPage({
+    super.key,
+    required this.repository,
+    this.existing,
+  });
 
   final PlansRepository repository;
+  final Plan? existing;
 
   @override
   ConsumerState<CreatePlanPage> createState() => _CreatePlanPageState();
@@ -32,6 +38,25 @@ class _CreatePlanPageState extends ConsumerState<CreatePlanPage> {
   final _budgetCtrl = TextEditingController();
   bool _includePublic = true;
   bool _saving = false;
+
+  bool get _isEdit => widget.existing != null;
+
+  @override
+  void initState() {
+    super.initState();
+    final p = widget.existing;
+    if (p == null) return;
+    final defaultTitle = p.title.trim() == 'Plan sin título';
+    _titleCtrl.text = defaultTitle ? '' : p.title;
+    _zoneCtrl.text = p.locationQuery;
+    _includePublic = p.includePublic;
+    final budget = p.maxBudgetAmount;
+    if (budget != null) {
+      _budgetCtrl.text = budget == budget.roundToDouble()
+          ? budget.round().toString()
+          : '$budget';
+    }
+  }
 
   @override
   void dispose() {
@@ -61,6 +86,27 @@ class _CreatePlanPageState extends ConsumerState<CreatePlanPage> {
       final budget = budgetRaw.isEmpty ? null : double.tryParse(budgetRaw);
       final zone = _zoneCtrl.text.trim();
       final title = _titleCtrl.text.trim();
+      final existing = widget.existing;
+      if (existing != null) {
+        await widget.repository.updatePlanMeta(
+          planId: existing.id,
+          title: title,
+          locationQuery: zone,
+          includePublic: _includePublic,
+          maxBudget: budget,
+        );
+        final uid = ref.read(supabaseClientProvider).auth.currentUser?.id;
+        if (uid != null) {
+          await ref
+              .read(entityCacheStoreProvider)
+              .invalidate(CacheKeys.plansPage0(uid));
+        }
+        ref.invalidate(plansProvider);
+        if (!mounted) return;
+        AppToast.show(context, context.l10n.planEditSaved);
+        Navigator.of(context).pop(true);
+        return;
+      }
       final Plan plan;
       if (title.isEmpty && zone.isEmpty) {
         plan = await widget.repository.createDraft(title: '');
@@ -101,7 +147,9 @@ class _CreatePlanPageState extends ConsumerState<CreatePlanPage> {
     final l10n = context.l10n;
     return Scaffold(
       key: WidgetKeys.createPlanPage,
-      appBar: AppBar(title: Text(l10n.planCreateTitle)),
+      appBar: AppBar(
+        title: Text(_isEdit ? l10n.planEditTitle : l10n.planCreateTitle),
+      ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
         children: [
@@ -118,7 +166,11 @@ class _CreatePlanPageState extends ConsumerState<CreatePlanPage> {
             controller: _titleCtrl,
             textCapitalization: TextCapitalization.sentences,
             textInputAction: TextInputAction.next,
-            decoration: _fieldDec(hint: l10n.planCreateStepTitleHint),
+            decoration: _fieldDec(
+              hint: _isEdit
+                  ? l10n.planEditTitleHint
+                  : l10n.planCreateStepTitleHint,
+            ),
           ),
           const SizedBox(height: 16),
           AppSectionLabel(text: l10n.planStatZone, bottom: 8),
@@ -186,7 +238,7 @@ class _CreatePlanPageState extends ConsumerState<CreatePlanPage> {
                     width: 22,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
-                : Text(l10n.planCreateNextStops),
+                : Text(_isEdit ? l10n.actionSave : l10n.planCreateNextStops),
           ),
         ],
       ),

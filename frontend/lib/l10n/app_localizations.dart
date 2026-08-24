@@ -1942,6 +1942,30 @@ abstract class AppLocalizations {
   /// **'Agregar sitios'**
   String get planMenuAddSites;
 
+  /// No description provided for @planMenuEdit.
+  ///
+  /// In es, this message translates to:
+  /// **'Editar plan'**
+  String get planMenuEdit;
+
+  /// No description provided for @planEditTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Editar plan'**
+  String get planEditTitle;
+
+  /// No description provided for @planEditTitleHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Nombre, zona y presupuesto de este plan.'**
+  String get planEditTitleHint;
+
+  /// No description provided for @planEditSaved.
+  ///
+  /// In es, this message translates to:
+  /// **'Plan actualizado.'**
+  String get planEditSaved;
+
   /// No description provided for @planMenuShare.
   ///
   /// In es, this message translates to:

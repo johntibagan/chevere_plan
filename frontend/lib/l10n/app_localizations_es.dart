@@ -1018,6 +1018,18 @@ class AppLocalizationsEs extends AppLocalizations {
   String get planMenuAddSites => 'Agregar sitios';
 
   @override
+  String get planMenuEdit => 'Editar plan';
+
+  @override
+  String get planEditTitle => 'Editar plan';
+
+  @override
+  String get planEditTitleHint => 'Nombre, zona y presupuesto de este plan.';
+
+  @override
+  String get planEditSaved => 'Plan actualizado.';
+
+  @override
   String get planMenuShare => 'Compartir';
 
   @override

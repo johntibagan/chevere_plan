@@ -258,9 +258,9 @@ Tab activo: icono + label `primary`. Inactivo: `mutedDark`, label 10 px.
 - Card de plan: portada 96 px (`SiteCover` + `SiteCoverScrim`) + `AppStatusPill` + título overlay + fila meta (zona, N sitios, presupuesto).
 - Vacío: mensaje bajo el heading, CTA sigue visible.
 
-### 6.7 Crear plan — `CreatePlanPage`
+### 6.7 Crear / editar plan — `CreatePlanPage`
 
-Formulario: título, zona, incluir públicos, tope presupuesto. Card atenuada **IA** abre `ComingSoonPage` (no genera planes). Luego `PlanBuilderPage`.
+Formulario: título, zona, incluir públicos, tope presupuesto. **Crear y editar = misma pantalla** (editar precarga). Card atenuada **IA** abre `ComingSoonPage` (no genera planes). Al crear: `PlanBuilderPage`. Al editar: Guardar y vuelve al detalle. Paradas: `+` / builder.
 
 ### 6.8 Armar paradas — `PlanBuilderPage`
 
@@ -274,7 +274,7 @@ Chips internos: buscar / resultados / añadidos. `AppSearchField` + filtros avan
 - `PlanTimeline`: puntos primary/success, arrastre si 2+, check visitado, borrar.
 - Barra inferior: **Llevar a Maps** + share + `+` (builder). **Sin FAB** duplicado. Maps: origen GPS, destino **nombre** del sitio (no centroide).
 - Fila atenuada “Transporte entre paradas” → `ComingSoonPage` (no se calcula medio).
-- ⋮: Maps, share, eliminar (sheet).
+- ⋮: editar (título/zona/presupuesto/públicos), Maps, share, eliminar (sheet).
 
 ### 6.10 Rutas — `MyRoutesPage`
 

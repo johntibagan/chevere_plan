@@ -168,7 +168,7 @@ flowchart LR
 
 ## 6. Planes
 
-1. Crear plan: título, zona (texto), si incluye públicos, tope de presupuesto. Hay una fila “IA” que abre **en construcción** (no arma el plan sola).
+1. Crear o **editar** plan: misma pantalla (título, zona, públicos, tope de presupuesto). Al crear, sigue el armado de paradas. Al editar (⋮ en el detalle) guarda y vuelve. Hay una fila “IA” que abre **en construcción** (no arma el plan sola).
 2. El servidor propone **candidatos** de tus guardados (y públicos si marcaste).
 3. Armás paradas. En la lista “añadidos” y en el detalle, con **2+ paradas**, arrastrás el orden; se guarda.
 4. Detalle (look Figma): portada, stats de paradas/presupuesto/zona, itinerario, **Llevar a Maps**, compartir y `+` en la misma barra. Seguir: abrir ficha, marcar visitado (pasa a **Rutas**), reordenar. El `+` agrega sitios. No hay transporte inventado en stats. **Llevar a Maps** usa tu GPS como origen y el **nombre** de cada parada como destino (no el centroide DIVIPOLA: ese pin lo convierte Maps en el negocio más cercano). Si el sitio tiene **Punto exacto**, ahí sí manda lat/lng.

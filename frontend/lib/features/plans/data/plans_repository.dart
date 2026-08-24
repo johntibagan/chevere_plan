@@ -265,13 +265,19 @@ class PlansRepository {
     await _client.from('plans').delete().eq('id', planId);
   }
 
-  Future<void> updateTitle({
+  Future<void> updatePlanMeta({
     required String planId,
     required String title,
+    required String locationQuery,
+    required bool includePublic,
+    double? maxBudget,
   }) async {
     final trimmed = title.trim();
     await _client.from('plans').update({
       'title': trimmed.isEmpty ? 'Plan sin título' : trimmed,
+      'location_query': locationQuery.trim(),
+      'include_public': includePublic,
+      'max_budget_amount': maxBudget,
     }).eq('id', planId);
   }
 

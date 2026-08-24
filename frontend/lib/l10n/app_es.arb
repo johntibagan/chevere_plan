@@ -400,6 +400,10 @@
     }
   },
   "planMenuAddSites": "Agregar sitios",
+  "planMenuEdit": "Editar plan",
+  "planEditTitle": "Editar plan",
+  "planEditTitleHint": "Nombre, zona y presupuesto de este plan.",
+  "planEditSaved": "Plan actualizado.",
   "planMenuShare": "Compartir",
   "planMenuOpenMaps": "Llevar a Maps",
   "planMenuMore": "Más opciones",
