@@ -2073,6 +2073,49 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Km inválido'**
   String get adminKmInvalid;
+
+  /// No description provided for @comingSoonBadge.
+  String get comingSoonBadge;
+
+  /// No description provided for @comingSoonAiTitle.
+  String get comingSoonAiTitle;
+
+  /// No description provided for @comingSoonAiBody.
+  String get comingSoonAiBody;
+
+  /// No description provided for @comingSoonTransportTitle.
+  String get comingSoonTransportTitle;
+
+  /// No description provided for @comingSoonTransportBody.
+  String get comingSoonTransportBody;
+
+  /// No description provided for @planZoneHint.
+  String get planZoneHint;
+
+  /// No description provided for @planIncludePublicSubtitle.
+  String get planIncludePublicSubtitle;
+
+  /// No description provided for @planCreateNextStops.
+  String get planCreateNextStops;
+
+  /// No description provided for @planCreateAiCta.
+  String get planCreateAiCta;
+
+  /// No description provided for @categoryPickerSelectGroup.
+  String get categoryPickerSelectGroup;
+
+  String categoryPickerSummary(int total, int groups);
+
+  String categoryPickerResults(int count);
+
+  /// No description provided for @adminStatCategories.
+  String get adminStatCategories;
+
+  /// No description provided for @adminStatVehicles.
+  String get adminStatVehicles;
+
+  /// No description provided for @adminStatReports.
+  String get adminStatReports;
 }
 
 class _AppLocalizationsDelegate

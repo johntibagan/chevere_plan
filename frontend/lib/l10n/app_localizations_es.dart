@@ -1083,4 +1083,56 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get adminKmInvalid => 'Km inválido';
+
+  @override
+  String get comingSoonBadge => 'Próximamente';
+
+  @override
+  String get comingSoonAiTitle => 'Armame un plan con IA';
+
+  @override
+  String get comingSoonAiBody =>
+      'La generación automática de planes estará disponible más adelante. Podés armar el plan eligiendo sitios que ya guardaste.';
+
+  @override
+  String get comingSoonTransportTitle => 'Transporte entre paradas';
+
+  @override
+  String get comingSoonTransportBody =>
+      'El cálculo de transporte sugerido entre paradas estará disponible más adelante.';
+
+  @override
+  String get planZoneHint => 'Ej. Villa de Leyva, Boyacá';
+
+  @override
+  String get planIncludePublicSubtitle =>
+      'Suma sitios públicos de otros a las opciones';
+
+  @override
+  String get planCreateNextStops => 'Siguiente: armar paradas';
+
+  @override
+  String get planCreateAiCta => 'Armame un plan con IA';
+
+  @override
+  String get categoryPickerSelectGroup => 'Seleccionar todo el grupo';
+
+  @override
+  String categoryPickerSummary(int total, int groups) {
+    return '$total categorías · $groups grupos';
+  }
+
+  @override
+  String categoryPickerResults(int count) {
+    return '$count resultado(s)';
+  }
+
+  @override
+  String get adminStatCategories => 'Categorías';
+
+  @override
+  String get adminStatVehicles => 'Vehículos';
+
+  @override
+  String get adminStatReports => 'Reportes abiertos';
 }

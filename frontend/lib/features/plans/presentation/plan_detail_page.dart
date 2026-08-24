@@ -10,8 +10,12 @@ import '../../../core/formatters/money_format.dart';
 import '../../../core/l10n/context_l10n.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_busy_overlay.dart';
+import '../../../core/widgets/app_section_label.dart';
+import '../../../core/widgets/app_stat_card.dart';
 import '../../../core/widgets/app_toast.dart';
+import '../../../core/widgets/coming_soon_page.dart';
 import '../../../core/widgets/site_cover.dart';
+import '../../../core/widgets/tab_screen_header.dart';
 import '../../saves/presentation/open_site_detail.dart';
 import '../data/maps_export.dart';
 import '../data/plan_models.dart';
@@ -324,17 +328,6 @@ class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
     final plan = _plan;
 
     return Scaffold(
-      floatingActionButton: plan == null
-          ? null
-          : Padding(
-              padding: const EdgeInsets.only(bottom: 64),
-              child: FloatingActionButton(
-                heroTag: 'plan_add_fab',
-                tooltip: l10n.planMenuAddSites,
-                onPressed: _busy ? null : _openBuilder,
-                child: const Icon(Icons.add),
-              ),
-            ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : plan == null
@@ -350,14 +343,9 @@ class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
                     _PlanStatsRow(plan: plan),
                     Padding(
                       padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                      child: Text(
-                        l10n.planItinerary,
-                        style: const TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 0.7,
-                          color: AppColors.mutedDark,
-                        ),
+                      child: AppSectionLabel(
+                        text: l10n.planItinerary,
+                        bottom: 0,
                       ),
                     ),
                     Expanded(
@@ -372,6 +360,15 @@ class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
                         onToggleVisited: _busy ? null : _toggleVisited,
                         onRemove: _busy ? null : _removeStop,
                         onReorder: _busy ? null : _reorderStops,
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                      child: ComingSoonCard(
+                        title: l10n.comingSoonTransportTitle,
+                        subtitle: l10n.comingSoonBadge,
+                        pageTitle: l10n.comingSoonTransportTitle,
+                        pageBody: l10n.comingSoonTransportBody,
                       ),
                     ),
                     SafeArea(
@@ -391,10 +388,17 @@ class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
                               ),
                             ),
                             const SizedBox(width: 8),
-                            IconButton.filledTonal(
+                            AppSquareIconButton(
+                              icon: Icons.ios_share_outlined,
                               tooltip: l10n.planMenuShare,
-                              onPressed: _busy ? null : _share,
-                              icon: const Icon(Icons.ios_share_outlined),
+                              onTap: _busy ? () {} : _share,
+                            ),
+                            const SizedBox(width: 8),
+                            AppSquareIconButton(
+                              icon: Icons.add,
+                              tooltip: l10n.planMenuAddSites,
+                              selected: true,
+                              onTap: _busy ? () {} : _openBuilder,
                             ),
                           ],
                         ),
@@ -525,71 +529,26 @@ class _PlanStatsRow extends StatelessWidget {
       child: Row(
         children: [
           Expanded(
-            child: _StatTile(
+            child: AppStatCard(
               value: '${plan.stops.length}',
               label: l10n.planStatStops,
-              color: AppColors.accent,
+              valueColor: AppColors.accent,
             ),
           ),
           const SizedBox(width: 8),
           Expanded(
-            child: _StatTile(
+            child: AppStatCard(
               value: budget,
               label: l10n.planStatBudget,
-              color: AppColors.success,
+              valueColor: AppColors.success,
             ),
           ),
           const SizedBox(width: 8),
           Expanded(
-            child: _StatTile(
+            child: AppStatCard(
               value: zone,
               label: l10n.planStatZone,
-              color: AppColors.primary,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _StatTile extends StatelessWidget {
-  const _StatTile({
-    required this.value,
-    required this.label,
-    required this.color,
-  });
-
-  final String value;
-  final String label;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        children: [
-          Text(
-            value,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w800,
-              color: color,
-            ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 9,
-              color: AppColors.mutedDark,
+              valueColor: AppColors.primary,
             ),
           ),
         ],

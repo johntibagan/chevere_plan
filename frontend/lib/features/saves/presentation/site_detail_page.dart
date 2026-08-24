@@ -13,6 +13,9 @@ import '../../../core/formatters/money_format.dart';
 import '../../../core/l10n/context_l10n.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_network_image.dart';
+import '../../../core/widgets/site_cover.dart';
+import '../../../core/widgets/site_origin_tags.dart';
+import '../../../core/widgets/tab_screen_header.dart';
 import '../../../core/widgets/visibility_badge.dart';
 import '../../auth/data/profile.dart';
 import '../../moderation/data/moderation_models.dart';
@@ -466,67 +469,145 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
       },
       child: Scaffold(
         backgroundColor: AppColors.background,
-        appBar: AppBar(
-          title: Text(
-            ficha?.name ?? l10n.siteDetailTitle,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back),
-            onPressed: () => Navigator.of(context).pop(_outcome),
-          ),
-          actions: [
-            FavoriteHeartButton(
-              siteId: widget.siteId,
-              style: FavoriteHeartStyle.icon,
-            ),
-            if (_canEditSite)
-              PopupMenuButton<String>(
-                tooltip: 'Acciones',
-                onSelected: (v) {
-                  switch (v) {
-                    case 'edit':
-                      _edit();
-                    case 'discard':
-                      _discard();
-                  }
-                },
-                itemBuilder: (context) => [
-                  PopupMenuItem(
-                    value: 'edit',
-                    child: ListTile(
-                      dense: true,
-                      contentPadding: EdgeInsets.zero,
-                      leading: const Icon(Icons.edit_outlined),
-                      title: Text(l10n.actionEdit),
+        body: Column(
+          children: [
+            SafeArea(
+              bottom: false,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(8, 4, 8, 8),
+                child: Row(
+                  children: [
+                    AppRoundIconButton(
+                      icon: Icons.arrow_back_rounded,
+                      onTap: () => Navigator.of(context).pop(_outcome),
                     ),
-                  ),
-                  if (ficha?.isOwn == true)
-                    PopupMenuItem(
-                      value: 'discard',
-                      child: ListTile(
-                        dense: true,
-                        contentPadding: EdgeInsets.zero,
-                        leading: const Icon(Icons.delete_outline),
-                        title: Text(l10n.actionDiscard),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        ficha?.name ?? l10n.siteDetailTitle,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.foreground,
+                        ),
                       ),
                     ),
-                ],
+                    FavoriteHeartButton(
+                      siteId: widget.siteId,
+                      style: FavoriteHeartStyle.icon,
+                    ),
+                    if (_canEditSite)
+                      PopupMenuButton<String>(
+                        tooltip: l10n.actionEdit,
+                        onSelected: (v) {
+                          switch (v) {
+                            case 'edit':
+                              _edit();
+                            case 'discard':
+                              _discard();
+                          }
+                        },
+                        itemBuilder: (context) => [
+                          PopupMenuItem(
+                            value: 'edit',
+                            child: ListTile(
+                              dense: true,
+                              contentPadding: EdgeInsets.zero,
+                              leading: const Icon(Icons.edit_outlined),
+                              title: Text(l10n.actionEdit),
+                            ),
+                          ),
+                          if (ficha?.isOwn == true)
+                            PopupMenuItem(
+                              value: 'discard',
+                              child: ListTile(
+                                dense: true,
+                                contentPadding: EdgeInsets.zero,
+                                leading: const Icon(Icons.delete_outline),
+                                title: Text(l10n.actionDiscard),
+                              ),
+                            ),
+                        ],
+                      ),
+                  ],
+                ),
               ),
-          ],
-          bottom: TabBar(
-            controller: _tabs,
-            tabs: [
-              Tab(text: l10n.siteDetailTabInfo),
-              Tab(text: l10n.siteDetailTabReviews),
-              Tab(text: l10n.siteDetailTabMore),
-            ],
-          ),
-        ),
-        body: _loading && ficha == null
-            ? const Center(child: CircularProgressIndicator())
-            : _error != null && ficha == null
+            ),
+            if (ficha != null)
+              SizedBox(
+                height: 176,
+                width: double.infinity,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    SiteCover(
+                      imageUrl: _photoUrls.values
+                              .where((u) => u.isNotEmpty)
+                              .isEmpty
+                          ? null
+                          : _photoUrls.values
+                              .firstWhere((u) => u.isNotEmpty),
+                      cacheKey: _photos.isEmpty ? null : _photos.first.id,
+                    ),
+                    const SiteCoverScrim(),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Container(
+                        width: 4,
+                        color: (ficha.isOwn ? ficha.isPublic : true)
+                            ? AppColors.success
+                            : AppColors.purple,
+                      ),
+                    ),
+                    Positioned(
+                      left: 16,
+                      right: 16,
+                      bottom: 12,
+                      child: Row(
+                        children: [
+                          VisibilityBadge(
+                            isPublic: ficha.isOwn ? ficha.isPublic : true,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: SiteOriginTags(
+                              isOwn: ficha.isOwn,
+                              isLinked: false,
+                              isCatalog: ficha.isCatalogSite,
+                            ),
+                          ),
+                          if (ficha.estimatedPriceAmount != null)
+                            Text(
+                              formatMoney(
+                                ficha.estimatedPriceAmount!,
+                                currencyCode: ficha.currencyCode,
+                              ),
+                              style: const TextStyle(
+                                color: AppColors.primary,
+                                fontWeight: FontWeight.w800,
+                                fontSize: 13,
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            TabBar(
+              controller: _tabs,
+              tabs: [
+                Tab(text: l10n.siteDetailTabInfo),
+                Tab(text: l10n.siteDetailTabReviews),
+                Tab(text: l10n.siteDetailTabMore),
+              ],
+            ),
+            Expanded(
+              child: _loading && ficha == null
+                  ? const Center(child: CircularProgressIndicator())
+                  : _error != null && ficha == null
                 ? Center(
                     child: Padding(
                       padding: const EdgeInsets.all(24),
@@ -585,7 +666,10 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
                       _TraceabilityTab(ficha: ficha),
                     ],
                   ),
-      ),
+              ),
+            ],
+          ),
+        ),
     );
   }
 }

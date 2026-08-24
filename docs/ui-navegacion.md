@@ -241,11 +241,12 @@ Tab activo: icono + label `primary`. Inactivo: `mutedDark`, label 10 px.
 
 ### 6.5 Ficha de sitio — `SiteDetailPage`
 
-- AppBar + `TabBar`: Info, Reseñas, Más (trazabilidad).
-- Info: datos, visibilidad por icono/color, galería **incrustada** (menú ⋮ por foto), enlaces.
-- Reseñas / bitácoras en tab.
-- Acciones dueño/staff en menú, no un FAB Figma de “agregar a plan” (eso no está en esta ficha hoy).
-- Esta pantalla está **menos alineada al Make** que Inicio/Explorar/Planes.
+- Header in-body: back circular, título, corazón favorito, ⋮ (editar/descartar).
+- Hero 176: `SiteCover` (primera foto si hay) + scrim + franja verde/morada + origen (Tuyo/Catálogo) + precio.
+- `TabBar`: Info, Reseñas, Más (trazabilidad).
+- Info: datos, galería **incrustada** (menú ⋮ por foto), enlaces, Maps real (abrir / cómo llegar).
+- Reseñas / bitácoras reales (no scores inventados).
+- **No** hay FAB “Agregar a un plan”.
 
 ### 6.6 Planes — lista `PlansListPage`
 
@@ -257,11 +258,11 @@ Tab activo: icono + label `primary`. Inactivo: `mutedDark`, label 10 px.
 
 ### 6.7 Crear plan — `CreatePlanPage`
 
-Formulario: título, zona texto, incluir públicos, tope presupuesto. Luego `PlanBuilderPage`.
+Formulario: título, zona, incluir públicos, tope presupuesto. Card atenuada **IA** abre `ComingSoonPage` (no genera planes). Luego `PlanBuilderPage`.
 
 ### 6.8 Armar paradas — `PlanBuilderPage`
 
-Tabs internos: buscar / resultados / añadidos. Reutiliza filtros de búsqueda. Timeline de paradas. **Look aún tipo formulario**, no Make.
+Chips internos: buscar / resultados / añadidos. `AppSearchField` + filtros avanzados. Resultados en `AppFormCard` + `SiteCover`. Timeline de paradas.
 
 ### 6.9 Detalle de plan — `PlanDetailPage`
 
@@ -269,8 +270,8 @@ Tabs internos: buscar / resultados / añadidos. Reutiliza filtros de búsqueda. 
 - 3 stats (`surface`, radio 12): Paradas (`accent`), Presupuesto (`success`), Zona (`primary`). Sin transporte (no está cableado).
 - Label “Itinerario” 11 extraBold mutedDark tracking.
 - `PlanTimeline`: puntos primary/success, arrastre si 2+, check visitado, borrar.
-- Barra inferior: **Llevar a Maps** (filled 48) + share tonal.
-- FAB `+` subido (~64) para no tapar la barra — agregar sitios.
+- Barra inferior: **Llevar a Maps** + share + `+` (builder). **Sin FAB** duplicado.
+- Fila atenuada “Transporte entre paradas” → `ComingSoonPage` (no se calcula medio).
 - ⋮: Maps, share, eliminar (sheet).
 
 ### 6.10 Rutas — `MyRoutesPage`
@@ -284,9 +285,11 @@ Tabs internos: buscar / resultados / añadidos. Reutiliza filtros de búsqueda. 
 
 ### 6.11 Admin / reportes / legales / mapa
 
-- `AdminPage`, `AdminReportsPage`: AppBar clásico, listas, poco Make.
+- `AdminPage`: 3 `AppStatCard` **reales** (nº categorías, vehículos, reportes abiertos). Tabs categorías / vehículos. **No** hay cifras inventadas de usuarios.
+- `AdminReportsPage`: lista de reportes abiertos reales.
 - `LegalDocumentPage`: texto.
 - `LocationPickerPage`: mapa interactivo + confirmar pin.
+- `ComingSoonPage`: título + texto (IA, transporte). Sin “avísame”.
 
 ### 6.12 Sheets cortos
 
@@ -330,13 +333,10 @@ No hay navegación por URL. Back del sistema / AppBar / chevron hero.
 
 Orden sugerido para que un rediseño aporte:
 
-1. **Ficha de sitio** y **builder de plan** — las más “Material default”.
-2. **Fotos reales** en listas (composición: ratio, overlay, fallback). Hoy el fallback es ilustración genérica.
-3. **Admin / reportes** — densidad y tablas.
-4. Unificar **AppBar vs header in-body** (Inicio/Explorar/Planes/Rutas vs Guardar/Ficha/Admin).
-5. FAB de plan vs barra Maps: dos CTAs; Figma puede proponer una sola zona de acciones.
-6. El corazón **sí** es favorito (tap funcional). No rediseñarlo como “es tuyo”.
-7. **No diseñar aún:** lista/filtro de favoritos, onboarding extra, tema claro, IA, tab Admin, envío a Maps desde ficha de sitio, cálculo de transporte en el itinerario.
+1. **Fotos reales** en listas (composición: ratio, overlay, fallback). Hoy el fallback es ilustración genérica.
+2. Unificar **AppBar vs header in-body** (Inicio/Explorar/Planes/Rutas vs Guardar/Admin).
+3. El corazón **sí** es favorito (tap funcional). No rediseñarlo como “es tuyo”.
+4. **No diseñar aún:** lista/filtro de favoritos, onboarding extra, tema claro, IA que arme planes, tab Admin, cálculo de transporte en el itinerario.
 
 ---
 
@@ -349,9 +349,13 @@ frontend/lib/core/widgets/site_cover.dart
 frontend/lib/features/home/presentation/home_page.dart      # shell + inicio + nav
 frontend/lib/features/home/presentation/home_cards.dart
 frontend/lib/features/search/presentation/search_page.dart
+frontend/lib/core/widgets/coming_soon_page.dart
 frontend/lib/features/saves/presentation/save_place_page.dart
 frontend/lib/features/saves/presentation/site_detail_page.dart
+frontend/lib/features/saves/presentation/category_picker_sheet.dart
 frontend/lib/features/plans/presentation/plans_list_page.dart
+frontend/lib/features/plans/presentation/create_plan_page.dart
+frontend/lib/features/plans/presentation/plan_builder_page.dart
 frontend/lib/features/plans/presentation/plan_detail_page.dart
 frontend/lib/features/routes/presentation/my_routes_page.dart
 frontend/lib/l10n/app_es.arb

@@ -421,5 +421,31 @@
   "adminActive": "Activa",
   "adminAgeRestricted": "Restringida +18",
   "adminEditTransport": "Editar transporte",
-  "adminKmInvalid": "Km inválido"
+  "adminKmInvalid": "Km inválido",
+  "comingSoonBadge": "Próximamente",
+  "comingSoonAiTitle": "Armame un plan con IA",
+  "comingSoonAiBody": "La generación automática de planes estará disponible más adelante. Podés armar el plan eligiendo sitios que ya guardaste.",
+  "comingSoonTransportTitle": "Transporte entre paradas",
+  "comingSoonTransportBody": "El cálculo de transporte sugerido entre paradas estará disponible más adelante.",
+  "planZoneHint": "Ej. Villa de Leyva, Boyacá",
+  "planIncludePublicSubtitle": "Suma sitios públicos de otros a las opciones",
+  "planCreateNextStops": "Siguiente: armar paradas",
+  "planCreateAiCta": "Armame un plan con IA",
+  "categoryPickerSelectGroup": "Seleccionar todo el grupo",
+  "categoryPickerSummary": "{total} categorías · {groups} grupos",
+  "@categoryPickerSummary": {
+    "placeholders": {
+      "total": {"type": "int"},
+      "groups": {"type": "int"}
+    }
+  },
+  "categoryPickerResults": "{count} resultado(s)",
+  "@categoryPickerResults": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "adminStatCategories": "Categorías",
+  "adminStatVehicles": "Vehículos",
+  "adminStatReports": "Reportes abiertos"
 }

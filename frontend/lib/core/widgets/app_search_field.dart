@@ -12,6 +12,7 @@ class AppSearchField extends StatelessWidget {
     required this.searchTooltip,
     required this.onSearch,
     this.loading = false,
+    this.onChanged,
   });
 
   final TextEditingController controller;
@@ -19,12 +20,14 @@ class AppSearchField extends StatelessWidget {
   final String searchTooltip;
   final VoidCallback onSearch;
   final bool loading;
+  final ValueChanged<String>? onChanged;
 
   @override
   Widget build(BuildContext context) {
     return TextField(
       controller: controller,
       textInputAction: TextInputAction.search,
+      onChanged: onChanged,
       onSubmitted: (_) => onSearch(),
       style: const TextStyle(fontSize: 13, color: AppColors.foreground),
       decoration: InputDecoration(

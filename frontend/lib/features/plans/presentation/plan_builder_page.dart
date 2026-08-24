@@ -8,8 +8,11 @@ import '../../../core/di/providers.dart';
 import '../../../core/formatters/money_format.dart';
 import '../../../core/l10n/context_l10n.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/app_form_card.dart';
+import '../../../core/widgets/app_search_field.dart';
+import '../../../core/widgets/app_select_chip.dart';
 import '../../../core/widgets/app_toast.dart';
-import '../../../core/widgets/field_action_icon.dart';
+import '../../../core/widgets/site_cover.dart';
 import '../../admin/data/admin_models.dart';
 import '../../saves/presentation/open_site_detail.dart';
 import '../../search/data/search_models.dart';
@@ -304,34 +307,33 @@ class _PlanBuilderPageState extends ConsumerState<PlanBuilderPage> {
           : Column(
               children: [
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                    AppSpacing.lg,
-                    AppSpacing.sm,
-                    AppSpacing.lg,
-                    AppSpacing.sm,
-                  ),
-                  child: SegmentedButton<_PlanBuilderTab>(
-                    segments: [
-                      ButtonSegment(
-                        value: _PlanBuilderTab.search,
-                        label: Text(l10n.planTabSearch),
-                        icon: const Icon(Icons.search, size: 18),
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                  child: Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      AppSelectChip(
+                        label: l10n.planTabSearch,
+                        selected: _tab == _PlanBuilderTab.search,
+                        filledPrimary: true,
+                        onTap: () =>
+                            setState(() => _tab = _PlanBuilderTab.search),
                       ),
-                      ButtonSegment(
-                        value: _PlanBuilderTab.results,
-                        label: Text(l10n.planTabResults),
-                        icon: const Icon(Icons.list_alt, size: 18),
+                      AppSelectChip(
+                        label: l10n.planTabResults,
+                        selected: _tab == _PlanBuilderTab.results,
+                        filledPrimary: true,
+                        onTap: () =>
+                            setState(() => _tab = _PlanBuilderTab.results),
                       ),
-                      ButtonSegment(
-                        value: _PlanBuilderTab.added,
-                        label: Text(
-                          l10n.planTabAdded(plan.stops.length),
-                        ),
-                        icon: const Icon(Icons.timeline, size: 18),
+                      AppSelectChip(
+                        label: l10n.planTabAdded(plan.stops.length),
+                        selected: _tab == _PlanBuilderTab.added,
+                        filledPrimary: true,
+                        onTap: () =>
+                            setState(() => _tab = _PlanBuilderTab.added),
                       ),
                     ],
-                    selected: {_tab},
-                    onSelectionChanged: (s) => setState(() => _tab = s.first),
                   ),
                 ),
                 Expanded(
@@ -394,21 +396,15 @@ class _PlanBuilderPageState extends ConsumerState<PlanBuilderPage> {
             child: Text(_advanced ? l10n.searchSimple : l10n.searchAdvanced),
           ),
         ),
-        TextField(
+        AppSearchField(
           controller: _queryCtrl,
-          decoration: InputDecoration(
-            labelText: _advanced ? l10n.searchLabelText : l10n.actionSearch,
-            hintText: l10n.planSearchHint,
-            border: const OutlineInputBorder(),
-            suffixIcon: FieldActionIcon(
-              icon: Icons.search,
-              tooltip: l10n.actionSearch,
-              loading: _searching,
-              onPressed: _searching ? null : _runSearch,
-            ),
-          ),
-          textInputAction: TextInputAction.search,
-          onSubmitted: (_) => _runSearch(),
+          hint: l10n.planSearchHint,
+          searchTooltip: l10n.actionSearch,
+          loading: _searching,
+          onSearch: () {
+            setState(() => _tab = _PlanBuilderTab.results);
+            _runSearch();
+          },
         ),
         if (_advanced) ...[
           const SizedBox(height: AppSpacing.md),
@@ -515,29 +511,69 @@ class _PlanBuilderPageState extends ConsumerState<PlanBuilderPage> {
         }
         final h = visible[index];
         final already = added.contains(h.siteId);
-        return ListTile(
-          contentPadding: EdgeInsets.zero,
-          title: Text(h.name),
-          subtitle: Text(
-            [
-              if (h.city != null && h.city!.isNotEmpty) h.city!,
-              if (h.department != null && h.department!.isNotEmpty)
-                h.department!,
-              if (h.estimatedPriceAmount != null)
-                formatMoney(
-                  h.estimatedPriceAmount!,
-                  currencyCode: h.currencyCode,
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: AppFormCard(
+            onTap: () => openSiteDetail(context, hit: h),
+            padding: const EdgeInsets.fromLTRB(10, 8, 8, 8),
+            child: Row(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: const SizedBox(
+                    width: 44,
+                    height: 44,
+                    child: SiteCover(),
+                  ),
                 ),
-            ].join(' · '),
-          ),
-          trailing: already
-              ? Icon(Icons.check_circle, color: AppColors.success)
-              : IconButton(
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        h.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.foreground,
+                        ),
+                      ),
+                      Text(
+                        [
+                          if (h.city != null && h.city!.isNotEmpty) h.city!,
+                          if (h.department != null &&
+                              h.department!.isNotEmpty)
+                            h.department!,
+                          if (h.estimatedPriceAmount != null)
+                            formatMoney(
+                              h.estimatedPriceAmount!,
+                              currencyCode: h.currencyCode,
+                            ),
+                        ].join(' · '),
+                        style: const TextStyle(
+                          fontSize: 10,
+                          color: AppColors.mutedDark,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
                   tooltip: l10n.planAddSite,
-                  onPressed: _mutating ? null : () => _addHit(h),
-                  icon: const Icon(Icons.add_circle_outline),
+                  onPressed: already || _mutating
+                      ? null
+                      : () => _addHit(h),
+                  icon: Icon(
+                    already ? Icons.check : Icons.add,
+                    color: already ? AppColors.success : AppColors.primary,
+                  ),
                 ),
-          onTap: () => openSiteDetail(context, hit: h),
+              ],
+            ),
+          ),
         );
       },
     );

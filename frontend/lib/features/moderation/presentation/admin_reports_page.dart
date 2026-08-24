@@ -3,9 +3,11 @@ import 'package:flutter/material.dart';
 import '../../../core/widgets/app_toast.dart';
 import '../../../core/formatters/date_format.dart';
 import '../../../core/l10n/context_l10n.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_async_body.dart';
-import '../../../core/widgets/app_list_card.dart';
+import '../../../core/widgets/app_form_card.dart';
 import '../../../core/widgets/app_network_image.dart';
+import '../../../core/widgets/app_stat_card.dart';
 import '../data/moderation_models.dart';
 import '../data/moderation_repository.dart';
 
@@ -88,43 +90,89 @@ class _AdminReportsPageState extends State<AdminReportsPage> {
         child: ListView.builder(
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.all(16),
-          itemCount: _reports.length,
+          itemCount: _reports.length + 1,
           itemBuilder: (context, index) {
-            final r = _reports[index];
-            return AppListCard(
-              child: ListTile(
-                isThreeLine: true,
-                leading: _photoUrls[r.id] != null
-                    ? AppNetworkImage(
+            if (index == 0) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: AppStatCard(
+                  value: '${_reports.length}',
+                  label: l10n.adminStatReports,
+                  valueColor: AppColors.accent,
+                  icon: Icons.flag_outlined,
+                ),
+              );
+            }
+            final r = _reports[index - 1];
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: AppFormCard(
+                padding: const EdgeInsets.all(12),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: 4,
+                      height: 56,
+                      decoration: BoxDecoration(
+                        color: AppColors.accent,
+                        borderRadius: BorderRadius.circular(99),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    if (_photoUrls[r.id] != null)
+                      AppNetworkImage(
                         url: _photoUrls[r.id]!,
                         cacheKey: r.photoPath ?? r.id,
                         width: 56,
                         height: 56,
-                        borderRadius: BorderRadius.circular(6),
+                        borderRadius: BorderRadius.circular(8),
                       )
-                    : const Icon(Icons.flag_outlined),
-                title: Text(r.siteName ?? l10n.reportsPhotoFallback),
-                subtitle: Text(
-                  [
-                    l10n.reportsBy(r.reporterName),
-                    formatDateDmY(r.createdAt),
-                    if (r.reason != null && r.reason!.isNotEmpty) r.reason!,
-                  ].join(' · '),
-                ),
-                trailing: PopupMenuButton<String>(
-                  onSelected: (v) => _setStatus(r, v),
-                  itemBuilder: (context) => [
-                    PopupMenuItem(
-                      value: 'reviewed',
-                      child: Text(l10n.reportsMarkReviewed),
+                    else
+                      const Icon(Icons.flag_outlined, color: AppColors.accent),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            r.siteName ?? l10n.reportsPhotoFallback,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.foreground,
+                            ),
+                          ),
+                          Text(
+                            [
+                              l10n.reportsBy(r.reporterName),
+                              formatDateDmY(r.createdAt),
+                              if (r.reason != null && r.reason!.isNotEmpty)
+                                r.reason!,
+                            ].join(' · '),
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: AppColors.muted,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                    PopupMenuItem(
-                      value: 'dismissed',
-                      child: Text(l10n.reportsDismiss),
-                    ),
-                    PopupMenuItem(
-                      value: 'actioned',
-                      child: Text(l10n.reportsActioned),
+                    PopupMenuButton<String>(
+                      onSelected: (v) => _setStatus(r, v),
+                      itemBuilder: (context) => [
+                        PopupMenuItem(
+                          value: 'reviewed',
+                          child: Text(l10n.reportsMarkReviewed),
+                        ),
+                        PopupMenuItem(
+                          value: 'dismissed',
+                          child: Text(l10n.reportsDismiss),
+                        ),
+                        PopupMenuItem(
+                          value: 'actioned',
+                          child: Text(l10n.reportsActioned),
+                        ),
+                      ],
                     ),
                   ],
                 ),

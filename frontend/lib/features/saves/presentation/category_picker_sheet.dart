@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/l10n/context_l10n.dart';
 import '../../../core/logging/app_log.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/app_form_card.dart';
+import '../../../core/widgets/app_search_field.dart';
 import '../../admin/data/admin_models.dart';
 
 /// Pantalla/popup para elegir categorías (árbol + filtro por keywords).
@@ -115,19 +119,87 @@ class _CategoryPickerPageState extends State<CategoryPickerPage> {
     });
   }
 
+  Color _colorOf(Category c) {
+    final raw = c.colorHex?.replaceAll('#', '');
+    if (raw == null || raw.length < 6) return AppColors.primary;
+    final hex = raw.length == 6 ? 'FF$raw' : raw;
+    final v = int.tryParse(hex, radix: 16);
+    return v == null ? AppColors.primary : Color(v);
+  }
+
+  Widget _catRow({
+    required Category c,
+    required String label,
+    required bool selected,
+  }) {
+    final color = _colorOf(c);
+    final kws = c.keywords.take(3).join(', ');
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: AppFormCard(
+        onTap: () => _toggle(c.id, !selected),
+        padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+        child: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: color.withValues(alpha: 0.16),
+              ),
+              child: Icon(Icons.category_outlined, size: 18, color: color),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    c.ageRestricted ? '$label (+18)' : label,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: selected ? color : AppColors.foreground,
+                    ),
+                  ),
+                  if (kws.isNotEmpty)
+                    Text(
+                      kws,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 10,
+                        color: AppColors.mutedDark,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            if (selected) Icon(Icons.check, color: color, size: 18),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final filtering = _searchCtrl.text.trim().isNotEmpty;
     final roots = _roots;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Categorías'),
+        title: Text(l10n.adminTabCategories),
         actions: [
           TextButton(
             onPressed: () =>
                 Navigator.pop(context, Set<String>.from(_selected)),
-            child: Text('Listo (${_selected.length})'),
+            child: Text(
+              '${l10n.actionDone} (${_selected.length})',
+              style: const TextStyle(fontWeight: FontWeight.w800),
+            ),
           ),
         ],
       ),
@@ -136,23 +208,11 @@ class _CategoryPickerPageState extends State<CategoryPickerPage> {
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-            child: TextField(
+            child: AppSearchField(
               controller: _searchCtrl,
-              decoration: InputDecoration(
-                hintText: 'Filtrar: nadar, tejo, plaza, bar…',
-                prefixIcon: const Icon(Icons.search),
-                border: const OutlineInputBorder(),
-                isDense: true,
-                suffixIcon: _searchCtrl.text.isEmpty
-                    ? null
-                    : IconButton(
-                        icon: const Icon(Icons.clear),
-                        onPressed: () {
-                          _searchCtrl.clear();
-                          setState(() {});
-                        },
-                      ),
-              ),
+              hint: l10n.saveCategoryHint,
+              searchTooltip: l10n.actionSearch,
+              onSearch: () => setState(() {}),
               onChanged: (_) => setState(() {}),
             ),
           ),
@@ -160,13 +220,15 @@ class _CategoryPickerPageState extends State<CategoryPickerPage> {
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Text(
               filtering
-                  ? '${_filteredFlat.length} resultado(s)'
-                  : '${widget.categories.length} categorías · ${roots.length} grupos',
-              style: Theme.of(context).textTheme.bodySmall,
+                  ? l10n.categoryPickerResults(_filteredFlat.length)
+                  : l10n.categoryPickerSummary(
+                      widget.categories.length,
+                      roots.length,
+                    ),
+              style: const TextStyle(fontSize: 11, color: AppColors.muted),
             ),
           ),
-          const SizedBox(height: 4),
-          const Divider(height: 1),
+          const SizedBox(height: 8),
           Expanded(
             child: filtering ? _buildFilteredList() : _buildTree(roots),
           ),
@@ -176,52 +238,45 @@ class _CategoryPickerPageState extends State<CategoryPickerPage> {
   }
 
   Widget _buildFilteredList() {
+    final l10n = context.l10n;
     final hits = _filteredFlat;
     if (hits.isEmpty) {
-      return const Center(child: Text('Sin coincidencias'));
+      return Center(child: Text(l10n.saveCategoryNone));
     }
     return ListView.builder(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
       itemCount: hits.length,
       itemBuilder: (context, index) {
         final c = hits[index];
         final parent = _parentName(c);
         final label = parent.isEmpty ? c.nameEs : '$parent › ${c.nameEs}';
-        return CheckboxListTile(
-          value: _selected.contains(c.id),
-          onChanged: (v) => _toggle(c.id, v),
-          title: Text(c.ageRestricted ? '$label (+18)' : label),
+        return _catRow(
+          c: c,
+          label: label,
+          selected: _selected.contains(c.id),
         );
       },
     );
   }
 
   Widget _buildTree(List<Category> roots) {
+    final l10n = context.l10n;
     if (widget.categories.isEmpty) {
-      return const Center(
-        child: Padding(
-          padding: EdgeInsets.all(24),
-          child: Text(
-            'No hay categorías cargadas.\n'
-            'Cierra, vuelve a abrir Guardar, o aplica el seed SQL en Supabase.',
-            textAlign: TextAlign.center,
-          ),
-        ),
-      );
+      return Center(child: Text(l10n.saveCategoryNone));
     }
 
     if (roots.isEmpty) {
-      // Fallback: si no hay raíces detectadas, listar todo plano.
       return ListView.builder(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
         itemCount: widget.categories.length,
         itemBuilder: (context, index) {
           final c = widget.categories[index];
           final parent = _parentName(c);
           final label = parent.isEmpty ? c.nameEs : '$parent › ${c.nameEs}';
-          return CheckboxListTile(
-            value: _selected.contains(c.id),
-            onChanged: (v) => _toggle(c.id, v),
-            title: Text(c.ageRestricted ? '$label (+18)' : label),
-            subtitle: Text('slug: ${c.slug} · parent: ${c.parentId ?? "null"}'),
+          return _catRow(
+            c: c,
+            label: label,
+            selected: _selected.contains(c.id),
           );
         },
       );
@@ -230,51 +285,58 @@ class _CategoryPickerPageState extends State<CategoryPickerPage> {
     final tiles = <Widget>[];
     for (final root in roots) {
       final children = _childrenOf(root.id);
+      final color = _colorOf(root);
       tiles.add(
-        Material(
-          color: Theme.of(context).colorScheme.surfaceContainerHighest,
-          child: ListTile(
-            dense: true,
-            title: Text(
-              root.nameEs,
-              style: const TextStyle(fontWeight: FontWeight.w700),
-            ),
-            subtitle: Text('${children.length} opciones'),
-            trailing: children.isEmpty
-                ? null
-                : IconButton(
-                    tooltip: 'Seleccionar todo el grupo',
-                    icon: const Icon(Icons.done_all),
-                    onPressed: () {
-                      setState(() {
-                        for (final c in children) {
-                          _selected.add(c.id);
-                        }
-                      });
-                    },
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 6),
+          child: Row(
+            children: [
+              Container(
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: color.withValues(alpha: 0.16),
+                ),
+                child: Icon(Icons.folder_outlined, size: 14, color: color),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  root.nameEs,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.foreground,
                   ),
+                ),
+              ),
+              if (children.isNotEmpty)
+                IconButton(
+                  tooltip: l10n.categoryPickerSelectGroup,
+                  icon: const Icon(Icons.done_all, size: 18),
+                  onPressed: () {
+                    setState(() {
+                      for (final c in children) {
+                        _selected.add(c.id);
+                      }
+                    });
+                  },
+                ),
+            ],
           ),
         ),
       );
-      if (children.isEmpty) {
+      for (final c in children) {
         tiles.add(
-          const ListTile(
-            dense: true,
-            title: Text('Sin subcategorías'),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: _catRow(
+              c: c,
+              label: c.nameEs,
+              selected: _selected.contains(c.id),
+            ),
           ),
         );
-      } else {
-        for (final c in children) {
-          tiles.add(
-            CheckboxListTile(
-              value: _selected.contains(c.id),
-              onChanged: (v) => _toggle(c.id, v),
-              title: Text(
-                c.ageRestricted ? '${c.nameEs} (+18)' : c.nameEs,
-              ),
-            ),
-          );
-        }
       }
     }
 

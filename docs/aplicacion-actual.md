@@ -125,7 +125,7 @@ Staff/admin **no** ve bitácoras ajenas privadas.
 
 Tres pestañas: **info**, **reseñas**, **más** (quién lo creó, catálogo, fechas, “también lo guardaron”).
 
-En info: nombre, visibilidad por color/icono, ciudad, pin, abrir/cómo llegar en Google Maps, categorías, precio, notas, fotos embebidas (menú ⋮ por foto: no un sheet vacío), enlaces. En la barra, corazón de **favorito** (igual que en las cards).
+En info: nombre, visibilidad por color/icono (hero con franja), ciudad, pin, abrir/cómo llegar en Google Maps, categorías, precio, notas, fotos embebidas (menú ⋮ por foto: no un sheet vacío), enlaces. En el header, corazón de **favorito** (igual que en las cards). **No** hay “agregar a un plan” en esta ficha.
 
 Editar: creador, quien lo tiene en su lista como propio, o staff sobre **público**.
 
@@ -164,11 +164,11 @@ flowchart LR
 
 ## 6. Planes
 
-1. Crear plan: título, zona (texto), si incluye públicos, tope de presupuesto.
+1. Crear plan: título, zona (texto), si incluye públicos, tope de presupuesto. Hay una fila “IA” que abre **en construcción** (no arma el plan sola).
 2. El servidor propone **candidatos** de tus guardados (y públicos si marcaste).
 3. Armás paradas. En la lista “añadidos” y en el detalle, con **2+ paradas**, arrastrás el orden; se guarda.
-4. Detalle (look Figma): portada, stats de paradas/presupuesto/zona, itinerario, **Llevar a Maps** y compartir abajo. Seguir: abrir ficha, marcar visitado (pasa a **Rutas**), reordenar. El `+` agrega sitios. No hay transporte inventado en stats.
-5. Transporte “sugerido por distancia” está **parametrizado en admin** (tipos y km), pero **la app no calcula aún** el medio en la línea de tiempo (código de sugerencia no está cableado).
+4. Detalle (look Figma): portada, stats de paradas/presupuesto/zona, itinerario, **Llevar a Maps**, compartir y `+` en la misma barra. Seguir: abrir ficha, marcar visitado (pasa a **Rutas**), reordenar. El `+` agrega sitios. No hay transporte inventado en stats.
+5. Transporte “sugerido por distancia” está **parametrizado en admin** (tipos y km), pero **la app no calcula aún** el medio: la fila abre la pantalla **en construcción**.
 
 ```mermaid
 sequenceDiagram

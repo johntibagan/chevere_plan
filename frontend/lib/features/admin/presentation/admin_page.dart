@@ -5,6 +5,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/cache/cache_ttl.dart';
 import '../../../core/di/providers.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/app_form_card.dart';
+import '../../../core/widgets/app_stat_card.dart';
 import '../../../core/widgets/app_toast.dart';
 import '../../../core/l10n/context_l10n.dart';
 import '../../moderation/presentation/admin_reports_page.dart';
@@ -26,6 +29,7 @@ class _AdminPageState extends ConsumerState<AdminPage>
   late final TabController _tabs;
   List<Category> _categories = [];
   List<TransportType> _transports = [];
+  int _openReports = 0;
   bool _loading = true;
   String? _error;
 
@@ -50,10 +54,13 @@ class _AdminPageState extends ConsumerState<AdminPage>
     try {
       final cats = await widget.repository.fetchCategories();
       final txs = await widget.repository.fetchTransportTypes();
+      final reports =
+          await ref.read(moderationRepositoryProvider).listOpenReports();
       if (!mounted) return;
       setState(() {
         _categories = cats;
         _transports = txs;
+        _openReports = reports.length;
         _loading = false;
       });
     } catch (e) {
@@ -290,7 +297,43 @@ class _AdminPageState extends ConsumerState<AdminPage>
                     ),
                   ),
                 )
-              : TabBarView(
+              : Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: AppStatCard(
+                              value: '${_categories.length}',
+                              label: l10n.adminStatCategories,
+                              valueColor: AppColors.primary,
+                              icon: Icons.category_outlined,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: AppStatCard(
+                              value: '${_transports.length}',
+                              label: l10n.adminStatVehicles,
+                              valueColor: AppColors.success,
+                              icon: Icons.directions_bus_outlined,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: AppStatCard(
+                              value: '$_openReports',
+                              label: l10n.adminStatReports,
+                              valueColor: AppColors.accent,
+                              icon: Icons.flag_outlined,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Expanded(
+                      child: TabBarView(
                   controller: _tabs,
                   children: [
                     _CategoriesTab(
@@ -300,6 +343,9 @@ class _AdminPageState extends ConsumerState<AdminPage>
                     _TransportsTab(
                       transports: _transports,
                       onEdit: _editTransport,
+                    ),
+                  ],
+                      ),
                     ),
                   ],
                 ),
@@ -322,7 +368,7 @@ class _CategoriesTab extends StatelessWidget {
       ..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
 
     return ListView.builder(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
       itemCount: roots.length,
       itemBuilder: (context, index) {
         final root = roots[index];
@@ -330,37 +376,53 @@ class _CategoriesTab extends StatelessWidget {
             .where((c) => c.parentId == root.id)
             .toList()
           ..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
+        final hex = root.colorHex?.replaceAll('#', '');
+        final color = () {
+          if (hex == null || hex.length < 6) return AppColors.primary;
+          final v = int.tryParse(hex.length == 6 ? 'FF$hex' : hex, radix: 16);
+          return v == null ? AppColors.primary : Color(v);
+        }();
 
-        return ExpansionTile(
-          title: Text(root.nameEs),
-          subtitle: Text(
-            [
-              root.isActive ? 'Activa' : 'Inactiva',
-              if (root.ageRestricted) '+18',
-            ].join(' · '),
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: AppFormCard(
+            padding: const EdgeInsets.fromLTRB(4, 4, 4, 8),
+            child: ExpansionTile(
+              leading: CircleAvatar(
+                backgroundColor: color.withValues(alpha: 0.18),
+                child: Icon(Icons.category_outlined, color: color, size: 18),
+              ),
+              title: Text(root.nameEs),
+              subtitle: Text(
+                [
+                  root.isActive ? 'Activa' : 'Inactiva',
+                  if (root.ageRestricted) '+18',
+                ].join(' · '),
+              ),
+              trailing: IconButton(
+                icon: const Icon(Icons.edit_outlined),
+                onPressed: () => onEdit(root),
+              ),
+              children: children
+                  .map(
+                    (c) => ListTile(
+                      contentPadding: const EdgeInsets.only(left: 32, right: 8),
+                      title: Text(c.nameEs),
+                      subtitle: Text(
+                        [
+                          c.isActive ? 'Activa' : 'Inactiva',
+                          if (c.ageRestricted) '+18',
+                        ].join(' · '),
+                      ),
+                      trailing: IconButton(
+                        icon: const Icon(Icons.edit_outlined),
+                        onPressed: () => onEdit(c),
+                      ),
+                    ),
+                  )
+                  .toList(),
+            ),
           ),
-          trailing: IconButton(
-            icon: const Icon(Icons.edit_outlined),
-            onPressed: () => onEdit(root),
-          ),
-          children: children
-              .map(
-                (c) => ListTile(
-                  contentPadding: const EdgeInsets.only(left: 32, right: 8),
-                  title: Text(c.nameEs),
-                  subtitle: Text(
-                    [
-                      c.isActive ? 'Activa' : 'Inactiva',
-                      if (c.ageRestricted) '+18',
-                    ].join(' · '),
-                  ),
-                  trailing: IconButton(
-                    icon: const Icon(Icons.edit_outlined),
-                    onPressed: () => onEdit(c),
-                  ),
-                ),
-              )
-              .toList(),
         );
       },
     );
