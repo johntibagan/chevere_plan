@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../core/formatters/money_format.dart';
 import '../../../core/l10n/context_l10n.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/site_cover.dart';
 import '../../saves/data/save_models.dart';
 import '../../search/data/search_models.dart';
 
@@ -186,14 +187,7 @@ class HomeRecentRailCard extends StatelessWidget {
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
-                    const ColoredBox(color: AppColors.surfaceElevated),
-                    const Center(
-                      child: Icon(
-                        Icons.place_outlined,
-                        color: AppColors.mutedDark,
-                        size: 32,
-                      ),
-                    ),
+                    const SiteCover(),
                     const DecoratedBox(
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
@@ -208,25 +202,37 @@ class HomeRecentRailCard extends StatelessWidget {
                       left: 8,
                       child: HomeSourceBadge(network: save.sourceNetwork),
                     ),
-                    if (!save.isPublic)
-                      const Positioned(
-                        top: 8,
-                        right: 8,
-                        child: DecoratedBox(
-                          decoration: BoxDecoration(
-                            color: Color(0x99000000),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Padding(
-                            padding: EdgeInsets.all(4),
-                            child: Icon(
-                              Icons.lock_rounded,
-                              size: 10,
-                              color: AppColors.purple,
+                    Positioned(
+                      top: 8,
+                      right: 8,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (!save.isPublic)
+                            const Padding(
+                              padding: EdgeInsets.only(right: 6),
+                              child: DecoratedBox(
+                                decoration: BoxDecoration(
+                                  color: Color(0x99000000),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Padding(
+                                  padding: EdgeInsets.all(4),
+                                  child: Icon(
+                                    Icons.lock_rounded,
+                                    size: 10,
+                                    color: AppColors.purple,
+                                  ),
+                                ),
+                              ),
                             ),
+                          Tooltip(
+                            message: context.l10n.cardSavedHeart,
+                            child: const CardHeartBadge(saved: true),
                           ),
-                        ),
+                        ],
                       ),
+                    ),
                     Positioned(
                       left: 8,
                       right: 8,
@@ -301,18 +307,11 @@ class HomePopularCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             SizedBox(
-              height: 144,
+              height: 100,
               child: Stack(
                 fit: StackFit.expand,
                 children: [
-                  const ColoredBox(color: AppColors.surfaceElevated),
-                  const Center(
-                    child: Icon(
-                      Icons.landscape_outlined,
-                      color: AppColors.mutedDark,
-                      size: 36,
-                    ),
-                  ),
+                  const SiteCover(),
                   const DecoratedBox(
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
@@ -322,16 +321,31 @@ class HomePopularCard extends StatelessWidget {
                       ),
                     ),
                   ),
-                  if (!hit.isPublic)
-                    const Positioned(
-                      top: 8,
-                      left: 8,
-                      child: Icon(
-                        Icons.lock_rounded,
-                        size: 12,
-                        color: AppColors.purple,
-                      ),
+                  Positioned(
+                    top: 8,
+                    left: 8,
+                    child: Row(
+                      children: [
+                        if (!hit.isPublic)
+                          const Padding(
+                            padding: EdgeInsets.only(right: 6),
+                            child: Icon(
+                              Icons.lock_rounded,
+                              size: 12,
+                              color: AppColors.purple,
+                            ),
+                          ),
+                      ],
                     ),
+                  ),
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: Tooltip(
+                      message: hit.isOwn ? l10n.cardSavedHeart : '',
+                      child: CardHeartBadge(saved: hit.isOwn),
+                    ),
+                  ),
                   Positioned(
                     left: 8,
                     bottom: 8,
@@ -371,7 +385,7 @@ class HomePopularCard extends StatelessWidget {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
+              padding: const EdgeInsets.fromLTRB(8, 6, 8, 8),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -398,7 +412,7 @@ class HomePopularCard extends StatelessWidget {
                         ),
                       ),
                     ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 4),
                   Row(
                     children: [
                       if (hit.distanceKm != null)

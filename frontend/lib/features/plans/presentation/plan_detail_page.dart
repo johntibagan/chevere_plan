@@ -6,10 +6,12 @@ import 'package:geolocator/geolocator.dart';
 import '../../../core/cache/cache_ttl.dart';
 import '../../../core/di/providers.dart';
 import '../../../core/errors/user_facing_error.dart';
+import '../../../core/formatters/money_format.dart';
 import '../../../core/l10n/context_l10n.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_busy_overlay.dart';
 import '../../../core/widgets/app_toast.dart';
+import '../../../core/widgets/site_cover.dart';
 import '../../saves/presentation/open_site_detail.dart';
 import '../data/maps_export.dart';
 import '../data/plan_models.dart';
@@ -322,29 +324,16 @@ class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
     final plan = _plan;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(plan?.title ?? l10n.plansTitle),
-      ),
       floatingActionButton: plan == null
           ? null
-          : Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                FloatingActionButton.small(
-                  heroTag: 'plan_more_fab',
-                  tooltip: l10n.planMenuMore,
-                  onPressed: _busy ? null : _showMoreMenu,
-                  child: const Icon(Icons.more_vert),
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                FloatingActionButton(
-                  heroTag: 'plan_add_fab',
-                  tooltip: l10n.planMenuAddSites,
-                  onPressed: _busy ? null : _openBuilder,
-                  child: const Icon(Icons.add),
-                ),
-              ],
+          : Padding(
+              padding: const EdgeInsets.only(bottom: 64),
+              child: FloatingActionButton(
+                heroTag: 'plan_add_fab',
+                tooltip: l10n.planMenuAddSites,
+                onPressed: _busy ? null : _openBuilder,
+                child: const Icon(Icons.add),
+              ),
             ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
@@ -353,27 +342,29 @@ class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
               : Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
+                    _PlanHero(
+                      plan: plan,
+                      onBack: () => Navigator.of(context).pop(),
+                      onMore: _busy ? null : _showMoreMenu,
+                    ),
+                    _PlanStatsRow(plan: plan),
                     Padding(
-                      padding: const EdgeInsets.fromLTRB(
-                        AppSpacing.lg,
-                        AppSpacing.md,
-                        AppSpacing.lg,
-                        AppSpacing.sm,
-                      ),
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
                       child: Text(
-                        plan.status == 'draft'
-                            ? l10n.planStatusDraft
-                            : l10n.planStopsCount(plan.stops.length),
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: AppColors.muted,
-                            ),
+                        l10n.planItinerary,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.7,
+                          color: AppColors.mutedDark,
+                        ),
                       ),
                     ),
                     Expanded(
                       child: PlanTimeline(
                         stops: plan.stops,
                         emptyLabel: l10n.planTimelineEmpty,
-                        bottomPadding: 120,
+                        bottomPadding: 24,
                         onStopTap: (stop) => openSiteDetail(
                           context,
                           siteId: stop.siteId,
@@ -383,8 +374,226 @@ class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
                         onReorder: _busy ? null : _reorderStops,
                       ),
                     ),
+                    SafeArea(
+                      top: false,
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: FilledButton.icon(
+                                onPressed: _busy ? null : _openMaps,
+                                icon: const Icon(
+                                  Icons.near_me_outlined,
+                                  size: 18,
+                                ),
+                                label: Text(l10n.planMenuOpenMaps),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            IconButton.filledTonal(
+                              tooltip: l10n.planMenuShare,
+                              onPressed: _busy ? null : _share,
+                              icon: const Icon(Icons.ios_share_outlined),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                   ],
                 ),
+    );
+  }
+}
+
+class _PlanHero extends StatelessWidget {
+  const _PlanHero({
+    required this.plan,
+    required this.onBack,
+    this.onMore,
+  });
+
+  final Plan plan;
+  final VoidCallback onBack;
+  final VoidCallback? onMore;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 176,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          const SiteCover(),
+          const DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Color(0x66000000),
+                  Colors.transparent,
+                  Color(0xFF0B0D15),
+                ],
+                stops: [0, 0.4, 1],
+              ),
+            ),
+          ),
+          SafeArea(
+            bottom: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(8, 4, 8, 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      IconButton(
+                        onPressed: onBack,
+                        icon: const Icon(Icons.arrow_back),
+                        style: IconButton.styleFrom(
+                          backgroundColor: const Color(0x80000000),
+                          foregroundColor: AppColors.onImage,
+                        ),
+                      ),
+                      const Spacer(),
+                      IconButton(
+                        onPressed: onMore,
+                        icon: const Icon(Icons.more_vert),
+                        style: IconButton.styleFrom(
+                          backgroundColor: const Color(0x80000000),
+                          foregroundColor: AppColors.onImage,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const Spacer(),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child: Text(
+                      plan.title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.onImage,
+                      ),
+                    ),
+                  ),
+                  if (plan.locationQuery.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(8, 4, 8, 0),
+                      child: Text(
+                        plan.locationQuery,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PlanStatsRow extends StatelessWidget {
+  const _PlanStatsRow({required this.plan});
+
+  final Plan plan;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final budget = plan.maxBudgetAmount == null
+        ? '—'
+        : formatMoney(
+            plan.maxBudgetAmount!,
+            currencyCode: plan.currencyCode,
+          );
+    final zone =
+        plan.locationQuery.isEmpty ? '—' : plan.locationQuery;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+      child: Row(
+        children: [
+          Expanded(
+            child: _StatTile(
+              value: '${plan.stops.length}',
+              label: l10n.planStatStops,
+              color: AppColors.accent,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: _StatTile(
+              value: budget,
+              label: l10n.planStatBudget,
+              color: AppColors.success,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: _StatTile(
+              value: zone,
+              label: l10n.planStatZone,
+              color: AppColors.primary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StatTile extends StatelessWidget {
+  const _StatTile({
+    required this.value,
+    required this.label,
+    required this.color,
+  });
+
+  final String value;
+  final String label;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        children: [
+          Text(
+            value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w800,
+              color: color,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 9,
+              color: AppColors.mutedDark,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

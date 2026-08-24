@@ -1003,6 +1003,21 @@ class AppLocalizationsEs extends AppLocalizations {
   String get planMenuMore => 'Más opciones';
 
   @override
+  String get planItinerary => 'Itinerario';
+
+  @override
+  String get planStatStops => 'Paradas';
+
+  @override
+  String get planStatBudget => 'Presupuesto';
+
+  @override
+  String get planStatZone => 'Zona';
+
+  @override
+  String get cardSavedHeart => 'En tus guardados';
+
+  @override
   String get planMarkDone => 'Marcar como hecho';
 
   @override

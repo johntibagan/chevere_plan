@@ -740,7 +740,7 @@ class _InicioTab extends StatelessWidget {
           else
             SliverToBoxAdapter(
               child: SizedBox(
-                height: 210,
+                height: 176,
                 child: ListView.separated(
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
                   scrollDirection: Axis.horizontal,
@@ -822,7 +822,7 @@ class _InicioTab extends StatelessWidget {
                                 crossAxisCount: 2,
                                 mainAxisSpacing: 10,
                                 crossAxisSpacing: 10,
-                                childAspectRatio: 0.72,
+                                childAspectRatio: 0.90,
                               ),
                               itemBuilder: (context, i) {
                                 final hit = nearby[i];

@@ -1918,6 +1918,36 @@ abstract class AppLocalizations {
   /// **'Más opciones'**
   String get planMenuMore;
 
+  /// No description provided for @planItinerary.
+  ///
+  /// In es, this message translates to:
+  /// **'Itinerario'**
+  String get planItinerary;
+
+  /// No description provided for @planStatStops.
+  ///
+  /// In es, this message translates to:
+  /// **'Paradas'**
+  String get planStatStops;
+
+  /// No description provided for @planStatBudget.
+  ///
+  /// In es, this message translates to:
+  /// **'Presupuesto'**
+  String get planStatBudget;
+
+  /// No description provided for @planStatZone.
+  ///
+  /// In es, this message translates to:
+  /// **'Zona'**
+  String get planStatZone;
+
+  /// No description provided for @cardSavedHeart.
+  ///
+  /// In es, this message translates to:
+  /// **'En tus guardados'**
+  String get cardSavedHeart;
+
   /// No description provided for @planMarkDone.
   ///
   /// In es, this message translates to:

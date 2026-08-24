@@ -2,7 +2,8 @@
 
 Documento de producto **según el código**. Solo lo que un usuario o admin puede hacer **ya**. Se actualiza en el **mismo cambio** que el código.
 
-Qué no romper: [`invariantes.md`](invariantes.md).
+Qué no romper: [`invariantes.md`](invariantes.md).  
+Estilo, pantallas y navegación (para Figma): [`ui-navegacion.md`](ui-navegacion.md).
 
 ---
 
@@ -38,7 +39,7 @@ sequenceDiagram
 
 | Sitio | Qué ves |
 |---|---|
-| **Inicio** | Saludo, **guardados recientes** (carrusel como en Figma), **populares cerca** (públicos a ≤25 km si hay GPS), **acciones rápidas**, borradores pendientes, cercanía, admin si aplica |
+| **Inicio** | Saludo, **guardados recientes** (carrusel), **populares cerca**, **acciones rápidas**. Tarjetas con portada por defecto, corazón si es tuyo y badge de red si hay origen |
 | **Explorar** | Búsqueda de sitios (cabecera Figma, chips de categoría, grilla/lista). Misma lógica: texto obligatorio en modo simple, filtros avanzados, incluir públicos |
 | **+ (centro)** | Guardar o completar un lugar (crear y editar son la **misma pantalla**) |
 | **Planes** | Tus itinerarios (tarjeta de crear + lista; el FAB sigue abriendo el mismo flujo) |
@@ -164,7 +165,7 @@ flowchart LR
 1. Crear plan: título, zona (texto), si incluye públicos, tope de presupuesto.
 2. El servidor propone **candidatos** de tus guardados (y públicos si marcaste).
 3. Armás paradas. En la lista “añadidos” y en el detalle, con **2+ paradas**, arrastrás el orden; se guarda.
-4. Detalle: línea de tiempo, abrir ficha, marcar visitado (pasa a **Rutas**), copiar texto del plan. Enviar a Maps como ruta multi-destino **no** está en el menú actual (queda pendiente).
+4. Detalle (look Figma): portada, stats de paradas/presupuesto/zona, itinerario, **Llevar a Maps** y compartir abajo. Seguir: abrir ficha, marcar visitado (pasa a **Rutas**), reordenar. El `+` agrega sitios. No hay transporte inventado en stats.
 5. Transporte “sugerido por distancia” está **parametrizado en admin** (tipos y km), pero **la app no calcula aún** el medio en la línea de tiempo (código de sugerencia no está cableado).
 
 ```mermaid

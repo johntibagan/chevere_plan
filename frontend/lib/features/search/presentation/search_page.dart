@@ -518,7 +518,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                           crossAxisCount: 2,
                           mainAxisSpacing: 12,
                           crossAxisSpacing: 12,
-                          childAspectRatio: 0.72,
+                          childAspectRatio: 0.90,
                         ),
                         delegate: SliverChildBuilderDelegate(
                           (context, index) {

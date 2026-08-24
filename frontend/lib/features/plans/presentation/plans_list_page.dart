@@ -10,6 +10,7 @@ import '../../../core/l10n/context_l10n.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_async_body.dart';
 import '../../../core/widgets/app_toast.dart';
+import '../../../core/widgets/site_cover.dart';
 import '../../../core/widgets/tab_screen_header.dart';
 import '../data/plan_models.dart';
 import '../data/plans_repository.dart';
@@ -264,7 +265,6 @@ class _PlanCard extends StatelessWidget {
     final isDraft = plan.status == 'draft';
     final statusLabel =
         isDraft ? l10n.planStatusDraft : l10n.plansStatusUpcoming;
-    final statusColor = isDraft ? AppColors.muted : AppColors.primary;
     return Material(
       color: AppColors.surface,
       clipBehavior: Clip.antiAlias,
@@ -274,89 +274,114 @@ class _PlanCard extends StatelessWidget {
       ),
       child: InkWell(
         onTap: onTap,
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Container(
-              width: 88,
+            SizedBox(
               height: 96,
-              color: AppColors.surfaceElevated,
-              alignment: Alignment.center,
-              child: const Icon(
-                Icons.map_outlined,
-                color: AppColors.mutedDark,
-                size: 28,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  const SiteCover(),
+                  const DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.transparent,
+                          Color(0xCC000000),
+                        ],
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
+                      decoration: BoxDecoration(
+                        color: isDraft
+                            ? const Color(0x99000000)
+                            : AppColors.primary,
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Text(
+                        statusLabel,
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                          color: isDraft ? AppColors.muted : AppColors.background,
+                        ),
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    left: 12,
+                    right: 12,
+                    bottom: 8,
+                    child: Text(
+                      plan.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.onImage,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            plan.title,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w800,
-                              color: AppColors.foreground,
-                            ),
-                          ),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 3,
-                          ),
-                          decoration: BoxDecoration(
-                            color: statusColor.withValues(alpha: 0.16),
-                            borderRadius: BorderRadius.circular(999),
-                          ),
-                          child: Text(
-                            statusLabel,
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w700,
-                              color: statusColor,
-                            ),
-                          ),
-                        ),
-                      ],
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
+              child: Row(
+                children: [
+                  if (plan.locationQuery.isNotEmpty) ...[
+                    const Icon(
+                      Icons.place_outlined,
+                      size: 12,
+                      color: AppColors.accent,
                     ),
-                    if (plan.locationQuery.isNotEmpty) ...[
-                      const SizedBox(height: 4),
-                      Text(
+                    const SizedBox(width: 4),
+                    Flexible(
+                      child: Text(
                         plan.locationQuery,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
-                          fontSize: 12,
+                          fontSize: 11,
                           color: AppColors.muted,
                         ),
                       ),
-                    ],
-                    const SizedBox(height: 8),
+                    ),
+                    const SizedBox(width: 10),
+                  ],
+                  Text(
+                    l10n.planStopsCount(plan.stopCount),
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: AppColors.muted,
+                    ),
+                  ),
+                  if (plan.maxBudgetAmount != null) ...[
+                    const SizedBox(width: 10),
                     Text(
-                      [
-                        l10n.planStopsCount(plan.stopCount),
-                        if (plan.maxBudgetAmount != null)
-                          formatMoney(
-                            plan.maxBudgetAmount!,
-                            currencyCode: plan.currencyCode,
-                          ),
-                      ].join(' · '),
+                      formatMoney(
+                        plan.maxBudgetAmount!,
+                        currencyCode: plan.currencyCode,
+                      ),
                       style: const TextStyle(
                         fontSize: 11,
-                        color: AppColors.mutedDark,
+                        color: AppColors.success,
                       ),
                     ),
                   ],
-                ),
+                ],
               ),
             ),
           ],
