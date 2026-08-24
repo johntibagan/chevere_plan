@@ -30,17 +30,21 @@ El usuario buscó en Maps y trajo el link. **No** preguntar “¿guardar el punt
 
 Ese diálogo **no se reintroduce**: al decir “solo el lugar” se perdía el pin y Público pedía ubicación aunque el form ya estaba lleno.
 
-Abrir Maps **desde la ficha** puede usar nombre / `google_place_id`. Eso no autoriza borrar coords al importar.
+Abrir Maps **desde la ficha**:
+- **Lugar** (interruptor apagado, default): búsqueda / ficha (nombre + `google_place_id`).
+- **Punto exacto** (interruptor encendido): `lat,lng`.
+
+Al pegar Maps o confirmar el mapa se **guardan las dos**. El interruptor no borra coords.
 
 ### Pin vs interruptor
 
-| Origen | Coords |
-|---|---|
-| Enlace / share Maps | Se conservan (o se geocodifican) |
-| Mapa interactivo | Se conservan; no preguntar |
-| Interruptor “Punto exacto” | Solo si el usuario lo toca. Apagar = quitar pin y **bloquear Público** (lugar físico). No apagarlo en silencio |
+| Origen | Coords (pin) | Lugar (nombre / Place ID) |
+|---|---|---|
+| Enlace / share Maps | Se conservan (o se geocodifican) | Se conservan |
+| Mapa interactivo | Se conservan | Place ID si el buscador lo trajo |
+| Interruptor “Punto exacto” | No borra el pin. Solo elige cómo abrir Maps. Default **apagado**. Encenderlo sin pin abre el mapa. |
 
-Público en lugar físico exige **lat y lng**. Ciudad o dirección solas no alcanzan.
+Público en lugar físico exige **lat y lng guardados**. El interruptor apagado **no** bloquea Público.
 
 Público es **sección siempre visible**. Sin pin, el interruptor se muestra **desactivado** (no se oculta). No reaparece el diálogo de “¿punto exacto?” al pegar Maps.
 
@@ -74,6 +78,7 @@ Alto riesgo: `save_place_page.dart`, `google_maps_link_importer.dart`, `save_pol
 ## Datos
 
 - Categorías, transporte, depto/ciudad: **base + caché**, nunca hardcode en Dart.
+- Populares cerca (Inicio): pintar caché; no GPS fino ni `search_sites` si seguís a menos de ~2 km del ancla y la lista tiene menos de 24 h.
 - Reset: default conserva DIVIPOLA + catálogo (`external_id`); `-Full` = migraciones en orden (baseline 3 + posteriores, p. ej. favoritos) + DIVIPOLA + JSON.
 
 ## Código

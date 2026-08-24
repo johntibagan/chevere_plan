@@ -20,7 +20,7 @@ class SavesRepository {
       'id, user_id, site_id, status, is_public, source_url, source_network, notes, created_at, '
       'is_possible_duplicate, possible_duplicate_of_site_id, '
       'sites!user_saves_site_id_fkey(name, city, city_id, department, department_id, address_line, is_public, '
-      'is_physical_place, google_place_id, created_by, created_at, updated_at, external_id, '
+      'is_physical_place, google_place_id, use_exact_pin, created_by, created_at, updated_at, external_id, '
       'profiles!sites_created_by_fkey(display_name, avatar_url), '
       'site_categories(categories(name_i18n)), '
       'site_contributors(user_id, created_at, profiles(display_name, avatar_url)))';
@@ -226,6 +226,8 @@ class SavesRepository {
       'department': input.department?.trim(),
       'department_id': input.departmentId,
       'created_by': uid,
+      'google_place_id': input.googlePlaceId,
+      'use_exact_pin': input.useExactPin,
     };
 
     final site = await _client
@@ -435,7 +437,7 @@ class SavesRepository {
         .from('sites')
         .select(
           'id, name, city, city_id, department, department_id, address_line, '
-          'is_public, is_physical_place, google_place_id',
+          'is_public, is_physical_place, google_place_id, use_exact_pin',
         )
         .eq('id', siteId)
         .maybeSingle();
@@ -476,6 +478,7 @@ class SavesRepository {
       isPublic: m['is_public'] as bool? ?? true,
       isPhysicalPlace: m['is_physical_place'] as bool? ?? true,
       googlePlaceId: m['google_place_id'] as String?,
+      useExactPin: m['use_exact_pin'] as bool? ?? false,
       categoryIds: categoryIds,
       latitude: lat,
       longitude: lng,
@@ -517,6 +520,8 @@ class SavesRepository {
       'city_id': input.cityId,
       'department': input.department?.trim(),
       'department_id': input.departmentId,
+      'google_place_id': input.googlePlaceId,
+      'use_exact_pin': input.useExactPin,
     }).eq('id', siteId);
 
     await _syncSiteLocation(siteId: siteId, input: input);
@@ -588,6 +593,8 @@ class SavesRepository {
       'city_id': input.cityId,
       'department': input.department?.trim(),
       'department_id': input.departmentId,
+      'google_place_id': input.googlePlaceId,
+      'use_exact_pin': input.useExactPin,
     }).eq('id', siteId);
 
     await _syncSiteLocation(siteId: siteId, input: input);
@@ -654,7 +661,7 @@ class SavesRepository {
 
   static const _siteSelect =
       'id, name, city, department, address_line, is_public, is_physical_place, '
-      'google_place_id, created_by, created_at, updated_at, external_id, '
+      'google_place_id, use_exact_pin, created_by, created_at, updated_at, external_id, '
       'profiles!sites_created_by_fkey(display_name, avatar_url), '
       'site_categories(categories(name_i18n)), '
       'site_contributors(user_id, created_at, profiles(display_name, avatar_url))';

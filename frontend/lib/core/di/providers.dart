@@ -27,6 +27,10 @@ import '../../features/saves/data/favorites_repository.dart';
 import '../../features/saves/data/saves_repository.dart';
 import '../../features/saves/data/site_ficha.dart';
 import '../../features/saves/data/site_reviews_repository.dart';
+import '../../features/home/data/device_location.dart';
+import '../../features/home/data/home_nearby_snapshot.dart';
+import '../../features/home/domain/home_nearby_policies.dart';
+import '../../features/search/data/search_models.dart';
 import '../../features/search/data/search_repository.dart';
 import '../cache/cache_ttl.dart';
 import '../cache/entity_cache_store.dart';
@@ -76,6 +80,10 @@ final geoRepositoryProvider = Provider<GeoRepository>((ref) {
 
 final searchRepositoryProvider = Provider<SearchRepository>((ref) {
   return SearchRepository(client: ref.watch(supabaseClientProvider));
+});
+
+final deviceLocationProvider = Provider<DeviceLocation>((ref) {
+  return DeviceLocation();
 });
 
 final plansRepositoryProvider = Provider<PlansRepository>((ref) {
@@ -628,4 +636,135 @@ class RoutesNotifier extends AsyncNotifier<List<RouteHistoryEntry>> {
 final routesProvider =
     AsyncNotifierProvider<RoutesNotifier, List<RouteHistoryEntry>>(
   RoutesNotifier.new,
+);
+
+class HomeNearbyNotifier extends AsyncNotifier<HomeNearbySnapshot> {
+  @override
+  Future<HomeNearbySnapshot> build() => _load(forceNetwork: false);
+
+  Future<void> refresh({bool force = false}) async {
+    state = AsyncData(await _load(forceNetwork: force));
+  }
+
+  Future<HomeNearbySnapshot> _load({required bool forceNetwork}) async {
+    final uid = ref.read(supabaseClientProvider).auth.currentUser?.id;
+    if (uid == null) {
+      return const HomeNearbySnapshot(hits: []);
+    }
+
+    final store = ref.read(entityCacheStoreProvider);
+    final key = CacheKeys.homeNearby(uid);
+    final cached = await store.read(key);
+    HomeNearbySnapshot? disk;
+    DateTime? fetchedAt;
+    if (cached != null) {
+      disk = HomeNearbySnapshot.fromCachePayload(cached.payload);
+      fetchedAt = cached.fetchedAt;
+      if (disk != null && disk.hits.isNotEmpty) {
+        state = AsyncData(disk);
+      }
+    }
+
+    if (!forceNetwork &&
+        disk != null &&
+        disk.originLat != null &&
+        disk.originLng != null &&
+        fetchedAt != null) {
+      final age = DateTime.now().toUtc().difference(fetchedAt);
+      if (age <= HomeNearbyPolicies.maxAge) {
+        final loc = ref.read(deviceLocationProvider);
+        final access = await loc.access();
+        if (access == LocationAccess.denied) {
+          return disk;
+        }
+        final last = await loc.lastKnown();
+        if (last == null) {
+          return disk;
+        }
+        if (HomeNearbyPolicies.stillInRange(
+          originLat: disk.originLat!,
+          originLng: disk.originLng!,
+          lat: last.lat,
+          lng: last.lng,
+        )) {
+          return disk;
+        }
+      }
+    }
+
+    return _fetchAndStore(
+      key: key,
+      store: store,
+      fallback: disk,
+    );
+  }
+
+  Future<HomeNearbySnapshot> _fetchAndStore({
+    required String key,
+    required EntityCacheStore store,
+    required HomeNearbySnapshot? fallback,
+  }) async {
+    final loc = ref.read(deviceLocationProvider);
+    final access = await loc.access(request: true);
+    if (access == LocationAccess.denied) {
+      return fallback ?? const HomeNearbySnapshot(hits: [], needGps: true);
+    }
+
+    GeoFix pos;
+    try {
+      pos = await loc.current();
+    } catch (_) {
+      final last = await loc.lastKnown();
+      if (last == null) {
+        return fallback ?? const HomeNearbySnapshot(hits: []);
+      }
+      pos = last;
+    }
+
+    if (fallback != null &&
+        fallback.originLat != null &&
+        fallback.originLng != null &&
+        HomeNearbyPolicies.stillInRange(
+          originLat: fallback.originLat!,
+          originLng: fallback.originLng!,
+          lat: pos.lat,
+          lng: pos.lng,
+        )) {
+      final cached = await store.read(key);
+      if (cached != null) {
+        final age = DateTime.now().toUtc().difference(cached.fetchedAt);
+        if (age <= HomeNearbyPolicies.maxAge) {
+          return fallback;
+        }
+      }
+    }
+
+    try {
+      final hits = await ref.read(searchRepositoryProvider).search(
+            SearchFilters(
+              includePublic: true,
+              lat: pos.lat,
+              lng: pos.lng,
+              radiusKm: HomeNearbyPolicies.searchRadiusKm,
+            ),
+          );
+      final snap = HomeNearbySnapshot(
+        hits: hits
+            .where((h) => h.isPublic)
+            .take(HomeNearbyPolicies.take)
+            .toList(),
+        originLat: pos.lat,
+        originLng: pos.lng,
+      );
+      await store.write(key, snap.toCacheJson());
+      return snap;
+    } catch (_) {
+      return fallback ?? const HomeNearbySnapshot(hits: []);
+    }
+  }
+}
+
+final homeNearbyProvider =
+    AsyncNotifierProvider<HomeNearbyNotifier, HomeNearbySnapshot>(
+  HomeNearbyNotifier.new,
 );

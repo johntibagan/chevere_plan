@@ -1,11 +1,25 @@
-/// Deep links a Google Maps (ficha del lugar vs pin crudo).
+/// Deep links a Google Maps (ficha del **lugar** vs **punto exacto**).
 ///
-/// `query=lat,lng` solo marca un punto sin nombre/fotos/reseñas.
-/// Preferir Place ID o búsqueda por nombre.
+/// - Lugar: Place ID o búsqueda por nombre (ficha con fotos/reseñas).
+/// - Punto exacto: `query=lat,lng` (pin; sin ficha).
 class GoogleMapsLinks {
   GoogleMapsLinks._();
 
-  /// Ver el lugar en Maps (tarjeta del sitio si Google lo reconoce).
+  static Uri? _coordsQuery(double? lat, double? lng) {
+    if (lat == null || lng == null) return null;
+    return Uri.parse(
+      'https://www.google.com/maps/search/?api=1&query=$lat,$lng',
+    );
+  }
+
+  static Uri? _coordsDir(double? lat, double? lng) {
+    if (lat == null || lng == null) return null;
+    return Uri.parse(
+      'https://www.google.com/maps/dir/?api=1&destination=$lat,$lng',
+    );
+  }
+
+  /// Ver en Maps. [useExactPin] usa coords; si no, ficha/búsqueda del lugar.
   static Uri viewPlace({
     required String name,
     String? city,
@@ -13,7 +27,12 @@ class GoogleMapsLinks {
     String? googlePlaceId,
     double? lat,
     double? lng,
+    bool useExactPin = false,
   }) {
+    if (useExactPin) {
+      final pin = _coordsQuery(lat, lng);
+      if (pin != null) return pin;
+    }
     final placeId = googlePlaceId?.trim();
     if (placeId != null && placeId.isNotEmpty) {
       final q = Uri.encodeQueryComponent(_label(name, city, department));
@@ -32,16 +51,10 @@ class GoogleMapsLinks {
       );
     }
 
-    if (lat != null && lng != null) {
-      return Uri.parse(
-        'https://www.google.com/maps/search/?api=1&query=$lat,$lng',
-      );
-    }
-
-    return Uri.parse('https://www.google.com/maps');
+    return _coordsQuery(lat, lng) ?? Uri.parse('https://www.google.com/maps');
   }
 
-  /// Cómo llegar: Place ID → nombre → coords.
+  /// Cómo llegar. [useExactPin] destina al pin; si no, al lugar.
   static Uri directionsTo({
     required String name,
     String? city,
@@ -49,7 +62,12 @@ class GoogleMapsLinks {
     String? googlePlaceId,
     double? lat,
     double? lng,
+    bool useExactPin = false,
   }) {
+    if (useExactPin) {
+      final pin = _coordsDir(lat, lng);
+      if (pin != null) return pin;
+    }
     final placeId = googlePlaceId?.trim();
     if (placeId != null && placeId.isNotEmpty) {
       final dest = Uri.encodeQueryComponent(_label(name, city, department));

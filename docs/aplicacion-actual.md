@@ -39,7 +39,7 @@ sequenceDiagram
 
 | Sitio | Qué ves |
 |---|---|
-| **Inicio** | Saludo + título, campana (cercanía), **banner de recuerdo cercano** (abre preferencias de radio), aviso de borradores, **guardados recientes** (carrusel), **populares cerca**, **acciones rápidas**. Tarjetas con portada, corazón de favorito, badge de red si hay origen, verde/morado por visibilidad |
+| **Inicio** | Saludo + título, campana (cercanía), **banner de recuerdo cercano** (abre preferencias de radio), aviso de borradores, **guardados recientes** (carrusel), **populares cerca** (caché por celda GPS ~2 km, no se vuelve a buscar al reentrar a Inicio), **acciones rápidas**. Tarjetas con portada, corazón de favorito, badge de red si hay origen, verde/morado visibilidad |
 | **Explorar** | Búsqueda de sitios (cabecera Figma, chips de categoría, grilla/lista). Misma lógica: texto obligatorio en modo simple, filtros avanzados, incluir públicos |
 | **+ (centro)** | Guardar o completar un lugar (crear y editar son la **misma pantalla**) |
 | **Planes** | Tus itinerarios (tarjeta de crear + lista; **un solo** CTA, sin FAB duplicado) |
@@ -63,7 +63,9 @@ Es el corazón de la app.
 - Reabrir un guardado incompleto desde Inicio
 - **Compartir** un enlace desde otra app (Maps, Instagram, etc.): se intenta leer nombre, ciudad y coordenadas
 
-Podés pegar un link de Maps **dentro del campo** (opción desde enlace / icono pegar): la app rellena nombre, ciudad y **pin**. Eso cuenta como lugar ya elegido: **no** se pregunta “¿punto exacto?” ni se tiran las coordenadas. **Público** queda habilitado si hay pin. El mapa interactivo tampoco pregunta: el usuario ya confirmó el punto. El interruptor **Punto exacto en el mapa** es opt-out explícito (apagarlo quita coords y bloquea Público en lugar físico). Contrato: [`invariantes.md`](invariantes.md).
+Podés pegar un link de Maps **dentro del campo** (opción desde enlace / icono pegar): la app rellena nombre, ciudad y **pin**. Eso cuenta como lugar ya elegido: **no** se pregunta “¿punto exacto?” ni se tiran las coordenadas. **Público** queda habilitado si hay pin. El mapa interactivo tampoco pregunta: el usuario ya confirmó el punto.
+
+Se guardan **las dos** ubicaciones: el **lugar** (nombre y Place ID de Google, para la ficha en Maps) y el **punto exacto** (lat/lng). El interruptor **Punto exacto en el mapa** va **apagado** por defecto: Maps abre la ficha/búsqueda del lugar. Si lo encendés, Maps abre el pin. Apagarlo **no** borra las coordenadas ni bloquea Público. Contrato: [`invariantes.md`](invariantes.md).
 
 ### Qué ves en el formulario
 
@@ -200,6 +202,8 @@ En Inicio, el banner **Recuerdo cercano** (y la campana) abre una hoja corta: ra
 
 El teléfono registra geocercas (tope práctico ~100, priorizando los tuyos). Si entrás al radio, notificación tipo recuerdo. Pedir ubicación “siempre” y el gasto de batería aún se pueden pulir.
 
+**Populares cerca** (Inicio) usa la misma idea de “celda”: guarda los 4 públicos del radio de 25 km junto con el punto GPS. Al volver a Inicio pinta esa lista al toque. Solo vuelve a consultar GPS fino + búsqueda si te moviste más de ~2 km (el tope de radio de recuerdos), si la caché tiene más de 24 h, o si deslizás para refrescar.
+
 ```mermaid
 flowchart TD
   P[Preferencias radio] --> S[Sincronizar cercas]
@@ -288,4 +292,5 @@ flowchart TB
 - Categorías y transporte: **base de datos** + caché larga
 - Geografía: **DIVIPOLA** + caché 30/90 días
 - Sitios, saves, planes, reseñas: servidor; la app muestra caché y confirma después
+- **Populares cerca:** Hive + ancla GPS; nueva red solo si te salís ~2 km, pasaron 24 h, o tirás a refrescar Inicio
 - Fotos: Storage privado; se pueden ver si el sitio es público o es tuyo

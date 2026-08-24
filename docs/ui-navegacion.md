@@ -232,7 +232,7 @@ Tab activo: icono + label `primary`. Inactivo: `mutedDark`, label 10 px.
 ### 6.4 Guardar / editar — `SavePlacePage` (misma pantalla)
 
 - AppBar solo con título (atrás del sistema). **Guardar** / **Guardar cambios** es un `FilledButton` **fijo abajo**, ancho, un solo CTA. **No** copiar el Make si lo pone arriba.
-- Siempre: **Ubicación** (pegar Maps + preview del mapa + switch punto exacto, misma card) → **Nombre** (`*`) → **Público** (icono verde/morado + switch; deshabilitado sin pin en físico).
+- Siempre: **Ubicación** (pegar Maps + preview del mapa + switch punto exacto **apagado** por defecto: elige ficha vs pin, no borra coords) → **Nombre** (`*`) → **Público** (icono verde/morado + switch; deshabilitado sin pin en físico).
 - Extra: chips `+` **Añadir sección** (no sheet): Detalles, Enlaces, Categorías, Fotos, Lugar físico.
 - Editar / completar borrador: todas las secciones abiertas.
 - Share-in: además abre Enlaces.

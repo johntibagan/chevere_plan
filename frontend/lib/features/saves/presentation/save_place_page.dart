@@ -82,6 +82,9 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
 
   double? _lat;
   double? _lng;
+  String? _googlePlaceId;
+  /// false = Maps abre el **lugar** (nombre/place id); true = **punto exacto** (lat/lng).
+  bool _useExactPin = false;
   /// Había pin persistido al abrir (editar). Si lo quitan, hay que borrar en DB.
   bool _hadStoredCoords = false;
 
@@ -241,6 +244,8 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
           _isPhysical = s.isPhysicalPlace;
           _lat = data.latitude;
           _lng = data.longitude;
+          _googlePlaceId = s.googlePlaceId;
+          _useExactPin = s.useExactPin;
           _hadStoredCoords = data.latitude != null && data.longitude != null;
           _selectedCategoryIds
             ..clear()
@@ -296,6 +301,8 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
           _isPhysical = data.isPhysicalPlace;
           _lat = data.latitude;
           _lng = data.longitude;
+          _googlePlaceId = data.googlePlaceId;
+          _useExactPin = data.useExactPin;
           _hadStoredCoords = data.latitude != null && data.longitude != null;
           _selectedCategoryIds
             ..clear()
@@ -363,6 +370,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
     double? lat,
     double? lng,
     String? staticMapUrl,
+    String? googlePlaceId,
   }) {
     void put(TextEditingController c, String? v) {
       if (v != null && v.trim().isNotEmpty) c.text = v.trim();
@@ -374,6 +382,9 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
       _applyGeoHints(department: department, city: city);
       _lat = lat ?? _lat;
       _lng = lng ?? _lng;
+      if (googlePlaceId != null && googlePlaceId.trim().isNotEmpty) {
+        _googlePlaceId = googlePlaceId.trim();
+      }
       if (staticMapUrl != null && staticMapUrl.isNotEmpty) {
         _pendingMapImageUrl = staticMapUrl;
       }
@@ -397,6 +408,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
         lat: result.lat,
         lng: result.lng,
         staticMapUrl: result.staticMapUrl,
+        googlePlaceId: result.googlePlaceId,
       );
       if (!mounted) return;
       // Enlace de Maps = el usuario ya eligió el lugar. Conservar coords.
@@ -709,6 +721,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
       address: place.addressLine ?? place.displayName,
       lat: place.lat,
       lng: place.lng,
+      googlePlaceId: place.placeId,
     );
     if (!mounted) return;
     // Soft check: diálogo (no Toast). Si sigue editando, al Guardar se reitera.
@@ -842,6 +855,8 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
         categoryIds: categoryIds,
         isPublic: true,
         isPhysicalPlace: _isPhysical,
+        googlePlaceId: _googlePlaceId,
+        useExactPin: _useExactPin,
         linkToExistingSiteId: existingSiteId,
         categoryIsExplicit: categoryIsExplicit,
       );
@@ -996,6 +1011,8 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
       categoryIds: categoryIds,
       isPublic: _isPublic && _hasFormLocation,
       isPhysicalPlace: _isPhysical,
+      googlePlaceId: _googlePlaceId,
+      useExactPin: _useExactPin,
       categoryIsExplicit: categoryIsExplicit,
       clearLocation: _hadStoredCoords && (lat == null || lng == null),
     );
@@ -1130,6 +1147,8 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
             categoryIds: input.categoryIds,
             isPublic: input.isPublic,
             isPhysicalPlace: _isPhysical,
+            googlePlaceId: _googlePlaceId,
+            useExactPin: _useExactPin,
             linkToExistingSiteId: linkToExisting,
             categoryIsExplicit: categoryIsExplicit,
           ),
@@ -1554,18 +1573,16 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
           contentPadding: EdgeInsets.zero,
           title: Text(l10n.saveExactPinSwitch),
           secondary: _infoTip(l10n.saveInfoExactPin),
-          value: hasPin,
+          value: _useExactPin,
           onChanged: _saving
               ? null
               : (v) async {
-                  if (!v) {
-                    setState(() {
-                      _lat = null;
-                      _lng = null;
-                    });
-                    return;
+                  if (v && (_lat == null || _lng == null)) {
+                    await _openMap();
+                    if (!mounted) return;
+                    if (_lat == null || _lng == null) return;
                   }
-                  await _openMap();
+                  setState(() => _useExactPin = v);
                 },
         ),
       ],

@@ -216,6 +216,7 @@ class UserSave {
     this.isCatalogSite = false,
     this.isPhysicalPlace = true,
     this.googlePlaceId,
+    this.useExactPin = false,
   });
 
   final String id;
@@ -248,6 +249,8 @@ class UserSave {
   final bool isCatalogSite;
   final bool isPhysicalPlace;
   final String? googlePlaceId;
+  /// Maps: true = pin lat/lng; false = ficha/búsqueda del lugar.
+  final bool useExactPin;
 
   bool get isIncomplete => status != SiteStatus.complete;
 
@@ -281,6 +284,7 @@ class UserSave {
         'is_catalog_site': isCatalogSite,
         'is_physical_place': isPhysicalPlace,
         'google_place_id': googlePlaceId,
+        'use_exact_pin': useExactPin,
       };
 
   factory UserSave.fromCacheJson(Map<String, dynamic> json) {
@@ -361,6 +365,7 @@ class UserSave {
       isCatalogSite: json['is_catalog_site'] as bool? ?? false,
       isPhysicalPlace: json['is_physical_place'] as bool? ?? true,
       googlePlaceId: json['google_place_id'] as String?,
+      useExactPin: json['use_exact_pin'] as bool? ?? false,
     );
   }
 
@@ -436,6 +441,7 @@ class UserSave {
       isCatalogSite: ext != null && ext.trim().isNotEmpty,
       isPhysicalPlace: site['is_physical_place'] as bool? ?? true,
       googlePlaceId: site['google_place_id'] as String?,
+      useExactPin: site['use_exact_pin'] as bool? ?? false,
     );
   }
 }
@@ -471,6 +477,7 @@ class SiteEditData {
     this.latitude,
     this.longitude,
     this.googlePlaceId,
+    this.useExactPin = false,
   });
 
   final String siteId;
@@ -486,6 +493,7 @@ class SiteEditData {
   final double? latitude;
   final double? longitude;
   final String? googlePlaceId;
+  final bool useExactPin;
 }
 
 class SaveDraftInput {
@@ -507,6 +515,8 @@ class SaveDraftInput {
     this.linkToExistingSiteId,
     this.categoryIsExplicit = true,
     this.clearLocation = false,
+    this.googlePlaceId,
+    this.useExactPin = false,
   });
 
   final String name;
@@ -529,4 +539,6 @@ class SaveDraftInput {
   final bool categoryIsExplicit;
   /// Al editar: quitar coords guardadas (ficha por nombre en Maps).
   final bool clearLocation;
+  final String? googlePlaceId;
+  final bool useExactPin;
 }

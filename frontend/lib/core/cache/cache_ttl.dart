@@ -65,4 +65,5 @@ abstract final class CacheKeys {
   static String plansPage0(String uid) => 'plans_p0:$uid';
   static String routesAll(String uid) => 'routes_all:$uid';
   static String search(String fingerprint) => 'search:$fingerprint';
+  static String homeNearby(String uid) => 'home_nearby_v1:$uid';
 }

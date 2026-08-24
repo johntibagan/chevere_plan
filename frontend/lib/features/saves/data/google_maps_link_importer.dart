@@ -20,6 +20,7 @@ class GoogleMapsImportResult {
     this.staticMapUrl,
     this.resolvedUrl,
     this.hasExactPin = false,
+    this.googlePlaceId,
   });
 
   final String? name;
@@ -31,6 +32,7 @@ class GoogleMapsImportResult {
   final String? staticMapUrl;
   final String? resolvedUrl;
   final bool hasExactPin;
+  final String? googlePlaceId;
 
   bool get hasCoords => lat != null && lng != null;
   bool get hasAnything =>
@@ -48,6 +50,7 @@ class GoogleMapsImportResult {
       city: city,
       department: department,
       addressLine: addressLine,
+      placeId: googlePlaceId,
     );
   }
 
@@ -65,6 +68,7 @@ class GoogleMapsImportResult {
       addressLine: p.addressLine ?? p.displayName,
       resolvedUrl: resolvedUrl,
       hasExactPin: hasExactPin,
+      googlePlaceId: p.placeId,
       staticMapUrl: null,
     );
   }
@@ -165,6 +169,7 @@ class GoogleMapsLinkImporter {
     String? city = parsed.city;
     String? department = parsed.department;
     String? address = parsed.addressLine;
+    String? googlePlaceId;
     var blob = resolved.toString();
 
     // HTML una vez si falta pin (acortador 200 / consent / data solo en body).
@@ -209,6 +214,7 @@ class GoogleMapsLinkImporter {
         final chij = GooglePlacesClient.extractChijPlaceId(blob);
         if (chij != null) {
           fromPlaces = await _places.placeDetails(placeId: chij);
+          googlePlaceId ??= chij;
         }
         if (fromPlaces == null) {
           final fid = extractFeatureId(blob);
@@ -232,6 +238,7 @@ class GoogleMapsLinkImporter {
           city ??= fromPlaces.city;
           department ??= fromPlaces.department;
           address ??= fromPlaces.addressLine ?? fromPlaces.displayName;
+          googlePlaceId ??= fromPlaces.placeId;
         }
       } catch (e, st) {
         AppLog.debug(
@@ -277,6 +284,7 @@ class GoogleMapsLinkImporter {
       addressLine: address,
       resolvedUrl: resolved.toString(),
       hasExactPin: hasExactPin && lat != null && lng != null,
+      googlePlaceId: googlePlaceId,
     )._withStaticMap();
 
     AppLog.debug(
@@ -583,6 +591,7 @@ extension on GoogleMapsImportResult {
       staticMapUrl: url,
       resolvedUrl: resolvedUrl,
       hasExactPin: hasExactPin,
+      googlePlaceId: googlePlaceId,
     );
   }
 }

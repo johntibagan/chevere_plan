@@ -1147,7 +1147,7 @@ abstract class AppLocalizations {
   /// No description provided for @saveExactPinSwitchHint.
   ///
   /// In es, this message translates to:
-  /// **'Si está apagado, Maps abre la ficha por nombre. Enciéndelo para rutas y el pin preciso.'**
+  /// **'Apagado (recomendado): Maps abre la ficha del lugar por nombre. Encendido: abre el pin (lat, lng).'**
   String get saveExactPinSwitchHint;
 
   /// No description provided for @saveMapsPasteLabel.
@@ -1471,7 +1471,7 @@ abstract class AppLocalizations {
   /// No description provided for @saveInfoExactPin.
   ///
   /// In es, this message translates to:
-  /// **'Encendido guarda el pin para rutas. Apagado abre la ficha en Maps por nombre y quita las coordenadas.'**
+  /// **'Se guardan las dos: el lugar (nombre / Place ID) y el pin. El interruptor solo elige cuál abre Maps. Apagado = ficha del lugar. Encendido = coordenadas.'**
   String get saveInfoExactPin;
 
   /// No description provided for @saveInfoName.

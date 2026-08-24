@@ -299,6 +299,7 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
       googlePlaceId: ficha.googlePlaceId,
       lat: ficha.lat,
       lng: ficha.lng,
+      useExactPin: ficha.useExactPin,
     );
     final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
     if (!ok && mounted) {
@@ -319,6 +320,7 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
       googlePlaceId: ficha.googlePlaceId,
       lat: ficha.lat,
       lng: ficha.lng,
+      useExactPin: ficha.useExactPin,
     );
     final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
     if (!ok && mounted) {

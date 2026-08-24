@@ -29,6 +29,7 @@ class SiteFicha {
     this.lat,
     this.lng,
     this.googlePlaceId,
+    this.useExactPin = false,
   });
 
   final String siteId;
@@ -56,6 +57,7 @@ class SiteFicha {
   final double? lat;
   final double? lng;
   final String? googlePlaceId;
+  final bool useExactPin;
 
   bool get isOwn => ownSave != null;
 
@@ -100,6 +102,7 @@ class SiteFicha {
         'lat': lat,
         'lng': lng,
         'google_place_id': googlePlaceId,
+        'use_exact_pin': useExactPin,
       };
 
   factory SiteFicha.fromCacheJson(Map<String, dynamic> json) {
@@ -180,6 +183,7 @@ class SiteFicha {
       lat: (json['lat'] as num?)?.toDouble(),
       lng: (json['lng'] as num?)?.toDouble(),
       googlePlaceId: json['google_place_id'] as String?,
+      useExactPin: json['use_exact_pin'] as bool? ?? false,
     );
   }
 
@@ -205,6 +209,7 @@ class SiteFicha {
       isCatalogSite: save.isCatalogSite,
       ownSave: save,
       googlePlaceId: save.googlePlaceId,
+      useExactPin: save.useExactPin,
     );
   }
 
@@ -278,6 +283,7 @@ class SiteFicha {
           : null,
       isCatalogSite: ext != null && ext.trim().isNotEmpty,
       googlePlaceId: site['google_place_id'] as String?,
+      useExactPin: site['use_exact_pin'] as bool? ?? false,
     );
   }
 
@@ -288,6 +294,7 @@ class SiteFicha {
     double? lat,
     double? lng,
     String? googlePlaceId,
+    bool? useExactPin,
   }) {
     return SiteFicha(
       siteId: siteId,
@@ -315,6 +322,7 @@ class SiteFicha {
       lat: lat ?? this.lat,
       lng: lng ?? this.lng,
       googlePlaceId: googlePlaceId ?? this.googlePlaceId,
+      useExactPin: useExactPin ?? this.useExactPin,
     );
   }
 }

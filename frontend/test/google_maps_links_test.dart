@@ -35,4 +35,17 @@ void main() {
     );
     expect(uri.queryParameters['query'], '5.5,-73.3');
   });
+
+  test('viewPlace con useExactPin usa lat,lng aunque haya place_id', () {
+    final uri = GoogleMapsLinks.viewPlace(
+      name: 'Plaza de Bolívar',
+      city: 'Tunja',
+      googlePlaceId: 'ChIJtest',
+      lat: 5.5,
+      lng: -73.3,
+      useExactPin: true,
+    );
+    expect(uri.queryParameters['query'], '5.5,-73.3');
+    expect(uri.queryParameters.containsKey('query_place_id'), isFalse);
+  });
 }

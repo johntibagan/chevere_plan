@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -48,9 +47,6 @@ class _HomePageState extends ConsumerState<HomePage> {
   int _tab = 0; // 0 inicio, 1 explorar, 2 planes, 3 rutas
   DateTime? _exitArmedAt;
   static const _exitWindow = Duration(seconds: 2);
-  List<SearchHit> _nearby = [];
-  bool _nearbyLoading = false;
-  bool _nearbyNeedGps = false;
   bool _showAllRecent = false;
 
   /// Instancias cacheadas: se crean al primer toque (lazy) y se reutilizan.
@@ -154,7 +150,6 @@ class _HomePageState extends ConsumerState<HomePage> {
         _loadingMoreSaves = page.loadingMore;
         _loading = false;
       });
-      _loadNearby();
       ref.read(sitePrefetchProvider).scheduleVisibleSites(
             saves.map((s) => s.siteId),
           );
@@ -215,54 +210,6 @@ class _HomePageState extends ConsumerState<HomePage> {
     }
   }
 
-  Future<void> _loadNearby() async {
-    if (!mounted) return;
-    setState(() {
-      _nearbyLoading = true;
-      _nearbyNeedGps = false;
-    });
-    try {
-      var permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-      }
-      if (permission == LocationPermission.denied ||
-          permission == LocationPermission.deniedForever) {
-        if (!mounted) return;
-        setState(() {
-          _nearby = [];
-          _nearbyLoading = false;
-          _nearbyNeedGps = true;
-        });
-        return;
-      }
-      final pos = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.medium,
-        ),
-      );
-      final hits = await ref.read(searchRepositoryProvider).search(
-            SearchFilters(
-              includePublic: true,
-              lat: pos.latitude,
-              lng: pos.longitude,
-              radiusKm: 25,
-            ),
-          );
-      if (!mounted) return;
-      setState(() {
-        _nearby = hits.where((h) => h.isPublic).take(4).toList();
-        _nearbyLoading = false;
-      });
-    } catch (_) {
-      if (!mounted) return;
-      setState(() {
-        _nearby = [];
-        _nearbyLoading = false;
-      });
-    }
-  }
-
   Future<void> _openSave({String? shared, UserSave? existing}) async {
     final result = await Navigator.of(context).push<UserSave>(
       MaterialPageRoute(
@@ -313,6 +260,13 @@ class _HomePageState extends ConsumerState<HomePage> {
     final adminRepo = ref.read(adminRepositoryProvider);
     final moderationRepo = ref.read(moderationRepositoryProvider);
 
+    final nearbyAsync = ref.watch(homeNearbyProvider);
+    final nearbySnap = nearbyAsync.valueOrNull;
+    final nearbyHits = nearbySnap?.hits ?? const <SearchHit>[];
+    final nearbyLoading =
+        nearbyAsync.isLoading && (nearbySnap == null || nearbySnap.hits.isEmpty);
+    final nearbyNeedGps = nearbySnap?.needGps ?? false;
+
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, _) {
@@ -339,13 +293,16 @@ class _HomePageState extends ConsumerState<HomePage> {
               saves: _saves,
               hasMoreSaves: _hasMoreSaves,
               loadingMoreSaves: _loadingMoreSaves,
-              nearby: _nearby,
-              nearbyLoading: _nearbyLoading,
-              nearbyNeedGps: _nearbyNeedGps,
+              nearby: nearbyHits,
+              nearbyLoading: nearbyLoading,
+              nearbyNeedGps: nearbyNeedGps,
               showAllRecent: _showAllRecent,
               profile: _profile,
               onRefresh: () async {
-                await _bootstrap(forceRefresh: true);
+                await Future.wait([
+                  _bootstrap(forceRefresh: true),
+                  ref.read(homeNearbyProvider.notifier).refresh(force: true),
+                ]);
               },
               onLoadMoreSaves: () =>
                   ref.read(mySavesProvider.notifier).loadMore(),

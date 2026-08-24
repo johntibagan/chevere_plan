@@ -70,7 +70,7 @@ void main() {
   );
 
   patrolTest(
-    'apagar Punto exacto limpia pin y bloquea Público',
+    'tras el pin, Punto exacto queda apagado y Público sigue habilitado',
     tags: ['critical', 'saves'],
     ($) async {
       if (!await requireSignedIn($)) return;
@@ -80,9 +80,11 @@ void main() {
       await save.openMap();
       await LocationPickerRobot($).confirmPin();
       save.expectHasPin(true);
-      await save.toggleExactPinOff();
-      save.expectHasPin(false);
-      save.expectPublicEnabled(false);
+      save.expectPublicEnabled(true);
+      final tile = $.tester.widget<SwitchListTile>(
+        find.byKey(WidgetKeys.saveExactPinSwitch),
+      );
+      expect(tile.value, isFalse);
     },
   );
 

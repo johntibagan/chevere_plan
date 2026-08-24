@@ -53,6 +53,7 @@ Esta es la sección más crítica del documento. Ninguna funcionalidad nueva se 
   | Fotos (metadata + signed URL) | alineado a firma (~50 min) | — |
   | Planes / rutas | 5–10 min | 24 h |
   | Búsqueda | 1–2 min por query | 30–60 min |
+  | Populares cerca (Inicio) | misma celda (~2 km) | 24 h |
 - **Imágenes**: `cached_network_image` en todo lugar donde se muestren fotos, con límite explícito de caché en disco/memoria (para no generar crashes en equipos de gama media/baja) y `memCacheWidth/Height` acotado según el tamaño real mostrado en pantalla.
 - **Selectores/autocompletados que dependen de catálogos "fríos"** (categorías, ubicación) deben resolverse 100% desde memoria/disco tras la primera sincronización, sin golpe de red por interacción del usuario, incluso sin conexión.
 - **Paginación y lazy loading** en toda lista potencialmente larga (Inicio, Explorar, Mis rutas). Nunca traer todo de una vez.
