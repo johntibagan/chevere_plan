@@ -1,6 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import 'geo_models.dart';
+import '../domain/geo_models.dart';
 
 class GeoRepository {
   GeoRepository({SupabaseClient? client})

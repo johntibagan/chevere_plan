@@ -1135,4 +1135,75 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get adminStatReports => 'Reportes abiertos';
+
+  @override
+  String get errorGeneric => 'Error en la app. Intenta de nuevo.';
+
+  @override
+  String get errorLoadRetry => 'No se pudo cargar. Intenta de nuevo.';
+
+  @override
+  String get siteDetailOpenMapsFail => 'No se pudo abrir Google Maps.';
+
+  @override
+  String get photoTermsBody =>
+      'Al subir una foto confirmas que cumple los Términos de Uso de Chevere Plan (turismo, gastronomía y planes de ocio; sin contenido sexual, ilegal o de acoso).';
+
+  @override
+  String get photoAdded => 'Foto añadida.';
+
+  @override
+  String get photoDeleted => 'Foto eliminada.';
+
+  @override
+  String get photoReportReason => 'Motivo (opcional)';
+
+  @override
+  String get photoReportSent =>
+      'Reporte enviado. Un administrador lo revisará.';
+
+  @override
+  String get adminInactive => 'Inactiva';
+
+  @override
+  String get adminKeywords => 'Palabras clave';
+
+  @override
+  String get adminKeywordsHint => 'Separadas por coma (ej. nadar, agua, pool)';
+
+  @override
+  String get adminNameEs => 'Nombre (es)';
+
+  @override
+  String get adminEditCategory => 'Editar categoría';
+
+  @override
+  String get adminEditSubcategory => 'Editar subcategoría';
+
+  @override
+  String get adminTransportActive => 'Activo';
+
+  @override
+  String get adminTransportMaxKm => 'Máx. km por defecto (vacío = sin tope)';
+
+  @override
+  String get locationMapsUnavailable =>
+      'El mapa no está disponible. Busca o toca el mapa.';
+
+  @override
+  String get locationSearchMinChars =>
+      'Escribe al menos 3 letras y toca buscar.';
+
+  @override
+  String get locationGpsFail =>
+      'No se pudo obtener tu ubicación. Busca o toca el mapa.';
+
+  @override
+  String get locationProviderGoogle => 'Google Maps · buscar solo con 🔍';
+
+  @override
+  String get locationProviderFallback => 'Búsqueda alternativa activa';
+
+  @override
+  String get locationProviderNone => 'Mapa no disponible';
 }

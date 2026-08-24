@@ -4,9 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'app.dart';
+import 'core/auth/secure_session_storage.dart';
 import 'core/cache/app_image_cache.dart';
 import 'core/cache/entity_cache_store.dart';
 import 'core/config/env.dart';
+import 'core/logging/app_log.dart';
 import 'core/notifications/fcm_bootstrap.dart';
 import 'features/proximity/data/proximity_reminder_service.dart';
 import 'features/saves/data/draft_reminder_service.dart';
@@ -19,7 +21,7 @@ Future<Widget> createRootApp({
 }) async {
   Env.assertNoServerSecrets();
 
-  if (!Env.hasSupabaseConfig) {
+  if (!Env.hasSupabaseConfig || !Env.supabaseUrlIsHttps) {
     return ProviderScope(
       overrides: overrides,
       child: BootstrapErrorApp(message: Env.missingConfigUserMessage),
@@ -29,11 +31,15 @@ Future<Widget> createRootApp({
   // Caché disco (Hive CE) — fallos no bloquean el arranque.
   try {
     await EntityCacheStore.instance.init();
-  } catch (_) {}
+  } catch (e, st) {
+    AppLog.error('Hive init', name: 'bootstrap', error: e, stackTrace: st);
+  }
 
   try {
     AppImageCacheManager.configurePaintingCache();
-  } catch (_) {}
+  } catch (e, st) {
+    AppLog.error('image cache', name: 'bootstrap', error: e, stackTrace: st);
+  }
 
   if (initFirebase) {
     await Firebase.initializeApp();
@@ -51,9 +57,18 @@ Future<Widget> createRootApp({
     await Supabase.initialize(
       url: Env.supabaseUrl,
       publishableKey: Env.supabaseAnonKey,
+      authOptions: FlutterAuthClientOptions(
+        localStorage: SecureSessionStorage(supabaseUrl: Env.supabaseUrl),
+      ),
     );
-  } catch (_) {
+  } catch (e, st) {
     // Ya inicializado en este proceso (p. ej. test Patrol anterior).
+    AppLog.debug(
+      'Supabase.initialize skipped',
+      name: 'bootstrap',
+      error: e,
+      stackTrace: st,
+    );
   }
 
   return ProviderScope(

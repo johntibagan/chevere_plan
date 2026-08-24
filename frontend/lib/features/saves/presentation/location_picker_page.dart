@@ -56,8 +56,15 @@ class _LocationPickerPageState extends ConsumerState<LocationPickerPage> {
     } else {
       _pin = _colombiaCenter;
     }
-    if (!Env.hasGoogleMapsKey && !Env.hasGeoapifyKey) {
-      _hint = 'Configura GOOGLE_MAPS_API_KEY en .env (ver docs/google-maps-setup.md).';
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_hint == null &&
+        !Env.hasGoogleMapsKey &&
+        !Env.hasGeoapifyKey) {
+      _hint = context.l10n.locationMapsUnavailable;
     }
   }
 
@@ -98,7 +105,7 @@ class _LocationPickerPageState extends ConsumerState<LocationPickerPage> {
       if (mounted) {
         setState(() {
           _predictions = const [];
-          _hint = 'Escribe al menos 3 letras y toca buscar.';
+          _hint = context.l10n.locationSearchMinChars;
         });
       }
       return;
@@ -256,7 +263,7 @@ class _LocationPickerPageState extends ConsumerState<LocationPickerPage> {
       await _setPin(next);
     } catch (_) {
       setState(() {
-        _hint = 'No se pudo obtener tu ubicación. Busca o toca el mapa.';
+        _hint = context.l10n.locationGpsFail;
         _locating = false;
       });
     }
@@ -289,10 +296,10 @@ class _LocationPickerPageState extends ConsumerState<LocationPickerPage> {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final providerLabel = Env.hasGoogleMapsKey
-        ? 'Google Maps · buscar solo con 🔍'
+        ? l10n.locationProviderGoogle
         : Env.hasGeoapifyKey
-            ? 'Fallback Geoapify · configura GOOGLE_MAPS_API_KEY'
-            : 'Sin key de mapas';
+            ? l10n.locationProviderFallback
+            : l10n.locationProviderNone;
 
     return Scaffold(
       appBar: AppBar(

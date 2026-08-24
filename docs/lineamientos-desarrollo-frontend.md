@@ -8,14 +8,26 @@ La prioridad número uno de este proyecto es **la agilidad percibida por el usua
 
 ## 2. Arquitectura y código
 
-- **Modular por feature**, con capas `data / domain / presentation` dentro de `frontend/`. Cada módulo (usuarios, guardados, planes, categorías, ubicación, moderación) debe poder testearse y modificarse de forma independiente.
-- **Inyección de dependencias con Riverpod** en toda la app. Nada de lógica de negocio dentro de widgets.
+- **Modular por feature**, con capas `data / domain / presentation` dentro de `frontend/lib/features/<nombre>/`. Domain: Dart puro (entidades + políticas/casos de uso). Data: un repositorio o cliente por fuente externa. Presentation: views + Riverpod `Notifier` / `AsyncNotifier` (no `StateNotifier`). **No forzar** casos de uso en pantallas triviales.
+- **`lib/core/` no importa features**, salvo el composition root `lib/core/di/providers.dart` (Riverpod registra repos). Una feature nueva (p. ej. IA de planes, cuando exista) vive en su carpeta y se registra solo ahí.
+- **Inyección con Riverpod** explícita. Nada de service locators ni singletons de negocio globales. Nada de lógica de negocio dentro de widgets.
+- **Errores:** `Result`/`Failure` en `lib/core/errors/result.dart` para data/domain; UI solo `AppUserError` o `kGenericAppError` / `errorGeneric`. Nunca SQL/PostgREST/stack en pantalla.
+- **Navegación:** `Navigator` + sheets cortos, como [`ui-navegacion.md`](ui-navegacion.md). **No GoRouter** en este pase: el flujo documentado (push de `SavePlacePage`, sheets de proximidad) no se reescribe.
 - **Cero duplicación (diseño y funciones):** no copiar pantallas, cards, chips, CTA ni flujos. Un widget/módulo compartido; las pantallas solo componen. Si el mismo look o la misma acción aparece (o va a aparecer) en 2+ sitios, se extrae a `core/widgets` o al feature dueño (p. ej. `home_cards`). Variantes = parámetros, no un segundo archivo casi igual. Caso extremo: un layout de una sola pantalla que extraer empeora. **Prohibido** dos CTA que hacen lo mismo en la misma pantalla (card Crear + FAB Crear).
 - **Cero duplicación de código**: widgets, servicios y utilidades reutilizables antes que copiar-pegar. Si un patrón se repite 2+ veces, se extrae.
 - **Theming centralizado**: colores, tipografías y spacing como tokens de diseño (coherentes con el prototipo Figma), nunca valores sueltos hardcodeados en cada pantalla.
 - **Código legible antes que ingenioso**: nombres explícitos, funciones cortas y de una sola responsabilidad, comentarios solo donde el código no se explica solo. Preferir claridad sobre abstracciones prematuras.
 - **Nada de reglas de negocio hardcodeadas**: todo lo parametrizable (categorías, vehículos, tarifas, topes, divisiones político-administrativas) vive en base de datos, nunca en el código.
 - **No inventar comportamiento**: si la especificación no cubre un detalle necesario para codificar, se pregunta antes de asumir.
+
+## 2.1 Seguridad (cliente)
+
+- Secretos y URLs de Supabase: `--dart-define` / `.env` gitignored (`Env`). Nunca assets. Service role prohibida en el cliente.
+- Sesión JWT: `flutter_secure_storage` (Android Keystore, AES-GCM). Legales y cuotas pueden seguir en SharedPreferences.
+- HTTPS obligatorio hacia Supabase (`Env.supabaseUrlIsHttps` + `usesCleartextTraffic=false`). Sin certificate pinning (frágil con CDN/certs rotativos); vale la validación del SO.
+- Share/deep link: `ShareParser` recorta y rechaza `javascript:` / `data:` / `file:` / `content:`.
+- Release Android: R8 minify + shrink resources. Ubicación “siempre” sigue en el manifiesto porque el geofencing de proximidad lo usa; pulir el prompt in-app sigue pendiente de producto.
+- i18n: `flutter_localizations` + `generate: true` + `app_es.arb` (ICU). No `intl_utils` (doble codegen). Moneda: `NumberFormat` / `formatMoney`, código desde el modelo.
 
 ## 3. Multi-idioma y multi-región (preparación a futuro)
 
@@ -47,6 +59,8 @@ Esta es la sección más crítica del documento. Ninguna funcionalidad nueva se 
 - **Prefetching liviano** de la pantalla siguiente probable en momentos de inactividad del usuario, sin consumir datos móviles de forma agresiva.
 - **Navegación entre tabs con `IndexedStack`** (o equivalente) para que no se reconstruya cada vista al cambiar de tab.
 - **`ref.watch` acotado al mínimo dato necesario** (con `.select`), nunca al objeto completo, para evitar rebuilds en cascada.
+- Listas largas: `ListView.builder` / `SliverList`. JSON/geo pesado: `compute`/isolates (el catálogo DIVIPOLA ya llega async; el fuzzy es barato en UI).
+- Medir frames de Inicio / Explorar / PlanBuilder con DevTools en dispositivo; no sustituye la regla de caché.
 - Antes de agregar caché alrededor de una consulta pesada, evaluar primero si la consulta en sí puede aligerarse (traer solo las columnas que la vista necesita, no el objeto completo con joins).
 - **Invalidación explícita** al guardar/editar/descartar, más refresco en segundo plano cuando el TTL fresco venció.
 

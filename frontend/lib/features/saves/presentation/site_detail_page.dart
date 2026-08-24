@@ -301,7 +301,7 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
     );
     final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
     if (!ok && mounted) {
-      AppToast.show(context, 'No se pudo abrir Google Maps.', error: true);
+      AppToast.show(context, context.l10n.siteDetailOpenMapsFail, error: true);
     }
   }
 
@@ -321,7 +321,7 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
     );
     final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
     if (!ok && mounted) {
-      AppToast.show(context, 'No se pudo abrir Google Maps.', error: true);
+      AppToast.show(context, context.l10n.siteDetailOpenMapsFail, error: true);
     }
   }
 
@@ -329,20 +329,16 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
     final accepted = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Términos de Uso'),
-        content: const Text(
-          'Al subir una foto confirmas que cumple los Términos de Uso de '
-          'Chevere Plan (turismo, gastronomía y planes de ocio; sin contenido '
-          'sexual, ilegal o de acoso).',
-        ),
+        title: Text(context.l10n.loginTerms),
+        content: Text(context.l10n.photoTermsBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancelar'),
+            child: Text(context.l10n.actionCancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Acepto y continuar'),
+            child: Text(context.l10n.actionAcceptContinue),
           ),
         ],
       ),
@@ -364,7 +360,7 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
           );
       await _loadPhotos();
       if (!mounted) return;
-      AppToast.show(context, 'Foto añadida.');
+      AppToast.show(context, context.l10n.photoAdded);
     } catch (e) {
       if (!mounted) return;
       AppToast.error(context, e);
@@ -377,16 +373,16 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
     final ok = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Eliminar foto'),
-        content: const Text('¿Quieres eliminar esta foto del sitio?'),
+        title: Text(context.l10n.photoDeleteTitle),
+        content: Text(context.l10n.photoDeleteConfirm),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancelar'),
+            child: Text(context.l10n.actionCancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Eliminar'),
+            child: Text(context.l10n.actionDelete),
           ),
         ],
       ),
@@ -398,7 +394,7 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
       await ref.read(moderationRepositoryProvider).deletePhoto(photo);
       await _loadPhotos();
       if (!mounted) return;
-      AppToast.show(context, 'Foto eliminada.');
+      AppToast.show(context, context.l10n.photoDeleted);
     } catch (e) {
       if (!mounted) return;
       AppToast.error(context, e);
@@ -412,23 +408,23 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
     final ok = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Reportar foto'),
+        title: Text(context.l10n.photoReportTitle),
         content: TextField(
           controller: reasonCtrl,
-          decoration: const InputDecoration(
-            labelText: 'Motivo (opcional)',
-            border: OutlineInputBorder(),
+          decoration: InputDecoration(
+            labelText: context.l10n.photoReportReason,
+            border: const OutlineInputBorder(),
           ),
           maxLines: 3,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancelar'),
+            child: Text(context.l10n.actionCancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Enviar reporte'),
+            child: Text(context.l10n.photoReportSend),
           ),
         ],
       ),
@@ -440,7 +436,7 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
             reason: reasonCtrl.text,
           );
       if (!mounted) return;
-      AppToast.show(context, 'Reporte enviado. Un administrador lo revisará.');
+      AppToast.show(context, context.l10n.photoReportSent);
     } catch (e) {
       if (!mounted) return;
       AppToast.error(context, e);
@@ -614,8 +610,8 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Text(
-                            'No se pudo cargar. Intenta de nuevo.',
+                          Text(
+                            l10n.errorLoadRetry,
                             textAlign: TextAlign.center,
                           ),
                           const SizedBox(height: 16),
@@ -1214,27 +1210,30 @@ class _PhotoTile extends StatelessWidget {
                 padding: EdgeInsets.zero,
                 icon: const Icon(Icons.more_vert, color: AppColors.onImage, size: 20),
                 onSelected: onMenu,
-                itemBuilder: (context) => [
-                  if (canDelete)
-                    const PopupMenuItem(
-                      value: 'delete',
+                itemBuilder: (context) {
+                  final l10n = context.l10n;
+                  return [
+                    if (canDelete)
+                      PopupMenuItem(
+                        value: 'delete',
+                        child: ListTile(
+                          dense: true,
+                          contentPadding: EdgeInsets.zero,
+                          leading: const Icon(Icons.delete_outline),
+                          title: Text(l10n.actionDelete),
+                        ),
+                      ),
+                    PopupMenuItem(
+                      value: 'report',
                       child: ListTile(
                         dense: true,
                         contentPadding: EdgeInsets.zero,
-                        leading: Icon(Icons.delete_outline),
-                        title: Text('Eliminar'),
+                        leading: const Icon(Icons.flag_outlined),
+                        title: Text(l10n.actionReport),
                       ),
                     ),
-                  const PopupMenuItem(
-                    value: 'report',
-                    child: ListTile(
-                      dense: true,
-                      contentPadding: EdgeInsets.zero,
-                      leading: Icon(Icons.flag_outlined),
-                      title: Text('Reportar'),
-                    ),
-                  ),
-                ],
+                  ];
+                },
               ),
             ),
           ),

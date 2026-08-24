@@ -85,33 +85,39 @@ class _AdminPageState extends ConsumerState<AdminPage>
         return StatefulBuilder(
           builder: (context, setLocal) {
             return AlertDialog(
-              title: Text(cat.isRoot ? 'Editar categoría' : 'Editar subcategoría'),
+              title: Text(
+                cat.isRoot
+                    ? context.l10n.adminEditCategory
+                    : context.l10n.adminEditSubcategory,
+              ),
               content: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     TextField(
                       controller: nameCtrl,
-                      decoration: const InputDecoration(labelText: 'Nombre (es)'),
+                      decoration: InputDecoration(
+                        labelText: context.l10n.adminNameEs,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     TextField(
                       controller: keywordsCtrl,
-                      decoration: const InputDecoration(
-                        labelText: 'Palabras clave',
-                        helperText: 'Separadas por coma (ej. nadar, agua, pool)',
+                      decoration: InputDecoration(
+                        labelText: context.l10n.adminKeywords,
+                        helperText: context.l10n.adminKeywordsHint,
                       ),
                       maxLines: 3,
                     ),
                     SwitchListTile(
                       contentPadding: EdgeInsets.zero,
-                      title: const Text('Activa'),
+                      title: Text(context.l10n.adminActive),
                       value: active,
                       onChanged: (v) => setLocal(() => active = v),
                     ),
                     SwitchListTile(
                       contentPadding: EdgeInsets.zero,
-                      title: const Text('Restringida +18'),
+                      title: Text(context.l10n.adminAgeRestricted),
                       value: ageRestricted,
                       onChanged: (v) => setLocal(() => ageRestricted = v),
                     ),
@@ -121,11 +127,11 @@ class _AdminPageState extends ConsumerState<AdminPage>
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context, false),
-                  child: const Text('Cancelar'),
+                  child: Text(context.l10n.actionCancel),
                 ),
                 FilledButton(
                   onPressed: () => Navigator.pop(context, true),
-                  child: const Text('Guardar'),
+                  child: Text(context.l10n.actionSave),
                 ),
               ],
             );
@@ -172,26 +178,28 @@ class _AdminPageState extends ConsumerState<AdminPage>
         return StatefulBuilder(
           builder: (context, setLocal) {
             return AlertDialog(
-              title: const Text('Editar transporte'),
+              title: Text(context.l10n.adminEditTransport),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   TextField(
                     controller: nameCtrl,
-                    decoration: const InputDecoration(labelText: 'Nombre (es)'),
+                    decoration: InputDecoration(
+                      labelText: context.l10n.adminNameEs,
+                    ),
                   ),
                   TextField(
                     controller: kmCtrl,
                     keyboardType: const TextInputType.numberWithOptions(
                       decimal: true,
                     ),
-                    decoration: const InputDecoration(
-                      labelText: 'Máx. km por defecto (vacío = sin tope)',
+                    decoration: InputDecoration(
+                      labelText: context.l10n.adminTransportMaxKm,
                     ),
                   ),
                   SwitchListTile(
                     contentPadding: EdgeInsets.zero,
-                    title: const Text('Activo'),
+                    title: Text(context.l10n.adminTransportActive),
                     value: active,
                     onChanged: (v) => setLocal(() => active = v),
                   ),
@@ -200,11 +208,11 @@ class _AdminPageState extends ConsumerState<AdminPage>
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context, false),
-                  child: const Text('Cancelar'),
+                  child: Text(context.l10n.actionCancel),
                 ),
                 FilledButton(
                   onPressed: () => Navigator.pop(context, true),
-                  child: const Text('Guardar'),
+                  child: Text(context.l10n.actionSave),
                 ),
               ],
             );
@@ -220,7 +228,7 @@ class _AdminPageState extends ConsumerState<AdminPage>
     if (!clearKm && km == null) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Km inválido')),
+        SnackBar(content: Text(context.l10n.adminKmInvalid)),
       );
       return;
     }
@@ -284,8 +292,8 @@ class _AdminPageState extends ConsumerState<AdminPage>
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Text(
-                          'No se pudo cargar. Intenta de nuevo.',
+                        Text(
+                          l10n.errorLoadRetry,
                           textAlign: TextAlign.center,
                         ),
                         const SizedBox(height: 12),
@@ -371,6 +379,7 @@ class _CategoriesTab extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
       itemCount: roots.length,
       itemBuilder: (context, index) {
+        final l10n = context.l10n;
         final root = roots[index];
         final children = categories
             .where((c) => c.parentId == root.id)
@@ -395,7 +404,7 @@ class _CategoriesTab extends StatelessWidget {
               title: Text(root.nameEs),
               subtitle: Text(
                 [
-                  root.isActive ? 'Activa' : 'Inactiva',
+                  root.isActive ? l10n.adminActive : l10n.adminInactive,
                   if (root.ageRestricted) '+18',
                 ].join(' · '),
               ),
@@ -410,7 +419,7 @@ class _CategoriesTab extends StatelessWidget {
                       title: Text(c.nameEs),
                       subtitle: Text(
                         [
-                          c.isActive ? 'Activa' : 'Inactiva',
+                          c.isActive ? l10n.adminActive : l10n.adminInactive,
                           if (c.ageRestricted) '+18',
                         ].join(' · '),
                       ),

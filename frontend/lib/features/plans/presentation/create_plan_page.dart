@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 
 import '../../../core/cache/cache_ttl.dart';
 import '../../../core/di/providers.dart';
@@ -162,7 +163,10 @@ class _CreatePlanPageState extends ConsumerState<CreatePlanPage> {
             controller: _budgetCtrl,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             decoration: _fieldDec(hint: l10n.searchBudgetMax).copyWith(
-              prefixText: '\$ ',
+              prefixText: NumberFormat.simpleCurrency(
+                name: 'COP',
+                locale: 'es',
+              ).currencySymbol,
               suffixText: 'COP',
             ),
           ),

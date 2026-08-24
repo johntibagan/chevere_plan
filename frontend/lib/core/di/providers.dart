@@ -1,3 +1,6 @@
+// Composition root (excepción a “core no importa features”):
+// Riverpod registra repos aquí. Features no importan otras features vía core
+// salvo este archivo. No usar GoRouter: ver docs/ui-navegacion.md.
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -5,7 +8,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../features/admin/data/admin_models.dart';
 import '../../features/admin/data/admin_repository.dart';
-import '../../features/geo/data/geo_models.dart';
+import '../../features/geo/domain/geo_models.dart';
 import '../../features/geo/data/geo_repository.dart';
 import '../../features/auth/data/auth_repository.dart';
 import '../../features/auth/data/profile_repository.dart';

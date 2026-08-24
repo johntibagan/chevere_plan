@@ -2075,47 +2075,226 @@ abstract class AppLocalizations {
   String get adminKmInvalid;
 
   /// No description provided for @comingSoonBadge.
+  ///
+  /// In es, this message translates to:
+  /// **'Próximamente'**
   String get comingSoonBadge;
 
   /// No description provided for @comingSoonAiTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Armame un plan con IA'**
   String get comingSoonAiTitle;
 
   /// No description provided for @comingSoonAiBody.
+  ///
+  /// In es, this message translates to:
+  /// **'La generación automática de planes estará disponible más adelante. Podés armar el plan eligiendo sitios que ya guardaste.'**
   String get comingSoonAiBody;
 
   /// No description provided for @comingSoonTransportTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Transporte entre paradas'**
   String get comingSoonTransportTitle;
 
   /// No description provided for @comingSoonTransportBody.
+  ///
+  /// In es, this message translates to:
+  /// **'El cálculo de transporte sugerido entre paradas estará disponible más adelante.'**
   String get comingSoonTransportBody;
 
   /// No description provided for @planZoneHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Ej. Villa de Leyva, Boyacá'**
   String get planZoneHint;
 
   /// No description provided for @planIncludePublicSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Suma sitios públicos de otros a las opciones'**
   String get planIncludePublicSubtitle;
 
   /// No description provided for @planCreateNextStops.
+  ///
+  /// In es, this message translates to:
+  /// **'Siguiente: armar paradas'**
   String get planCreateNextStops;
 
   /// No description provided for @planCreateAiCta.
+  ///
+  /// In es, this message translates to:
+  /// **'Armame un plan con IA'**
   String get planCreateAiCta;
 
   /// No description provided for @categoryPickerSelectGroup.
+  ///
+  /// In es, this message translates to:
+  /// **'Seleccionar todo el grupo'**
   String get categoryPickerSelectGroup;
 
+  /// No description provided for @categoryPickerSummary.
+  ///
+  /// In es, this message translates to:
+  /// **'{total} categorías · {groups} grupos'**
   String categoryPickerSummary(int total, int groups);
 
+  /// No description provided for @categoryPickerResults.
+  ///
+  /// In es, this message translates to:
+  /// **'{count} resultado(s)'**
   String categoryPickerResults(int count);
 
   /// No description provided for @adminStatCategories.
+  ///
+  /// In es, this message translates to:
+  /// **'Categorías'**
   String get adminStatCategories;
 
   /// No description provided for @adminStatVehicles.
+  ///
+  /// In es, this message translates to:
+  /// **'Vehículos'**
   String get adminStatVehicles;
 
   /// No description provided for @adminStatReports.
+  ///
+  /// In es, this message translates to:
+  /// **'Reportes abiertos'**
   String get adminStatReports;
+
+  /// No description provided for @errorGeneric.
+  ///
+  /// In es, this message translates to:
+  /// **'Error en la app. Intenta de nuevo.'**
+  String get errorGeneric;
+
+  /// No description provided for @errorLoadRetry.
+  ///
+  /// In es, this message translates to:
+  /// **'No se pudo cargar. Intenta de nuevo.'**
+  String get errorLoadRetry;
+
+  /// No description provided for @siteDetailOpenMapsFail.
+  ///
+  /// In es, this message translates to:
+  /// **'No se pudo abrir Google Maps.'**
+  String get siteDetailOpenMapsFail;
+
+  /// No description provided for @photoTermsBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Al subir una foto confirmas que cumple los Términos de Uso de Chevere Plan (turismo, gastronomía y planes de ocio; sin contenido sexual, ilegal o de acoso).'**
+  String get photoTermsBody;
+
+  /// No description provided for @photoAdded.
+  ///
+  /// In es, this message translates to:
+  /// **'Foto añadida.'**
+  String get photoAdded;
+
+  /// No description provided for @photoDeleted.
+  ///
+  /// In es, this message translates to:
+  /// **'Foto eliminada.'**
+  String get photoDeleted;
+
+  /// No description provided for @photoReportReason.
+  ///
+  /// In es, this message translates to:
+  /// **'Motivo (opcional)'**
+  String get photoReportReason;
+
+  /// No description provided for @photoReportSent.
+  ///
+  /// In es, this message translates to:
+  /// **'Reporte enviado. Un administrador lo revisará.'**
+  String get photoReportSent;
+
+  /// No description provided for @adminInactive.
+  ///
+  /// In es, this message translates to:
+  /// **'Inactiva'**
+  String get adminInactive;
+
+  /// No description provided for @adminKeywords.
+  ///
+  /// In es, this message translates to:
+  /// **'Palabras clave'**
+  String get adminKeywords;
+
+  /// No description provided for @adminKeywordsHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Separadas por coma (ej. nadar, agua, pool)'**
+  String get adminKeywordsHint;
+
+  /// No description provided for @adminNameEs.
+  ///
+  /// In es, this message translates to:
+  /// **'Nombre (es)'**
+  String get adminNameEs;
+
+  /// No description provided for @adminEditCategory.
+  ///
+  /// In es, this message translates to:
+  /// **'Editar categoría'**
+  String get adminEditCategory;
+
+  /// No description provided for @adminEditSubcategory.
+  ///
+  /// In es, this message translates to:
+  /// **'Editar subcategoría'**
+  String get adminEditSubcategory;
+
+  /// No description provided for @adminTransportActive.
+  ///
+  /// In es, this message translates to:
+  /// **'Activo'**
+  String get adminTransportActive;
+
+  /// No description provided for @adminTransportMaxKm.
+  ///
+  /// In es, this message translates to:
+  /// **'Máx. km por defecto (vacío = sin tope)'**
+  String get adminTransportMaxKm;
+
+  /// No description provided for @locationMapsUnavailable.
+  ///
+  /// In es, this message translates to:
+  /// **'El mapa no está disponible. Busca o toca el mapa.'**
+  String get locationMapsUnavailable;
+
+  /// No description provided for @locationSearchMinChars.
+  ///
+  /// In es, this message translates to:
+  /// **'Escribe al menos 3 letras y toca buscar.'**
+  String get locationSearchMinChars;
+
+  /// No description provided for @locationGpsFail.
+  ///
+  /// In es, this message translates to:
+  /// **'No se pudo obtener tu ubicación. Busca o toca el mapa.'**
+  String get locationGpsFail;
+
+  /// No description provided for @locationProviderGoogle.
+  ///
+  /// In es, this message translates to:
+  /// **'Google Maps · buscar solo con 🔍'**
+  String get locationProviderGoogle;
+
+  /// No description provided for @locationProviderFallback.
+  ///
+  /// In es, this message translates to:
+  /// **'Búsqueda alternativa activa'**
+  String get locationProviderFallback;
+
+  /// No description provided for @locationProviderNone.
+  ///
+  /// In es, this message translates to:
+  /// **'Mapa no disponible'**
+  String get locationProviderNone;
 }
 
 class _AppLocalizationsDelegate

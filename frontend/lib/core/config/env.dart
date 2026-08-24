@@ -45,6 +45,10 @@ class Env {
   static bool get hasSupabaseConfig =>
       supabaseUrl.trim().isNotEmpty && supabaseAnonKey.trim().isNotEmpty;
 
+  /// Cliente solo habla HTTPS con Supabase (validación de cert del SO).
+  static bool get supabaseUrlIsHttps =>
+      supabaseUrl.trim().toLowerCase().startsWith('https://');
+
   static bool get hasGoogleWebClientId => googleWebClientId.trim().isNotEmpty;
 
   static bool get hasGoogleMapsKey => googleMapsApiKey.trim().isNotEmpty;

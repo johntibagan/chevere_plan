@@ -1,4 +1,4 @@
-import '../data/geo_models.dart';
+import 'geo_models.dart';
 
 /// Coincidencia difusa sobre el catálogo ya cacheado (sin red).
 abstract final class GeoFuzzy {

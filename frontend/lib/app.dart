@@ -7,6 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../features/auth/presentation/login_page.dart';
 import '../features/home/presentation/home_page.dart';
+import '../features/saves/data/share_parser.dart';
 import '../features/saves/presentation/save_place_page.dart';
 import 'core/cache/session_cache_cleanup.dart';
 import 'core/di/providers.dart';
@@ -56,7 +57,13 @@ class _CheverePlanAppState extends ConsumerState<CheverePlanApp> {
         .where((p) => p.trim().isNotEmpty)
         .toList();
     if (texts.isEmpty) return;
-    final payload = texts.join('\n');
+    var payload = texts.join('\n');
+    if (payload.length > ShareParser.maxInputChars) {
+      payload = payload.substring(0, ShareParser.maxInputChars);
+    }
+    final parsed = ShareParser.parse(payload);
+    if (!parsed.hasNavigableContent) return;
+    final safeText = parsed.rawText ?? parsed.url ?? payload;
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final nav = appNavigatorKey.currentState;
@@ -66,7 +73,7 @@ class _CheverePlanAppState extends ConsumerState<CheverePlanApp> {
       nav.push(
         MaterialPageRoute<void>(
           builder: (_) => SavePlacePage(
-            initialSharedText: payload,
+            initialSharedText: safeText,
             savesRepository: savesRepo,
           ),
         ),

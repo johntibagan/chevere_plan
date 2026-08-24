@@ -19,7 +19,7 @@ import '../../../core/widgets/app_toast.dart';
 import '../../../core/widgets/field_action_icon.dart';
 import '../../../core/widgets/site_cover.dart';
 import '../../admin/data/admin_models.dart';
-import '../../geo/data/geo_models.dart';
+import '../../geo/domain/geo_models.dart';
 import '../../geo/domain/geo_fuzzy.dart';
 import '../../geo/presentation/geo_typeahead_field.dart';
 import '../data/geo_place.dart';

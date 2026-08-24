@@ -1,4 +1,4 @@
-import 'package:chevere_plan/features/geo/data/geo_models.dart';
+import 'package:chevere_plan/features/geo/domain/geo_models.dart';
 import 'package:chevere_plan/features/geo/domain/geo_fuzzy.dart';
 import 'package:flutter_test/flutter_test.dart';
 

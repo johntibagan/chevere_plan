@@ -11,11 +11,24 @@ class ShareParseResult {
   final String? network;
   final String? suggestedName;
   final String? rawText;
+
+  bool get hasNavigableContent =>
+      (url != null && url!.isNotEmpty) ||
+      (suggestedName != null && suggestedName!.trim().isNotEmpty) ||
+      (rawText != null && rawText!.trim().isNotEmpty);
 }
 
 class ShareParser {
+  /// Tope contra payloads enormes / share malicioso.
+  static const int maxInputChars = 8192;
+
   static final _urlRegex = RegExp(
     r'https?:\/\/[^\s<>"{}|\\^`\[\]]+',
+    caseSensitive: false,
+  );
+
+  static final _disallowedScheme = RegExp(
+    r'^\s*(javascript|data|file|content|intent):',
     caseSensitive: false,
   );
 
@@ -23,9 +36,25 @@ class ShareParser {
     if (shared == null || shared.trim().isEmpty) {
       return const ShareParseResult();
     }
-    final text = shared.trim();
+    var text = shared.trim();
+    if (text.length > maxInputChars) {
+      text = text.substring(0, maxInputChars);
+    }
+    if (_disallowedScheme.hasMatch(text) && !_urlRegex.hasMatch(text)) {
+      return const ShareParseResult();
+    }
     final match = _urlRegex.firstMatch(text);
-    final url = match?.group(0);
+    var url = match?.group(0);
+    if (url != null) {
+      final uri = Uri.tryParse(url);
+      final scheme = uri?.scheme.toLowerCase() ?? '';
+      if (uri == null || (scheme != 'http' && scheme != 'https')) {
+        url = null;
+      }
+    }
+    if (url == null && _disallowedScheme.hasMatch(text)) {
+      return const ShareParseResult();
+    }
     final network = _detectNetwork(url ?? text);
     String? name;
     if (url != null) {
