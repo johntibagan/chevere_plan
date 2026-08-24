@@ -401,6 +401,8 @@
   "planStatBudget": "Presupuesto",
   "planStatZone": "Zona",
   "cardSavedHeart": "En tus guardados",
+  "favoriteAdd": "Agregar a favoritos",
+  "favoriteRemove": "Quitar de favoritos",
   "planMarkDone": "Marcar como hecho",
   "planMarkPending": "Marcar pendiente",
   "planRemoveStop": "Quitar del plan",

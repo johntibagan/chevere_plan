@@ -29,6 +29,9 @@ begin
   if to_regclass('public.content_reports') is not null then
     truncate table public.content_reports restart identity cascade;
   end if;
+  if to_regclass('public.site_favorites') is not null then
+    truncate table public.site_favorites restart identity cascade;
+  end if;
   if to_regclass('public.user_saves') is not null then
     truncate table public.user_saves restart identity cascade;
   end if;

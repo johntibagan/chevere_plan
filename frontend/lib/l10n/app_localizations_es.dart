@@ -1018,6 +1018,12 @@ class AppLocalizationsEs extends AppLocalizations {
   String get cardSavedHeart => 'En tus guardados';
 
   @override
+  String get favoriteAdd => 'Agregar a favoritos';
+
+  @override
+  String get favoriteRemove => 'Quitar de favoritos';
+
+  @override
   String get planMarkDone => 'Marcar como hecho';
 
   @override

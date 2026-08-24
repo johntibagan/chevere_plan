@@ -21,6 +21,7 @@ import '../data/google_maps_links.dart';
 import '../data/save_models.dart';
 import '../data/site_ficha.dart';
 import '../data/social_link_models.dart';
+import 'favorite_heart_button.dart';
 import 'save_place_page.dart';
 import 'site_reviews_tab.dart';
 import 'site_status_l10n.dart';
@@ -476,6 +477,10 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
             onPressed: () => Navigator.of(context).pop(_outcome),
           ),
           actions: [
+            FavoriteHeartButton(
+              siteId: widget.siteId,
+              style: FavoriteHeartStyle.icon,
+            ),
             if (_canEditSite)
               PopupMenuButton<String>(
                 tooltip: 'Acciones',

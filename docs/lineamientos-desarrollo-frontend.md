@@ -35,6 +35,7 @@ Esta es la sección más crítica del documento. Ninguna funcionalidad nueva se 
   | Categorías / transporte | 24 h | 7 días |
   | Departamentos / ciudades (DIVIPOLA) | 30 días | 90 días |
   | Mis guardados (lista) | 2–5 min | 24 h |
+  | Favoritos (ids) | 5 min | 24 h |
   | Ficha de sitio | 2–5 min | 12–24 h |
   | Fotos (metadata + signed URL) | alineado a firma (~50 min) | — |
   | Planes / rutas | 5–10 min | 24 h |

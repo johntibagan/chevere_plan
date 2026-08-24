@@ -98,7 +98,7 @@ class _DefaultCoverPainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
-/// Corazón Figma (arriba derecha). Relleno = está en tus guardados.
+/// Corazón Figma (arriba derecha). Relleno = favorito.
 class CardHeartBadge extends StatelessWidget {
   const CardHeartBadge({super.key, required this.saved});
 

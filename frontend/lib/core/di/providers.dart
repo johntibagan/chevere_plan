@@ -20,6 +20,7 @@ import '../../features/saves/data/draft_reminder_service.dart';
 import '../../features/saves/data/google_places_client.dart';
 import '../../features/saves/data/place_geocoder.dart';
 import '../../features/saves/data/save_models.dart';
+import '../../features/saves/data/favorites_repository.dart';
 import '../../features/saves/data/saves_repository.dart';
 import '../../features/saves/data/site_ficha.dart';
 import '../../features/saves/data/site_reviews_repository.dart';
@@ -52,6 +53,10 @@ final profileRepositoryProvider = Provider<ProfileRepository>((ref) {
 
 final savesRepositoryProvider = Provider<SavesRepository>((ref) {
   return SavesRepository(client: ref.watch(supabaseClientProvider));
+});
+
+final favoritesRepositoryProvider = Provider<FavoritesRepository>((ref) {
+  return FavoritesRepository(client: ref.watch(supabaseClientProvider));
 });
 
 final siteReviewsRepositoryProvider = Provider<SiteReviewsRepository>((ref) {
@@ -276,6 +281,80 @@ class MySavesNotifier extends AsyncNotifier<PagedItems<UserSave>> {
 final mySavesProvider =
     AsyncNotifierProvider<MySavesNotifier, PagedItems<UserSave>>(
   MySavesNotifier.new,
+);
+
+class FavoriteSiteIdsNotifier extends AsyncNotifier<Set<String>> {
+  var _refreshing = false;
+
+  @override
+  Future<Set<String>> build() => _load(forceNetwork: false);
+
+  Future<void> toggle(String siteId) async {
+    if (siteId.isEmpty) return;
+    final current = {...(state.valueOrNull ?? {})};
+    final adding = !current.contains(siteId);
+    final next = {...current};
+    if (adding) {
+      next.add(siteId);
+    } else {
+      next.remove(siteId);
+    }
+    state = AsyncData(next);
+    try {
+      await ref.read(favoritesRepositoryProvider).setFavorite(
+            siteId,
+            favorite: adding,
+          );
+      final uid = ref.read(supabaseClientProvider).auth.currentUser?.id;
+      if (uid != null) {
+        await ref.read(entityCacheStoreProvider).write(
+              CacheKeys.favoriteSiteIds(uid),
+              next.toList(),
+            );
+      }
+    } catch (e) {
+      state = AsyncData(current);
+      rethrow;
+    }
+  }
+
+  Future<Set<String>> _load({required bool forceNetwork}) async {
+    final uid = ref.read(supabaseClientProvider).auth.currentUser?.id;
+    if (uid == null) return {};
+
+    final swr = ref.read(swrLoaderProvider);
+    return swr.load<Set<String>>(
+      key: CacheKeys.favoriteSiteIds(uid),
+      ttl: CacheTtl.favorites,
+      decode: _decodeFavoriteIds,
+      encode: (ids) => ids.toList(),
+      forceNetwork: forceNetwork,
+      network: () => ref.read(favoritesRepositoryProvider).listMine(),
+      onBackgroundRefresh: (pending) {
+        if (_refreshing) return;
+        _refreshing = true;
+        unawaited(
+          pending.then((fresh) {
+            state = AsyncData(fresh);
+          }).catchError((_) {}).whenComplete(() {
+            _refreshing = false;
+          }),
+        );
+      },
+    );
+  }
+}
+
+Set<String> _decodeFavoriteIds(Object? payload) {
+  if (payload is List) {
+    return {for (final e in payload) e.toString()};
+  }
+  return {};
+}
+
+final favoriteSiteIdsProvider =
+    AsyncNotifierProvider<FavoriteSiteIdsNotifier, Set<String>>(
+  FavoriteSiteIdsNotifier.new,
 );
 
 class CategoriesNotifier extends AsyncNotifier<List<Category>> {

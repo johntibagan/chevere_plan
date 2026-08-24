@@ -2,6 +2,11 @@
 
 No bloquean el uso diario. Al implementar, tacha aquí y ajusta el código.
 
+## Favoritos
+
+- El corazón **ya persiste** favorito sí/no (`site_favorites`).
+- Pendiente de producto: lista o filtro de favoritos, usarlo en planes/ranking, notificaciones, etc.
+
 ## Captura / Maps
 
 - Import Maps: redirect → parse `!3d!4d` → **1× Place Details** (si falta pin y hay key). Caché por URL. Sin probes HTML multi-estrategia. Setup: [`docs/google-maps-setup.md`](google-maps-setup.md). Buscador del mapa solo con botón 🔍.

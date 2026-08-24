@@ -39,13 +39,15 @@ sequenceDiagram
 
 | Sitio | Qué ves |
 |---|---|
-| **Inicio** | Saludo, **guardados recientes** (carrusel), **populares cerca**, **acciones rápidas**. Tarjetas con portada por defecto, corazón si es tuyo y badge de red si hay origen |
+| **Inicio** | Saludo, **guardados recientes** (carrusel), **populares cerca**, **acciones rápidas**. Tarjetas con portada por defecto, **corazón de favorito** (relleno si lo marcaste) y badge de red si hay origen |
 | **Explorar** | Búsqueda de sitios (cabecera Figma, chips de categoría, grilla/lista). Misma lógica: texto obligatorio en modo simple, filtros avanzados, incluir públicos |
 | **+ (centro)** | Guardar o completar un lugar (crear y editar son la **misma pantalla**) |
 | **Planes** | Tus itinerarios (tarjeta de crear + lista; el FAB sigue abriendo el mismo flujo) |
 | **Rutas** | Historial de paradas visitadas (stats del listado ya cargado + línea de tiempo). Admin no vive acá |
 
 Los tabs que ya abriste se quedan en memoria para que cambiar de pestaña se sienta instantáneo. Las listas pintan caché primero y refrescan detrás.
+
+**Favoritos:** el corazón (cards de Inicio/Explorar y ficha del sitio) marca o quita el sitio en tu lista de favoritos. Relleno = está marcado. Hoy no hay pestaña ni filtro de favoritos; eso va en [`pendientes.md`](pendientes.md). No es lo mismo que “Tuyo” (tu guardado).
 
 ---
 
@@ -123,7 +125,7 @@ Staff/admin **no** ve bitácoras ajenas privadas.
 
 Tres pestañas: **info**, **reseñas**, **más** (quién lo creó, catálogo, fechas, “también lo guardaron”).
 
-En info: nombre, visibilidad por color/icono, ciudad, pin, abrir/cómo llegar en Google Maps, categorías, precio, notas, fotos embebidas (menú ⋮ por foto: no un sheet vacío), enlaces.
+En info: nombre, visibilidad por color/icono, ciudad, pin, abrir/cómo llegar en Google Maps, categorías, precio, notas, fotos embebidas (menú ⋮ por foto: no un sheet vacío), enlaces. En la barra, corazón de **favorito** (igual que en las cards).
 
 Editar: creador, quien lo tiene en su lista como propio, o staff sobre **público**.
 

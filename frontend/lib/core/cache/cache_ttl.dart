@@ -29,6 +29,11 @@ class CacheTtl {
     stale: Duration(hours: 24),
   );
 
+  static const favorites = CacheTtl(
+    fresh: Duration(minutes: 5),
+    stale: Duration(hours: 24),
+  );
+
   static const siteFicha = CacheTtl(
     fresh: Duration(minutes: 3),
     stale: Duration(hours: 12),
@@ -52,6 +57,7 @@ class CacheTtl {
 
 abstract final class CacheKeys {
   static String mySavesSummary(String uid) => 'my_saves_summary_p0:$uid';
+  static String favoriteSiteIds(String uid) => 'favorite_site_ids:$uid';
   static String categories() => 'categories:v1';
   static String transportTypes() => 'transport_types:v1';
   static String geoCatalog() => 'geo_catalog:v1';

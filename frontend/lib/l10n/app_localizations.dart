@@ -1948,6 +1948,18 @@ abstract class AppLocalizations {
   /// **'En tus guardados'**
   String get cardSavedHeart;
 
+  /// No description provided for @favoriteAdd.
+  ///
+  /// In es, this message translates to:
+  /// **'Agregar a favoritos'**
+  String get favoriteAdd;
+
+  /// No description provided for @favoriteRemove.
+  ///
+  /// In es, this message translates to:
+  /// **'Quitar de favoritos'**
+  String get favoriteRemove;
+
   /// No description provided for @planMarkDone.
   ///
   /// In es, this message translates to:

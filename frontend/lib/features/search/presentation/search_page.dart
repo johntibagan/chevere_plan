@@ -16,6 +16,7 @@ import '../../../core/widgets/tab_screen_header.dart';
 import '../../admin/data/admin_models.dart';
 import '../../home/presentation/home_cards.dart';
 import '../../saves/data/site_ficha.dart';
+import '../../saves/presentation/favorite_heart_button.dart';
 import '../../saves/presentation/open_site_detail.dart';
 import '../data/search_models.dart';
 import '../data/search_repository.dart';
@@ -718,6 +719,10 @@ class _SearchHitRow extends StatelessWidget {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
+                    FavoriteHeartButton(
+                      siteId: hit.siteId,
+                      style: FavoriteHeartStyle.icon,
+                    ),
                     if (hit.updatedAt != null)
                       Text(
                         formatDateDmY(hit.updatedAt!),

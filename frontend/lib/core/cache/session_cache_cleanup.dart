@@ -36,6 +36,7 @@ Future<void> clearSessionCaches({
   } catch (_) {}
 
   invalidate(mySavesProvider);
+  invalidate(favoriteSiteIdsProvider);
   invalidate(categoriesProvider);
   invalidate(geoCatalogProvider);
   invalidate(transportTypesProvider);

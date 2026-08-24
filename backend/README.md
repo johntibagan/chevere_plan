@@ -16,7 +16,7 @@ powershell -File C:\workspace\chevere_plan\backend\reset_all.ps1
 
 ### 2) Cero absoluto + reseeding (lento)
 
-Nuke del schema `public` → **3 migraciones** (esquema, seed, storage) → regenera/aplica DIVIPOLA →  
+Nuke del schema `public` → **migraciones en orden** (esquema, seed, storage y las posteriores, p. ej. favoritos) → regenera/aplica DIVIPOLA →  
 carga masiva desde `docs/data/colombia_departamentos_municipios_sitios.json` → root único.
 
 ```powershell

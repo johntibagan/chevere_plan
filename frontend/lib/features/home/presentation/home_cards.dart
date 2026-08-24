@@ -6,6 +6,7 @@ import '../../../core/l10n/context_l10n.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/site_cover.dart';
 import '../../saves/data/save_models.dart';
+import '../../saves/presentation/favorite_heart_button.dart';
 import '../../search/data/search_models.dart';
 
 String homeSavedAgo(AppLocalizations l10n, DateTime? at) {
@@ -226,10 +227,7 @@ class HomeRecentRailCard extends StatelessWidget {
                                 ),
                               ),
                             ),
-                          Tooltip(
-                            message: context.l10n.cardSavedHeart,
-                            child: const CardHeartBadge(saved: true),
-                          ),
+                          FavoriteHeartButton(siteId: save.siteId),
                         ],
                       ),
                     ),
@@ -341,10 +339,7 @@ class HomePopularCard extends StatelessWidget {
                   Positioned(
                     top: 8,
                     right: 8,
-                    child: Tooltip(
-                      message: hit.isOwn ? l10n.cardSavedHeart : '',
-                      child: CardHeartBadge(saved: hit.isOwn),
-                    ),
+                    child: FavoriteHeartButton(siteId: hit.siteId),
                   ),
                   Positioned(
                     left: 8,

@@ -15,7 +15,7 @@ Contratos que no se pueden romper: [`invariantes.md`](invariantes.md).
 
 1. Tratar cada pantalla de la §6 como un **frame Android** (390×844 lógico, o el viewport del Motorola del dueño).
 2. Respetar **tokens** (§3) y **señales** (§4). No introducir tema claro ni iOS-only.
-3. Mejorar jerarquía, ritmo, fotos, iconografía y microcopy **sin** agregar flujos (no hay favoritos reales, no hay IA, no hay admin en Rutas).
+3. Mejorar jerarquía, ritmo, fotos, iconografía y microcopy **sin** agregar flujos (favoritos = solo el corazón; no hay IA, no hay admin en Rutas).
 4. Las fotos de sitios **casi nunca llegan a las listas**: hoy hay **portada ilustrada por defecto**. Un rediseño puede proponer recortes, máscaras y empty-photo más ricos; el producto aún no rellena `imageUrl` en home/búsqueda/planes.
 5. Entregar frames nombrados como las pantallas de la §6 para mapear 1:1 a widgets Flutter.
 
@@ -149,7 +149,7 @@ Todo el texto de producto está en `app_es.arb` (i18n).
 2. Sin borde: **solo icono** (`public` / `lock`) del mismo color + tooltip. Nunca icono + label del mismo concepto.
 3. Etiquetas permitidas aparte del color: Tuyo, Vinculado, Catálogo, Borrador, Próximo.
 4. Listas clicables: chevron `>` y fecha si aporta.
-5. **Corazón** en cards de sitio: **indicador** “está en tus guardados” (`isOwn`), no un sistema de favoritos. Relleno rojo `accent` si es tuyo; outline blanco si no.
+5. **Corazón** en cards y ficha: **favorito** persistido. Relleno rojo `accent` si está marcado; outline si no. El tap no abre la ficha. “Tuyo” sigue siendo otra señal.
 6. **Badge de red** (IG / TK / FB / GM): solo si hay `sourceNetwork`. Si no hay origen, **nada**.
 7. Acciones de campo: icono **dentro** del input (lupa, pegar), no botones sueltos al lado del formulario.
 
@@ -162,7 +162,8 @@ Todo el texto de producto está en `app_es.arb` (i18n).
 | `TabScreenHeader` | `tab_screen_header.dart` | Título 22 ExtraBold + subtítulo 12 muted. Sin AppBar. |
 | `AppRoundIconButton` | mismo | Círculo surface; selected = primary 18% + icono primary. |
 | `SiteCover` | `site_cover.dart` | Foto de red o `DefaultSiteCover` (gradiente montaña + icono landscape). |
-| `CardHeartBadge` | mismo | Corazón sobre foto, esquina superior derecha. |
+| `CardHeartBadge` | mismo | Corazón sobre foto (relleno = favorito). |
+| `FavoriteHeartButton` | `favorite_heart_button.dart` | Tap para marcar/quitar favorito. |
 | `HomeSourceBadge` | `home_cards.dart` | Pastilla 2 letras, color de red. |
 | `HomeCategoryChip` | mismo | Chip 9 px, tinte por nombre de categoría. |
 | `HomeSectionHeader` | mismo | Título de sección + “ver todo” primary. |
@@ -334,8 +335,8 @@ Orden sugerido para que un rediseño aporte:
 4. **Admin / reportes** — densidad y tablas.
 5. Unificar **AppBar vs header in-body** (Inicio/Explorar/Planes/Rutas vs Guardar/Ficha/Admin).
 6. FAB de plan vs barra Maps: dos CTAs; Figma puede proponer una sola zona de acciones.
-7. Corazón vacío en públicos ajenos puede parecer favorito; si se rediseña, que no prometa un tap que no existe.
-8. **No diseñar:** onboarding extra, tema claro, favoritos, IA, tab Admin, envío a Maps desde ficha de sitio, cálculo de transporte en el itinerario.
+7. El corazón **sí** es favorito (tap funcional). No rediseñarlo como “es tuyo”.
+8. **No diseñar aún:** lista/filtro de favoritos, onboarding extra, tema claro, IA, tab Admin, envío a Maps desde ficha de sitio, cálculo de transporte en el itinerario.
 
 ---
 

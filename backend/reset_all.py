@@ -8,7 +8,7 @@ Solo datos de usuario (rápido):
 
 Cero absoluto + reseeding (lento):
   python reset_all.py --full
-  Nuke schema → 3 migraciones (schema, seed, storage) → regenera/aplica DIVIPOLA →
+  Nuke schema → migraciones en orden (schema, seed, storage + posteriores) → regenera/aplica DIVIPOLA →
   carga masiva de sitios (JSON actual) → root único.
 """
 

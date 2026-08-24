@@ -66,6 +66,7 @@ Alto riesgo: `save_place_page.dart`, `google_maps_link_importer.dart`, `save_pol
 ## UI y errores
 
 - Público = verde; privado = morado. Si ya hay borde/franja de color, **no** repetir “Público/Privado”.
+- Corazón = **favorito** del usuario (`site_favorites`), no “es tuyo”. Relleno si está marcado. No crear un `user_saves` ni tocar coords al favoritar.
 - Listas clicables: chevron; fecha si aporta.
 - Errores en UI: mensaje de negocio o **"Error en la app. Intenta de nuevo."** Nunca SQL, PostgREST, stacks, keys.
 - Modales: nada de barrier sin contenido. Fotos del sitio en la ficha, no en sheet.
@@ -73,7 +74,7 @@ Alto riesgo: `save_place_page.dart`, `google_maps_link_importer.dart`, `save_pol
 ## Datos
 
 - Categorías, transporte, depto/ciudad: **base + caché**, nunca hardcode en Dart.
-- Reset: default conserva DIVIPOLA + catálogo (`external_id`); `-Full` = 3 migraciones + DIVIPOLA + JSON.
+- Reset: default conserva DIVIPOLA + catálogo (`external_id`); `-Full` = migraciones en orden (baseline 3 + posteriores, p. ej. favoritos) + DIVIPOLA + JSON.
 
 ## Código
 
