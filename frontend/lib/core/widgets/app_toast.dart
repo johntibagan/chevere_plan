@@ -9,6 +9,7 @@ abstract final class AppToast {
     BuildContext context,
     String message, {
     bool error = false,
+    Duration? duration,
   }) {
     final messenger = ScaffoldMessenger.maybeOf(context);
     if (messenger == null) return;
@@ -17,7 +18,7 @@ abstract final class AppToast {
       SnackBar(
         content: Text(message),
         behavior: SnackBarBehavior.floating,
-        duration: Duration(seconds: error ? 5 : 4),
+        duration: duration ?? Duration(seconds: error ? 5 : 4),
         backgroundColor: error ? AppColors.accent : AppColors.surfaceElevated,
       ),
     );

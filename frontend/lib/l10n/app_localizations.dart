@@ -106,6 +106,12 @@ abstract class AppLocalizations {
   /// **'Guarda, organiza y descubre los mejores planes de Colombia'**
   String get appTagline;
 
+  /// No description provided for @navPressBackAgainToExit.
+  ///
+  /// In es, this message translates to:
+  /// **'Pulsa atrás otra vez para salir.'**
+  String get navPressBackAgainToExit;
+
   /// No description provided for @navHome.
   ///
   /// In es, this message translates to:

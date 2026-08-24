@@ -2,6 +2,7 @@
   "@@locale": "es",
   "appTitle": "Chevere Plan",
   "appTagline": "Guarda, organiza y descubre los mejores planes de Colombia",
+  "navPressBackAgainToExit": "Pulsa atrás otra vez para salir.",
   "navHome": "Inicio",
   "navExplore": "Explorar",
   "navPlans": "Planes",

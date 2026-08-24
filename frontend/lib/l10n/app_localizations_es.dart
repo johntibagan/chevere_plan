@@ -16,6 +16,9 @@ class AppLocalizationsEs extends AppLocalizations {
       'Guarda, organiza y descubre los mejores planes de Colombia';
 
   @override
+  String get navPressBackAgainToExit => 'Pulsa atrás otra vez para salir.';
+
+  @override
   String get navHome => 'Inicio';
 
   @override

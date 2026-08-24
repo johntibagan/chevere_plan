@@ -32,6 +32,7 @@ Contratos que no se pueden romper: [`invariantes.md`](invariantes.md).
 | Sesión | Sin login → `LoginPage`. Con sesión → `HomePage` (shell de 4 tabs + FAB). |
 | Share del SO | Deep-link / share intent abre `SavePlacePage` encima del shell. |
 | Tabs | `IndexedStack`: Explorar / Planes / Rutas se **crean al primer toque** y **no se destruyen**. |
+| Atrás (Android) | En tabs distintos de Inicio → vuelve a Inicio. En Inicio → toast y segundo atrás cierra (`SystemNavigator.pop`). Rutas apiladas (ficha, guardar) hacen pop normal. |
 | Body | `extendBody: true` — el contenido pasa **detrás** de la barra; paddings inferiores ~72–120 px en listas. |
 
 ```mermaid

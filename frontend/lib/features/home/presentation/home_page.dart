@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -44,6 +45,8 @@ class _HomePageState extends ConsumerState<HomePage> {
   String? _error;
   bool _loading = true;
   int _tab = 0; // 0 inicio, 1 explorar, 2 planes, 3 rutas
+  DateTime? _exitArmedAt;
+  static const _exitWindow = Duration(seconds: 2);
   List<SearchHit> _nearby = [];
   bool _nearbyLoading = false;
   bool _nearbyNeedGps = false;
@@ -60,7 +63,27 @@ class _HomePageState extends ConsumerState<HomePage> {
     _bootstrap();
   }
 
+  void _onRootBack() {
+    if (_tab != 0) {
+      _selectTab(0);
+      return;
+    }
+    final now = DateTime.now();
+    if (_exitArmedAt != null &&
+        now.difference(_exitArmedAt!) < _exitWindow) {
+      SystemNavigator.pop();
+      return;
+    }
+    _exitArmedAt = now;
+    AppToast.show(
+      context,
+      context.l10n.navPressBackAgainToExit,
+      duration: _exitWindow,
+    );
+  }
+
   void _selectTab(int i) {
+    _exitArmedAt = null;
     setState(() {
       _tab = i;
       switch (i) {
@@ -289,10 +312,16 @@ class _HomePageState extends ConsumerState<HomePage> {
     final adminRepo = ref.read(adminRepositoryProvider);
     final moderationRepo = ref.read(moderationRepositoryProvider);
 
-    return Scaffold(
-      key: const Key('home_shell'),
-      backgroundColor: AppColors.background,
-      extendBody: true,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+        _onRootBack();
+      },
+      child: Scaffold(
+        key: const Key('home_shell'),
+        backgroundColor: AppColors.background,
+        extendBody: true,
       body: SafeArea(
         bottom: false,
         child: IndexedStack(
@@ -360,6 +389,7 @@ class _HomePageState extends ConsumerState<HomePage> {
         onChanged: _selectTab,
         onGuardar: () => _openSave(),
       ),
+    ),
     );
   }
 }

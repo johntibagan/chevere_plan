@@ -47,6 +47,8 @@ sequenceDiagram
 
 Los tabs que ya abriste se quedan en memoria para que cambiar de pestaña se sienta instantáneo. Las listas pintan caché primero y refrescan detrás.
 
+**Atrás en el shell:** si estás en Explorar, Planes o Rutas, el botón atrás vuelve a **Inicio**. En Inicio, el primer atrás muestra “Pulsa atrás otra vez para salir”; el segundo (en ~2 s) cierra la app. En fichas, guardar, mapas, etc. atrás sigue cerrando esa pantalla.
+
 **Favoritos:** el corazón (cards de Inicio/Explorar y ficha del sitio) marca o quita el sitio en tu lista de favoritos. Relleno = está marcado. Hoy no hay pestaña ni filtro de favoritos; eso va en [`pendientes.md`](pendientes.md). No es lo mismo que “Tuyo” (tu guardado).
 
 ---
