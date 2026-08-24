@@ -19,5 +19,8 @@ Antes de cambiar captura de lugares, leer [`docs/invariantes.md`](docs/invariant
 - Enlace Maps = el usuario ya eligió el sitio. Pin se queda. Público habilitado si hay lat/lng.
 - El interruptor “Punto exacto” solo cambia coords si el usuario lo toca. Apagarlo bloquea Público (lugar físico): no apagarlo en silencio.
 - Crear y editar = misma pantalla. DIVIPOLA por id. Pegar dentro del campo.
+- Nombre obligatorio (sección propia debajo de ubicación). No guardar como “Sin nombre”.
+- Crear vacío: solo Ubicación, Nombre y Público. El resto (detalles, enlaces, categorías, fotos, “es lugar físico”) detrás de **Añadir sección**. Editar: todas. Share: también enlaces.
+- Público siempre visible; deshabilitado sin pin en lugar físico. Ayuda con tooltip, no párrafos.
 
 Si el cambio no deja pegar un link de Maps y publicar **sin** abrir el mapa otra vez, no está listo.

@@ -122,6 +122,52 @@ class AppLocalizationsEs extends AppLocalizations {
   String get homeMySaves => 'Mis guardados';
 
   @override
+  String get homeRecentSaves => 'Guardados recientes';
+
+  @override
+  String get homeSeeAll => 'Ver todos';
+
+  @override
+  String get homePopularNearby => 'Populares cerca';
+
+  @override
+  String get homeExploreLink => 'Explorar';
+
+  @override
+  String get homeQuickActions => 'Acciones rápidas';
+
+  @override
+  String get homeActionNearMe => 'Cerca de mí';
+
+  @override
+  String get homeActionMostSaved => 'Más guardados';
+
+  @override
+  String get homeActionByCategory => 'Por categoría';
+
+  @override
+  String get homeNearbyEmpty => 'No hay lugares públicos cerca por ahora.';
+
+  @override
+  String get homeNearbyNeedGps => 'Activa la ubicación para ver lugares cerca.';
+
+  @override
+  String get homeSavedToday => 'hoy';
+
+  @override
+  String get homeSavedYesterday => 'ayer';
+
+  @override
+  String homeSavedDaysAgo(int count) {
+    return 'hace $count días';
+  }
+
+  @override
+  String homeSavedWeeksAgo(int count) {
+    return 'hace $count sem.';
+  }
+
+  @override
   String get homeEmptySaves =>
       'Aún no tienes lugares. Usa el botón + o comparte un link desde IG/TikTok/FB.';
 
@@ -430,7 +476,51 @@ class AppLocalizationsEs extends AppLocalizations {
   String get searchEmptyHint => 'Escribe y pulsa la lupa o Enter.';
 
   @override
-  String get saveLocationSection => '1. Ubicación (opcional)';
+  String searchResultsCount(int count) {
+    return '$count lugares encontrados';
+  }
+
+  @override
+  String get searchChipAll => 'Todos';
+
+  @override
+  String get searchViewGrid => 'Grilla';
+
+  @override
+  String get searchViewList => 'Lista';
+
+  @override
+  String get plansSubtitle => 'Organiza tus próximas aventuras';
+
+  @override
+  String get plansCreateCardTitle => 'Crear un plan';
+
+  @override
+  String get plansCreateCardHint => 'Elegí una zona y armá las paradas';
+
+  @override
+  String get plansSavedHeading => 'Mis planes guardados';
+
+  @override
+  String get plansStatusUpcoming => 'Próximo';
+
+  @override
+  String get routesSubtitle => 'Tu historial de aventuras';
+
+  @override
+  String get routesStatVisited => 'Visitados';
+
+  @override
+  String get routesStatCities => 'Ciudades';
+
+  @override
+  String get routesStatPlans => 'Planes';
+
+  @override
+  String get routesHistoryHeading => 'Historial de lugares';
+
+  @override
+  String get saveLocationSection => 'Ubicación';
 
   @override
   String get saveLocationDraftHint =>
@@ -531,8 +621,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get savePlaceName => 'Nombre del lugar';
 
   @override
-  String get savePlaceNameHelper =>
-      'Opcional. Se completa del mapa o queda “Sin nombre”';
+  String get savePlaceNameHelper => 'El mapa o el enlace suelen completarlo.';
 
   @override
   String get saveDepartment => 'Departamento';
@@ -554,7 +643,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get savePickDeptFirst => 'Primero elige el departamento';
 
   @override
-  String get saveLinksSection => '2. Enlaces (opcional)';
+  String get saveLinksSection => 'Enlaces';
 
   @override
   String get saveSocialPaste => 'Pegar enlace (IG, TikTok, FB…)';
@@ -566,7 +655,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get saveSocialDuplicate => 'Ese enlace ya está en la lista.';
 
   @override
-  String get saveCategoriesSection => '3. Categorías';
+  String get saveCategoriesSection => 'Categorías';
 
   @override
   String get saveCategoryHint => 'Ej. nadar, tejo, plaza, bar…';
@@ -590,7 +679,7 @@ class AppLocalizationsEs extends AppLocalizations {
       'Sin coincidencia clara → Otros (puedes cambiarla)';
 
   @override
-  String get saveVisibilitySection => '4. Visibilidad y foto';
+  String get saveVisibilitySection => 'Visibilidad';
 
   @override
   String get saveIsPhysical => 'Es un lugar físico';
@@ -622,6 +711,62 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get saveDraftFooter =>
       'Puedes guardar ya: sin ubicación queda en borrador y te recordaremos completarlo.';
+
+  @override
+  String get saveNameSection => 'Nombre';
+
+  @override
+  String get savePublicSection => 'Público';
+
+  @override
+  String get saveNameRequired => 'Escribe un nombre para guardar.';
+
+  @override
+  String get saveAddSection => 'Añadir sección';
+
+  @override
+  String get saveExtraDetails => 'Detalles';
+
+  @override
+  String get saveExtraPhoto => 'Fotos';
+
+  @override
+  String get saveExtraPhysical => 'Visibilidad del lugar físico';
+
+  @override
+  String get saveInfoLocation =>
+      'Mapa o enlace de Google. El pin habilita Público. Sin ubicación el guardado queda en borrador.';
+
+  @override
+  String get saveInfoExactPin =>
+      'Encendido guarda el pin para rutas. Apagado abre la ficha en Maps por nombre y quita las coordenadas.';
+
+  @override
+  String get saveInfoName =>
+      'Obligatorio. El mapa o el enlace de Google suelen completarlo.';
+
+  @override
+  String get saveInfoPublic =>
+      'Privado por defecto. Para publicar hace falta lugar físico y pin en el mapa. Sin pin el interruptor queda desactivado.';
+
+  @override
+  String get saveInfoDetails =>
+      'Departamento y ciudad de la lista oficial; dirección opcional. El mapa suele rellenarlos.';
+
+  @override
+  String get saveInfoLinks =>
+      'Instagram, TikTok u otra red del lugar. Pegá el enlace en el campo.';
+
+  @override
+  String get saveInfoCategories =>
+      'Se sugiere según el nombre. Al crear, si no hay coincidencia queda Otros.';
+
+  @override
+  String get saveInfoPhoto => 'Hasta 15 fotos. Se suben al guardar.';
+
+  @override
+  String get saveInfoPhysical =>
+      'Por defecto es un lugar físico. Si es receta, tip u otro contenido, apagá esto: quedará siempre privado.';
 
   @override
   String get sameSiteTitle => '¿Es el mismo sitio?';

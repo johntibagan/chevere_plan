@@ -310,6 +310,90 @@ abstract class AppLocalizations {
   /// **'Mis guardados'**
   String get homeMySaves;
 
+  /// No description provided for @homeRecentSaves.
+  ///
+  /// In es, this message translates to:
+  /// **'Guardados recientes'**
+  String get homeRecentSaves;
+
+  /// No description provided for @homeSeeAll.
+  ///
+  /// In es, this message translates to:
+  /// **'Ver todos'**
+  String get homeSeeAll;
+
+  /// No description provided for @homePopularNearby.
+  ///
+  /// In es, this message translates to:
+  /// **'Populares cerca'**
+  String get homePopularNearby;
+
+  /// No description provided for @homeExploreLink.
+  ///
+  /// In es, this message translates to:
+  /// **'Explorar'**
+  String get homeExploreLink;
+
+  /// No description provided for @homeQuickActions.
+  ///
+  /// In es, this message translates to:
+  /// **'Acciones rápidas'**
+  String get homeQuickActions;
+
+  /// No description provided for @homeActionNearMe.
+  ///
+  /// In es, this message translates to:
+  /// **'Cerca de mí'**
+  String get homeActionNearMe;
+
+  /// No description provided for @homeActionMostSaved.
+  ///
+  /// In es, this message translates to:
+  /// **'Más guardados'**
+  String get homeActionMostSaved;
+
+  /// No description provided for @homeActionByCategory.
+  ///
+  /// In es, this message translates to:
+  /// **'Por categoría'**
+  String get homeActionByCategory;
+
+  /// No description provided for @homeNearbyEmpty.
+  ///
+  /// In es, this message translates to:
+  /// **'No hay lugares públicos cerca por ahora.'**
+  String get homeNearbyEmpty;
+
+  /// No description provided for @homeNearbyNeedGps.
+  ///
+  /// In es, this message translates to:
+  /// **'Activa la ubicación para ver lugares cerca.'**
+  String get homeNearbyNeedGps;
+
+  /// No description provided for @homeSavedToday.
+  ///
+  /// In es, this message translates to:
+  /// **'hoy'**
+  String get homeSavedToday;
+
+  /// No description provided for @homeSavedYesterday.
+  ///
+  /// In es, this message translates to:
+  /// **'ayer'**
+  String get homeSavedYesterday;
+
+  /// No description provided for @homeSavedDaysAgo.
+  ///
+  /// In es, this message translates to:
+  /// **'hace {count} días'**
+  String homeSavedDaysAgo(int count);
+
+  /// No description provided for @homeSavedWeeksAgo.
+  ///
+  /// In es, this message translates to:
+  /// **'hace {count} sem.'**
+  String homeSavedWeeksAgo(int count);
+
   /// No description provided for @homeEmptySaves.
   ///
   /// In es, this message translates to:
@@ -874,10 +958,94 @@ abstract class AppLocalizations {
   /// **'Escribe y pulsa la lupa o Enter.'**
   String get searchEmptyHint;
 
+  /// No description provided for @searchResultsCount.
+  ///
+  /// In es, this message translates to:
+  /// **'{count} lugares encontrados'**
+  String searchResultsCount(int count);
+
+  /// No description provided for @searchChipAll.
+  ///
+  /// In es, this message translates to:
+  /// **'Todos'**
+  String get searchChipAll;
+
+  /// No description provided for @searchViewGrid.
+  ///
+  /// In es, this message translates to:
+  /// **'Grilla'**
+  String get searchViewGrid;
+
+  /// No description provided for @searchViewList.
+  ///
+  /// In es, this message translates to:
+  /// **'Lista'**
+  String get searchViewList;
+
+  /// No description provided for @plansSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Organiza tus próximas aventuras'**
+  String get plansSubtitle;
+
+  /// No description provided for @plansCreateCardTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Crear un plan'**
+  String get plansCreateCardTitle;
+
+  /// No description provided for @plansCreateCardHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Elegí una zona y armá las paradas'**
+  String get plansCreateCardHint;
+
+  /// No description provided for @plansSavedHeading.
+  ///
+  /// In es, this message translates to:
+  /// **'Mis planes guardados'**
+  String get plansSavedHeading;
+
+  /// No description provided for @plansStatusUpcoming.
+  ///
+  /// In es, this message translates to:
+  /// **'Próximo'**
+  String get plansStatusUpcoming;
+
+  /// No description provided for @routesSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Tu historial de aventuras'**
+  String get routesSubtitle;
+
+  /// No description provided for @routesStatVisited.
+  ///
+  /// In es, this message translates to:
+  /// **'Visitados'**
+  String get routesStatVisited;
+
+  /// No description provided for @routesStatCities.
+  ///
+  /// In es, this message translates to:
+  /// **'Ciudades'**
+  String get routesStatCities;
+
+  /// No description provided for @routesStatPlans.
+  ///
+  /// In es, this message translates to:
+  /// **'Planes'**
+  String get routesStatPlans;
+
+  /// No description provided for @routesHistoryHeading.
+  ///
+  /// In es, this message translates to:
+  /// **'Historial de lugares'**
+  String get routesHistoryHeading;
+
   /// No description provided for @saveLocationSection.
   ///
   /// In es, this message translates to:
-  /// **'1. Ubicación (opcional)'**
+  /// **'Ubicación'**
   String get saveLocationSection;
 
   /// No description provided for @saveLocationDraftHint.
@@ -1057,7 +1225,7 @@ abstract class AppLocalizations {
   /// No description provided for @savePlaceNameHelper.
   ///
   /// In es, this message translates to:
-  /// **'Opcional. Se completa del mapa o queda “Sin nombre”'**
+  /// **'El mapa o el enlace suelen completarlo.'**
   String get savePlaceNameHelper;
 
   /// No description provided for @saveDepartment.
@@ -1099,7 +1267,7 @@ abstract class AppLocalizations {
   /// No description provided for @saveLinksSection.
   ///
   /// In es, this message translates to:
-  /// **'2. Enlaces (opcional)'**
+  /// **'Enlaces'**
   String get saveLinksSection;
 
   /// No description provided for @saveSocialPaste.
@@ -1123,7 +1291,7 @@ abstract class AppLocalizations {
   /// No description provided for @saveCategoriesSection.
   ///
   /// In es, this message translates to:
-  /// **'3. Categorías'**
+  /// **'Categorías'**
   String get saveCategoriesSection;
 
   /// No description provided for @saveCategoryHint.
@@ -1165,7 +1333,7 @@ abstract class AppLocalizations {
   /// No description provided for @saveVisibilitySection.
   ///
   /// In es, this message translates to:
-  /// **'4. Visibilidad y foto'**
+  /// **'Visibilidad'**
   String get saveVisibilitySection;
 
   /// No description provided for @saveIsPhysical.
@@ -1221,6 +1389,102 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Puedes guardar ya: sin ubicación queda en borrador y te recordaremos completarlo.'**
   String get saveDraftFooter;
+
+  /// No description provided for @saveNameSection.
+  ///
+  /// In es, this message translates to:
+  /// **'Nombre'**
+  String get saveNameSection;
+
+  /// No description provided for @savePublicSection.
+  ///
+  /// In es, this message translates to:
+  /// **'Público'**
+  String get savePublicSection;
+
+  /// No description provided for @saveNameRequired.
+  ///
+  /// In es, this message translates to:
+  /// **'Escribe un nombre para guardar.'**
+  String get saveNameRequired;
+
+  /// No description provided for @saveAddSection.
+  ///
+  /// In es, this message translates to:
+  /// **'Añadir sección'**
+  String get saveAddSection;
+
+  /// No description provided for @saveExtraDetails.
+  ///
+  /// In es, this message translates to:
+  /// **'Detalles'**
+  String get saveExtraDetails;
+
+  /// No description provided for @saveExtraPhoto.
+  ///
+  /// In es, this message translates to:
+  /// **'Fotos'**
+  String get saveExtraPhoto;
+
+  /// No description provided for @saveExtraPhysical.
+  ///
+  /// In es, this message translates to:
+  /// **'Visibilidad del lugar físico'**
+  String get saveExtraPhysical;
+
+  /// No description provided for @saveInfoLocation.
+  ///
+  /// In es, this message translates to:
+  /// **'Mapa o enlace de Google. El pin habilita Público. Sin ubicación el guardado queda en borrador.'**
+  String get saveInfoLocation;
+
+  /// No description provided for @saveInfoExactPin.
+  ///
+  /// In es, this message translates to:
+  /// **'Encendido guarda el pin para rutas. Apagado abre la ficha en Maps por nombre y quita las coordenadas.'**
+  String get saveInfoExactPin;
+
+  /// No description provided for @saveInfoName.
+  ///
+  /// In es, this message translates to:
+  /// **'Obligatorio. El mapa o el enlace de Google suelen completarlo.'**
+  String get saveInfoName;
+
+  /// No description provided for @saveInfoPublic.
+  ///
+  /// In es, this message translates to:
+  /// **'Privado por defecto. Para publicar hace falta lugar físico y pin en el mapa. Sin pin el interruptor queda desactivado.'**
+  String get saveInfoPublic;
+
+  /// No description provided for @saveInfoDetails.
+  ///
+  /// In es, this message translates to:
+  /// **'Departamento y ciudad de la lista oficial; dirección opcional. El mapa suele rellenarlos.'**
+  String get saveInfoDetails;
+
+  /// No description provided for @saveInfoLinks.
+  ///
+  /// In es, this message translates to:
+  /// **'Instagram, TikTok u otra red del lugar. Pegá el enlace en el campo.'**
+  String get saveInfoLinks;
+
+  /// No description provided for @saveInfoCategories.
+  ///
+  /// In es, this message translates to:
+  /// **'Se sugiere según el nombre. Al crear, si no hay coincidencia queda Otros.'**
+  String get saveInfoCategories;
+
+  /// No description provided for @saveInfoPhoto.
+  ///
+  /// In es, this message translates to:
+  /// **'Hasta 15 fotos. Se suben al guardar.'**
+  String get saveInfoPhoto;
+
+  /// No description provided for @saveInfoPhysical.
+  ///
+  /// In es, this message translates to:
+  /// **'Por defecto es un lugar físico. Si es receta, tip u otro contenido, apagá esto: quedará siempre privado.'**
+  String get saveInfoPhysical;
 
   /// No description provided for @sameSiteTitle.
   ///

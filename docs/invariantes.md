@@ -42,6 +42,16 @@ Abrir Maps **desde la ficha** puede usar nombre / `google_place_id`. Eso no auto
 
 Público en lugar físico exige **lat y lng**. Ciudad o dirección solas no alcanzan.
 
+Público es **sección siempre visible**. Sin pin, el interruptor se muestra **desactivado** (no se oculta). No reaparece el diálogo de “¿punto exacto?” al pegar Maps.
+
+### Layout del formulario
+
+- Siempre: Ubicación → Nombre (obligatorio; Maps lo rellena) → Público.
+- Extra detrás de **+**: Detalles, Enlaces, Categorías, Fotos, Visibilidad del lugar físico.
+- Crear: lugar físico por defecto (el switch no está en la pantalla mínima). Editar: todas las secciones. Share: también Enlaces.
+- Nombre vacío: no guardar (nada de “Sin nombre”).
+- Ayuda en tooltip (tap), no textos largos bajo los campos.
+
 ### Más invariantes de esta pantalla
 
 - Depto → ciudad (DIVIPOLA, ids, no listas en Dart).

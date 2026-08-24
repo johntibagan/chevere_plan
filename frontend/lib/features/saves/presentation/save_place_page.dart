@@ -37,6 +37,8 @@ import 'site_review_editor_page.dart';
 import 'site_status_l10n.dart';
 import 'social_link_preview_card.dart';
 
+enum _SaveExtra { details, links, categories, photo, physical }
+
 class SavePlacePage extends ConsumerStatefulWidget {
   const SavePlacePage({
     super.key,
@@ -89,8 +91,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
   bool _addingSocial = false;
   /// true = pegar enlace Google Maps; false = mapa interactivo.
   bool _useGoogleLink = false;
-  bool _locationDetailsExpanded = false;
-  int _locationPanelEpoch = 0;
+  final Set<_SaveExtra> _openExtras = {};
   File? _pendingPhoto;
   String? _pendingMapImageUrl;
   String? _editSaveId;
@@ -192,6 +193,9 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
       }
     }
     if (parsed.suggestedName != null) _nameCtrl.text = parsed.suggestedName!;
+    if (widget.initialSharedText?.trim().isNotEmpty ?? false) {
+      _openExtras.add(_SaveExtra.links);
+    }
     _bootstrapForm();
   }
 
@@ -264,6 +268,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
               ),
             );
           }
+          _openExtras.addAll(_SaveExtra.values);
           _loadingCats = false;
         });
       } else if (siteIdOnly != null) {
@@ -309,6 +314,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
                 ),
               ),
             );
+          _openExtras.addAll(_SaveExtra.values);
           _loadingCats = false;
         });
       } else {
@@ -369,8 +375,6 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
       if (staticMapUrl != null && staticMapUrl.isNotEmpty) {
         _pendingMapImageUrl = staticMapUrl;
       }
-      _locationDetailsExpanded = true;
-      _locationPanelEpoch++;
     });
     if (!_isEditing) _maybeSuggestCategories(force: true);
   }
@@ -724,9 +728,8 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
         (city == null || city.trim().isEmpty)) {
       return false;
     }
-    final name = _nameCtrl.text.trim().isEmpty
-        ? 'Sin nombre'
-        : _nameCtrl.text.trim();
+    final name = _nameCtrl.text.trim();
+    if (name.isEmpty) return false;
     try {
       final dupes = await widget.savesRepository.findPossibleDuplicates(
         name: name,
@@ -899,18 +902,6 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
     }
   }
 
-  String get _locationSummary {
-    final name = _nameCtrl.text.trim();
-    final parts = <String>[
-      if (name.isNotEmpty) name else 'Sin nombre',
-      if (_selectedDept != null) _selectedDept!.name,
-      if (_selectedCity != null) _selectedCity!.name,
-      if (_addressCtrl.text.trim().isNotEmpty) _addressCtrl.text.trim(),
-      if (_lat != null && _lng != null) 'Punto en mapa',
-    ];
-    return parts.join(' · ');
-  }
-
   Future<void> _pickPhoto() async {
     final accepted = await showDialog<bool>(
       context: context,
@@ -949,9 +940,12 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
     // igual de claro que el de «¡Lugar guardado!».
     final lat = _lat;
     final lng = _lng;
-    final name = _nameCtrl.text.trim().isEmpty
-        ? 'Sin nombre'
-        : _nameCtrl.text.trim();
+    final name = _nameCtrl.text.trim();
+    if (name.isEmpty) {
+      if (!mounted) return;
+      AppToast.show(context, context.l10n.saveNameRequired, error: true);
+      return;
+    }
     final primaryLink =
         _socialLinks.isNotEmpty ? _socialLinks.first : null;
     final mapsUrl = _mapsCtrl.text.trim();
@@ -1367,7 +1361,24 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
     );
   }
 
-  Widget _sectionCard({required String title, required List<Widget> children}) {
+  Widget _infoTip(String message) {
+    return Tooltip(
+      message: message,
+      triggerMode: TooltipTriggerMode.tap,
+      showDuration: const Duration(seconds: 8),
+      waitDuration: Duration.zero,
+      child: Padding(
+        padding: const EdgeInsets.all(4),
+        child: Icon(Icons.info_outline, size: 20, color: AppColors.muted),
+      ),
+    );
+  }
+
+  Widget _sectionCard({
+    required String title,
+    required String info,
+    required List<Widget> children,
+  }) {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: Padding(
@@ -1375,11 +1386,18 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(
-              title,
-              style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w800,
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    title,
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w800,
+                        ),
                   ),
+                ),
+                _infoTip(info),
+              ],
             ),
             const SizedBox(height: 10),
             ...children,
@@ -1412,9 +1430,436 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
     );
   }
 
+  String _extraTitle(AppLocalizations l10n, _SaveExtra extra) {
+    return switch (extra) {
+      _SaveExtra.details => l10n.saveExtraDetails,
+      _SaveExtra.links => l10n.saveLinksSection,
+      _SaveExtra.categories => l10n.saveCategoriesSection,
+      _SaveExtra.photo => l10n.saveExtraPhoto,
+      _SaveExtra.physical => l10n.saveExtraPhysical,
+    };
+  }
+
+  IconData _extraIcon(_SaveExtra extra) {
+    return switch (extra) {
+      _SaveExtra.details => Icons.place_outlined,
+      _SaveExtra.links => Icons.link,
+      _SaveExtra.categories => Icons.category_outlined,
+      _SaveExtra.photo => Icons.photo_outlined,
+      _SaveExtra.physical => Icons.storefront_outlined,
+    };
+  }
+
+  Future<void> _pickExtraSection() async {
+    final hidden = _SaveExtra.values
+        .where((e) => !_openExtras.contains(e))
+        .toList();
+    if (hidden.isEmpty) return;
+    final chosen = await showModalBottomSheet<_SaveExtra>(
+      context: context,
+      backgroundColor: AppColors.surface,
+      showDragHandle: true,
+      builder: (ctx) {
+        final l10n = ctx.l10n;
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (final extra in hidden)
+                ListTile(
+                  leading: Icon(_extraIcon(extra), color: AppColors.foreground),
+                  title: Text(
+                    _extraTitle(l10n, extra),
+                    style: const TextStyle(color: AppColors.foreground),
+                  ),
+                  onTap: () => Navigator.pop(ctx, extra),
+                ),
+            ],
+          ),
+        );
+      },
+    );
+    if (chosen != null && mounted) {
+      setState(() => _openExtras.add(chosen));
+    }
+  }
+
+  Widget _locationSection(AppLocalizations l10n) {
+    return _sectionCard(
+      title: l10n.saveLocationSection,
+      info: l10n.saveInfoLocation,
+      children: [
+        SegmentedButton<bool>(
+          segments: [
+            ButtonSegment<bool>(
+              value: false,
+              label: Text(l10n.saveLocationMap),
+              icon: const Icon(Icons.map_outlined, size: 18),
+            ),
+            ButtonSegment<bool>(
+              value: true,
+              label: Text(l10n.saveLocationGoogleLink),
+              icon: const Icon(Icons.link, size: 18),
+            ),
+          ],
+          selected: {_useGoogleLink},
+          onSelectionChanged: _saving
+              ? null
+              : (s) => setState(() => _useGoogleLink = s.first),
+        ),
+        const SizedBox(height: 10),
+        if (!_useGoogleLink) ...[
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: Icon(
+              Icons.touch_app_outlined,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+            title: Text(
+              _lat != null && _lng != null
+                  ? l10n.saveLocationPointReady
+                  : l10n.saveLocationPickMap,
+            ),
+            subtitle: Text(
+              _lat != null && _lng != null
+                  ? '${_lat!.toStringAsFixed(5)}, ${_lng!.toStringAsFixed(5)}'
+                  : l10n.saveLocationTapHint,
+            ),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: _saving ? null : _openMap,
+          ),
+          if (_lat != null)
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton(
+                onPressed: _saving
+                    ? null
+                    : () => setState(() {
+                          _lat = null;
+                          _lng = null;
+                        }),
+                child: Text(l10n.saveLocationClear),
+              ),
+            ),
+        ] else ...[
+          TextField(
+            controller: _mapsCtrl,
+            decoration: _dec(l10n.saveMapsPasteLabel).copyWith(
+              suffixIcon: FieldActionIcon(
+                icon: Icons.content_paste,
+                tooltip: l10n.actionPaste,
+                loading: _importingMaps,
+                onPressed: (_saving || _importingMaps)
+                    ? null
+                    : _pasteMapsAndImport,
+              ),
+            ),
+            keyboardType: TextInputType.url,
+            textInputAction: TextInputAction.done,
+            onSubmitted: (_) {
+              if (!_saving && !_importingMaps) {
+                _importFromGoogleMaps();
+              }
+            },
+          ),
+          if (_pendingMapImageUrl != null) ...[
+            const SizedBox(height: 8),
+            AppNetworkImage(
+              url: _pendingMapImageUrl!,
+              cacheKey: 'map:${_pendingMapImageUrl!}',
+              height: 100,
+              width: double.infinity,
+              fit: BoxFit.cover,
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ],
+        ],
+        SwitchListTile(
+          contentPadding: EdgeInsets.zero,
+          title: Text(l10n.saveExactPinSwitch),
+          secondary: _infoTip(l10n.saveInfoExactPin),
+          value: _lat != null && _lng != null,
+          onChanged: _saving
+              ? null
+              : (v) async {
+                  if (!v) {
+                    setState(() {
+                      _lat = null;
+                      _lng = null;
+                    });
+                    return;
+                  }
+                  await _openMap();
+                },
+        ),
+      ],
+    );
+  }
+
+  Widget _nameSection(AppLocalizations l10n) {
+    return _sectionCard(
+      title: l10n.saveNameSection,
+      info: l10n.saveInfoName,
+      children: [
+        TextField(
+          controller: _nameCtrl,
+          decoration: _dec(l10n.savePlaceName, required: true),
+          textCapitalization: TextCapitalization.words,
+          onChanged: (_) => setState(() {}),
+          onEditingComplete: () {
+            _maybeSuggestCategories();
+            FocusScope.of(context).unfocus();
+          },
+          onSubmitted: (_) => _maybeSuggestCategories(),
+        ),
+      ],
+    );
+  }
+
+  Widget _publicSection(AppLocalizations l10n) {
+    final canPublish = _isPhysical && _hasFormLocation;
+    return _sectionCard(
+      title: l10n.savePublicSection,
+      info: l10n.saveInfoPublic,
+      children: [
+        SwitchListTile(
+          contentPadding: EdgeInsets.zero,
+          title: Text(l10n.saveMakePublic),
+          value: _isPublic && canPublish,
+          onChanged: canPublish
+              ? (v) => setState(() => _isPublic = v)
+              : null,
+        ),
+      ],
+    );
+  }
+
+  Widget _detailsSection(AppLocalizations l10n) {
+    return _sectionCard(
+      title: l10n.saveExtraDetails,
+      info: l10n.saveInfoDetails,
+      children: [
+        GeoTypeaheadField<GeoDepartment>(
+          controller: _deptCtrl,
+          focusNode: _deptFocus,
+          items: _geoCatalog?.activeDepartments ?? const [],
+          labelOf: (d) => d.name,
+          selected: _selectedDept,
+          enabled: _geoCatalog != null,
+          decoration: _dec(
+            l10n.saveDepartment,
+            helper: _geoCatalog == null ? l10n.saveGeoCatalogMissing : null,
+          ),
+          onSelected: (d) => setState(() {
+            _setDepartment(d);
+          }),
+        ),
+        const SizedBox(height: 10),
+        GeoTypeaheadField<GeoCity>(
+          controller: _cityCtrl,
+          focusNode: _cityFocus,
+          items: _selectedDept == null
+              ? const []
+              : (_geoCatalog?.citiesIn(_selectedDept!.id) ?? const []),
+          labelOf: (c) => c.name,
+          selected: _selectedCity,
+          enabled: _geoCatalog != null && _selectedDept != null,
+          decoration: _dec(l10n.saveCity),
+          onSelected: (c) => setState(() => _setCity(c)),
+        ),
+        const SizedBox(height: 10),
+        TextField(
+          controller: _addressCtrl,
+          decoration: _dec(l10n.saveAddress),
+          textCapitalization: TextCapitalization.sentences,
+          onChanged: (_) => setState(() {}),
+        ),
+      ],
+    );
+  }
+
+  Widget _linksSection(AppLocalizations l10n) {
+    return _sectionCard(
+      title: l10n.saveLinksSection,
+      info: l10n.saveInfoLinks,
+      children: [
+        TextField(
+          controller: _socialCtrl,
+          decoration: _dec(l10n.saveSocialPaste).copyWith(
+            suffixIcon: FieldActionIcon(
+              icon: Icons.content_paste,
+              tooltip: l10n.actionPaste,
+              loading: _addingSocial,
+              onPressed: (_saving || _addingSocial) ? null : _pasteSocialAndAdd,
+            ),
+          ),
+          keyboardType: TextInputType.url,
+          onSubmitted: (v) async {
+            await _addSocialLink(v);
+            _socialCtrl.clear();
+          },
+        ),
+        if (_socialLinks.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          ..._socialLinks.map(
+            (d) => Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: SocialLinkPreviewCard(
+                draft: d,
+                loading: _addingSocial &&
+                    d.title == null &&
+                    d.imageUrl == null,
+                onRemove: _saving
+                    ? null
+                    : () => setState(() => _socialLinks.remove(d)),
+              ),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _categoriesSection(AppLocalizations l10n) {
+    return _sectionCard(
+      title: l10n.saveCategoriesSection,
+      info: l10n.saveInfoCategories,
+      children: [
+        if (_categoryWasAutoSuggested && _selectedCategories.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 6),
+            child: Text(
+              _selectedCategories.any(
+                    (c) =>
+                        c.slug == CategorySuggester.defaultChildSlug ||
+                        c.slug == CategorySuggester.defaultParentSlug,
+                  )
+                  ? l10n.saveCategoryFallbackOtros
+                  : l10n.saveCategorySuggested,
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ),
+        if (_selectedCategories.isNotEmpty)
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: _selectedCategories.map((c) {
+              final parent = _parentName(c);
+              final label =
+                  parent.isEmpty ? c.nameEs : '$parent › ${c.nameEs}';
+              return InputChip(
+                label: Text(
+                  c.ageRestricted ? '$label (+18)' : label,
+                ),
+                onDeleted: _saving
+                    ? null
+                    : () => setState(() {
+                          _markCategoriesTouched();
+                          _selectedCategoryIds.remove(c.id);
+                        }),
+              );
+            }).toList(),
+          ),
+        const SizedBox(height: 8),
+        TextField(
+          controller: _categorySearchCtrl,
+          decoration: InputDecoration(
+            hintText: l10n.saveCategoryHint,
+            prefixIcon: const Icon(Icons.search),
+            border: const OutlineInputBorder(),
+            isDense: true,
+            suffixIcon: IconButton(
+              tooltip: l10n.saveCategoryTree,
+              onPressed: _saving ? null : _openCategoryTree,
+              icon: const Icon(Icons.account_tree_outlined),
+            ),
+          ),
+          onChanged: (_) => setState(() {}),
+        ),
+        if (_categorySearchCtrl.text.trim().isNotEmpty) ...[
+          const SizedBox(height: 4),
+          ..._filteredCategories.map((c) {
+            final parent = _parentName(c);
+            final label =
+                parent.isEmpty ? c.nameEs : '$parent › ${c.nameEs}';
+            final selected = _selectedCategoryIds.contains(c.id);
+            return CheckboxListTile(
+              dense: true,
+              contentPadding: EdgeInsets.zero,
+              title: Text(
+                c.ageRestricted ? '$label (+18)' : label,
+              ),
+              value: selected,
+              onChanged: (v) {
+                setState(() {
+                  _markCategoriesTouched();
+                  if (v == true) {
+                    _selectedCategoryIds.add(c.id);
+                  } else {
+                    _selectedCategoryIds.remove(c.id);
+                  }
+                });
+              },
+            );
+          }),
+          if (_filteredCategories.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Text(l10n.saveCategoryNone),
+            ),
+        ],
+      ],
+    );
+  }
+
+  Widget _photoSection(AppLocalizations l10n) {
+    return _sectionCard(
+      title: l10n.saveExtraPhoto,
+      info: l10n.saveInfoPhoto,
+      children: [
+        OutlinedButton.icon(
+          onPressed: _saving ? null : _pickPhoto,
+          icon: const Icon(Icons.photo_outlined),
+          label: Text(
+            _pendingPhoto == null ? l10n.saveAddPhoto : l10n.savePhotoReady,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _physicalSection(AppLocalizations l10n) {
+    return _sectionCard(
+      title: l10n.saveExtraPhysical,
+      info: l10n.saveInfoPhysical,
+      children: [
+        SwitchListTile(
+          contentPadding: EdgeInsets.zero,
+          title: Text(l10n.saveIsPhysical),
+          value: _isPhysical,
+          onChanged: (v) => setState(() {
+            _isPhysical = v;
+            if (!v) _isPublic = false;
+          }),
+        ),
+      ],
+    );
+  }
+
+  Widget _extraSection(AppLocalizations l10n, _SaveExtra extra) {
+    return switch (extra) {
+      _SaveExtra.details => _detailsSection(l10n),
+      _SaveExtra.links => _linksSection(l10n),
+      _SaveExtra.categories => _categoriesSection(l10n),
+      _SaveExtra.photo => _photoSection(l10n),
+      _SaveExtra.physical => _physicalSection(l10n),
+    };
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
+    final nameOk = _nameCtrl.text.trim().isNotEmpty;
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -1426,420 +1871,22 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
           : ListView(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
               children: [
-                // 1) Ubicación primero
-                _sectionCard(
-                  title: l10n.saveLocationSection,
-                  children: [
-                    Text(
-                      l10n.saveLocationDraftHint,
-                      style: const TextStyle(fontSize: 12),
+                _locationSection(l10n),
+                _nameSection(l10n),
+                _publicSection(l10n),
+                for (final extra in _SaveExtra.values)
+                  if (_openExtras.contains(extra)) _extraSection(l10n, extra),
+                if (_openExtras.length < _SaveExtra.values.length)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: OutlinedButton.icon(
+                      onPressed: _saving ? null : _pickExtraSection,
+                      icon: const Icon(Icons.add),
+                      label: Text(l10n.saveAddSection),
                     ),
-                    const SizedBox(height: 10),
-                    SegmentedButton<bool>(
-                      segments: [
-                        ButtonSegment<bool>(
-                          value: false,
-                          label: Text(l10n.saveLocationMap),
-                          icon: const Icon(Icons.map_outlined, size: 18),
-                        ),
-                        ButtonSegment<bool>(
-                          value: true,
-                          label: Text(l10n.saveLocationGoogleLink),
-                          icon: const Icon(Icons.link, size: 18),
-                        ),
-                      ],
-                      selected: {_useGoogleLink},
-                      onSelectionChanged: _saving
-                          ? null
-                          : (s) => setState(() => _useGoogleLink = s.first),
-                    ),
-                    const SizedBox(height: 10),
-                    if (!_useGoogleLink) ...[
-                      ListTile(
-                        contentPadding: EdgeInsets.zero,
-                        leading: Icon(
-                          Icons.touch_app_outlined,
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
-                        title: Text(
-                          _lat != null && _lng != null
-                              ? l10n.saveLocationPointReady
-                              : l10n.saveLocationPickMap,
-                        ),
-                        subtitle: Text(
-                          _lat != null && _lng != null
-                              ? '${_lat!.toStringAsFixed(5)}, ${_lng!.toStringAsFixed(5)}'
-                              : l10n.saveLocationTapHint,
-                        ),
-                        trailing: const Icon(Icons.chevron_right),
-                        onTap: _saving ? null : _openMap,
-                      ),
-                      if (_lat != null)
-                        Align(
-                          alignment: Alignment.centerLeft,
-                          child: TextButton(
-                            onPressed: _saving
-                                ? null
-                                : () => setState(() {
-                                      _lat = null;
-                                      _lng = null;
-                                    }),
-                            child: Text(l10n.saveLocationClear),
-                          ),
-                        ),
-                    ] else ...[
-                      TextField(
-                        controller: _mapsCtrl,
-                        decoration: _dec(
-                          l10n.saveMapsPasteLabel,
-                          helper: l10n.saveMapsPasteHelper,
-                        ).copyWith(
-                          suffixIcon: FieldActionIcon(
-                            icon: Icons.content_paste,
-                            tooltip: l10n.actionPaste,
-                            loading: _importingMaps,
-                            onPressed: (_saving || _importingMaps)
-                                ? null
-                                : _pasteMapsAndImport,
-                          ),
-                        ),
-                        keyboardType: TextInputType.url,
-                        textInputAction: TextInputAction.done,
-                        onSubmitted: (_) {
-                          if (!_saving && !_importingMaps) {
-                            _importFromGoogleMaps();
-                          }
-                        },
-                      ),
-                      if (_pendingMapImageUrl != null) ...[
-                        const SizedBox(height: 8),
-                        AppNetworkImage(
-                          url: _pendingMapImageUrl!,
-                          cacheKey: 'map:${_pendingMapImageUrl!}',
-                          height: 100,
-                          width: double.infinity,
-                          fit: BoxFit.cover,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ],
-                    ],
-                    SwitchListTile(
-                      contentPadding: EdgeInsets.zero,
-                      title: Text(l10n.saveExactPinSwitch),
-                      subtitle: Text(
-                        l10n.saveExactPinSwitchHint,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: AppColors.onImageMuted,
-                        ),
-                      ),
-                      value: _lat != null && _lng != null,
-                      onChanged: _saving
-                          ? null
-                          : (v) async {
-                              if (!v) {
-                                setState(() {
-                                  _lat = null;
-                                  _lng = null;
-                                });
-                                return;
-                              }
-                              await _openMap();
-                            },
-                    ),
-                    Theme(
-                      data: Theme.of(context)
-                          .copyWith(dividerColor: Colors.transparent),
-                      child: ExpansionTile(
-                        key: ValueKey('loc-$_locationPanelEpoch'),
-                        initiallyExpanded: _locationDetailsExpanded,
-                        maintainState: true,
-                        tilePadding: EdgeInsets.zero,
-                        childrenPadding: const EdgeInsets.only(bottom: 4),
-                        onExpansionChanged: (v) =>
-                            setState(() => _locationDetailsExpanded = v),
-                        title: Text(
-                          l10n.saveNameDetails,
-                          style: const TextStyle(fontWeight: FontWeight.w700),
-                        ),
-                        subtitle: Text(
-                          _locationSummary,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: AppColors.onImageMuted,
-                          ),
-                        ),
-                        children: [
-                          TextField(
-                            controller: _nameCtrl,
-                            decoration: _dec(
-                              l10n.savePlaceName,
-                              helper: l10n.savePlaceNameHelper,
-                            ),
-                            textCapitalization: TextCapitalization.words,
-                            onChanged: (_) => setState(() {}),
-                            onEditingComplete: () {
-                              _maybeSuggestCategories();
-                              FocusScope.of(context).unfocus();
-                            },
-                            onSubmitted: (_) => _maybeSuggestCategories(),
-                          ),
-                          const SizedBox(height: 10),
-                          GeoTypeaheadField<GeoDepartment>(
-                            controller: _deptCtrl,
-                            focusNode: _deptFocus,
-                            items: _geoCatalog?.activeDepartments ?? const [],
-                            labelOf: (d) => d.name,
-                            selected: _selectedDept,
-                            enabled: _geoCatalog != null,
-                            decoration: _dec(
-                              l10n.saveDepartment,
-                              helper: _geoCatalog == null
-                                  ? l10n.saveGeoCatalogMissing
-                                  : l10n.savePickFromList,
-                            ),
-                            onSelected: (d) => setState(() {
-                              _setDepartment(d);
-                            }),
-                          ),
-                          const SizedBox(height: 10),
-                          GeoTypeaheadField<GeoCity>(
-                            controller: _cityCtrl,
-                            focusNode: _cityFocus,
-                            items: _selectedDept == null
-                                ? const []
-                                : (_geoCatalog?.citiesIn(_selectedDept!.id) ??
-                                    const []),
-                            labelOf: (c) => c.name,
-                            selected: _selectedCity,
-                            enabled:
-                                _geoCatalog != null && _selectedDept != null,
-                            decoration: _dec(
-                              l10n.saveCity,
-                              helper: _selectedDept == null
-                                  ? l10n.savePickDeptFirst
-                                  : l10n.savePickFromList,
-                            ),
-                            onSelected: (c) => setState(() => _setCity(c)),
-                          ),
-                          const SizedBox(height: 10),
-                          TextField(
-                            controller: _addressCtrl,
-                            decoration: _dec(l10n.saveAddress),
-                            textCapitalization: TextCapitalization.sentences,
-                            onChanged: (_) => setState(() {}),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-
-                // 2) Enlaces
-                _sectionCard(
-                  title: l10n.saveLinksSection,
-                  children: [
-                    TextField(
-                      controller: _socialCtrl,
-                      decoration: _dec(l10n.saveSocialPaste).copyWith(
-                        suffixIcon: FieldActionIcon(
-                          icon: Icons.content_paste,
-                          tooltip: l10n.actionPaste,
-                          loading: _addingSocial,
-                          onPressed: (_saving || _addingSocial)
-                              ? null
-                              : _pasteSocialAndAdd,
-                        ),
-                      ),
-                      keyboardType: TextInputType.url,
-                      onSubmitted: (v) async {
-                        await _addSocialLink(v);
-                        _socialCtrl.clear();
-                      },
-                    ),
-                    if (_socialLinks.isNotEmpty) ...[
-                      const SizedBox(height: 8),
-                      ..._socialLinks.map(
-                        (d) => Padding(
-                          padding: const EdgeInsets.only(bottom: 8),
-                          child: SocialLinkPreviewCard(
-                            draft: d,
-                            loading: _addingSocial &&
-                                d.title == null &&
-                                d.imageUrl == null,
-                            onRemove: _saving
-                                ? null
-                                : () =>
-                                    setState(() => _socialLinks.remove(d)),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-
-                // 3) Categorías (sugeridas; default Otros si no hay match)
-                _sectionCard(
-                  title: l10n.saveCategoriesSection,
-                  children: [
-                    if (_categoryWasAutoSuggested &&
-                        _selectedCategories.isNotEmpty)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 6),
-                        child: Text(
-                          _selectedCategories.any(
-                                (c) =>
-                                    c.slug ==
-                                        CategorySuggester.defaultChildSlug ||
-                                    c.slug ==
-                                        CategorySuggester.defaultParentSlug,
-                              )
-                              ? l10n.saveCategoryFallbackOtros
-                              : l10n.saveCategorySuggested,
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                      ),
-                    if (_selectedCategories.isNotEmpty)
-                      Wrap(
-                        spacing: 6,
-                        runSpacing: 6,
-                        children: _selectedCategories.map((c) {
-                          final parent = _parentName(c);
-                          final label = parent.isEmpty
-                              ? c.nameEs
-                              : '$parent › ${c.nameEs}';
-                          return InputChip(
-                            label: Text(
-                              c.ageRestricted ? '$label (+18)' : label,
-                            ),
-                            onDeleted: _saving
-                                ? null
-                                : () => setState(() {
-                                      _markCategoriesTouched();
-                                      _selectedCategoryIds.remove(c.id);
-                                    }),
-                          );
-                        }).toList(),
-                      ),
-                    const SizedBox(height: 8),
-                    TextField(
-                      controller: _categorySearchCtrl,
-                      decoration: InputDecoration(
-                        hintText: l10n.saveCategoryHint,
-                        prefixIcon: const Icon(Icons.search),
-                        border: const OutlineInputBorder(),
-                        isDense: true,
-                        suffixIcon: IconButton(
-                          tooltip: l10n.saveCategoryTree,
-                          onPressed: _saving ? null : _openCategoryTree,
-                          icon: const Icon(Icons.account_tree_outlined),
-                        ),
-                      ),
-                      onChanged: (_) => setState(() {}),
-                    ),
-                    if (_categorySearchCtrl.text.trim().isNotEmpty) ...[
-                      const SizedBox(height: 4),
-                      ..._filteredCategories.map((c) {
-                        final parent = _parentName(c);
-                        final label = parent.isEmpty
-                            ? c.nameEs
-                            : '$parent › ${c.nameEs}';
-                        final selected = _selectedCategoryIds.contains(c.id);
-                        return CheckboxListTile(
-                          dense: true,
-                          contentPadding: EdgeInsets.zero,
-                          title: Text(
-                            c.ageRestricted ? '$label (+18)' : label,
-                          ),
-                          value: selected,
-                          onChanged: (v) {
-                            setState(() {
-                              _markCategoriesTouched();
-                              if (v == true) {
-                                _selectedCategoryIds.add(c.id);
-                              } else {
-                                _selectedCategoryIds.remove(c.id);
-                              }
-                            });
-                          },
-                        );
-                      }),
-                      if (_filteredCategories.isEmpty)
-                        Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                          child: Text(l10n.saveCategoryNone),
-                        ),
-                    ] else
-                      Padding(
-                        padding: const EdgeInsets.only(top: 6),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                l10n.saveCategorySuggestHint,
-                                style: const TextStyle(fontSize: 12),
-                              ),
-                            ),
-                            TextButton.icon(
-                              onPressed: _saving ? null : _openCategoryTree,
-                              icon: const Icon(
-                                Icons.account_tree_outlined,
-                                size: 18,
-                              ),
-                              label: Text(l10n.saveCategoryTree),
-                            ),
-                          ],
-                        ),
-                      ),
-                  ],
-                ),
-
-                // 4) Opciones
-                _sectionCard(
-                  title: l10n.saveVisibilitySection,
-                  children: [
-                    SwitchListTile(
-                      contentPadding: EdgeInsets.zero,
-                      title: Text(l10n.saveIsPhysical),
-                      subtitle: Text(l10n.saveIsPhysicalSubtitle),
-                      value: _isPhysical,
-                      onChanged: (v) => setState(() {
-                        _isPhysical = v;
-                        if (!v) _isPublic = false;
-                      }),
-                    ),
-                    SwitchListTile(
-                      contentPadding: EdgeInsets.zero,
-                      title: Text(l10n.saveMakePublic),
-                      subtitle: Text(
-                        !_isPhysical
-                            ? l10n.savePublicNonPhysical
-                            : !_hasFormLocation
-                                ? l10n.savePublicNeedLocation
-                                : l10n.savePublicVisible,
-                      ),
-                      value: _isPublic,
-                      onChanged: (_isPhysical && _hasFormLocation)
-                          ? (v) => setState(() => _isPublic = v)
-                          : null,
-                    ),
-                    OutlinedButton.icon(
-                      onPressed: _saving ? null : _pickPhoto,
-                      icon: const Icon(Icons.photo_outlined),
-                      label: Text(
-                        _pendingPhoto == null
-                            ? l10n.saveAddPhoto
-                            : l10n.savePhotoReady,
-                      ),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 12),
+                  ),
                 FilledButton(
-                  onPressed: _saving ? null : _submit,
+                  onPressed: (_saving || !nameOk) ? null : _submit,
                   child: _saving
                       ? const SizedBox(
                           height: 22,
@@ -1851,11 +1898,6 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
                               ? l10n.savePlaceSubmitEdit
                               : l10n.savePlaceSubmit,
                         ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  l10n.saveDraftFooter,
-                  style: Theme.of(context).textTheme.bodySmall,
                 ),
               ],
             ),

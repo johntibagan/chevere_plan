@@ -38,11 +38,11 @@ sequenceDiagram
 
 | Sitio | Qué ves |
 |---|---|
-| **Inicio** | Saludo, tus guardados (lista paginada), acceso a cercanía, admin si aplica, cerrar sesión |
-| **Explorar** | Búsqueda de sitios |
+| **Inicio** | Saludo, **guardados recientes** (carrusel como en Figma), **populares cerca** (públicos a ≤25 km si hay GPS), **acciones rápidas**, borradores pendientes, cercanía, admin si aplica |
+| **Explorar** | Búsqueda de sitios (cabecera Figma, chips de categoría, grilla/lista). Misma lógica: texto obligatorio en modo simple, filtros avanzados, incluir públicos |
 | **+ (centro)** | Guardar o completar un lugar (crear y editar son la **misma pantalla**) |
-| **Planes** | Tus itinerarios |
-| **Rutas** | Historial de paradas que marcaste como hechas en un plan |
+| **Planes** | Tus itinerarios (tarjeta de crear + lista; el FAB sigue abriendo el mismo flujo) |
+| **Rutas** | Historial de paradas visitadas (stats del listado ya cargado + línea de tiempo). Admin no vive acá |
 
 Los tabs que ya abriste se quedan en memoria para que cambiar de pestaña se sienta instantáneo. Las listas pintan caché primero y refrescan detrás.
 
@@ -60,17 +60,22 @@ Es el corazón de la app.
 
 Podés pegar un link de Maps **dentro del campo** (opción desde enlace / icono pegar): la app rellena nombre, ciudad y **pin**. Eso cuenta como lugar ya elegido: **no** se pregunta “¿punto exacto?” ni se tiran las coordenadas. **Público** queda habilitado si hay pin. El mapa interactivo tampoco pregunta: el usuario ya confirmó el punto. El interruptor **Punto exacto en el mapa** es opt-out explícito (apagarlo quita coords y bloquea Público en lugar físico). Contrato: [`invariantes.md`](invariantes.md).
 
-### Qué pedís (poco, con ayuda en el campo)
+### Qué ves en el formulario
 
-- Nombre
-- Si es **lugar físico** o no (un video/receta no físico **no puede ser público**)
-- Departamento → luego ciudad (lista del catálogo oficial, no texto libre)
-- Dirección, pin en mapa (opcional)
-- Categorías (árbol de la base; al **crear**, default **Otros**; al **editar** no se pisa lo que ya tenía)
-- Precio estimado, notas, link de origen (el link original es **solo para vos**)
-- Público / privado (color)
-- Fotos (galería en la ficha, no en otra pantalla)
-- Enlaces de redes del sitio (vista previa)
+Siempre visibles (crear vacío):
+
+1. **Ubicación** — mapa interactivo o enlace Google, más interruptor de punto exacto
+2. **Nombre** — obligatorio; el autocompletado de Maps lo rellena igual
+3. **Público** — apagado por defecto; sin pin (lugar físico) el interruptor se ve pero no se puede encender
+
+El resto va detrás de **Añadir sección** (`+`): **Detalles** (depto → ciudad → dirección), **Enlaces**, **Categorías**, **Fotos**, **Visibilidad del lugar físico**. Si ya están todas, el `+` desaparece.
+
+- Al **crear**, se asume lugar físico y privado. El interruptor de “es lugar físico” solo aparece si abrís esa sección extra o si **editás**.
+- Al **editar** o completar un borrador: se muestran **todas** las secciones.
+- Al **compartir** desde otra app: además de ubicación y nombre, se abre **Enlaces**.
+- Ayuda: icono **i** (tooltip al toque), no párrafos bajo cada campo.
+- Categorías: árbol de la base; al **crear**, default **Otros**; al **editar** no se pisa lo que ya tenía.
+- Sin nombre no se puede guardar (el botón queda desactivado). Sin ubicación el guardado puede quedar en borrador.
 
 ### Estados del guardado
 
