@@ -1150,6 +1150,12 @@ abstract class AppLocalizations {
   /// **'Pegar enlace de Google Maps'**
   String get saveMapsPasteLabel;
 
+  /// No description provided for @saveLocationSearchHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Buscar o pegar enlace de Google Maps'**
+  String get saveLocationSearchHint;
+
   /// No description provided for @saveMapsPasteHelper.
   ///
   /// In es, this message translates to:

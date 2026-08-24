@@ -11,6 +11,7 @@ class AppSelectChip extends StatelessWidget {
     required this.onTap,
     this.accent,
     this.filledPrimary = false,
+    this.icon,
   });
 
   final String label;
@@ -20,6 +21,7 @@ class AppSelectChip extends StatelessWidget {
   final Color? accent;
   /// “Todos”: fondo primary y texto oscuro.
   final bool filledPrimary;
+  final IconData? icon;
 
   @override
   Widget build(BuildContext context) {
@@ -49,13 +51,22 @@ class AppSelectChip extends StatelessWidget {
         customBorder: const StadiumBorder(),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          child: Text(
-            label,
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w800,
-              color: fg,
-            ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (icon != null) ...[
+                Icon(icon, size: 12, color: fg),
+                const SizedBox(width: 6),
+              ],
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                  color: fg,
+                ),
+              ),
+            ],
           ),
         ),
       ),

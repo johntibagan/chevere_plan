@@ -241,6 +241,7 @@
   "saveExactPinSwitch": "Punto exacto en el mapa",
   "saveExactPinSwitchHint": "Si está apagado, Maps abre la ficha por nombre. Enciéndelo para rutas y el pin preciso.",
   "saveMapsPasteLabel": "Pegar enlace de Google Maps",
+  "saveLocationSearchHint": "Buscar o pegar enlace de Google Maps",
   "saveMapsPasteHelper": "maps.app.goo.gl o google.com/maps",
   "saveMapsNeedExactPin": "No se obtuvo el punto exacto. Ábrelo en el mapa interactivo y confirma el pin.",
   "saveMapsNeedGoogleKey": "Falta GOOGLE_MAPS_API_KEY en el build. Corre con: flutter run --dart-define-from-file=.env",

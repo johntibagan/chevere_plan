@@ -578,6 +578,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get saveMapsPasteLabel => 'Pegar enlace de Google Maps';
 
   @override
+  String get saveLocationSearchHint => 'Buscar o pegar enlace de Google Maps';
+
+  @override
   String get saveMapsPasteHelper => 'maps.app.goo.gl o google.com/maps';
 
   @override

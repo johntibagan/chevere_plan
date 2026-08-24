@@ -67,11 +67,11 @@ Podés pegar un link de Maps **dentro del campo** (opción desde enlace / icono 
 
 Siempre visibles (crear vacío):
 
-1. **Ubicación** — mapa interactivo o enlace Google, más interruptor de punto exacto
+1. **Ubicación** — campo para pegar enlace de Maps (icono pegar) y preview tappable del mapa, más interruptor de punto exacto (todo en la misma card)
 2. **Nombre** — obligatorio; el autocompletado de Maps lo rellena igual
 3. **Público** — apagado por defecto; sin pin (lugar físico) el interruptor se ve pero no se puede encender
 
-El resto va detrás de **Añadir sección** (`+`): **Detalles** (depto → ciudad → dirección), **Enlaces**, **Categorías**, **Fotos**, **Visibilidad del lugar físico**. Si ya están todas, el `+` desaparece.
+El resto va detrás de **Añadir sección**: chips `+` por extra (**Detalles**, **Enlaces**, **Categorías**, **Fotos**, **Visibilidad del lugar físico**). Si ya están todas, los chips desaparecen. **Guardar** está en el AppBar (un solo CTA).
 
 - Al **crear**, se asume lugar físico y privado. El interruptor de “es lugar físico” solo aparece si abrís esa sección extra o si **editás**.
 - Al **editar** o completar un borrador: se muestran **todas** las secciones.

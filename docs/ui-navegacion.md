@@ -60,7 +60,7 @@ flowchart TB
   Save --> Cats[CategoryPickerPage fullscreen]
 ```
 
-**Push vs sheet (regla actual):** galerías y listas altas van en **página** (`Navigator.push` + `Scaffold`). Sheets solo cortos (proximidad, “Añadir sección” del formulario, menú ⋮ del plan). Sheet mal montado = oscurece y no se ve contenido: hay que evitarlo.
+**Push vs sheet (regla actual):** galerías y listas altas van en **página** (`Navigator.push` + `Scaffold`). Sheets solo cortos (proximidad, menú ⋮ del plan). Sheet mal montado = oscurece y no se ve contenido: hay que evitarlo.
 
 ---
 
@@ -229,14 +229,15 @@ Tab activo: icono + label `primary`. Inactivo: `mutedDark`, label 10 px.
 
 ### 6.4 Guardar / editar — `SavePlacePage` (misma pantalla)
 
-- AppBar con guardar.
-- Siempre: **Ubicación** (mapa o link Google + switch punto exacto) → **Nombre** → **Público**.
-- Extra detrás de **Añadir sección** (sheet corto elige cuál): Detalles, Enlaces, Categorías, Fotos, Lugar físico.
+- AppBar con **Guardar** (único CTA; no hay botón duplicado abajo).
+- Siempre: **Ubicación** (pegar Maps + preview del mapa + switch punto exacto, misma card) → **Nombre** (`*`) → **Público** (icono verde/morado + switch; deshabilitado sin pin en físico).
+- Extra: chips `+` **Añadir sección** (no sheet): Detalles, Enlaces, Categorías, Fotos, Lugar físico.
 - Editar / completar borrador: todas las secciones abiertas.
 - Share-in: además abre Enlaces.
 - Categorías: `CategoryPickerPage` **fullscreen dialog**, no sheet.
 - Mapa grande: `LocationPickerPage`.
 - Ayuda: icono `i`, no párrafos.
+- Tras guardar: pop (no pantalla “¡Guardado!”).
 
 ### 6.5 Ficha de sitio — `SiteDetailPage`
 
@@ -292,7 +293,6 @@ Tabs internos: buscar / resultados / añadidos. Reutiliza filtros de búsqueda. 
 | Sheet | Contenido |
 |---|---|
 | Proximidad | Radio 100–2000 m, incluir públicos, guardar |
-| Añadir sección (guardar) | 5 opciones |
 | Más del plan | 3 list tiles |
 
 ---

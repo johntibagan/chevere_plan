@@ -12,9 +12,12 @@ import '../../../core/config/env.dart';
 import '../../../core/di/providers.dart';
 import '../../../core/l10n/context_l10n.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/app_form_card.dart';
+import '../../../core/widgets/app_section_label.dart';
+import '../../../core/widgets/app_select_chip.dart';
 import '../../../core/widgets/app_toast.dart';
-import '../../../core/widgets/app_network_image.dart';
 import '../../../core/widgets/field_action_icon.dart';
+import '../../../core/widgets/site_cover.dart';
 import '../../admin/data/admin_models.dart';
 import '../../geo/data/geo_models.dart';
 import '../../geo/domain/geo_fuzzy.dart';
@@ -90,7 +93,6 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
   bool _importingMaps = false;
   bool _addingSocial = false;
   /// true = pegar enlace Google Maps; false = mapa interactivo.
-  bool _useGoogleLink = false;
   final Set<_SaveExtra> _openExtras = {};
   File? _pendingPhoto;
   String? _pendingMapImageUrl;
@@ -187,7 +189,6 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
     if (parsed.url != null) {
       if (GoogleMapsLinkImporter.looksLikeMapsUrl(parsed.url)) {
         _mapsCtrl.text = parsed.url!;
-        _useGoogleLink = true;
       } else {
         _socialCtrl.text = parsed.url!;
       }
@@ -381,10 +382,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
 
   Future<void> _importFromGoogleMaps() async {
     final text = _mapsCtrl.text.trim();
-    if (text.isEmpty) {
-      AppToast.show(context, context.l10n.saveMapsNeedLink, error: true);
-      return;
-    }
+    if (text.isEmpty) return;
     setState(() => _importingMaps = true);
     try {
       final result = await _mapsImporter.importFromText(text);
@@ -1378,22 +1376,22 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
     required String title,
     required String info,
     required List<Widget> children,
+    bool required = false,
   }) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: AppFormCard(
+        padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Row(
               children: [
                 Expanded(
-                  child: Text(
-                    title,
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w800,
-                        ),
+                  child: AppSectionLabel(
+                    text: title,
+                    required: required,
+                    bottom: 0,
                   ),
                 ),
                 _infoTip(info),
@@ -1407,26 +1405,18 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
     );
   }
 
-  InputDecoration _dec(String label, {bool required = false, String? helper}) {
+  InputDecoration _dec(String label, {String? helper, String? hint}) {
     return InputDecoration(
-      label: required
-          ? Text.rich(
-              TextSpan(
-                children: [
-                  TextSpan(text: label),
-                  const TextSpan(
-                    text: ' *',
-                    style: TextStyle(
-                      color: AppColors.requiredMark,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-            )
-          : Text(label),
-      border: const OutlineInputBorder(),
+      labelText: hint == null ? label : null,
+      hintText: hint,
+      filled: true,
+      fillColor: AppColors.surfaceElevated,
       helperText: helper,
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: AppColors.border),
+      ),
     );
   }
 
@@ -1440,145 +1430,110 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
     };
   }
 
-  IconData _extraIcon(_SaveExtra extra) {
-    return switch (extra) {
-      _SaveExtra.details => Icons.place_outlined,
-      _SaveExtra.links => Icons.link,
-      _SaveExtra.categories => Icons.category_outlined,
-      _SaveExtra.photo => Icons.photo_outlined,
-      _SaveExtra.physical => Icons.storefront_outlined,
-    };
-  }
-
-  Future<void> _pickExtraSection() async {
+  Widget _addExtraChips(AppLocalizations l10n) {
     final hidden = _SaveExtra.values
         .where((e) => !_openExtras.contains(e))
         .toList();
-    if (hidden.isEmpty) return;
-    final chosen = await showModalBottomSheet<_SaveExtra>(
-      context: context,
-      backgroundColor: AppColors.surface,
-      showDragHandle: true,
-      builder: (ctx) {
-        final l10n = ctx.l10n;
-        return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
+    if (hidden.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          AppSectionLabel(text: l10n.saveAddSection, bottom: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
             children: [
               for (final extra in hidden)
-                ListTile(
-                  leading: Icon(_extraIcon(extra), color: AppColors.foreground),
-                  title: Text(
-                    _extraTitle(l10n, extra),
-                    style: const TextStyle(color: AppColors.foreground),
-                  ),
-                  onTap: () => Navigator.pop(ctx, extra),
+                AppSelectChip(
+                  label: _extraTitle(l10n, extra),
+                  selected: false,
+                  icon: Icons.add,
+                  onTap: () {
+                    if (_saving) return;
+                    setState(() => _openExtras.add(extra));
+                  },
                 ),
             ],
           ),
-        );
-      },
+        ],
+      ),
     );
-    if (chosen != null && mounted) {
-      setState(() => _openExtras.add(chosen));
-    }
   }
 
   Widget _locationSection(AppLocalizations l10n) {
+    final hasPin = _lat != null && _lng != null;
     return _sectionCard(
       title: l10n.saveLocationSection,
       info: l10n.saveInfoLocation,
       children: [
-        SegmentedButton<bool>(
-          segments: [
-            ButtonSegment<bool>(
-              value: false,
-              label: Text(l10n.saveLocationMap),
-              icon: const Icon(Icons.map_outlined, size: 18),
+        TextField(
+          controller: _mapsCtrl,
+          decoration: _dec(
+            l10n.saveMapsPasteLabel,
+            hint: l10n.saveLocationSearchHint,
+          ).copyWith(
+            suffixIcon: FieldActionIcon(
+              icon: Icons.content_paste,
+              tooltip: l10n.actionPaste,
+              loading: _importingMaps,
+              onPressed: (_saving || _importingMaps) ? null : _pasteMapsAndImport,
             ),
-            ButtonSegment<bool>(
-              value: true,
-              label: Text(l10n.saveLocationGoogleLink),
-              icon: const Icon(Icons.link, size: 18),
-            ),
-          ],
-          selected: {_useGoogleLink},
-          onSelectionChanged: _saving
-              ? null
-              : (s) => setState(() => _useGoogleLink = s.first),
+          ),
+          keyboardType: TextInputType.url,
+          textInputAction: TextInputAction.done,
+          onSubmitted: (_) {
+            if (!_saving && !_importingMaps) {
+              _importFromGoogleMaps();
+            }
+          },
         ),
         const SizedBox(height: 10),
-        if (!_useGoogleLink) ...[
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: Icon(
-              Icons.touch_app_outlined,
-              color: Theme.of(context).colorScheme.primary,
-            ),
-            title: Text(
-              _lat != null && _lng != null
-                  ? l10n.saveLocationPointReady
-                  : l10n.saveLocationPickMap,
-            ),
-            subtitle: Text(
-              _lat != null && _lng != null
-                  ? '${_lat!.toStringAsFixed(5)}, ${_lng!.toStringAsFixed(5)}'
-                  : l10n.saveLocationTapHint,
-            ),
-            trailing: const Icon(Icons.chevron_right),
+        Material(
+          color: AppColors.surfaceElevated,
+          clipBehavior: Clip.antiAlias,
+          borderRadius: BorderRadius.circular(12),
+          child: InkWell(
             onTap: _saving ? null : _openMap,
-          ),
-          if (_lat != null)
-            Align(
-              alignment: Alignment.centerLeft,
-              child: TextButton(
-                onPressed: _saving
-                    ? null
-                    : () => setState(() {
-                          _lat = null;
-                          _lng = null;
-                        }),
-                child: Text(l10n.saveLocationClear),
-              ),
-            ),
-        ] else ...[
-          TextField(
-            controller: _mapsCtrl,
-            decoration: _dec(l10n.saveMapsPasteLabel).copyWith(
-              suffixIcon: FieldActionIcon(
-                icon: Icons.content_paste,
-                tooltip: l10n.actionPaste,
-                loading: _importingMaps,
-                onPressed: (_saving || _importingMaps)
-                    ? null
-                    : _pasteMapsAndImport,
-              ),
-            ),
-            keyboardType: TextInputType.url,
-            textInputAction: TextInputAction.done,
-            onSubmitted: (_) {
-              if (!_saving && !_importingMaps) {
-                _importFromGoogleMaps();
-              }
-            },
-          ),
-          if (_pendingMapImageUrl != null) ...[
-            const SizedBox(height: 8),
-            AppNetworkImage(
-              url: _pendingMapImageUrl!,
-              cacheKey: 'map:${_pendingMapImageUrl!}',
-              height: 100,
+            child: SizedBox(
+              height: 112,
               width: double.infinity,
-              fit: BoxFit.cover,
-              borderRadius: BorderRadius.circular(12),
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  SiteCover(
+                    imageUrl: _pendingMapImageUrl,
+                    cacheKey: _pendingMapImageUrl == null
+                        ? null
+                        : 'map:$_pendingMapImageUrl',
+                  ),
+                  Align(
+                    alignment: Alignment.bottomLeft,
+                    child: Padding(
+                      padding: const EdgeInsets.all(10),
+                      child: Text(
+                        hasPin
+                            ? l10n.saveLocationPointReady
+                            : l10n.saveLocationPickMap,
+                        style: const TextStyle(
+                          color: AppColors.foreground,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ],
-        ],
+          ),
+        ),
         SwitchListTile(
           contentPadding: EdgeInsets.zero,
           title: Text(l10n.saveExactPinSwitch),
           secondary: _infoTip(l10n.saveInfoExactPin),
-          value: _lat != null && _lng != null,
+          value: hasPin,
           onChanged: _saving
               ? null
               : (v) async {
@@ -1600,10 +1555,14 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
     return _sectionCard(
       title: l10n.saveNameSection,
       info: l10n.saveInfoName,
+      required: true,
       children: [
         TextField(
           controller: _nameCtrl,
-          decoration: _dec(l10n.savePlaceName, required: true),
+          decoration: _dec(
+            l10n.savePlaceName,
+            hint: l10n.savePlaceName,
+          ),
           textCapitalization: TextCapitalization.words,
           onChanged: (_) => setState(() {}),
           onEditingComplete: () {
@@ -1618,17 +1577,34 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
 
   Widget _publicSection(AppLocalizations l10n) {
     final canPublish = _isPhysical && _hasFormLocation;
+    final isOn = _isPublic && canPublish;
+    final iconColor = isOn ? AppColors.success : AppColors.purple;
     return _sectionCard(
       title: l10n.savePublicSection,
       info: l10n.saveInfoPublic,
       children: [
-        SwitchListTile(
-          contentPadding: EdgeInsets.zero,
-          title: Text(l10n.saveMakePublic),
-          value: _isPublic && canPublish,
-          onChanged: canPublish
-              ? (v) => setState(() => _isPublic = v)
-              : null,
+        Row(
+          children: [
+            Tooltip(
+              message: !canPublish
+                  ? (!_isPhysical
+                      ? l10n.savePublicNonPhysical
+                      : l10n.savePublicNeedLocation)
+                  : (isOn ? l10n.savePublicVisible : l10n.saveMakePublic),
+              child: Icon(
+                isOn ? Icons.public : Icons.lock_outline,
+                color: iconColor,
+                size: 22,
+              ),
+            ),
+            const Spacer(),
+            Switch(
+              value: isOn,
+              onChanged: canPublish
+                  ? (v) => setState(() => _isPublic = v)
+                  : null,
+            ),
+          ],
         ),
       ],
     );
@@ -1865,6 +1841,24 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
         title: Text(
           _isEditing ? l10n.savePlaceEditTitle : l10n.savePlaceTitle,
         ),
+        actions: [
+          if (!_loadingCats)
+            TextButton(
+              onPressed: (_saving || !nameOk) ? null : _submit,
+              child: _saving
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : Text(
+                      _isEditing
+                          ? l10n.savePlaceSubmitEdit
+                          : l10n.savePlaceSubmit,
+                      style: const TextStyle(fontWeight: FontWeight.w800),
+                    ),
+            ),
+        ],
       ),
       body: _loadingCats
           ? const Center(child: CircularProgressIndicator())
@@ -1876,29 +1870,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
                 _publicSection(l10n),
                 for (final extra in _SaveExtra.values)
                   if (_openExtras.contains(extra)) _extraSection(l10n, extra),
-                if (_openExtras.length < _SaveExtra.values.length)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: OutlinedButton.icon(
-                      onPressed: _saving ? null : _pickExtraSection,
-                      icon: const Icon(Icons.add),
-                      label: Text(l10n.saveAddSection),
-                    ),
-                  ),
-                FilledButton(
-                  onPressed: (_saving || !nameOk) ? null : _submit,
-                  child: _saving
-                      ? const SizedBox(
-                          height: 22,
-                          width: 22,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : Text(
-                          _isEditing
-                              ? l10n.savePlaceSubmitEdit
-                              : l10n.savePlaceSubmit,
-                        ),
-                ),
+                _addExtraChips(l10n),
               ],
             ),
     );
