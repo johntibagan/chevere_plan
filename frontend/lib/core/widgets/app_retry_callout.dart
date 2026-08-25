@@ -27,19 +27,19 @@ class AppRetryCallout extends StatelessWidget {
           Text(
             l10n.errorGenericLead,
             textAlign: TextAlign.center,
-            style: const TextStyle(
+            style: TextStyle(
               color: AppColors.muted,
               height: 1.4,
               fontSize: 14,
             ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
           TextButton.icon(
             onPressed: onRetry,
-            icon: const Icon(Icons.refresh, size: 18),
+            icon: Icon(Icons.refresh, size: 18),
             label: Text(
               l10n.errorRetryAction,
-              style: const TextStyle(
+              style: TextStyle(
                 decoration: TextDecoration.underline,
                 fontWeight: FontWeight.w600,
               ),

@@ -3,6 +3,7 @@
 // salvo este archivo. No usar GoRouter: ver docs/ui-navegacion.md.
 import 'dart:async';
 
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -877,3 +878,34 @@ final homeSectionsOpenProvider =
     NotifierProvider<HomeSectionsOpenNotifier, HomeSectionsOpen>(
   HomeSectionsOpenNotifier.new,
 );
+
+class AppThemeModeNotifier extends Notifier<ThemeMode> {
+  static const _prefsKey = 'theme_mode';
+
+  @override
+  ThemeMode build() {
+    Future.microtask(_hydrate);
+    return ThemeMode.dark;
+  }
+
+  Future<void> _hydrate() async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(_prefsKey);
+    final next = switch (raw) {
+      'light' => ThemeMode.light,
+      'dark' => ThemeMode.dark,
+      _ => ThemeMode.dark,
+    };
+    if (next != state) state = next;
+  }
+
+  Future<void> setDark(bool isDark) async {
+    final next = isDark ? ThemeMode.dark : ThemeMode.light;
+    state = next;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_prefsKey, isDark ? 'dark' : 'light');
+  }
+}
+
+final appThemeModeProvider =
+    NotifierProvider<AppThemeModeNotifier, ThemeMode>(AppThemeModeNotifier.new);

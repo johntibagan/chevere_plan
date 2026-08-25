@@ -1,0 +1,47 @@
+---
+description: Flutter — un solo lugar para colores, tema, tipografía, i18n, moneda y formatters
+globs: frontend/**/*.dart,frontend/lib/l10n/**/*.arb
+alwaysApply: true
+---
+
+# Design tokens centralizados (Chevere Plan)
+
+**Un cambio de soporte = un archivo fuente.** Mapa: [`frontend/lib/core/design/design_system.dart`](frontend/lib/core/design/design_system.dart). Detalle: [`docs/lineamientos-desarrollo-frontend.md`](docs/lineamientos-desarrollo-frontend.md) §2.
+
+## Dónde vive cada cosa
+
+| Cambiar | Archivo | En widgets/features |
+|---|---|---|
+| Color / paleta / gradiente marca | `core/theme/chevere_theme_colors.dart` | `AppColors.*` o `context.chevereColors` |
+| Tema Material light/dark | `core/theme/app_theme.dart` | No duplicar `ThemeData` |
+| Tipografía display (Jakarta) | `core/theme/app_typography.dart` | `AppTypography.tabTitle()` etc.; cuerpo → `Theme.of(context).textTheme` |
+| Radios / espaciado | `app_radius.dart`, `AppSpacing` | Preferir tokens; no `BorderRadius.circular(12)` suelto en código nuevo |
+| Locale MVP | `core/l10n/app_locale.dart` | `kAppLocale`; no `'es'` suelto en formatters |
+| Copy de UI | `lib/l10n/app_es.arb` | `context.l10n`; **prohibido** español en presentation/widgets |
+| Fechas UI | `core/formatters/date_format.dart` | `formatDateDmY` / `formatDateTimeShort` |
+| Moneda UI | `core/formatters/money_format.dart` | `formatMoney`, `currencyInputPrefix/Suffix`; código desde **modelo** |
+| Distancia UI | `core/formatters/distance_format.dart` | `formatDistanceKmLabel(l10n, km)` |
+| Dept/ciudad | `core/formatters/place_format.dart` | `formatDeptCity` |
+| Fallback sin nombre (data) | `core/l10n/display_defaults.dart` | Debe coincidir con `.arb` |
+| Logo Google (marca externa) | `core/theme/google_brand_colors.dart` | Solo login |
+
+## Prohibido en presentation / core/widgets
+
+- `Color(0x…)` o `Colors.*` para UI de producto (salvo `Colors.transparent`).
+- `GoogleFonts.*` fuera de `app_theme.dart` / `app_typography.dart`.
+- `NumberFormat` / `DateFormat` / `'${n} km'` / `'COP'` en pantallas.
+- `const TextStyle(… AppColors …)` — `AppColors` es dinámico (tema claro/oscuro).
+- Duplicar strings que ya existen en `.arb` (buscar antes de añadir clave).
+
+## Obligatorio al tocar UI
+
+1. Color nuevo → token en `ChevereThemeColors` (dark **y** light) + getter en `AppColors`.
+2. String visible → clave en `app_es.arb` + `flutter gen-l10n`.
+3. Formato fecha/moneda/distancia → formatter en `core/formatters/`, no inline.
+4. Categoría con hex de DB → parse + fallback `AppColors.primary` (no hex fijo en widget).
+
+## Excepciones (OK)
+
+- `kGenericAppError` solo en capas **sin** `BuildContext` (auth, `Result`).
+- `LegalTexts` (documentos largos).
+- `'COP'` default en **modelos** JSON/DB, no en decoración de campos.

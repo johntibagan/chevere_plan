@@ -29,10 +29,10 @@ class AppSearchField extends StatelessWidget {
       textInputAction: TextInputAction.search,
       onChanged: onChanged,
       onSubmitted: (_) => onSearch(),
-      style: const TextStyle(fontSize: 13, color: AppColors.foreground),
+      style: TextStyle(fontSize: 13, color: AppColors.foreground),
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: const TextStyle(fontSize: 13, color: AppColors.mutedDark),
+        hintStyle: TextStyle(fontSize: 13, color: AppColors.mutedDark),
         filled: true,
         fillColor: AppColors.surface,
         isDense: true,
@@ -45,15 +45,15 @@ class AppSearchField extends StatelessWidget {
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.border),
+          borderSide: BorderSide(color: AppColors.border),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.border),
+          borderSide: BorderSide(color: AppColors.border),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.primary),
+          borderSide: BorderSide(color: AppColors.primary),
         ),
       ),
     );

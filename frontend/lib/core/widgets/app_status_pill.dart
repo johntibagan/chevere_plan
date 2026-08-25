@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../theme/app_radius.dart';
 import '../theme/app_theme.dart';
+import '../theme/app_typography.dart';
 
 /// Pill de estado (borrador vs próximo, etc.).
 class AppStatusPill extends StatelessWidget {
@@ -18,15 +20,13 @@ class AppStatusPill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: emphasized ? AppColors.primary : const Color(0x99000000),
-        borderRadius: BorderRadius.circular(999),
+        color: emphasized ? AppColors.primary : AppColors.scrim,
+        borderRadius: AppRadius.pillAll,
       ),
       child: Text(
         label,
-        style: TextStyle(
-          fontSize: 10,
-          fontWeight: FontWeight.w700,
-          color: emphasized ? AppColors.background : AppColors.muted,
+        style: AppTypography.microBold(
+          color: emphasized ? AppColors.onPrimary : AppColors.muted,
         ),
       ),
     );

@@ -1,12 +1,16 @@
-import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'dart:async';
 
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../di/providers.dart';
 import '../l10n/context_l10n.dart';
+import '../theme/app_typography.dart';
 import '../theme/app_theme.dart';
 import 'app_network_image.dart';
 
 /// Menú lateral derecho (estilo Google): cuenta arriba, acciones, salir al final.
-class AppMoreMenuDrawer extends StatelessWidget {
+class AppMoreMenuDrawer extends ConsumerWidget {
   const AppMoreMenuDrawer({
     super.key,
     required this.displayName,
@@ -33,9 +37,10 @@ class AppMoreMenuDrawer extends StatelessWidget {
   final VoidCallback onSignOut;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
     final width = MediaQuery.sizeOf(context).width * 0.86;
+    final isDark = ref.watch(appThemeModeProvider) == ThemeMode.dark;
 
     return Drawer(
       backgroundColor: AppColors.surface,
@@ -56,7 +61,7 @@ class AppMoreMenuDrawer extends StatelessWidget {
                   child: Row(
                     children: [
                       _Avatar(initial: initial, avatarUrl: avatarUrl),
-                      const SizedBox(width: 14),
+                      SizedBox(width: 14),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -65,28 +70,24 @@ class AppMoreMenuDrawer extends StatelessWidget {
                               displayName,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: GoogleFonts.plusJakartaSans(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w800,
-                                color: AppColors.foreground,
-                              ),
+                              style: AppTypography.cardTitle(),
                             ),
                             if (email != null && email!.trim().isNotEmpty) ...[
-                              const SizedBox(height: 2),
+                              SizedBox(height: 2),
                               Text(
                                 email!.trim(),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 12,
                                   color: AppColors.muted,
                                 ),
                               ),
                             ],
-                            const SizedBox(height: 4),
+                            SizedBox(height: 4),
                             Text(
                               l10n.moreMenuManageAccount,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
                                 color: AppColors.primary,
@@ -95,7 +96,7 @@ class AppMoreMenuDrawer extends StatelessWidget {
                           ],
                         ),
                       ),
-                      const Icon(
+                      Icon(
                         Icons.chevron_right_rounded,
                         color: AppColors.mutedDark,
                       ),
@@ -104,11 +105,46 @@ class AppMoreMenuDrawer extends StatelessWidget {
                 ),
               ),
             ),
-            const Divider(height: 1, color: AppColors.border),
+            Divider(height: 1, color: AppColors.border),
             Expanded(
               child: ListView(
                 padding: const EdgeInsets.symmetric(vertical: 8),
                 children: [
+                  SwitchListTile(
+                    secondary: Icon(
+                      isDark
+                          ? Icons.dark_mode_outlined
+                          : Icons.light_mode_outlined,
+                      color: AppColors.muted,
+                      size: 22,
+                    ),
+                    title: Text(
+                      l10n.moreMenuDarkMode,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.foreground,
+                      ),
+                    ),
+                    subtitle: Text(
+                      isDark
+                          ? l10n.moreMenuDarkModeOn
+                          : l10n.moreMenuDarkModeOff,
+                      style: TextStyle(fontSize: 11, color: AppColors.muted),
+                    ),
+                    value: isDark,
+                    activeThumbColor: AppColors.onPrimary,
+                    activeTrackColor: AppColors.primary,
+                    inactiveThumbColor: AppColors.muted,
+                    inactiveTrackColor: AppColors.surfaceElevated,
+                    onChanged: (value) {
+                      unawaited(
+                        ref.read(appThemeModeProvider.notifier).setDark(value),
+                      );
+                    },
+                    contentPadding:
+                        const EdgeInsets.symmetric(horizontal: 20, vertical: 2),
+                  ),
                   _MenuTile(
                     icon: Icons.notifications_active_outlined,
                     label: l10n.proximityTitle,
@@ -139,7 +175,7 @@ class AppMoreMenuDrawer extends StatelessWidget {
                 ],
               ),
             ),
-            const Divider(height: 1, color: AppColors.border),
+            Divider(height: 1, color: AppColors.border),
             _MenuTile(
               icon: Icons.logout_rounded,
               label: l10n.moreMenuSignOut,
@@ -149,7 +185,7 @@ class AppMoreMenuDrawer extends StatelessWidget {
                 onSignOut();
               },
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: 8),
           ],
         ),
       ),
@@ -177,11 +213,7 @@ class _Avatar extends StatelessWidget {
                 child: Center(
                   child: Text(
                     initial,
-                    style: GoogleFonts.plusJakartaSans(
-                      fontWeight: FontWeight.w800,
-                      fontSize: 18,
-                      color: AppColors.primary,
-                    ),
+                    style: AppTypography.cardTitle(color: AppColors.primary),
                   ),
                 ),
               ),
@@ -223,7 +255,7 @@ class _MenuTile extends StatelessWidget {
           ? null
           : Text(
               subtitle!,
-              style: const TextStyle(fontSize: 11, color: AppColors.muted),
+              style: TextStyle(fontSize: 11, color: AppColors.muted),
             ),
       onTap: onTap,
       contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 2),

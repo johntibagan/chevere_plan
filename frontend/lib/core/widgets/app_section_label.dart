@@ -22,7 +22,7 @@ class AppSectionLabel extends StatelessWidget {
       child: Text.rich(
         TextSpan(
           text: text.toUpperCase(),
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 11,
             fontWeight: FontWeight.w800,
             letterSpacing: 0.8,
@@ -30,7 +30,7 @@ class AppSectionLabel extends StatelessWidget {
           ),
           children: [
             if (required)
-              const TextSpan(
+              TextSpan(
                 text: ' *',
                 style: TextStyle(
                   color: AppColors.requiredMark,

@@ -149,7 +149,7 @@ class _SitePhotoViewerPageState extends State<SitePhotoViewerPage> {
                 child: IconButton(
                   tooltip: l10n.sitePhotoViewerClose,
                   onPressed: () => Navigator.of(context).pop(),
-                  icon: const Icon(Icons.close, color: AppColors.onImage),
+                  icon: Icon(Icons.close, color: AppColors.onImage),
                 ),
               ),
               if (total > 1)
@@ -161,7 +161,7 @@ class _SitePhotoViewerPageState extends State<SitePhotoViewerPage> {
                     child: Text(
                       l10n.sitePhotoViewerIndex(_index + 1, total),
                       textAlign: TextAlign.center,
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: AppColors.onImage,
                         fontWeight: FontWeight.w600,
                       ),
@@ -206,13 +206,13 @@ class _SitePhotoViewerPageState extends State<SitePhotoViewerPage> {
                                   ? l10n.sitePhotoUploaderUnknown
                                   : name,
                             ),
-                            style: const TextStyle(
+                            style: TextStyle(
                               color: AppColors.onImage,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
                           if (when != null) ...[
-                            const SizedBox(height: 4),
+                            SizedBox(height: 4),
                             Text(
                               l10n.sitePhotoUploadedAt(
                                 formatDateDmY(when),

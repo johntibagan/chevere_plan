@@ -10,6 +10,8 @@ class AppUserError implements Exception {
   String toString() => message;
 }
 
+/// Mensaje genérico para capas sin [BuildContext] (auth, Result).
+/// En UI con contexto, preferir `context.l10n.errorGeneric`.
 const String kGenericAppError = 'Error en la app. Intenta de nuevo.';
 
 /// Convierte cualquier excepción en mensaje de usuario.

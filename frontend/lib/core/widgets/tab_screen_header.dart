@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../theme/app_theme.dart';
+import '../theme/app_typography.dart';
 
 class TabScreenHeader extends StatelessWidget {
   const TabScreenHeader({
@@ -20,24 +20,11 @@ class TabScreenHeader extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            title,
-            style: GoogleFonts.plusJakartaSans(
-              fontSize: 22,
-              fontWeight: FontWeight.w800,
-              color: AppColors.foreground,
-            ),
-          ),
+          Text(title, style: AppTypography.tabTitle()),
           if (subtitle != null && subtitle!.isNotEmpty)
             Padding(
               padding: const EdgeInsets.only(top: 2),
-              child: Text(
-                subtitle!,
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: AppColors.muted,
-                ),
-              ),
+              child: Text(subtitle!, style: AppTypography.bodySecondary()),
             ),
         ],
       ),

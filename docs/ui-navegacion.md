@@ -14,7 +14,7 @@ Contratos que no se pueden romper: [`invariantes.md`](invariantes.md).
 ## 1. Cómo usar este archivo en Figma
 
 1. Tratar cada pantalla de la §6 como un **frame Android** (390×844 lógico, o el viewport del Motorola del dueño).
-2. Respetar **tokens** (§3) y **señales** (§4). No introducir tema claro ni iOS-only.
+2. Respetar **tokens** (§3) y **señales** (§4). Hay tema **oscuro y claro**; diseñar ambos si se entrega a Figma. No iOS-only.
 3. Mejorar jerarquía, ritmo, fotos, iconografía y microcopy **sin** agregar flujos (favoritos = solo el corazón; no hay IA, no hay admin en Rutas).
 4. **Guardar lugar:** el CTA **Guardar** va **abajo**, ancho, al alcance del pulgar. El Make a veces lo pone en el AppBar: **no replicar eso**.
 5. Las fotos de sitios: encabezado = **portada** (elegida o primera), igual en listas, tarjetas y ficha. Visor a pantalla completa con autor, fecha y ⋮ (portada / eliminar / reportar). La tira de info no lleva ⋮. Sin foto, ilustración de la **categoría padre**. El mismo sitio se ve igual en Inicio, Explorar, Planes y Rutas.
@@ -27,7 +27,7 @@ Contratos que no se pueden romper: [`invariantes.md`](invariantes.md).
 | Dato | Hoy |
 |---|---|
 | Plataforma | Android (Flutter, Material 3) |
-| Tema | **Solo oscuro** |
+| Tema | **Oscuro** (default) y **claro**; interruptor en menú ☰, sin pantalla aparte. Persiste en el dispositivo. |
 | Idioma UI | Español (strings en `.arb`; no hardcodear copy en Figma si se puede evitar) |
 | Navegación raíz | `MaterialApp` + `Navigator` implícito. Sin GoRouter. |
 | Sesión | Sin login → `LoginPage`. Con sesión → `HomePage` (shell de 4 tabs + FAB). |
@@ -57,6 +57,7 @@ flowchart TB
   Detail --> Ficha
   T3 --> PlanDetailFromRoute[PlanDetailPage]
   T0 --> Menu[Más opciones endDrawer]
+  Menu --> ThemeToggle[Modo oscuro ON/OFF]
   Menu --> Admin[AdminPage / Reportes]
   Menu --> Prox[Bottom sheet proximidad]
   Menu --> ProfileSoon[ComingSoon perfil]
@@ -71,33 +72,38 @@ flowchart TB
 
 ## 3. Tokens de diseño (código)
 
-Fuente: `frontend/lib/core/theme/app_theme.dart` (`AppColors`, `AppSpacing`, `AppTheme`).
+Fuente: `frontend/lib/core/theme/` (`ChevereThemeColors`, `AppColors`, `AppSpacing`, `AppTheme`). Los tokens viven en `ChevereThemeColors` (extensión de tema); `AppColors` refleja la paleta activa.
 
 ### 3.1 Color
 
-| Token | Hex | Uso |
-|---|---|---|
-| `background` | `#0B0D15` | Scaffold, AppBar |
-| `surface` | `#141A24` | Cards, campos, sheets, tiles |
-| `surfaceElevated` | `#1C2333` | Chips, tracks, bloques un peldaño arriba |
-| `sidebar` | `#0E1120` | Barra inferior |
-| `foreground` | `#F0F4FF` | Texto principal |
-| `muted` | `#8E93AC` | Secundario |
-| `mutedDark` | `#5A607A` | Terciario, nav inactiva, hints |
-| `primary` | `#FFBB33` | CTA, tab activo, acentos de marca |
-| `primarySoft` | `#FF8C42` | Extremo del gradiente CTA |
-| `accent` | `#FF5252` | Error, corazón “guardado”, acentos calientes |
-| `success` | `#00D68F` | **Público** (y stats positivas) |
-| `purple` | `#8B7FFF` | **Privado** / candado |
-| `border` | blanco ~6% | Bordes de card/input (`#0FFFFFFF`) |
-| `scrim` | negro 54% | Overlays |
-| `onImage` | `#FFFFFF` | Texto sobre foto |
-| `onImageMuted` | blanco 54% | Subtexto sobre foto |
-| `requiredMark` | `#FF8C00` | Asterisco de obligatorio |
+Cada token tiene valor **oscuro** y **claro**. Marca: azul `primary` + teal `primarySoft` (gradiente CTA/FAB). `onPrimary`: texto/ícono sobre CTA (oscuro `#0B0D15`, claro `#FFFFFF`).
 
-**Categorías (tinte de chip, no es taxonomía fija en Dart de negocio):** gastro `#FF8C42`, aloj `#8B7FFF`, nat `#00D68F`, cult `#E84393`, ent `#FFBB33`, comp `#00C9A7`, even `#FF5252`, serv `#4A90D9`, deporte `#2ECC71`. El árbol real vive en DB.
+| Token | Oscuro | Claro | Uso |
+|---|---|---|---|
+| `background` | `#0B0D15` | `#F7F9FC` | Scaffold, AppBar |
+| `surface` | `#141A24` | `#FFFFFF` | Cards, campos, sheets |
+| `surfaceElevated` | `#1C2333` | `#EEF1F7` | Chips, tracks |
+| `sidebar` | `#0E1120` | `#FFFFFF` | Barra inferior |
+| `foreground` | `#F0F4FF` | `#12141C` | Texto principal |
+| `muted` | `#8E93AC` | `#5C6178` | Secundario |
+| `mutedDark` | `#5A607A` | `#9096AC` | Terciario, nav inactiva |
+| `primary` | `#3D8BFF` | `#2563EB` | CTA, tab activo, links, FAB |
+| `primarySoft` | `#33D6C8` | `#0EA5B7` | Gradiente CTA |
+| `accent` | `#FF5252` | `#E0393E` | Error, corazón, stats calientes |
+| `success` | `#00D68F` | `#00A876` | **Público** |
+| `purple` | `#8B7FFF` | `#6C5CE7` | **Privado** |
+| `border` | blanco ~6% | negro ~8% | Bordes card/input |
+| `outlineVariant` | blanco ~8% | negro ~10% | Borde Material |
+| `scrim` | negro ~54% | negro ~40% | Overlays |
+| `coverScrim` | negro ~40% | negro ~30% | Degradado sobre portada |
+| `onImage` / `onImageMuted` | blanco / 54% | igual | Texto sobre foto |
+| `requiredMark` | `#FF8C00` | `#D9720A` | Asterisco obligatorio |
 
-**Gradiente CTA / FAB guardar:** `#FFBB33` → `#FF8C42`, esquina superior-izq a inferior-der. Sombra del FAB central: primary a 45% blur 22 offset (0, 4).
+**Categorías (chip / ilustración):** gastro, aloj, nat, cult, **ent** (`#F2789F` / `#D65A82`), comp, even, serv, deporte — ver `ChevereThemeColors` en código. Portadas sin foto: aloj `#6B74D6`/`#565EBF`, nat `#1B8F6A`/`#177956`, deporte `#3D9B6E`/`#32805C`.
+
+**Gradiente CTA / FAB:** `primary` → `primarySoft` (esquina sup-izq a inf-der). Sombra FAB: primary 45%, blur 22, offset (0, 4).
+
+**Login Google:** oscuro fondo `#1A1A1A`; claro fondo `#FFFFFF` con borde negro ~12%.
 
 ### 3.2 Tipo
 
@@ -183,7 +189,7 @@ Todo el texto de producto está en `app_es.arb` (i18n).
 | `AppNetworkImage` | `app_network_image.dart` | `cached_network_image` + decode acotado. |
 | `AppToast` | `app_toast.dart` | Snackbar; error de negocio o “Error en la app…”. |
 | `AppBusyOverlay` | `app_busy_overlay.dart` | Bloqueo breve (p. ej. abrir Maps). |
-| `AppMoreMenuDrawer` | `app_more_menu_drawer.dart` | `endDrawer` derecha: cuenta, recuerdos, admin, cerrar sesión. |
+| `AppMoreMenuDrawer` | `app_more_menu_drawer.dart` | `endDrawer` derecha: cuenta, **modo oscuro** (toggle), recuerdos, admin, cerrar sesión. |
 
 **Iconografía:** Material Icons. Redes en cards son **texto** (IG/TK/FB/GM), no SVG de marca.
 
@@ -197,7 +203,7 @@ Todo el texto de producto está en `app_es.arb` (i18n).
 - Logo 72×72, radio 20, **gradiente primary**, pin de mapa.
 - Título app (Jakarta ExtraBold 28) + claim.
 - Checkbox custom (cuadrado 20, check al aceptar) + texto con links a `LegalDocumentPage` (términos y privacidad).
-- Botón Google blanco cuando los legales están aceptados; apagado si no. Sigue siendo **solo Google**.
+- Botón Google según tema: oscuro fondo `#1A1A1A` texto claro; claro fondo blanco con borde y texto oscuro. Apagado si no aceptaste legales. Sigue siendo **solo Google**.
 
 ### 6.2 Shell — `HomePage`
 
@@ -215,10 +221,10 @@ Tab activo: icono + label `primary`. Inactivo: `mutedDark`, label 10 px.
 
 **Inicio (`_InicioTab`)** — sin AppBar:
 
-1. Saludo 11 mutedDark + título app 22 ExtraBold. Botón **☰** (derecha) abre `endDrawer` Más opciones: perfil (próximamente), Recuerdos cercanos, Admin/Reportes si staff, **Cerrar sesión** al final. Banner de recuerdo sigue en el feed.
-2. Banner **Recuerdo cercano** (gradiente primary, abre sheet de radio).
-3. Aviso de **borradores** (card naranja, no el gradiente).
-4. **Vista** (lista / 2 / 3 / 4) arriba, aplica a recientes y populares.
+1. Saludo 11 mutedDark + título app 22 ExtraBold. Botón **☰** (derecha) abre `endDrawer` Más opciones: perfil (próximamente), Recuerdos cercanos, Admin/Reportes si staff, **Cerrar sesión** al final.
+2. **Vista** (lista / 2 / 3 / 4) justo debajo del título; aplica a recientes y populares.
+3. Aviso de **borradores** (card naranja), si hay.
+4. **Eventos**: título plegable; contenido *Próximamente.* (placeholder).
 5. **Guardados recientes**: misma vista (hasta 5). El título pliega. **Ver más** abre Explorar.
 6. **Populares cerca**: mismo plegado y misma vista. **Ver más** abre Explorar. Vacío / sin GPS: texto muted.
 7. **Acciones rápidas**: se pliegan igual; los tres atajos también van a Explorar.
@@ -324,7 +330,7 @@ Chips internos: buscar / resultados / añadidos. `AppSearchField` + filtros avan
 | Más opciones → Admin (staff) | | `AdminPage` |
 | Más opciones → Reportes (staff) | | `AdminReportsPage` |
 | Más opciones → Perfil | | `ComingSoonPage` |
-| Banner recuerdo | | Sheet proximidad |
+| Banner recuerdo | | *(eliminado; recuerdos en menú ☰)* |
 | Planes CTA crear | | `CreatePlanPage` → builder |
 | Card plan / item ruta | | `PlanDetailPage` |
 | Plan `+` | | `PlanBuilderPage` |
@@ -351,7 +357,7 @@ Orden sugerido para que un rediseño aporte:
 1. **Fotos reales** en listas (composición: ratio, overlay, fallback). Hoy el fallback es ilustración genérica.
 2. Unificar **AppBar vs header in-body** (Inicio/Explorar/Planes/Rutas vs Guardar/Admin).
 3. El corazón **sí** es favorito (tap funcional). No rediseñarlo como “es tuyo”.
-4. **No diseñar aún:** lista/filtro de favoritos, onboarding extra, tema claro, IA que arme planes, tab Admin, cálculo de transporte en el itinerario.
+4. **No diseñar aún:** lista/filtro de favoritos, onboarding extra, IA que arme planes, tab Admin, cálculo de transporte en el itinerario.
 
 ---
 

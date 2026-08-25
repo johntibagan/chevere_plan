@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/l10n/context_l10n.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_network_image.dart';
 import '../data/social_link_models.dart';
@@ -21,9 +22,10 @@ class SocialLinkPreviewCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final title = draft.title?.trim().isNotEmpty == true
         ? draft.title!
-        : (draft.network ?? Uri.tryParse(draft.url)?.host ?? 'Enlace');
+        : (draft.network ?? Uri.tryParse(draft.url)?.host ?? l10n.saveLinkFallback);
     final desc = draft.description?.trim();
 
     return Material(
@@ -38,7 +40,7 @@ class SocialLinkPreviewCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               if (loading)
-                const SizedBox(
+                SizedBox(
                   width: 64,
                   height: 64,
                   child: Center(
@@ -65,9 +67,9 @@ class SocialLinkPreviewCard extends StatelessWidget {
                     color: AppColors.surfaceElevated,
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Icon(Icons.link, color: AppColors.muted),
+                  child: Icon(Icons.link, color: AppColors.muted),
                 ),
-              const SizedBox(width: 10),
+              SizedBox(width: 10),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -76,29 +78,29 @@ class SocialLinkPreviewCard extends StatelessWidget {
                       title,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontWeight: FontWeight.w700,
                         color: AppColors.foreground,
                       ),
                     ),
                     if (desc != null && desc.isNotEmpty) ...[
-                      const SizedBox(height: 2),
+                      SizedBox(height: 2),
                       Text(
                         desc,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 12,
                           color: AppColors.muted,
                         ),
                       ),
                     ],
-                    const SizedBox(height: 4),
+                    SizedBox(height: 4),
                     Text(
                       draft.url,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 11,
                         color: AppColors.primary,
                       ),
@@ -109,7 +111,7 @@ class SocialLinkPreviewCard extends StatelessWidget {
               if (onRemove != null)
                 IconButton(
                   onPressed: onRemove,
-                  icon: const Icon(Icons.close, size: 18),
+                  icon: Icon(Icons.close, size: 18),
                   color: AppColors.muted,
                 ),
             ],

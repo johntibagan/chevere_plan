@@ -21,11 +21,11 @@ enum SiteCoverFamily {
       case SiteCoverFamily.gastronomy:
         return AppColors.catGastro;
       case SiteCoverFamily.lodging:
-        return const Color(0xFF6B74D6);
+        return AppColors.coverLodging;
       case SiteCoverFamily.nature:
-        return const Color(0xFF1B8F6A);
+        return AppColors.coverNature;
       case SiteCoverFamily.sport:
-        return const Color(0xFF3D9B6E);
+        return AppColors.coverSport;
       case SiteCoverFamily.culture:
         return AppColors.catCult;
       case SiteCoverFamily.entertainment:
@@ -419,8 +419,8 @@ class CardHeartBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DecoratedBox(
-      decoration: const BoxDecoration(
-        color: Color(0x66000000),
+      decoration: BoxDecoration(
+        color: AppColors.coverScrim,
         shape: BoxShape.circle,
       ),
       child: Padding(

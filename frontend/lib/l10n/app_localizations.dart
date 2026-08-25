@@ -166,6 +166,24 @@ abstract class AppLocalizations {
   /// **'Cerrar sesión'**
   String get moreMenuSignOut;
 
+  /// No description provided for @moreMenuDarkMode.
+  ///
+  /// In es, this message translates to:
+  /// **'Modo oscuro'**
+  String get moreMenuDarkMode;
+
+  /// No description provided for @moreMenuDarkModeOn.
+  ///
+  /// In es, this message translates to:
+  /// **'Tema oscuro activo'**
+  String get moreMenuDarkModeOn;
+
+  /// No description provided for @moreMenuDarkModeOff.
+  ///
+  /// In es, this message translates to:
+  /// **'Tema claro activo'**
+  String get moreMenuDarkModeOff;
+
   /// No description provided for @moreMenuProfileComingTitle.
   ///
   /// In es, this message translates to:
@@ -393,6 +411,18 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Vista'**
   String get homeFeedView;
+
+  /// No description provided for @homeEvents.
+  ///
+  /// In es, this message translates to:
+  /// **'Eventos'**
+  String get homeEvents;
+
+  /// No description provided for @homeEventsComingSoon.
+  ///
+  /// In es, this message translates to:
+  /// **'Próximamente.'**
+  String get homeEventsComingSoon;
 
   /// No description provided for @homePopularNearby.
   ///
@@ -2523,6 +2553,90 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Mapa no disponible'**
   String get locationProviderNone;
+
+  /// No description provided for @formatDistanceKm.
+  ///
+  /// In es, this message translates to:
+  /// **'{km} km'**
+  String formatDistanceKm(String km);
+
+  /// No description provided for @defaultUserDisplayName.
+  ///
+  /// In es, this message translates to:
+  /// **'Usuario'**
+  String get defaultUserDisplayName;
+
+  /// No description provided for @reviewAuthorYou.
+  ///
+  /// In es, this message translates to:
+  /// **'Tú'**
+  String get reviewAuthorYou;
+
+  /// No description provided for @reviewEditedOn.
+  ///
+  /// In es, this message translates to:
+  /// **' · editado {date}'**
+  String reviewEditedOn(String date);
+
+  /// No description provided for @saveSuccessTitleCreate.
+  ///
+  /// In es, this message translates to:
+  /// **'¡Lugar guardado!'**
+  String get saveSuccessTitleCreate;
+
+  /// No description provided for @saveSuccessTitleUpdate.
+  ///
+  /// In es, this message translates to:
+  /// **'¡Actualizado!'**
+  String get saveSuccessTitleUpdate;
+
+  /// No description provided for @saveSuccessStaffBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Cambios del sitio guardados.'**
+  String get saveSuccessStaffBody;
+
+  /// No description provided for @saveSuccessCompleteBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Quedó completo en tu lista.'**
+  String get saveSuccessCompleteBody;
+
+  /// No description provided for @saveSuccessPrivateSuffix.
+  ///
+  /// In es, this message translates to:
+  /// **' Privado por defecto.'**
+  String get saveSuccessPrivateSuffix;
+
+  /// No description provided for @saveLinkFallback.
+  ///
+  /// In es, this message translates to:
+  /// **'Enlace'**
+  String get saveLinkFallback;
+
+  /// No description provided for @adminTransportInactive.
+  ///
+  /// In es, this message translates to:
+  /// **'Inactivo'**
+  String get adminTransportInactive;
+
+  /// No description provided for @adminTransportNoKmCap.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin tope km'**
+  String get adminTransportNoKmCap;
+
+  /// No description provided for @adminTransportMaxKmShort.
+  ///
+  /// In es, this message translates to:
+  /// **'Máx {km} km'**
+  String adminTransportMaxKmShort(int km);
+
+  /// No description provided for @adminTransportGroupOther.
+  ///
+  /// In es, this message translates to:
+  /// **'Otro (plataformas)'**
+  String get adminTransportGroupOther;
 }
 
 class _AppLocalizationsDelegate

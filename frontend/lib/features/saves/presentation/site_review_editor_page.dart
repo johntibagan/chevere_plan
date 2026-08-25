@@ -121,9 +121,9 @@ class _SiteReviewEditorPageState extends ConsumerState<SiteReviewEditorPage> {
               color: AppColors.foreground,
             ),
           ),
-          const SizedBox(height: 16),
-          Text(l10n.reviewRatingLabel, style: const TextStyle(color: AppColors.muted)),
-          const SizedBox(height: 8),
+          SizedBox(height: 16),
+          Text(l10n.reviewRatingLabel, style: TextStyle(color: AppColors.muted)),
+          SizedBox(height: 8),
           Row(
             children: [
               for (var i = 1; i <= 5; i++)
@@ -137,7 +137,7 @@ class _SiteReviewEditorPageState extends ConsumerState<SiteReviewEditorPage> {
                 ),
             ],
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
           TextField(
             key: WidgetKeys.reviewBody,
             controller: _body,
@@ -149,23 +149,23 @@ class _SiteReviewEditorPageState extends ConsumerState<SiteReviewEditorPage> {
             ),
           ),
           if (_canChoosePrivacy) ...[
-            const SizedBox(height: 8),
+            SizedBox(height: 8),
             SwitchListTile(
               key: WidgetKeys.reviewPublicSwitch,
               contentPadding: EdgeInsets.zero,
               title: Text(
                 l10n.reviewMakePublic,
-                style: const TextStyle(color: AppColors.foreground),
+                style: TextStyle(color: AppColors.foreground),
               ),
               subtitle: Text(
                 _isPublic ? l10n.reviewPublicHint : l10n.reviewPrivateHint,
-                style: const TextStyle(color: AppColors.muted, fontSize: 13),
+                style: TextStyle(color: AppColors.muted, fontSize: 13),
               ),
               value: _isPublic,
               onChanged: (v) => setState(() => _isPublic = v),
             ),
           ],
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
           Wrap(
             spacing: 8,
             runSpacing: 8,
@@ -177,17 +177,17 @@ class _SiteReviewEditorPageState extends ConsumerState<SiteReviewEditorPage> {
                 ),
               OutlinedButton.icon(
                 onPressed: _pickPhoto,
-                icon: const Icon(Icons.add_a_photo_outlined),
+                icon: Icon(Icons.add_a_photo_outlined),
                 label: Text(l10n.reviewAddPhoto),
               ),
             ],
           ),
-          const SizedBox(height: 24),
+          SizedBox(height: 24),
           FilledButton(
             key: WidgetKeys.reviewSubmit,
             onPressed: _saving ? null : _save,
             child: _saving
-                ? const SizedBox(
+                ? SizedBox(
                     width: 22,
                     height: 22,
                     child: CircularProgressIndicator(strokeWidth: 2),

@@ -1,10 +1,12 @@
 import 'package:intl/intl.dart';
 
+import '../l10n/app_locale.dart';
+
 /// Fecha visible: `dd/MMM/y` del locale (`es` → `25/ago/2026`).
 /// Meses: CLDR vía `intl` (no una lista propia). UTC → local.
 String formatDateDmY(DateTime value, {bool toLocal = true, String? locale}) {
   final d = toLocal ? value.toLocal() : value;
-  return DateFormat('dd/MMM/y', locale ?? 'es').format(d);
+  return DateFormat('dd/MMM/y', locale ?? kAppLocale).format(d);
 }
 
 /// Misma fecha (sin hora en UI).

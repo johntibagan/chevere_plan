@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/l10n/context_l10n.dart';
 import '../domain/geo_fuzzy.dart';
 
 /// Campo de texto + coincidencias locales. Hay que elegir una opción (id real).
@@ -115,7 +116,7 @@ class _GeoTypeaheadFieldState<T extends Object>
               .copyWith(
             suffixIcon: widget.selected != null
                 ? IconButton(
-                    tooltip: 'Quitar',
+                    tooltip: context.l10n.actionClear,
                     icon: const Icon(Icons.clear, size: 20),
                     onPressed: widget.enabled
                         ? () {

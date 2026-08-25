@@ -30,7 +30,7 @@ class SitePhotoOverflowButton extends StatelessWidget {
         enabled: enabled,
         padding: EdgeInsets.zero,
         tooltip: l10n.sitePhotoMenuTooltip,
-        icon: const Icon(Icons.more_vert, color: AppColors.onImage, size: 20),
+        icon: Icon(Icons.more_vert, color: AppColors.onImage, size: 20),
         onSelected: onSelected,
         itemBuilder: (context) => [
           if (canSetCover)
@@ -54,7 +54,7 @@ class SitePhotoOverflowButton extends StatelessWidget {
               child: ListTile(
                 dense: true,
                 contentPadding: EdgeInsets.zero,
-                leading: const Icon(Icons.delete_outline),
+                leading: Icon(Icons.delete_outline),
                 title: Text(l10n.actionDelete),
               ),
             ),
@@ -63,7 +63,7 @@ class SitePhotoOverflowButton extends StatelessWidget {
             child: ListTile(
               dense: true,
               contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.flag_outlined),
+              leading: Icon(Icons.flag_outlined),
               title: Text(l10n.actionReport),
             ),
           ),

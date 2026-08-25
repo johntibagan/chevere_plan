@@ -150,7 +150,7 @@ class _CategoryPickerPageState extends State<CategoryPickerPage> {
               ),
               child: Icon(Icons.category_outlined, size: 18, color: color),
             ),
-            const SizedBox(width: 12),
+            SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -168,7 +168,7 @@ class _CategoryPickerPageState extends State<CategoryPickerPage> {
                       kws,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 10,
                         color: AppColors.mutedDark,
                       ),
@@ -198,7 +198,7 @@ class _CategoryPickerPageState extends State<CategoryPickerPage> {
                 Navigator.pop(context, Set<String>.from(_selected)),
             child: Text(
               '${l10n.actionDone} (${_selected.length})',
-              style: const TextStyle(fontWeight: FontWeight.w800),
+              style: TextStyle(fontWeight: FontWeight.w800),
             ),
           ),
         ],
@@ -225,10 +225,10 @@ class _CategoryPickerPageState extends State<CategoryPickerPage> {
                       widget.categories.length,
                       roots.length,
                     ),
-              style: const TextStyle(fontSize: 11, color: AppColors.muted),
+              style: TextStyle(fontSize: 11, color: AppColors.muted),
             ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
           Expanded(
             child: filtering ? _buildFilteredList() : _buildTree(roots),
           ),
@@ -300,11 +300,11 @@ class _CategoryPickerPageState extends State<CategoryPickerPage> {
                 ),
                 child: Icon(Icons.folder_outlined, size: 14, color: color),
               ),
-              const SizedBox(width: 8),
+              SizedBox(width: 8),
               Expanded(
                 child: Text(
                   root.nameEs,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontWeight: FontWeight.w800,
                     color: AppColors.foreground,
                   ),
@@ -313,7 +313,7 @@ class _CategoryPickerPageState extends State<CategoryPickerPage> {
               if (children.isNotEmpty)
                 IconButton(
                   tooltip: l10n.categoryPickerSelectGroup,
-                  icon: const Icon(Icons.done_all, size: 18),
+                  icon: Icon(Icons.done_all, size: 18),
                   onPressed: () {
                     setState(() {
                       for (final c in children) {

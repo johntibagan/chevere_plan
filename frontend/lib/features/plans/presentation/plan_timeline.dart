@@ -177,7 +177,7 @@ class _StopTile extends StatelessWidget {
                 ],
               ),
             ),
-            const SizedBox(width: AppSpacing.sm),
+            SizedBox(width: AppSpacing.sm),
             Expanded(
               child: Padding(
                 padding: EdgeInsets.only(
@@ -198,7 +198,7 @@ class _StopTile extends StatelessWidget {
                         ),
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    SizedBox(width: 8),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -248,7 +248,7 @@ class _StopTile extends StatelessWidget {
                         tooltip: l10n.planRemoveStop,
                         visualDensity: VisualDensity.compact,
                         onPressed: onRemove,
-                        icon: const Icon(
+                        icon: Icon(
                           Icons.delete_outline,
                           size: 22,
                           color: AppColors.muted,

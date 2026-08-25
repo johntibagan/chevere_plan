@@ -4,35 +4,40 @@ class HomeSectionsOpen {
     this.recent = true,
     this.popular = true,
     this.quick = true,
+    this.events = true,
   });
 
   final bool recent;
   final bool popular;
   final bool quick;
+  final bool events;
 
   HomeSectionsOpen copyWith({
     bool? recent,
     bool? popular,
     bool? quick,
+    bool? events,
   }) {
     return HomeSectionsOpen(
       recent: recent ?? this.recent,
       popular: popular ?? this.popular,
       quick: quick ?? this.quick,
+      events: events ?? this.events,
     );
   }
 
-  /// Tres caracteres `0`/`1`: recientes, populares, acciones.
+  /// Cuatro caracteres `0`/`1`: recientes, populares, acciones, eventos.
   String encode() =>
-      '${recent ? '1' : '0'}${popular ? '1' : '0'}${quick ? '1' : '0'}';
+      '${recent ? '1' : '0'}${popular ? '1' : '0'}${quick ? '1' : '0'}${events ? '1' : '0'}';
 
   static HomeSectionsOpen decode(String? raw) {
-    if (raw == null || raw.length < 3) return const HomeSectionsOpen();
-    bool bit(int i) => raw[i] != '0';
+    if (raw == null || raw.isEmpty) return const HomeSectionsOpen();
+    bool bit(int i) => raw.length > i && raw[i] != '0';
     return HomeSectionsOpen(
       recent: bit(0),
-      popular: bit(1),
-      quick: bit(2),
+      popular: raw.length > 1 ? bit(1) : true,
+      quick: raw.length > 2 ? bit(2) : true,
+      events: raw.length > 3 ? bit(3) : true,
     );
   }
 }

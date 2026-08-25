@@ -12,6 +12,7 @@ import '../../../core/testing/widget_keys.dart';
 import '../../../core/widgets/app_retry_callout.dart';
 import '../../../core/widgets/app_toast.dart';
 import '../../../core/formatters/date_format.dart';
+import '../../../core/formatters/distance_format.dart';
 import '../../../core/formatters/money_format.dart';
 import '../../../core/l10n/context_l10n.dart';
 import '../../../core/theme/app_theme.dart';
@@ -544,7 +545,7 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
           controller: reasonCtrl,
           decoration: InputDecoration(
             labelText: context.l10n.photoReportReason,
-            border: const OutlineInputBorder(),
+            border: OutlineInputBorder(),
           ),
           maxLines: 3,
         ),
@@ -638,7 +639,7 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
                       icon: Icons.arrow_back_rounded,
                       onTap: () => Navigator.of(context).pop(_outcome),
                     ),
-                    const SizedBox(width: 8),
+                    SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         ficha?.name ?? l10n.siteDetailTitle,
@@ -673,7 +674,7 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
                             child: ListTile(
                               dense: true,
                               contentPadding: EdgeInsets.zero,
-                              leading: const Icon(Icons.edit_outlined),
+                              leading: Icon(Icons.edit_outlined),
                               title: Text(l10n.actionEdit),
                             ),
                           ),
@@ -683,7 +684,7 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
                               child: ListTile(
                                 dense: true,
                                 contentPadding: EdgeInsets.zero,
-                                leading: const Icon(Icons.delete_outline),
+                                leading: Icon(Icons.delete_outline),
                                 title: Text(l10n.actionDiscard),
                               ),
                             ),
@@ -728,7 +729,7 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
                           VisibilityBadge(
                             isPublic: ficha.isOwn ? ficha.isPublic : true,
                           ),
-                          const SizedBox(width: 8),
+                          SizedBox(width: 8),
                           Expanded(
                             child: SiteOriginTags(
                               isOwn: ficha.isOwn,
@@ -742,7 +743,7 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
                                 ficha.estimatedPriceAmount!,
                                 currencyCode: ficha.currencyCode,
                               ),
-                              style: const TextStyle(
+                              style: TextStyle(
                                 color: AppColors.primary,
                                 fontWeight: FontWeight.w800,
                                 fontSize: 13,
@@ -764,7 +765,7 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
             ),
             Expanded(
               child: _loading && ficha == null
-                  ? const Center(child: CircularProgressIndicator())
+                  ? Center(child: CircularProgressIndicator())
                   : _error != null && ficha == null
                 ? Center(
                     child: AppRetryCallout(onRetry: _load),
@@ -878,18 +879,18 @@ class _InfoTab extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(
+                Icon(
                   Icons.shield_outlined,
                   size: 18,
                   color: AppColors.primary,
                 ),
-                const SizedBox(width: 8),
+                SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     l10n.staffModeBanner(
                       staffRoleLabel ?? l10n.staffRoleAdmin,
                     ),
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12,
                       height: 1.35,
                       color: AppColors.foreground,
@@ -900,7 +901,7 @@ class _InfoTab extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
         ],
         Text(
           ficha.name,
@@ -910,7 +911,7 @@ class _InfoTab extends StatelessWidget {
             color: AppColors.foreground,
           ),
         ),
-        const SizedBox(height: 8),
+        SizedBox(height: 8),
         Wrap(
           spacing: 8,
           runSpacing: 8,
@@ -926,7 +927,7 @@ class _InfoTab extends StatelessWidget {
               _Chip(label: l10n.siteDetailNotPhysical),
           ],
         ),
-        const SizedBox(height: 20),
+        SizedBox(height: 20),
         _GallerySection(
           photos: photos,
           photoUrls: photoUrls,
@@ -941,7 +942,7 @@ class _InfoTab extends StatelessWidget {
         if (location.isNotEmpty ||
             onOpenPlaceOnMaps != null ||
             onOpenDirectionsOnMaps != null) ...[
-          const SizedBox(height: 20),
+          SizedBox(height: 20),
           _Section(
             icon: Icons.place_outlined,
             title: l10n.siteDetailLocation,
@@ -960,7 +961,7 @@ class _InfoTab extends StatelessWidget {
                             backgroundColor:
                                 AppColors.primary.withValues(alpha: 0.12),
                           ),
-                          icon: const Icon(Icons.place_outlined),
+                          icon: Icon(Icons.place_outlined),
                         ),
                       if (onOpenDirectionsOnMaps != null)
                         IconButton(
@@ -971,20 +972,20 @@ class _InfoTab extends StatelessWidget {
                             backgroundColor:
                                 AppColors.primary.withValues(alpha: 0.12),
                           ),
-                          icon: const Icon(Icons.directions_outlined),
+                          icon: Icon(Icons.directions_outlined),
                         ),
                     ],
                   ),
             child: location.isNotEmpty
-                ? Text(location, style: const TextStyle(color: AppColors.muted))
+                ? Text(location, style: TextStyle(color: AppColors.muted))
                 : Text(
                     l10n.siteDetailNoCoords,
-                    style: const TextStyle(color: AppColors.muted),
+                    style: TextStyle(color: AppColors.muted),
                   ),
           ),
         ],
         if (ficha.categoryNames.isNotEmpty) ...[
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           _Section(
             icon: Icons.category_outlined,
             title: l10n.siteDetailCategories,
@@ -1003,7 +1004,7 @@ class _InfoTab extends StatelessWidget {
           ),
         ],
         if (ficha.estimatedPriceAmount != null) ...[
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           _Section(
             icon: Icons.payments_outlined,
             title: l10n.siteDetailPrice,
@@ -1012,26 +1013,26 @@ class _InfoTab extends StatelessWidget {
                 ficha.estimatedPriceAmount!,
                 currencyCode: ficha.currencyCode,
               ),
-              style: const TextStyle(color: AppColors.muted),
+              style: TextStyle(color: AppColors.muted),
             ),
           ),
         ],
         if (ficha.distanceKm != null) ...[
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           _Section(
             icon: Icons.near_me_outlined,
             title: l10n.siteDetailDistance,
             child: Text(
-              '${ficha.distanceKm!.toStringAsFixed(1)} km',
-              style: const TextStyle(color: AppColors.muted),
+              formatDistanceKmLabel(l10n, ficha.distanceKm!),
+              style: TextStyle(color: AppColors.muted),
             ),
           ),
         ],
         if (socialLinks.isNotEmpty) ...[
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           _Section(
             icon: Icons.link,
-            title: 'Enlaces',
+            title: l10n.saveLinksSection,
             child: Column(
               children: socialLinks
                   .map(
@@ -1055,7 +1056,7 @@ class _InfoTab extends StatelessWidget {
           ),
         ],
         if (showLegacySource) ...[
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           _Section(
             icon: Icons.link,
             title: l10n.siteDetailSource,
@@ -1066,7 +1067,7 @@ class _InfoTab extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(vertical: 4),
                 child: Text(
                   legacySource,
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: AppColors.primary,
                     decoration: TextDecoration.underline,
                     decorationColor: AppColors.primary,
@@ -1077,13 +1078,13 @@ class _InfoTab extends StatelessWidget {
           ),
         ],
         if (ficha.notes != null && ficha.notes!.trim().isNotEmpty) ...[
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           _Section(
             icon: Icons.notes_outlined,
             title: l10n.siteDetailNotes,
             child: Text(
               ficha.notes!,
-              style: const TextStyle(color: AppColors.muted),
+              style: TextStyle(color: AppColors.muted),
             ),
           ),
         ],
@@ -1125,8 +1126,8 @@ class _TraceabilityTab extends StatelessWidget {
             ),
             child: Row(
               children: [
-                const Icon(Icons.public, size: 18, color: AppColors.primary),
-                const SizedBox(width: 8),
+                Icon(Icons.public, size: 18, color: AppColors.primary),
+                SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     l10n.siteDetailCatalogBadge,
@@ -1139,7 +1140,7 @@ class _TraceabilityTab extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
         ],
         if (creator != null) ...[
           _Section(
@@ -1147,7 +1148,7 @@ class _TraceabilityTab extends StatelessWidget {
             title: l10n.siteDetailCreatedBy,
             child: _PersonAvatar(person: creator, showJoinedHint: false),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
         ],
         if (also.isNotEmpty) ...[
           _Section(
@@ -1162,33 +1163,33 @@ class _TraceabilityTab extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
         ],
         if (createdAt != null) ...[
           _TraceRow(
             label: l10n.siteDetailCreatedAt,
             value: formatDateTimeShort(createdAt),
           ),
-          const SizedBox(height: 10),
+          SizedBox(height: 10),
         ],
         if (updatedAt != null) ...[
           _TraceRow(
             label: l10n.siteDetailUpdatedAt,
             value: formatDateTimeShort(updatedAt),
           ),
-          const SizedBox(height: 10),
+          SizedBox(height: 10),
         ],
         if (ownSavedAt != null) ...[
           _TraceRow(
             label: l10n.siteDetailYourSaveAt(formatDateTimeShort(ownSavedAt)),
             value: '',
           ),
-          const SizedBox(height: 10),
+          SizedBox(height: 10),
         ],
         if (!hasAny)
           Text(
             l10n.siteDetailTraceEmpty,
-            style: const TextStyle(color: AppColors.muted),
+            style: TextStyle(color: AppColors.muted),
           ),
       ],
     );
@@ -1223,7 +1224,7 @@ class _TraceRow extends StatelessWidget {
             ),
           ),
           if (value.isNotEmpty) ...[
-            const SizedBox(height: 4),
+            SizedBox(height: 4),
             Text(
               value,
               style: GoogleFonts.plusJakartaSans(
@@ -1272,11 +1273,11 @@ class _GallerySection extends StatelessWidget {
           ? IconButton(
               tooltip: l10n.photoAddTooltip,
               onPressed: busy ? null : onAddPhoto,
-              icon: const Icon(Icons.add_a_photo_outlined, size: 20),
+              icon: Icon(Icons.add_a_photo_outlined, size: 20),
             )
           : null,
       child: loading && photos.isEmpty
-          ? const Padding(
+          ? Padding(
               padding: EdgeInsets.symmetric(vertical: 24),
               child: Center(
                 child: SizedBox(
@@ -1291,7 +1292,7 @@ class _GallerySection extends StatelessWidget {
                   canManage
                       ? l10n.siteDetailPhotosEmptyManage
                       : l10n.siteDetailPhotosEmpty,
-                  style: const TextStyle(color: AppColors.muted),
+                  style: TextStyle(color: AppColors.muted),
                 )
               : SizedBox(
                   height: _PhotoTile.stripHeight,
@@ -1299,7 +1300,7 @@ class _GallerySection extends StatelessWidget {
                     scrollDirection: Axis.horizontal,
                     clipBehavior: Clip.none,
                     itemCount: photos.length,
-                    separatorBuilder: (_, _) => const SizedBox(width: 8),
+                    separatorBuilder: (_, _) => SizedBox(width: 8),
                     itemBuilder: (context, index) {
                       final photo = photos[index];
                       final url = photoUrls[photo.id] ??
@@ -1398,7 +1399,7 @@ class _PhotoTile extends StatelessWidget {
               : SizedBox(
                   width: stripHeight * 0.72,
                   height: stripHeight,
-                  child: const ColoredBox(
+                  child: ColoredBox(
                     color: AppColors.surfaceElevated,
                     child: Icon(
                       Icons.broken_image,
@@ -1446,7 +1447,7 @@ class _PersonAvatar extends StatelessWidget {
                   cacheKey: 'avatar:${person.userId}',
                   fit: BoxFit.cover,
                 )
-              : const ColoredBox(
+              : ColoredBox(
                   color: AppColors.surfaceElevated,
                   child: Icon(Icons.person, size: 20, color: AppColors.muted),
                 ),
@@ -1477,7 +1478,7 @@ class _Section extends StatelessWidget {
         Row(
           children: [
             Icon(icon, size: 18, color: AppColors.muted),
-            const SizedBox(width: 6),
+            SizedBox(width: 6),
             Expanded(
               child: Text(
                 title,
@@ -1490,7 +1491,7 @@ class _Section extends StatelessWidget {
             ?trailing,
           ],
         ),
-        const SizedBox(height: 8),
+        SizedBox(height: 8),
         child,
       ],
     );
@@ -1513,7 +1514,7 @@ class _Chip extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: const TextStyle(fontSize: 12, color: AppColors.muted),
+        style: TextStyle(fontSize: 12, color: AppColors.muted),
       ),
     );
   }

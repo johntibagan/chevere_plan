@@ -1,3 +1,5 @@
+import '../../../core/l10n/display_defaults.dart';
+
 enum SiteStatus {
   draft,
   pendingLocation,
@@ -120,7 +122,7 @@ class SitePerson {
   String get tooltipName {
     final n = displayName?.trim();
     if (n != null && n.isNotEmpty) return n;
-    return 'Usuario';
+    return DisplayDefaults.userDisplayName;
   }
 
   Map<String, dynamic> toCacheJson() => {

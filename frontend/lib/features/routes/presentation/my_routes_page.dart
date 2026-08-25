@@ -106,7 +106,7 @@ class _MyRoutesPageState extends ConsumerState<MyRoutesPage> {
                               valueColor: AppColors.primary,
                             ),
                           ),
-                          const SizedBox(width: 8),
+                          SizedBox(width: 8),
                           Expanded(
                             child: AppStatCard(
                               key: WidgetKeys.routesStatCities,
@@ -115,7 +115,7 @@ class _MyRoutesPageState extends ConsumerState<MyRoutesPage> {
                               valueColor: AppColors.success,
                             ),
                           ),
-                          const SizedBox(width: 8),
+                          SizedBox(width: 8),
                           Expanded(
                             child: AppStatCard(
                               key: WidgetKeys.routesStatPlans,
@@ -137,7 +137,7 @@ class _MyRoutesPageState extends ConsumerState<MyRoutesPage> {
                       return Text(
                         l10n.routesEmpty,
                         key: WidgetKeys.routesEmpty,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 13,
                           color: AppColors.muted,
                         ),
@@ -222,7 +222,7 @@ class _RouteTimelineTile extends StatelessWidget {
                         width: 2,
                       ),
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.check_rounded,
                       size: 14,
                       color: AppColors.success,
@@ -239,13 +239,13 @@ class _RouteTimelineTile extends StatelessWidget {
                 ],
               ),
             ),
-            const SizedBox(width: 12),
+            SizedBox(width: 12),
             Expanded(
               child: Material(
                 color: AppColors.surface,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
-                  side: const BorderSide(color: AppColors.border),
+                  side: BorderSide(color: AppColors.border),
                 ),
                 child: InkWell(
                   onTap: onTap,
@@ -262,7 +262,7 @@ class _RouteTimelineTile extends StatelessWidget {
                             child: SiteLookCover(siteId: entry.siteId),
                           ),
                         ),
-                        const SizedBox(width: 10),
+                        SizedBox(width: 10),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -271,18 +271,18 @@ class _RouteTimelineTile extends StatelessWidget {
                                 entry.siteName,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w700,
                                   color: AppColors.foreground,
                                 ),
                               ),
-                              const SizedBox(height: 2),
+                              SizedBox(height: 2),
                               Text(
                                 place.isEmpty ? entry.planTitle : place,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 10,
                                   color: AppColors.mutedDark,
                                 ),

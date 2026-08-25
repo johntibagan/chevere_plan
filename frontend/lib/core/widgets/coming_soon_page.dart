@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../l10n/context_l10n.dart';
 import '../theme/app_theme.dart';
+import '../theme/app_typography.dart';
 import 'app_form_card.dart';
 import 'tab_screen_header.dart';
 
@@ -50,7 +50,7 @@ class ComingSoonPage extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 32),
               child: Column(
                 children: [
-                  const Spacer(flex: 2),
+                  Spacer(flex: 2),
                   Container(
                     width: 80,
                     height: 80,
@@ -58,33 +58,29 @@ class ComingSoonPage extends StatelessWidget {
                       shape: BoxShape.circle,
                       color: AppColors.mutedDark.withValues(alpha: 0.12),
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.build_outlined,
                       size: 34,
                       color: AppColors.mutedDark,
                     ),
                   ),
-                  const SizedBox(height: 20),
+                  SizedBox(height: 20),
                   Text(
                     title,
                     textAlign: TextAlign.center,
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.foreground,
-                    ),
+                    style: AppTypography.screenTitle(),
                   ),
-                  const SizedBox(height: 8),
+                  SizedBox(height: 8),
                   Text(
                     body,
                     textAlign: TextAlign.center,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 13,
                       height: 1.45,
                       color: AppColors.muted,
                     ),
                   ),
-                  const Spacer(flex: 3),
+                  Spacer(flex: 3),
                 ],
               ),
             ),
@@ -130,20 +126,20 @@ class ComingSoonCard extends StatelessWidget {
                 color: AppColors.mutedDark.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.build_outlined,
                 size: 18,
                 color: AppColors.mutedDark,
               ),
             ),
-            const SizedBox(width: 12),
+            SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     title,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
                       color: AppColors.mutedDark,
@@ -151,7 +147,7 @@ class ComingSoonCard extends StatelessWidget {
                   ),
                   Text(
                     subtitle,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 10,
                       color: AppColors.mutedDark,
                     ),
@@ -161,7 +157,7 @@ class ComingSoonCard extends StatelessWidget {
             ),
             Text(
               context.l10n.comingSoonBadge,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 10,
                 fontWeight: FontWeight.w800,
                 color: AppColors.mutedDark,

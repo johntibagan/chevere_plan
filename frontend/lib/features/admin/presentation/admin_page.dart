@@ -102,7 +102,7 @@ class _AdminPageState extends ConsumerState<AdminPage>
                         labelText: context.l10n.adminNameEs,
                       ),
                     ),
-                    const SizedBox(height: 8),
+                    SizedBox(height: 8),
                     TextField(
                       controller: keywordsCtrl,
                       decoration: InputDecoration(
@@ -275,7 +275,7 @@ class _AdminPageState extends ConsumerState<AdminPage>
                 ),
               );
             },
-            icon: const Icon(Icons.flag_outlined),
+            icon: Icon(Icons.flag_outlined),
           ),
         ],
         bottom: TabBar(
@@ -287,7 +287,7 @@ class _AdminPageState extends ConsumerState<AdminPage>
         ),
       ),
       body: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? Center(child: CircularProgressIndicator())
           : _error != null
               ? Center(child: AppRetryCallout(onRetry: _load))
               : Column(
@@ -304,7 +304,7 @@ class _AdminPageState extends ConsumerState<AdminPage>
                               icon: Icons.category_outlined,
                             ),
                           ),
-                          const SizedBox(width: 8),
+                          SizedBox(width: 8),
                           Expanded(
                             child: AppStatCard(
                               value: '${_transports.length}',
@@ -313,7 +313,7 @@ class _AdminPageState extends ConsumerState<AdminPage>
                               icon: Icons.directions_bus_outlined,
                             ),
                           ),
-                          const SizedBox(width: 8),
+                          SizedBox(width: 8),
                           Expanded(
                             child: AppStatCard(
                               value: '$_openReports',
@@ -394,7 +394,7 @@ class _CategoriesTab extends StatelessWidget {
                 ].join(' · '),
               ),
               trailing: IconButton(
-                icon: const Icon(Icons.edit_outlined),
+                icon: Icon(Icons.edit_outlined),
                 onPressed: () => onEdit(root),
               ),
               children: children
@@ -409,7 +409,7 @@ class _CategoriesTab extends StatelessWidget {
                         ].join(' · '),
                       ),
                       trailing: IconButton(
-                        icon: const Icon(Icons.edit_outlined),
+                        icon: Icon(Icons.edit_outlined),
                         onPressed: () => onEdit(c),
                       ),
                     ),
@@ -432,14 +432,14 @@ class _TransportsTab extends StatelessWidget {
   final List<TransportType> transports;
   final ValueChanged<TransportType> onEdit;
 
-  String _groupLabel(String g) {
+  String _groupLabel(AppLocalizations l10n, String g) {
     switch (g) {
       case 'particular':
-        return 'Particular';
+        return l10n.searchTransportPrivate;
       case 'publico':
-        return 'Público';
+        return l10n.searchTransportPublic;
       case 'otro':
-        return 'Otro (plataformas)';
+        return l10n.adminTransportGroupOther;
       default:
         return g;
     }
@@ -447,6 +447,7 @@ class _TransportsTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final groups = ['particular', 'publico', 'otro'];
     return ListView(
       children: [
@@ -454,7 +455,7 @@ class _TransportsTab extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
             child: Text(
-              _groupLabel(g),
+              _groupLabel(l10n, g),
               style: Theme.of(context).textTheme.titleSmall,
             ),
           ),
@@ -463,14 +464,16 @@ class _TransportsTab extends StatelessWidget {
               title: Text(t.nameEs),
               subtitle: Text(
                 [
-                  t.isActive ? 'Activo' : 'Inactivo',
+                  t.isActive
+                      ? l10n.adminTransportActive
+                      : l10n.adminTransportInactive,
                   t.defaultMaxKm == null
-                      ? 'Sin tope km'
-                      : 'Máx ${t.defaultMaxKm} km',
+                      ? l10n.adminTransportNoKmCap
+                      : l10n.adminTransportMaxKmShort(t.defaultMaxKm!.round()),
                 ].join(' · '),
               ),
               trailing: IconButton(
-                icon: const Icon(Icons.edit_outlined),
+                icon: Icon(Icons.edit_outlined),
                 onPressed: () => onEdit(t),
               ),
             ),

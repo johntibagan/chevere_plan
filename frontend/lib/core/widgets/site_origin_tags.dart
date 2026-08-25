@@ -21,7 +21,7 @@ class SiteOriginTags extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (!hasAny) return const SizedBox.shrink();
+    if (!hasAny) return SizedBox.shrink();
     final l10n = context.l10n;
     return Wrap(
       spacing: 6,
@@ -32,7 +32,7 @@ class SiteOriginTags extends StatelessWidget {
           Text(
             l10n.labelOwn,
             key: WidgetKeys.siteOriginOwn,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 9,
               fontWeight: FontWeight.w800,
               color: AppColors.primary,
@@ -42,7 +42,7 @@ class SiteOriginTags extends StatelessWidget {
           Text(
             l10n.labelLinked,
             key: WidgetKeys.siteOriginLinked,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 9,
               fontWeight: FontWeight.w800,
               color: AppColors.muted,
@@ -52,7 +52,7 @@ class SiteOriginTags extends StatelessWidget {
           Text(
             l10n.labelCatalog,
             key: WidgetKeys.siteOriginCatalog,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 9,
               fontWeight: FontWeight.w800,
               color: AppColors.muted,

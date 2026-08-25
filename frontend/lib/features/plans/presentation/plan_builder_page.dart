@@ -301,7 +301,7 @@ class _PlanBuilderPageState extends ConsumerState<PlanBuilderPage> {
         ],
       ),
       body: _loadingPlan || plan == null
-          ? const Center(child: CircularProgressIndicator())
+          ? Center(child: CircularProgressIndicator())
           : Column(
               children: [
                 Padding(
@@ -380,14 +380,14 @@ class _PlanBuilderPageState extends ConsumerState<PlanBuilderPage> {
                 color: AppColors.muted,
               ),
         ),
-        const SizedBox(height: AppSpacing.sm),
+        SizedBox(height: AppSpacing.sm),
         Text(
           l10n.planSearchEmptyQueryHint,
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: AppColors.muted,
               ),
         ),
-        const SizedBox(height: AppSpacing.sm),
+        SizedBox(height: AppSpacing.sm),
         Align(
           alignment: Alignment.centerRight,
           child: TextButton(
@@ -407,19 +407,19 @@ class _PlanBuilderPageState extends ConsumerState<PlanBuilderPage> {
           },
         ),
         if (_advanced) ...[
-          const SizedBox(height: AppSpacing.md),
+          SizedBox(height: AppSpacing.md),
           TextField(
             controller: _locationCtrl,
             decoration: InputDecoration(
               labelText: l10n.searchLabelLocationExtra,
-              border: const OutlineInputBorder(),
+              border: OutlineInputBorder(),
             ),
           ),
-          const SizedBox(height: AppSpacing.md),
+          SizedBox(height: AppSpacing.md),
           InputDecorator(
             decoration: InputDecoration(
               labelText: l10n.searchLabelCategory,
-              border: const OutlineInputBorder(),
+              border: OutlineInputBorder(),
             ),
             child: DropdownButtonHideUnderline(
               child: DropdownButton<String?>(
@@ -461,7 +461,7 @@ class _PlanBuilderPageState extends ConsumerState<PlanBuilderPage> {
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
               decoration: InputDecoration(
                 labelText: l10n.searchRadiusKm,
-                border: const OutlineInputBorder(),
+                border: OutlineInputBorder(),
               ),
             ),
         ] else
@@ -478,7 +478,7 @@ class _PlanBuilderPageState extends ConsumerState<PlanBuilderPage> {
 
   Widget _buildResults(AppLocalizations l10n) {
     if (_searching) {
-      return const Center(child: CircularProgressIndicator());
+      return Center(child: CircularProgressIndicator());
     }
     if (!_searched) {
       return Center(child: Text(l10n.planSearchFirst));
@@ -532,7 +532,7 @@ class _PlanBuilderPageState extends ConsumerState<PlanBuilderPage> {
                     ),
                   ),
                 ),
-                const SizedBox(width: 10),
+                SizedBox(width: 10),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -541,7 +541,7 @@ class _PlanBuilderPageState extends ConsumerState<PlanBuilderPage> {
                         h.name,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w700,
                           color: AppColors.foreground,
@@ -559,7 +559,7 @@ class _PlanBuilderPageState extends ConsumerState<PlanBuilderPage> {
                               currencyCode: h.currencyCode,
                             ),
                         ].join(' · '),
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 10,
                           color: AppColors.mutedDark,
                         ),

@@ -14,7 +14,7 @@ Agilidad percibida: carga instantánea, tabs fluidos, formularios rápidos. Ante
 ## Arquitectura
 
 - Features con `data / domain / presentation`. Riverpod; **cero** negocio en widgets.
-- **Sin duplicar UI ni funciones:** 2+ usos → extraer widget/módulo. Variantes con parámetros. No dos CTA iguales en la misma pantalla. Tokens de tema, no colores sueltos.
+- **Sin duplicar UI ni funciones:** 2+ usos → extraer widget/módulo. Variantes con parámetros. No dos CTA iguales en la misma pantalla. Tokens de tema, no colores sueltos. Ver **`design-tokens-centralizados.mdc`** (mapa único: colores, tipografía, i18n, moneda, formatters).
 - Parametrizable (categorías, geo, tarifas) en DB + caché, **nunca** listas quemadas en Dart.
 - **No reinventar** SDK/pubspec: fechas `DateFormat`, distancia `Geolocator.distanceBetween`, paths `package:path`. Ver `no-reinventar-sdk.mdc`.
 - i18n: strings en `.arb`. Fechas UTC internas. Moneda desacoplada del número.

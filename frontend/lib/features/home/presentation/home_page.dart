@@ -13,6 +13,7 @@ import '../../../core/widgets/app_retry_callout.dart';
 import '../../../core/widgets/app_toast.dart';
 import '../../../core/prefetch/site_prefetch.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/theme/chevere_theme_colors.dart';
 import '../../../core/testing/widget_keys.dart';
 import '../../../core/widgets/app_feed_layout_toggle.dart';
 import '../../../core/widgets/app_more_menu_drawer.dart';
@@ -112,7 +113,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     // Placeholder a tamaño completo: SizedBox.shrink() colapsaba el IndexedStack
     // y dejaba el body vacío / la barra “flotando” al centro.
     if (page == null) {
-      return const ColoredBox(
+      return ColoredBox(
         color: AppColors.background,
         child: SizedBox.expand(),
       );
@@ -321,7 +322,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     final name = _profile?.displayName ??
         user.userMetadata?['full_name'] as String? ??
         user.userMetadata?['name'] as String? ??
-        'Usuario';
+        l10n.defaultUserDisplayName;
     final isStaff = _profile?.role.isStaff ?? false;
     final initial = name.trim().isNotEmpty ? name.trim()[0].toUpperCase() : 'U';
     final email = user.email;
@@ -375,7 +376,6 @@ class _HomePageState extends ConsumerState<HomePage> {
                 nearby: nearbyHits,
                 nearbyLoading: nearbyLoading,
                 nearbyNeedGps: nearbyNeedGps,
-                profile: _profile,
                 onRefresh: () async {
                   await Future.wait([
                     _bootstrap(forceRefresh: true),
@@ -385,7 +385,6 @@ class _HomePageState extends ConsumerState<HomePage> {
                 onOpenSave: _openSave,
                 onOpenSite: _openSite,
                 onOpenHit: _openHit,
-                onProximity: _openProximityPrefs,
                 onOpenMenu: () => _scaffoldKey.currentState?.openEndDrawer(),
                 onExplore: () => _selectTab(1),
               ),
@@ -423,7 +422,7 @@ class _ChevereBottomNav extends StatelessWidget {
       color: AppColors.sidebar,
       elevation: 0,
       child: DecoratedBox(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           border: Border(top: BorderSide(color: AppColors.border)),
         ),
         child: SafeArea(
@@ -445,7 +444,9 @@ class _ChevereBottomNav extends StatelessWidget {
                           width: 56,
                           height: 56,
                           decoration: BoxDecoration(
-                            gradient: AppTheme.primaryGradient,
+                            gradient: AppTheme.primaryGradient(
+                              context.chevereColors,
+                            ),
                             shape: BoxShape.circle,
                             boxShadow: [
                               BoxShadow(
@@ -456,9 +457,9 @@ class _ChevereBottomNav extends StatelessWidget {
                               ),
                             ],
                           ),
-                          child: const Icon(
+                          child: Icon(
                             Icons.add,
-                            color: AppColors.background,
+                            color: AppColors.onPrimary,
                             size: 28,
                           ),
                         ),
@@ -494,7 +495,7 @@ class _ChevereBottomNav extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(icon, size: 22, color: color),
-            const SizedBox(height: 2),
+            SizedBox(height: 2),
             Text(
               label,
               maxLines: 1,
@@ -521,12 +522,10 @@ class _InicioTab extends ConsumerWidget {
     required this.nearby,
     required this.nearbyLoading,
     required this.nearbyNeedGps,
-    required this.profile,
     required this.onRefresh,
     required this.onOpenSave,
     required this.onOpenSite,
     required this.onOpenHit,
-    required this.onProximity,
     required this.onOpenMenu,
     required this.onExplore,
   });
@@ -538,12 +537,10 @@ class _InicioTab extends ConsumerWidget {
   final List<SearchHit> nearby;
   final bool nearbyLoading;
   final bool nearbyNeedGps;
-  final Profile? profile;
   final Future<void> Function() onRefresh;
   final Future<void> Function({String? shared, UserSave? existing}) onOpenSave;
   final Future<void> Function({UserSave? existing}) onOpenSite;
   final Future<void> Function(SearchHit hit) onOpenHit;
-  final VoidCallback onProximity;
   final VoidCallback onOpenMenu;
   final VoidCallback onExplore;
 
@@ -571,7 +568,7 @@ class _InicioTab extends ConsumerWidget {
                       children: [
                         Text(
                           greeting,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 11,
                             color: AppColors.mutedDark,
                             fontWeight: FontWeight.w500,
@@ -600,81 +597,34 @@ class _InicioTab extends ConsumerWidget {
               ),
             ),
           ),
-          if (profile != null)
-            SliverToBoxAdapter(
-              child: Container(
-                margin: const EdgeInsets.fromLTRB(16, 4, 16, 12),
-                decoration: BoxDecoration(
-                  gradient: AppTheme.primaryGradient,
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(16),
-                    onTap: onProximity,
-                    child: Padding(
-                      padding: const EdgeInsets.all(14),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              color: AppColors.background.withValues(alpha: 0.15),
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(
-                              Icons.bolt_rounded,
-                              color: AppColors.background,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  l10n.homeNearbyMemoryLabel.toUpperCase(),
-                                  style: TextStyle(
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w800,
-                                    letterSpacing: 0.8,
-                                    color: AppColors.background
-                                        .withValues(alpha: 0.5),
-                                  ),
-                                ),
-                                Text(
-                                  l10n.homeNearbyMemoryTitle,
-                                  style: const TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w800,
-                                    color: AppColors.background,
-                                  ),
-                                ),
-                                Text(
-                                  '${l10n.homeProximityRadius(profile!.proximityRadiusM)}'
-                                  '${profile!.remindPublicSites ? l10n.homeProximityPublicSuffix : ''}',
-                                  style: TextStyle(
-                                    fontSize: 10,
-                                    color: AppColors.background
-                                        .withValues(alpha: 0.55),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Icon(
-                            Icons.chevron_right,
-                            color: AppColors.background.withValues(alpha: 0.4),
-                          ),
-                        ],
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      l10n.homeFeedView,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.mutedDark,
                       ),
                     ),
                   ),
-                ),
+                  AppFeedLayoutToggle(
+                    value: layout,
+                    onChanged: (v) =>
+                        ref.read(feedLayoutProvider.notifier).setLayout(v),
+                    listTooltip: l10n.feedLayoutList,
+                    grid2Tooltip: l10n.feedLayoutGrid2,
+                    grid3Tooltip: l10n.feedLayoutGrid3,
+                    grid4Tooltip: l10n.feedLayoutGrid4,
+                  ),
+                ],
               ),
             ),
+          ),
           if (drafts.isNotEmpty)
             SliverToBoxAdapter(
               child: Container(
@@ -700,7 +650,7 @@ class _InicioTab extends ConsumerWidget {
                             size: 16,
                             color: AppColors.primarySoft,
                           ),
-                          const SizedBox(width: 12),
+                          SizedBox(width: 12),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -715,7 +665,7 @@ class _InicioTab extends ConsumerWidget {
                                 ),
                                 Text(
                                   l10n.homeDraftsHint,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 10,
                                     color: AppColors.muted,
                                   ),
@@ -736,33 +686,24 @@ class _InicioTab extends ConsumerWidget {
               ),
             ),
           SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      l10n.homeFeedView,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.mutedDark,
-                      ),
-                    ),
-                  ),
-                  AppFeedLayoutToggle(
-                    value: layout,
-                    onChanged: (v) =>
-                        ref.read(feedLayoutProvider.notifier).setLayout(v),
-                    listTooltip: l10n.feedLayoutList,
-                    grid2Tooltip: l10n.feedLayoutGrid2,
-                    grid3Tooltip: l10n.feedLayoutGrid3,
-                    grid4Tooltip: l10n.feedLayoutGrid4,
-                  ),
-                ],
-              ),
+            child: HomeSectionHeader(
+              title: l10n.homeEvents,
+              expanded: sections.events,
+              onToggleExpanded: () => ref
+                  .read(homeSectionsOpenProvider.notifier)
+                  .setOpen(sections.copyWith(events: !sections.events)),
             ),
           ),
+          if (sections.events)
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                child: Text(
+                  l10n.homeEventsComingSoon,
+                  style: TextStyle(color: AppColors.muted),
+                ),
+              ),
+            ),
           SliverToBoxAdapter(
             child: HomeSectionHeader(
               title: l10n.homeRecentSaves,
@@ -796,7 +737,7 @@ class _InicioTab extends ConsumerWidget {
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
                   child: Text(
                     l10n.homeEmptySaves,
-                    style: const TextStyle(color: AppColors.muted),
+                    style: TextStyle(color: AppColors.muted),
                   ),
                 ),
               )
@@ -835,19 +776,19 @@ class _InicioTab extends ConsumerWidget {
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
                 child: nearbyLoading
-                    ? const Padding(
+                    ? Padding(
                         padding: EdgeInsets.symmetric(vertical: 24),
                         child: Center(child: CircularProgressIndicator()),
                       )
                     : nearbyNeedGps
                         ? Text(
                             l10n.homeNearbyNeedGps,
-                            style: const TextStyle(color: AppColors.muted),
+                            style: TextStyle(color: AppColors.muted),
                           )
                         : nearby.isEmpty
                             ? Text(
                                 l10n.homeNearbyEmpty,
-                                style: const TextStyle(color: AppColors.muted),
+                                style: TextStyle(color: AppColors.muted),
                               )
                             : HomeFeedHits(
                                 hits: nearby,
@@ -879,7 +820,7 @@ class _InicioTab extends ConsumerWidget {
                         onTap: onExplore,
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    SizedBox(width: 8),
                     Expanded(
                       child: HomeQuickAction(
                         icon: Icons.trending_up_rounded,
@@ -888,7 +829,7 @@ class _InicioTab extends ConsumerWidget {
                         onTap: onExplore,
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    SizedBox(width: 8),
                     Expanded(
                       child: HomeQuickAction(
                         icon: Icons.sell_outlined,

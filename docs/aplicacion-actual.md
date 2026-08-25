@@ -20,7 +20,7 @@ Público y privado se distinguen por **color** (verde / morado), no hace falta r
 1. Abrís la app → pantalla de **iniciar sesión con Google**.
 2. El servidor crea un perfil (nombre, foto, rol `usuario`).
 3. Un correo concreto queda como **root** al resetear la base (dueño del catálogo masivo). Hay también rol **admin**.
-4. Admin y root entran al **panel** desde el menú **☰** de Inicio (Más opciones). Reportes viven ahí. Sobre **contenido público** actúan casi como dueños. Las **bitácoras privadas no las ven**: solo quien las escribió.
+4. Admin y root entran al **panel** desde el menú **☰** de Inicio (Más opciones). Ahí también podés cambiar entre **tema oscuro y claro** (interruptor, sin pantalla aparte; se recuerda en el celular). Reportes viven ahí. Sobre **contenido público** actúan casi como dueños. Las **bitácoras privadas no las ven**: solo quien las escribió.
 
 ```mermaid
 sequenceDiagram
@@ -39,7 +39,7 @@ sequenceDiagram
 
 | Sitio | Qué ves |
 |---|---|
-| **Inicio** | Saludo + título, menú **☰** (perfil, recuerdos cercanos, admin si sos staff, cerrar sesión), banner de recuerdo, borradores, **Vista** (lista / 2 / 3 / 4, aplica a recientes y populares), esas dos secciones y **acciones rápidas** (se pliegan). **Ver más** abre Explorar. Portada: foto o ilustración de categoría padre; borde verde/morado. |
+| **Inicio** | Saludo + título, menú **☰**, **Vista** (lista / 2 / 3 / 4), borradores si hay, **Eventos** (próximamente, se pliega), **Guardados recientes** y **Populares cerca** (misma vista; se pliegan), **acciones rápidas** (se pliegan). **Ver más** abre Explorar. Portada: foto o ilustración de categoría padre; borde verde/morado. |
 | **Explorar** | Búsqueda de sitios (cabecera Figma, chips de categoría, lista o cuadrícula 2/3/4). Misma lógica: texto obligatorio en modo simple, filtros avanzados, incluir públicos |
 | **+ (centro)** | Guardar o completar un lugar (crear y editar son la **misma pantalla**) |
 | **Planes** | Tus itinerarios (tarjeta de crear + lista; **un solo** CTA, sin FAB duplicado) |
@@ -199,7 +199,7 @@ Lista de paradas que marcaste hechas (sitio, plan, fecha). Sirve como “ya pas�
 
 ## 8. Cercanía (“recuerdos”)
 
-En Inicio, el banner **Recuerdo cercano** (y **Más opciones → Recuerdos cercanos**) abre una hoja corta: radio (100–2000 m) y si querés que cuenten **sitios públicos** además de los tuyos.
+En **Más opciones (☰)** → **Recuerdos cercanos** abrís la hoja de radio (100–2000 m) y si querés que cuenten **sitios públicos** además de los tuyos. Ya no hay banner de recuerdo en el feed de Inicio.
 
 El teléfono registra geocercas (tope práctico ~100, priorizando los tuyos). Si entrás al radio, notificación tipo recuerdo. Pedir ubicación “siempre” y el gasto de batería aún se pueden pulir.
 

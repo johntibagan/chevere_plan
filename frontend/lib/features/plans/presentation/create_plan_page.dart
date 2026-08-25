@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 
 import '../../../core/cache/cache_ttl.dart';
 import '../../../core/di/providers.dart';
 import '../../../core/testing/widget_keys.dart';
+import '../../../core/formatters/money_format.dart';
 import '../../../core/l10n/context_l10n.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_form_card.dart';
@@ -74,7 +74,7 @@ class _CreatePlanPageState extends ConsumerState<CreatePlanPage> {
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: AppColors.border),
+        borderSide: BorderSide(color: AppColors.border),
       ),
     );
   }
@@ -145,6 +145,9 @@ class _CreatePlanPageState extends ConsumerState<CreatePlanPage> {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
+    final currencyCode =
+        widget.existing?.currencyCode ?? kDefaultCurrencyCode;
+
     return Scaffold(
       key: WidgetKeys.createPlanPage,
       appBar: AppBar(
@@ -159,7 +162,7 @@ class _CreatePlanPageState extends ConsumerState<CreatePlanPage> {
             pageTitle: l10n.comingSoonAiTitle,
             pageBody: l10n.comingSoonAiBody,
           ),
-          const SizedBox(height: 20),
+          SizedBox(height: 20),
           AppSectionLabel(text: l10n.planTitleOptional, bottom: 8),
           TextField(
             key: WidgetKeys.createPlanTitle,
@@ -172,7 +175,7 @@ class _CreatePlanPageState extends ConsumerState<CreatePlanPage> {
                   : l10n.planCreateStepTitleHint,
             ),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           AppSectionLabel(text: l10n.planStatZone, bottom: 8),
           TextField(
             key: WidgetKeys.createPlanZone,
@@ -180,7 +183,7 @@ class _CreatePlanPageState extends ConsumerState<CreatePlanPage> {
             textCapitalization: TextCapitalization.words,
             decoration: _fieldDec(hint: l10n.planZoneHint),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           AppFormCard(
             padding: const EdgeInsets.fromLTRB(14, 10, 8, 10),
             child: Row(
@@ -191,14 +194,14 @@ class _CreatePlanPageState extends ConsumerState<CreatePlanPage> {
                     children: [
                       Text(
                         l10n.searchIncludePublic,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontWeight: FontWeight.w700,
                           color: AppColors.foreground,
                         ),
                       ),
                       Text(
                         l10n.planIncludePublicSubtitle,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 10,
                           color: AppColors.mutedDark,
                         ),
@@ -214,26 +217,23 @@ class _CreatePlanPageState extends ConsumerState<CreatePlanPage> {
               ],
             ),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           AppSectionLabel(text: l10n.planStatBudget, bottom: 8),
           TextField(
             key: WidgetKeys.createPlanBudget,
             controller: _budgetCtrl,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             decoration: _fieldDec(hint: l10n.searchBudgetMax).copyWith(
-              prefixText: NumberFormat.simpleCurrency(
-                name: 'COP',
-                locale: 'es',
-              ).currencySymbol,
-              suffixText: 'COP',
+              prefixText: currencyInputPrefix(currencyCode),
+              suffixText: currencyInputSuffix(currencyCode),
             ),
           ),
-          const SizedBox(height: 24),
+          SizedBox(height: 24),
           FilledButton(
             key: WidgetKeys.createPlanNext,
             onPressed: _saving ? null : _next,
             child: _saving
-                ? const SizedBox(
+                ? SizedBox(
                     height: 22,
                     width: 22,
                     child: CircularProgressIndicator(strokeWidth: 2),

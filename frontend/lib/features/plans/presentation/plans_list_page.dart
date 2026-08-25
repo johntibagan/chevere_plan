@@ -128,7 +128,7 @@ class _PlansListPageState extends ConsumerState<PlansListPage> {
                         padding: const EdgeInsets.only(top: 8, bottom: 24),
                         child: Text(
                           l10n.plansEmpty,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 13,
                             color: AppColors.muted,
                           ),
@@ -141,7 +141,7 @@ class _PlansListPageState extends ConsumerState<PlansListPage> {
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         child: Center(
                           child: (page?.loadingMore ?? false)
-                              ? const SizedBox(
+                              ? SizedBox(
                                   width: 24,
                                   height: 24,
                                   child: CircularProgressIndicator(
@@ -193,7 +193,7 @@ class _PlanCard extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: const BorderSide(color: AppColors.border),
+        side: BorderSide(color: AppColors.border),
       ),
       child: InkWell(
         onTap: onTap,
@@ -233,7 +233,7 @@ class _PlanCard extends StatelessWidget {
                       plan.title,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w800,
                         color: AppColors.onImage,
@@ -248,52 +248,52 @@ class _PlanCard extends StatelessWidget {
               child: Row(
                 children: [
                   if (plan.locationQuery.isNotEmpty) ...[
-                    const Icon(
+                    Icon(
                       Icons.place_outlined,
                       size: 12,
                       color: AppColors.accent,
                     ),
-                    const SizedBox(width: 4),
+                    SizedBox(width: 4),
                     Flexible(
                       child: Text(
                         plan.locationQuery,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 11,
                           color: AppColors.muted,
                         ),
                       ),
                     ),
-                    const SizedBox(width: 10),
+                    SizedBox(width: 10),
                   ],
-                  const Icon(
+                  Icon(
                     Icons.trending_up_rounded,
                     size: 12,
                     color: AppColors.primary,
                   ),
-                  const SizedBox(width: 4),
+                  SizedBox(width: 4),
                   Text(
                     l10n.planStopsCount(plan.stopCount),
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 11,
                       color: AppColors.muted,
                     ),
                   ),
                   if (plan.maxBudgetAmount != null) ...[
-                    const SizedBox(width: 10),
-                    const Icon(
+                    SizedBox(width: 10),
+                    Icon(
                       Icons.attach_money_rounded,
                       size: 12,
                       color: AppColors.success,
                     ),
-                    const SizedBox(width: 2),
+                    SizedBox(width: 2),
                     Text(
                       formatMoney(
                         plan.maxBudgetAmount!,
                         currencyCode: plan.currencyCode,
                       ),
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 11,
                         color: AppColors.success,
                       ),

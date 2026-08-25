@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/context_l10n.dart';
 import '../theme/app_theme.dart';
 
 /// Barrera modal de carga: el usuario no puede tocar nada hasta que termine [action].
@@ -9,6 +10,7 @@ abstract final class AppBusyOverlay {
     required Future<T> Function() action,
     String? message,
   }) async {
+    final l10n = context.l10n;
     final navigator = Navigator.of(context, rootNavigator: true);
     showDialog<void>(
       context: context,
@@ -21,16 +23,16 @@ abstract final class AppBusyOverlay {
             backgroundColor: AppColors.surface,
             content: Row(
               children: [
-                const SizedBox(
+                SizedBox(
                   width: 28,
                   height: 28,
                   child: CircularProgressIndicator(strokeWidth: 3),
                 ),
-                const SizedBox(width: 16),
+                SizedBox(width: 16),
                 Expanded(
                   child: Text(
-                    message ?? 'Cargando…',
-                    style: const TextStyle(color: AppColors.foreground),
+                    message ?? l10n.actionLoading,
+                    style: TextStyle(color: AppColors.foreground),
                   ),
                 ),
               ],

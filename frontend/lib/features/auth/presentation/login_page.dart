@@ -1,12 +1,14 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../core/di/providers.dart';
 import '../../../core/l10n/context_l10n.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/theme/app_typography.dart';
+import '../../../core/theme/chevere_theme_colors.dart';
+import '../../../core/theme/google_brand_colors.dart';
 import '../../../core/widgets/app_toast.dart';
 import '../../legal/legal_texts.dart';
 import '../../legal/presentation/legal_document_page.dart';
@@ -77,6 +79,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final canSignIn = _acceptedLegal && !_loading;
+    final colors = context.chevereColors;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -85,41 +88,33 @@ class _LoginPageState extends ConsumerState<LoginPage> {
           padding: const EdgeInsets.symmetric(horizontal: 24),
           child: Column(
             children: [
-              const Spacer(flex: 2),
+              Spacer(flex: 2),
               Container(
                 width: 72,
                 height: 72,
                 decoration: BoxDecoration(
-                  gradient: AppTheme.primaryGradient,
+                  gradient: AppTheme.primaryGradient(colors),
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.location_on_rounded,
                   size: 34,
-                  color: AppColors.background,
+                  color: colors.onPrimary,
                 ),
               ),
-              const SizedBox(height: 20),
+              SizedBox(height: 20),
               Text(
                 l10n.appTitle,
                 textAlign: TextAlign.center,
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 28,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.foreground,
-                ),
+                style: AppTypography.loginTitle(),
               ),
-              const SizedBox(height: 6),
+              SizedBox(height: 6),
               Text(
                 l10n.appTagline,
                 textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 14,
-                  height: 1.35,
-                  color: AppColors.muted,
-                ),
+                style: AppTypography.tagline(),
               ),
-              const Spacer(flex: 2),
+              Spacer(flex: 2),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -128,11 +123,11 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     enabled: !_loading,
                     onChanged: (v) => setState(() => _acceptedLegal = v),
                   ),
-                  const SizedBox(width: 12),
+                  SizedBox(width: 12),
                   Expanded(
                     child: Text.rich(
                       TextSpan(
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 12,
                           height: 1.45,
                           color: AppColors.muted,
@@ -141,35 +136,42 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                           TextSpan(text: '${l10n.loginAcceptLegal} '),
                           TextSpan(
                             text: l10n.loginTerms,
-                            style: const TextStyle(
+                            style: TextStyle(
                               color: AppColors.primary,
                               decoration: TextDecoration.underline,
                             ),
                             recognizer: _termsTap,
                           ),
-                          const TextSpan(text: ' y el '),
+                          TextSpan(text: ' y el '),
                           TextSpan(
                             text: l10n.loginPrivacy,
-                            style: const TextStyle(
+                            style: TextStyle(
                               color: AppColors.primary,
                               decoration: TextDecoration.underline,
                             ),
                             recognizer: _privacyTap,
                           ),
-                          const TextSpan(text: '.'),
+                          TextSpan(text: '.'),
                         ],
                       ),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
               SizedBox(
                 width: double.infinity,
                 height: 48,
                 child: Material(
-                  color: canSignIn ? Colors.white : AppColors.surface,
-                  borderRadius: BorderRadius.circular(12),
+                  color: canSignIn
+                      ? AppColors.googleButtonBg
+                      : AppColors.surface,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    side: canSignIn && AppColors.googleButtonBorder.a > 0
+                        ? BorderSide(color: AppColors.googleButtonBorder)
+                        : BorderSide.none,
+                  ),
                   child: InkWell(
                     key: const Key('login_google_button'),
                     onTap: canSignIn ? _onGooglePressed : null,
@@ -180,21 +182,21 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           if (_loading)
-                            const SizedBox(
+                            SizedBox(
                               width: 18,
                               height: 18,
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
                           else ...[
                             const _GoogleMark(),
-                            const SizedBox(width: 12),
+                            SizedBox(width: 12),
                             Text(
                               l10n.loginContinueGoogle,
                               style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600,
                                 color: canSignIn
-                                    ? const Color(0xFF1A1A1A)
+                                    ? AppColors.googleButtonFg
                                     : AppColors.mutedDark,
                               ),
                             ),
@@ -205,7 +207,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                   ),
                 ),
               ),
-              const SizedBox(height: 28),
+              SizedBox(height: 28),
             ],
           ),
         ),
@@ -246,10 +248,10 @@ class _LegalCheck extends StatelessWidget {
               ),
             ),
             child: value
-                ? const Icon(
+                ? Icon(
                     Icons.check_rounded,
                     size: 14,
-                    color: AppColors.background,
+                    color: AppColors.onPrimary,
                   )
                 : null,
           ),
@@ -264,7 +266,7 @@ class _GoogleMark extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const SizedBox(
+    return SizedBox(
       width: 18,
       height: 18,
       child: CustomPaint(painter: _GoogleGPainter()),
@@ -278,13 +280,13 @@ class _GoogleGPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final p = Paint()..style = PaintingStyle.fill;
-    p.color = const Color(0xFF4285F4);
+    p.color = GoogleBrandColors.blue;
     canvas.drawCircle(Offset(size.width * 0.72, size.height * 0.5), 3.2, p);
-    p.color = const Color(0xFF34A853);
+    p.color = GoogleBrandColors.green;
     canvas.drawCircle(Offset(size.width * 0.5, size.height * 0.78), 3.2, p);
-    p.color = const Color(0xFFFBBC05);
+    p.color = GoogleBrandColors.yellow;
     canvas.drawCircle(Offset(size.width * 0.22, size.height * 0.5), 3.2, p);
-    p.color = const Color(0xFFEA4335);
+    p.color = GoogleBrandColors.red;
     canvas.drawCircle(Offset(size.width * 0.5, size.height * 0.22), 3.2, p);
   }
 

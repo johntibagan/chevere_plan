@@ -15,7 +15,22 @@ La prioridad número uno de este proyecto es **la agilidad percibida por el usua
 - **Navegación:** `Navigator` + sheets cortos, como [`ui-navegacion.md`](ui-navegacion.md). **No GoRouter** en este pase: el flujo documentado (push de `SavePlacePage`, sheets de proximidad) no se reescribe.
 - **Cero duplicación (diseño y funciones):** no copiar pantallas, cards, chips, CTA ni flujos. Un widget/módulo compartido; las pantallas solo componen. Si el mismo look o la misma acción aparece (o va a aparecer) en 2+ sitios, se extrae a `core/widgets` o al feature dueño (p. ej. `home_cards`). Variantes = parámetros, no un segundo archivo casi igual. Caso extremo: un layout de una sola pantalla que extraer empeora. **Prohibido** dos CTA que hacen lo mismo en la misma pantalla (card Crear + FAB Crear).
 - **Cero duplicación de código**: widgets, servicios y utilidades reutilizables antes que copiar-pegar. Si un patrón se repite 2+ veces, se extrae.
-- **Theming centralizado**: colores, tipografías y spacing como tokens de diseño (coherentes con el prototipo Figma), nunca valores sueltos hardcodeados en cada pantalla.
+- **Theming centralizado**: colores, tipografías y spacing como tokens de diseño (coherentes con el prototipo Figma), nunca valores sueltos hardcodeados en cada pantalla. **Mapa único:** [`frontend/lib/core/design/design_system.dart`](../frontend/lib/core/design/design_system.dart) (reexporta tokens y formatters).
+- **Tokens concretos:**
+  | Qué | Dónde | Uso |
+  |---|---|---|
+  | Colores oscuro/claro | `core/theme/chevere_theme_colors.dart` + facade `AppColors` | UI; se sincroniza en `MaterialApp.builder` |
+  | Tema Material | `core/theme/app_theme.dart` | `AppTheme.light()` / `dark()` |
+  | Tipografía display | `core/theme/app_typography.dart` | Títulos Jakarta; cuerpo vía `Theme.of(context).textTheme` |
+  | Radios | `core/theme/app_radius.dart` | Cards 16, inputs 12, pill 999 |
+  | Espaciado | `AppSpacing` en `app_theme.dart` | xs–xxl |
+  | Locale MVP | `core/l10n/app_locale.dart` (`kAppLocale`) | `MaterialApp`, formatters |
+  | Strings UI | `lib/l10n/app_es.arb` | `context.l10n` — **prohibido** copy en presentation |
+  | Fechas | `core/formatters/date_format.dart` | `formatDateDmY`, etc. |
+  | Moneda | `core/formatters/money_format.dart` | `formatMoney`, `currencyInputPrefix/Suffix`; código desde modelo |
+  | Distancia | `core/formatters/distance_format.dart` | `formatDistanceKmLabel(l10n, km)` |
+  | Lugar dept/ciudad | `core/formatters/place_format.dart` | `formatDeptCity` |
+  | Google logo (marca) | `core/theme/google_brand_colors.dart` | Solo botón login |
 - **Código legible antes que ingenioso**: nombres explícitos, funciones cortas y de una sola responsabilidad, comentarios solo donde el código no se explica solo. Preferir claridad sobre abstracciones prematuras.
 - **Nada de reglas de negocio hardcodeadas**: todo lo parametrizable (categorías, vehículos, tarifas, topes, divisiones político-administrativas) vive en base de datos, nunca en el código.
 - **No inventar comportamiento**: si la especificación no cubre un detalle necesario para codificar, se pregunta antes de asumir.

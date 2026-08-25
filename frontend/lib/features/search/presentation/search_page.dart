@@ -211,7 +211,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                       loading: _loading,
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  SizedBox(width: 8),
                   AppSquareIconButton(
                     icon: Icons.tune_rounded,
                     selected: _advanced,
@@ -278,7 +278,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                                 label: l10n.searchLabelLocationExtra,
                               ),
                             ),
-                            const SizedBox(height: 12),
+                            SizedBox(height: 12),
                             InputDecorator(
                               decoration: _boxDec(
                                 label: l10n.searchLabelCategory,
@@ -313,7 +313,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                                 ),
                               ),
                             ),
-                            const SizedBox(height: 12),
+                            SizedBox(height: 12),
                             InputDecorator(
                               decoration: _boxDec(
                                 label: l10n.searchLabelTransport,
@@ -348,7 +348,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                                 ),
                               ),
                             ),
-                            const SizedBox(height: 12),
+                            SizedBox(height: 12),
                             Row(
                               children: [
                                 Expanded(
@@ -363,7 +363,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                                     ),
                                   ),
                                 ),
-                                const SizedBox(width: 8),
+                                SizedBox(width: 8),
                                 Expanded(
                                   child: TextField(
                                     controller: _budgetMaxCtrl,
@@ -453,7 +453,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                                   Expanded(
                                     child: Text(
                                       l10n.searchResultsCount(_hits.length),
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         fontSize: 11,
                                         color: AppColors.mutedDark,
                                       ),

@@ -119,7 +119,7 @@ class _AdminReportsPageState extends State<AdminReportsPage> {
                         borderRadius: BorderRadius.circular(99),
                       ),
                     ),
-                    const SizedBox(width: 10),
+                    SizedBox(width: 10),
                     if (_photoUrls[r.id] != null)
                       AppNetworkImage(
                         url: _photoUrls[r.id]!,
@@ -129,15 +129,15 @@ class _AdminReportsPageState extends State<AdminReportsPage> {
                         borderRadius: BorderRadius.circular(8),
                       )
                     else
-                      const Icon(Icons.flag_outlined, color: AppColors.accent),
-                    const SizedBox(width: 10),
+                      Icon(Icons.flag_outlined, color: AppColors.accent),
+                    SizedBox(width: 10),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             r.siteName ?? l10n.reportsPhotoFallback,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontWeight: FontWeight.w700,
                               color: AppColors.foreground,
                             ),
@@ -149,7 +149,7 @@ class _AdminReportsPageState extends State<AdminReportsPage> {
                               if (r.reason != null && r.reason!.isNotEmpty)
                                 r.reason!,
                             ].join(' · '),
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 11,
                               color: AppColors.muted,
                             ),

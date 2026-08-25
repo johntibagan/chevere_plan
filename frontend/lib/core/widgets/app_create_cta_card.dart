@@ -27,7 +27,7 @@ class AppCreateCtaCard extends StatelessWidget {
         child: Ink(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
-            gradient: const LinearGradient(
+            gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [AppColors.surface, AppColors.surfaceElevated],
@@ -49,23 +49,23 @@ class AppCreateCtaCard extends StatelessWidget {
                   ),
                   child: Icon(icon, color: AppColors.primary),
                 ),
-                const SizedBox(width: 12),
+                SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         title,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w800,
                           color: AppColors.foreground,
                         ),
                       ),
-                      const SizedBox(height: 2),
+                      SizedBox(height: 2),
                       Text(
                         hint,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 11,
                           color: AppColors.muted,
                         ),
@@ -73,7 +73,7 @@ class AppCreateCtaCard extends StatelessWidget {
                     ],
                   ),
                 ),
-                const Icon(Icons.chevron_right, color: AppColors.primary),
+                Icon(Icons.chevron_right, color: AppColors.primary),
               ],
             ),
           ),

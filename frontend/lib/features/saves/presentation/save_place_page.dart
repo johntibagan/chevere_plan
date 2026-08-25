@@ -765,11 +765,11 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
             backgroundColor: AppColors.surface,
             title: Text(
               context.l10n.sameSiteTitle,
-              style: const TextStyle(color: AppColors.foreground),
+              style: TextStyle(color: AppColors.foreground),
             ),
             content: Text(
               context.l10n.sameSiteStaffHint,
-              style: const TextStyle(color: AppColors.muted),
+              style: TextStyle(color: AppColors.muted),
             ),
             actions: [
               FilledButton(
@@ -936,11 +936,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
       context: context,
       builder: (context) => AlertDialog(
         title: Text(context.l10n.loginTerms),
-        content: const Text(
-          'Al subir una foto confirmas que cumple los Términos de Uso de '
-          'Chevere Plan (turismo, gastronomía y planes de ocio; sin contenido '
-          'sexual, ilegal o de acoso).',
-        ),
+        content: Text(context.l10n.photoTermsBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -1132,11 +1128,11 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
               backgroundColor: AppColors.surface,
               title: Text(
                 context.l10n.sameSiteTitle,
-                style: const TextStyle(color: AppColors.foreground),
+                style: TextStyle(color: AppColors.foreground),
               ),
               content: Text(
                 context.l10n.sameSiteStaffHint,
-                style: const TextStyle(color: AppColors.muted),
+                style: TextStyle(color: AppColors.muted),
               ),
               actions: [
                 FilledButton(
@@ -1286,23 +1282,25 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
           builder: (context) => AlertDialog(
             backgroundColor: AppColors.surface,
             title: Text(
-              _isEditing ? '¡Actualizado!' : '¡Lugar guardado!',
-              style: const TextStyle(color: AppColors.foreground),
+              _isEditing
+                  ? l10n.saveSuccessTitleUpdate
+                  : l10n.saveSuccessTitleCreate,
+              style: TextStyle(color: AppColors.foreground),
             ),
             content: Text(
               [
                 if (_isStaffSiteEdit)
-                  'Cambios del sitio guardados.'
+                  l10n.saveSuccessStaffBody
                 else if (status == SiteStatus.complete)
-                  'Quedó completo en tu lista.'
+                  l10n.saveSuccessCompleteBody
                 else if (_isPhysical && (lat == null || lng == null))
                   l10n.saveNeedsMapPoint
                 else
                   l10n.saveStatusAfterSave(status.label(l10n)),
                 if (!_isStaffSiteEdit && !isPublicResult)
-                  ' Privado por defecto.',
+                  l10n.saveSuccessPrivateSuffix,
               ].join(),
-              style: const TextStyle(color: AppColors.muted),
+              style: TextStyle(color: AppColors.muted),
             ),
             actions: [
               FilledButton(
@@ -1354,11 +1352,11 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
         backgroundColor: AppColors.surface,
         title: Text(
           l10n.privacyBlockTitle,
-          style: const TextStyle(color: AppColors.foreground),
+          style: TextStyle(color: AppColors.foreground),
         ),
         content: Text(
           reason,
-          style: const TextStyle(color: AppColors.muted),
+          style: TextStyle(color: AppColors.muted),
         ),
         actions: [
           FilledButton(
@@ -1410,7 +1408,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
                 _infoTip(info),
               ],
             ),
-            const SizedBox(height: 10),
+            SizedBox(height: 10),
             ...children,
           ],
         ),
@@ -1428,7 +1426,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: AppColors.border),
+        borderSide: BorderSide(color: AppColors.border),
       ),
     );
   }
@@ -1447,7 +1445,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
     final hidden = _SaveExtra.values
         .where((e) => !_openExtras.contains(e))
         .toList();
-    if (hidden.isEmpty) return const SizedBox.shrink();
+    if (hidden.isEmpty) return SizedBox.shrink();
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: Column(
@@ -1510,7 +1508,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
             }
           },
         ),
-        const SizedBox(height: 10),
+        SizedBox(height: 10),
         Material(
           color: AppColors.surfaceElevated,
           clipBehavior: Clip.antiAlias,
@@ -1541,7 +1539,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
                         key: hasPin
                             ? WidgetKeys.saveHasPin
                             : WidgetKeys.saveNoPin,
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: AppColors.foreground,
                           fontWeight: FontWeight.w800,
                           fontSize: 12,
@@ -1627,7 +1625,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
                 size: 22,
               ),
             ),
-            const Spacer(),
+            Spacer(),
             Switch(
               key: WidgetKeys.savePublicSwitch,
               value: isOn,
@@ -1661,7 +1659,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
             _setDepartment(d);
           }),
         ),
-        const SizedBox(height: 10),
+        SizedBox(height: 10),
         GeoTypeaheadField<GeoCity>(
           controller: _cityCtrl,
           focusNode: _cityFocus,
@@ -1674,7 +1672,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
           decoration: _dec(l10n.saveCity),
           onSelected: (c) => setState(() => _setCity(c)),
         ),
-        const SizedBox(height: 10),
+        SizedBox(height: 10),
         TextField(
           controller: _addressCtrl,
           decoration: _dec(l10n.saveAddress),
@@ -1708,7 +1706,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
           },
         ),
         if (_socialLinks.isNotEmpty) ...[
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
           ..._socialLinks.map(
             (d) => Padding(
               padding: const EdgeInsets.only(bottom: 8),
@@ -1768,24 +1766,24 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
               );
             }).toList(),
           ),
-        const SizedBox(height: 8),
+        SizedBox(height: 8),
         TextField(
           controller: _categorySearchCtrl,
           decoration: InputDecoration(
             hintText: l10n.saveCategoryHint,
-            prefixIcon: const Icon(Icons.search),
-            border: const OutlineInputBorder(),
+            prefixIcon: Icon(Icons.search),
+            border: OutlineInputBorder(),
             isDense: true,
             suffixIcon: IconButton(
               tooltip: l10n.saveCategoryTree,
               onPressed: _saving ? null : _openCategoryTree,
-              icon: const Icon(Icons.account_tree_outlined),
+              icon: Icon(Icons.account_tree_outlined),
             ),
           ),
           onChanged: (_) => setState(() {}),
         ),
         if (_categorySearchCtrl.text.trim().isNotEmpty) ...[
-          const SizedBox(height: 4),
+          SizedBox(height: 4),
           ..._filteredCategories.map((c) {
             final parent = _parentName(c);
             final label =
@@ -1827,7 +1825,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
       children: [
         OutlinedButton.icon(
           onPressed: _saving ? null : _pickPhoto,
-          icon: const Icon(Icons.photo_outlined),
+          icon: Icon(Icons.photo_outlined),
           label: Text(
             _pendingPhoto == null ? l10n.saveAddPhoto : l10n.savePhotoReady,
           ),
@@ -1876,7 +1874,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
         ),
       ),
       body: _loadingCats
-          ? const Center(child: CircularProgressIndicator())
+          ? Center(child: CircularProgressIndicator())
           : ListView(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
               children: [
@@ -1912,7 +1910,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
                           minimumSize: const Size.fromHeight(52),
                         ),
                         child: _saving
-                            ? const SizedBox(
+                            ? SizedBox(
                                 width: 22,
                                 height: 22,
                                 child: CircularProgressIndicator(strokeWidth: 2),

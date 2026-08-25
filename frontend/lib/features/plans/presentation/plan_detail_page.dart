@@ -332,7 +332,7 @@ class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
             children: [
               ListTile(
                 key: WidgetKeys.planMenuEdit,
-                leading: const Icon(Icons.edit_outlined),
+                leading: Icon(Icons.edit_outlined),
                 title: Text(l10n.planMenuEdit),
                 onTap: () {
                   Navigator.pop(ctx);
@@ -340,7 +340,7 @@ class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.map_outlined),
+                leading: Icon(Icons.map_outlined),
                 title: Text(l10n.planMenuOpenMaps),
                 onTap: () {
                   Navigator.pop(ctx);
@@ -348,7 +348,7 @@ class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.ios_share_outlined),
+                leading: Icon(Icons.ios_share_outlined),
                 title: Text(l10n.planMenuShare),
                 onTap: () {
                   Navigator.pop(ctx);
@@ -357,14 +357,14 @@ class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
               ),
               ListTile(
                 key: WidgetKeys.planMenuDelete,
-                leading: const Icon(Icons.delete_outline),
+                leading: Icon(Icons.delete_outline),
                 title: Text(l10n.actionDelete),
                 onTap: () {
                   Navigator.pop(ctx);
                   _delete();
                 },
               ),
-              const SizedBox(height: AppSpacing.sm),
+              SizedBox(height: AppSpacing.sm),
             ],
           ),
         );
@@ -380,7 +380,7 @@ class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
     return Scaffold(
       key: WidgetKeys.planDetail,
       body: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? Center(child: CircularProgressIndicator())
           : plan == null
               ? Center(child: Text(l10n.actionRetry))
               : Column(
@@ -432,20 +432,20 @@ class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
                             Expanded(
                               child: FilledButton.icon(
                                 onPressed: _busy ? null : _openMaps,
-                                icon: const Icon(
+                                icon: Icon(
                                   Icons.near_me_outlined,
                                   size: 18,
                                 ),
                                 label: Text(l10n.planMenuOpenMaps),
                               ),
                             ),
-                            const SizedBox(width: 8),
+                            SizedBox(width: 8),
                             AppSquareIconButton(
                               icon: Icons.ios_share_outlined,
                               tooltip: l10n.planMenuShare,
                               onTap: _busy ? () {} : _share,
                             ),
-                            const SizedBox(width: 8),
+                            SizedBox(width: 8),
                             AppSquareIconButton(
                               key: WidgetKeys.planDetailAdd,
                               icon: Icons.add,
@@ -490,17 +490,17 @@ class _PlanHero extends StatelessWidget {
                 ? plan.stops.first.coverStoragePath
                 : null,
           ),
-          const DecoratedBox(
+          DecoratedBox(
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  Color(0x66000000),
+                  AppColors.coverScrim,
                   Colors.transparent,
-                  Color(0xFF0B0D15),
+                  AppColors.background,
                 ],
-                stops: [0, 0.4, 1],
+                stops: const [0, 0.4, 1],
               ),
             ),
           ),
@@ -515,32 +515,32 @@ class _PlanHero extends StatelessWidget {
                     children: [
                       IconButton(
                         onPressed: onBack,
-                        icon: const Icon(Icons.arrow_back),
+                        icon: Icon(Icons.arrow_back),
                         style: IconButton.styleFrom(
-                          backgroundColor: const Color(0x80000000),
+                          backgroundColor: AppColors.scrim,
                           foregroundColor: AppColors.onImage,
                         ),
                       ),
-                      const Spacer(),
+                      Spacer(),
                       IconButton(
                         key: WidgetKeys.planDetailMore,
                         onPressed: onMore,
-                        icon: const Icon(Icons.more_vert),
+                        icon: Icon(Icons.more_vert),
                         style: IconButton.styleFrom(
-                          backgroundColor: const Color(0x80000000),
+                          backgroundColor: AppColors.scrim,
                           foregroundColor: AppColors.onImage,
                         ),
                       ),
                     ],
                   ),
-                  const Spacer(),
+                  Spacer(),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 8),
                     child: Text(
                       plan.title,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.w800,
                         color: AppColors.onImage,
@@ -554,7 +554,7 @@ class _PlanHero extends StatelessWidget {
                         plan.locationQuery,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 12,
                           color: AppColors.primary,
                         ),
@@ -598,7 +598,7 @@ class _PlanStatsRow extends StatelessWidget {
               valueColor: AppColors.accent,
             ),
           ),
-          const SizedBox(width: 8),
+          SizedBox(width: 8),
           Expanded(
             child: AppStatCard(
               key: WidgetKeys.planStatBudget,
@@ -607,7 +607,7 @@ class _PlanStatsRow extends StatelessWidget {
               valueColor: AppColors.success,
             ),
           ),
-          const SizedBox(width: 8),
+          SizedBox(width: 8),
           Expanded(
             child: AppStatCard(
               value: zone,

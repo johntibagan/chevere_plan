@@ -12,6 +12,9 @@
   "moreMenuProximitySubtitle": "Radio y sitios públicos",
   "moreMenuReports": "Reportes",
   "moreMenuSignOut": "Cerrar sesión",
+  "moreMenuDarkMode": "Modo oscuro",
+  "moreMenuDarkModeOn": "Tema oscuro activo",
+  "moreMenuDarkModeOff": "Tema claro activo",
   "moreMenuProfileComingTitle": "Tu perfil",
   "moreMenuProfileComingBody": "Pronto vas a poder ver y editar tu cuenta desde aquí.",
   "actionCancel": "Cancelar",
@@ -60,6 +63,8 @@
   "homeRecentSaves": "Guardados recientes",
   "homeSeeAll": "Ver más",
   "homeFeedView": "Vista",
+  "homeEvents": "Eventos",
+  "homeEventsComingSoon": "Próximamente.",
   "homePopularNearby": "Populares cerca",
   "homeExploreLink": "Explorar",
   "homeQuickActions": "Acciones rápidas",
@@ -528,5 +533,34 @@
   "locationGpsFail": "No se pudo obtener tu ubicación. Busca o toca el mapa.",
   "locationProviderGoogle": "Google Maps · buscar solo con 🔍",
   "locationProviderFallback": "Búsqueda alternativa activa",
-  "locationProviderNone": "Mapa no disponible"
+  "locationProviderNone": "Mapa no disponible",
+  "formatDistanceKm": "{km} km",
+  "@formatDistanceKm": {
+    "placeholders": {
+      "km": {"type": "String"}
+    }
+  },
+  "defaultUserDisplayName": "Usuario",
+  "reviewAuthorYou": "Tú",
+  "reviewEditedOn": " · editado {date}",
+  "@reviewEditedOn": {
+    "placeholders": {
+      "date": {"type": "String"}
+    }
+  },
+  "saveSuccessTitleCreate": "¡Lugar guardado!",
+  "saveSuccessTitleUpdate": "¡Actualizado!",
+  "saveSuccessStaffBody": "Cambios del sitio guardados.",
+  "saveSuccessCompleteBody": "Quedó completo en tu lista.",
+  "saveSuccessPrivateSuffix": " Privado por defecto.",
+  "saveLinkFallback": "Enlace",
+  "adminTransportInactive": "Inactivo",
+  "adminTransportNoKmCap": "Sin tope km",
+  "adminTransportMaxKmShort": "Máx {km} km",
+  "@adminTransportMaxKmShort": {
+    "placeholders": {
+      "km": {"type": "int"}
+    }
+  },
+  "adminTransportGroupOther": "Otro (plataformas)"
 }

@@ -143,11 +143,11 @@ class _SiteReviewsTabState extends ConsumerState<SiteReviewsTab> {
         backgroundColor: AppColors.surface,
         title: Text(
           l10n.reviewDeleteTitle,
-          style: const TextStyle(color: AppColors.foreground),
+          style: TextStyle(color: AppColors.foreground),
         ),
         content: Text(
           l10n.reviewDeleteBody,
-          style: const TextStyle(color: AppColors.muted),
+          style: TextStyle(color: AppColors.muted),
         ),
         actions: [
           TextButton(
@@ -191,7 +191,7 @@ class _SiteReviewsTabState extends ConsumerState<SiteReviewsTab> {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     if (_loading) {
-      return const Center(child: CircularProgressIndicator());
+      return Center(child: CircularProgressIndicator());
     }
     final visible = _visible;
 
@@ -206,7 +206,7 @@ class _SiteReviewsTabState extends ConsumerState<SiteReviewsTab> {
                   widget.staffRoleLabel ?? l10n.staffRoleAdmin,
                 ),
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: 12),
             ],
             Row(
               children: [
@@ -241,13 +241,13 @@ class _SiteReviewsTabState extends ConsumerState<SiteReviewsTab> {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.sort, size: 20, color: AppColors.muted),
-                        const SizedBox(width: 4),
+                        Icon(Icons.sort, size: 20, color: AppColors.muted),
+                        SizedBox(width: 4),
                         Text(
                           _sortLabel(_sort),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 12,
                             color: AppColors.muted,
                           ),
@@ -258,7 +258,7 @@ class _SiteReviewsTabState extends ConsumerState<SiteReviewsTab> {
                 ),
               ],
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: 8),
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(
@@ -271,7 +271,7 @@ class _SiteReviewsTabState extends ConsumerState<SiteReviewsTab> {
                       _mineOnly = false;
                     }),
                   ),
-                  const SizedBox(width: 6),
+                  SizedBox(width: 6),
                   for (var star = 5; star >= 1; star--) ...[
                     FilterChip(
                       label: Text('$star★'),
@@ -280,7 +280,7 @@ class _SiteReviewsTabState extends ConsumerState<SiteReviewsTab> {
                         _starFilter = sel ? star : null;
                       }),
                     ),
-                    const SizedBox(width: 6),
+                    SizedBox(width: 6),
                   ],
                   if (_uid != null)
                     FilterChip(
@@ -291,11 +291,11 @@ class _SiteReviewsTabState extends ConsumerState<SiteReviewsTab> {
                 ],
               ),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
             if (visible.isEmpty)
               Text(
                 _reviews.isEmpty ? l10n.reviewEmpty : l10n.reviewFilterEmpty,
-                style: const TextStyle(color: AppColors.muted),
+                style: TextStyle(color: AppColors.muted),
               )
             else
               for (final r in visible) ...[
@@ -308,7 +308,7 @@ class _SiteReviewsTabState extends ConsumerState<SiteReviewsTab> {
                   onEdit: () => _openEditor(review: r),
                   onDelete: () => _confirmDelete(r),
                 ),
-                const SizedBox(height: 12),
+                SizedBox(height: 12),
               ],
           ],
         ),
@@ -321,7 +321,7 @@ class _SiteReviewsTabState extends ConsumerState<SiteReviewsTab> {
             backgroundColor: AppColors.primary,
             foregroundColor: AppColors.background,
             onPressed: () => _openEditor(),
-            child: const Icon(Icons.add_comment, size: 28),
+            child: Icon(Icons.add_comment, size: 28),
           ),
         ),
       ],
@@ -347,12 +347,12 @@ class _StaffPrivilegesBanner extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.shield_outlined, size: 18, color: AppColors.primary),
-          const SizedBox(width: 8),
+          Icon(Icons.shield_outlined, size: 18, color: AppColors.primary),
+          SizedBox(width: 8),
           Expanded(
             child: Text(
               message,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12,
                 height: 1.35,
                 color: AppColors.foreground,
@@ -389,7 +389,7 @@ class _ReviewCard extends StatelessWidget {
     final name = () {
       final n = review.authorName?.trim() ?? '';
       if (n.isNotEmpty) return n;
-      return isMine ? 'Tú' : 'Usuario';
+      return isMine ? l10n.reviewAuthorYou : l10n.defaultUserDisplayName;
     }();
     final accent =
         review.isPublic ? AppColors.success : AppColors.purple;
@@ -424,7 +424,7 @@ class _ReviewCard extends StatelessWidget {
                                     height: 32,
                                     cacheKey: 'avatar:${review.userId}',
                                   )
-                                : const ColoredBox(
+                                : ColoredBox(
                                     color: AppColors.surfaceElevated,
                                     child: Icon(
                                       Icons.person,
@@ -434,7 +434,7 @@ class _ReviewCard extends StatelessWidget {
                                   ),
                           ),
                         ),
-                        const SizedBox(width: 8),
+                        SizedBox(width: 8),
                         Expanded(
                           child: Text(
                             name,
@@ -461,7 +461,7 @@ class _ReviewCard extends StatelessWidget {
                         ),
                         if (canManage)
                           PopupMenuButton<String>(
-                            icon: const Icon(
+                            icon: Icon(
                               Icons.more_vert,
                               color: AppColors.muted,
                             ),
@@ -483,14 +483,14 @@ class _ReviewCard extends StatelessWidget {
                       ],
                     ),
                     if (review.body.trim().isNotEmpty) ...[
-                      const SizedBox(height: 8),
+                      SizedBox(height: 8),
                       Text(
                         review.body,
-                        style: const TextStyle(color: AppColors.muted),
+                        style: TextStyle(color: AppColors.muted),
                       ),
                     ],
                     if (review.photos.isNotEmpty) ...[
-                      const SizedBox(height: 8),
+                      SizedBox(height: 8),
                       Wrap(
                         spacing: 6,
                         children: [
@@ -508,11 +508,19 @@ class _ReviewCard extends StatelessWidget {
                         ],
                       ),
                     ],
-                    const SizedBox(height: 6),
+                    SizedBox(height: 6),
                     Text(
-                      '${formatDateTimeShort(review.createdAt)}'
-                      '${review.updatedAt.difference(review.createdAt).inSeconds.abs() > 2 ? ' · editado ${formatDateTimeShort(review.updatedAt)}' : ''}',
-                      style: const TextStyle(
+                      formatDateTimeShort(review.createdAt) +
+                          (review.updatedAt
+                                      .difference(review.createdAt)
+                                      .inSeconds
+                                      .abs() >
+                                  2
+                              ? l10n.reviewEditedOn(
+                                  formatDateTimeShort(review.updatedAt),
+                                )
+                              : ''),
+                      style: TextStyle(
                         fontSize: 11,
                         color: AppColors.mutedDark,
                       ),

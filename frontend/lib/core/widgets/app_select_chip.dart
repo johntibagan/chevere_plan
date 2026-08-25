@@ -56,7 +56,7 @@ class AppSelectChip extends StatelessWidget {
             children: [
               if (icon != null) ...[
                 Icon(icon, size: 12, color: fg),
-                const SizedBox(width: 6),
+                SizedBox(width: 6),
               ],
               Text(
                 label,

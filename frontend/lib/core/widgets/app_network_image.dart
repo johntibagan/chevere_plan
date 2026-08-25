@@ -100,7 +100,7 @@ class AppNetworkImage extends StatelessWidget {
       child: ColoredBox(
         color: AppColors.surfaceElevated,
         child: showLoadingIndicator
-            ? const Center(
+            ? Center(
                 child: SizedBox(
                   width: 18,
                   height: 18,
@@ -129,7 +129,7 @@ class AppNetworkImage extends StatelessWidget {
       errorWidget: (context, _, _) => SizedBox(
         width: placeholderW,
         height: height,
-        child: const ColoredBox(
+        child: ColoredBox(
           color: AppColors.surfaceElevated,
           child: Icon(Icons.broken_image, color: AppColors.muted),
         ),

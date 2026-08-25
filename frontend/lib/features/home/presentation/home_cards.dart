@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../../../core/formatters/distance_format.dart';
 import '../../../core/formatters/money_format.dart';
 import '../../../core/formatters/place_format.dart';
 import '../../../core/l10n/context_l10n.dart';
@@ -92,7 +93,7 @@ class HomeSectionHeader extends StatelessWidget {
                       ),
                     ),
                     if (canToggle) ...[
-                      const SizedBox(width: 4),
+                      SizedBox(width: 4),
                       Icon(
                         isOpen
                             ? Icons.expand_less_rounded
@@ -108,7 +109,7 @@ class HomeSectionHeader extends StatelessWidget {
           ),
           if (trailing != null) ...[
             trailing!,
-            const SizedBox(width: 8),
+            SizedBox(width: 8),
           ],
           if (actionLabel != null && onAction != null)
             InkWell(
@@ -118,13 +119,13 @@ class HomeSectionHeader extends StatelessWidget {
                 children: [
                   Text(
                     actionLabel!,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
                       color: AppColors.primary,
                     ),
                   ),
-                  const Icon(
+                  Icon(
                     Icons.chevron_right,
                     size: 14,
                     color: AppColors.primary,
@@ -146,7 +147,7 @@ class HomeSourceBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final n = (network ?? '').toLowerCase();
-    if (n.isEmpty) return const SizedBox.shrink();
+    if (n.isEmpty) return SizedBox.shrink();
     final label = switch (n) {
       'instagram' => 'IG',
       'tiktok' => 'TK',
@@ -155,9 +156,9 @@ class HomeSourceBadge extends StatelessWidget {
       _ => n.length >= 2 ? n.substring(0, 2).toUpperCase() : n.toUpperCase(),
     };
     final color = switch (n) {
-      'instagram' => const Color(0xFFE1306C),
-      'tiktok' => const Color(0xFF69C9D0),
-      'facebook' => const Color(0xFF1877F2),
+      'instagram' => AppColors.badgeInstagram,
+      'tiktok' => AppColors.badgeTikTok,
+      'facebook' => AppColors.badgeFacebook,
       _ => AppColors.mutedDark,
     };
     return Container(
@@ -168,7 +169,7 @@ class HomeSourceBadge extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 9,
           fontWeight: FontWeight.w800,
           color: AppColors.onImage,
@@ -250,7 +251,7 @@ class HomeRecentRailCard extends StatelessWidget {
                           if (save.isIncomplete) ...[
                             if (save.sourceNetwork != null &&
                                 save.sourceNetwork!.isNotEmpty)
-                              const SizedBox(width: 4),
+                              SizedBox(width: 4),
                             Container(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 6,
@@ -268,7 +269,7 @@ class HomeRecentRailCard extends StatelessWidget {
                                   save.id,
                                   save.status.name,
                                 ),
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 9,
                                   fontWeight: FontWeight.w800,
                                   color: AppColors.primarySoft,
@@ -300,12 +301,12 @@ class HomeRecentRailCard extends StatelessWidget {
                                 ? AppColors.success
                                 : AppColors.purple,
                           ),
-                          const SizedBox(height: 2),
+                          SizedBox(height: 2),
                           Text(
                             save.siteName,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w800,
                               color: AppColors.onImage,
@@ -316,7 +317,7 @@ class HomeRecentRailCard extends StatelessWidget {
                               save.city!,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 9,
                                 color: AppColors.onImageMuted,
                               ),
@@ -328,7 +329,7 @@ class HomeRecentRailCard extends StatelessWidget {
                 ),
               ),
             ),
-            const SizedBox(height: 6),
+            SizedBox(height: 6),
             if (cat != null) HomeCategoryChip(label: cat),
           ],
         ),
@@ -371,10 +372,10 @@ class SiteCardPlaceTexts extends StatelessWidget {
           ),
         ),
         if (place.isNotEmpty) ...[
-          const SizedBox(height: 4),
+          SizedBox(height: 4),
           Text(
             place,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 10,
               color: AppColors.mutedDark,
               height: 1.25,
@@ -382,10 +383,10 @@ class SiteCardPlaceTexts extends StatelessWidget {
           ),
         ],
         if (address.isNotEmpty) ...[
-          const SizedBox(height: 4),
+          SizedBox(height: 4),
           Text(
             address,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 10,
               color: AppColors.muted,
               height: 1.25,
@@ -463,7 +464,7 @@ class HomePopularCard extends StatelessWidget {
                         if (hit.isIncomplete) ...[
                           if (hit.sourceNetwork != null &&
                               hit.sourceNetwork!.isNotEmpty)
-                            const SizedBox(width: 4),
+                            SizedBox(width: 4),
                           Container(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 6,
@@ -477,7 +478,7 @@ class HomePopularCard extends StatelessWidget {
                             ),
                             child: Text(
                               l10n.statusDraft,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 9,
                                 fontWeight: FontWeight.w800,
                                 color: AppColors.primarySoft,
@@ -510,12 +511,12 @@ class HomePopularCard extends StatelessWidget {
                             compact: true,
                           ),
                           if (origin.hasAny) ...[
-                            const SizedBox(width: 6),
+                            SizedBox(width: 6),
                             Expanded(child: origin),
                           ],
                         ],
                       ),
-                      const SizedBox(height: 4),
+                      SizedBox(height: 4),
                     ],
                     Expanded(
                       child: SingleChildScrollView(
@@ -528,22 +529,22 @@ class HomePopularCard extends StatelessWidget {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    SizedBox(height: 4),
                     Row(
                       children: [
                         if (hit.distanceKm != null)
                           Text(
-                            '${hit.distanceKm!.toStringAsFixed(1)} km',
-                            style: const TextStyle(
+                            formatDistanceKmLabel(context.l10n, hit.distanceKm!),
+                            style: TextStyle(
                               fontSize: 10,
                               color: AppColors.mutedDark,
                             ),
                           ),
-                        const Spacer(),
+                        Spacer(),
                         if (price != null)
                           Text(
                             formatMoney(price, currencyCode: hit.currencyCode),
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.w800,
                               color: AppColors.primary,
@@ -627,7 +628,7 @@ class HomeSearchListCard extends StatelessWidget {
                               compact: true,
                             ),
                             if (origin.hasAny) ...[
-                              const SizedBox(width: 6),
+                              SizedBox(width: 6),
                               Expanded(child: origin),
                             ],
                             FavoriteHeartButton(
@@ -636,7 +637,7 @@ class HomeSearchListCard extends StatelessWidget {
                             ),
                           ],
                         ),
-                        const SizedBox(height: 4),
+                        SizedBox(height: 4),
                         ConstrainedBox(
                           constraints: const BoxConstraints(maxHeight: 96),
                           child: SingleChildScrollView(
@@ -650,25 +651,25 @@ class HomeSearchListCard extends StatelessWidget {
                             ),
                           ),
                         ),
-                        const SizedBox(height: 6),
+                        SizedBox(height: 6),
                         Row(
                           children: [
                             if (hit.distanceKm != null)
                               Text(
-                                '${hit.distanceKm!.toStringAsFixed(1)} km',
-                                style: const TextStyle(
+                                formatDistanceKmLabel(context.l10n, hit.distanceKm!),
+                                style: TextStyle(
                                   fontSize: 10,
                                   color: AppColors.mutedDark,
                                 ),
                               ),
-                            const Spacer(),
+                            Spacer(),
                             if (price != null)
                               Text(
                                 formatMoney(
                                   price,
                                   currencyCode: hit.currencyCode,
                                 ),
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 10,
                                   fontWeight: FontWeight.w800,
                                   color: AppColors.primary,
@@ -680,7 +681,7 @@ class HomeSearchListCard extends StatelessWidget {
                     ),
                   ),
                 ),
-                const Padding(
+                Padding(
                   padding: EdgeInsets.only(right: 8),
                   child: Icon(
                     Icons.chevron_right,
@@ -717,7 +718,7 @@ class HomeQuickAction extends StatelessWidget {
       color: AppColors.surface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: const BorderSide(color: AppColors.border),
+        side: BorderSide(color: AppColors.border),
       ),
       child: InkWell(
         onTap: onTap,
@@ -735,13 +736,13 @@ class HomeQuickAction extends StatelessWidget {
                 ),
                 child: Icon(icon, size: 18, color: color),
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               Text(
                 label,
                 textAlign: TextAlign.center,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 10,
                   fontWeight: FontWeight.w600,
                   color: AppColors.muted,

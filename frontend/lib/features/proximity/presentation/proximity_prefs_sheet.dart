@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/errors/user_facing_error.dart';
 import '../../../core/widgets/app_toast.dart';
 import '../../../core/l10n/context_l10n.dart';
 import '../../auth/data/profile.dart';
@@ -68,7 +67,7 @@ class _ProximityPrefsSheetState extends State<_ProximityPrefsSheet> {
       if (sync == GeofenceSyncResult.needsLocationPermission) {
         AppToast.show(context, context.l10n.proximityNeedsLocation, error: true);
       } else if (sync == GeofenceSyncResult.failed) {
-        AppToast.show(context, kGenericAppError, error: true);
+        AppToast.show(context, context.l10n.errorGeneric, error: true);
       }
       Navigator.of(context).pop(updated);
     } catch (e) {

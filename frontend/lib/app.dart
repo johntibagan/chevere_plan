@@ -11,9 +11,11 @@ import '../features/saves/data/share_parser.dart';
 import '../features/saves/presentation/save_place_page.dart';
 import 'core/cache/session_cache_cleanup.dart';
 import 'core/di/providers.dart';
+import 'core/l10n/app_locale.dart';
 import 'core/l10n/context_l10n.dart';
 import 'core/notifications/local_notification_router.dart';
 import 'core/theme/app_theme.dart';
+import 'core/theme/chevere_theme_colors.dart';
 
 final GlobalKey<NavigatorState> appNavigatorKey = GlobalKey<NavigatorState>();
 
@@ -83,16 +85,25 @@ class _CheverePlanAppState extends ConsumerState<CheverePlanApp> {
 
   @override
   Widget build(BuildContext context) {
+    final themeMode = ref.watch(appThemeModeProvider);
+
     return MaterialApp(
       onGenerateTitle: (ctx) => AppLocalizations.of(ctx).appTitle,
       navigatorKey: appNavigatorKey,
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.dark(),
+      theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),
-      themeMode: ThemeMode.dark,
-      locale: const Locale('es'),
+      themeMode: themeMode,
+      locale: const Locale(kAppLocale),
       supportedLocales: AppLocalizations.supportedLocales,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
+      builder: (context, child) {
+        final colors =
+            Theme.of(context).extension<ChevereThemeColors>() ??
+                ChevereThemeColors.dark;
+        AppColors.bind(colors);
+        return child ?? SizedBox.shrink();
+      },
       home: const AuthGate(),
     );
   }
@@ -132,7 +143,7 @@ class _AuthGateState extends ConsumerState<AuthGate> {
 
         if (snapshot.connectionState == ConnectionState.waiting &&
             session == null) {
-          return const Scaffold(
+          return Scaffold(
             body: Center(child: CircularProgressIndicator()),
           );
         }

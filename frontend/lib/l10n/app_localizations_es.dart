@@ -46,6 +46,15 @@ class AppLocalizationsEs extends AppLocalizations {
   String get moreMenuSignOut => 'Cerrar sesión';
 
   @override
+  String get moreMenuDarkMode => 'Modo oscuro';
+
+  @override
+  String get moreMenuDarkModeOn => 'Tema oscuro activo';
+
+  @override
+  String get moreMenuDarkModeOff => 'Tema claro activo';
+
+  @override
   String get moreMenuProfileComingTitle => 'Tu perfil';
 
   @override
@@ -164,6 +173,12 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get homeFeedView => 'Vista';
+
+  @override
+  String get homeEvents => 'Eventos';
+
+  @override
+  String get homeEventsComingSoon => 'Próximamente.';
 
   @override
   String get homePopularNearby => 'Populares cerca';
@@ -1334,4 +1349,52 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get locationProviderNone => 'Mapa no disponible';
+
+  @override
+  String formatDistanceKm(String km) {
+    return '$km km';
+  }
+
+  @override
+  String get defaultUserDisplayName => 'Usuario';
+
+  @override
+  String get reviewAuthorYou => 'Tú';
+
+  @override
+  String reviewEditedOn(String date) {
+    return ' · editado $date';
+  }
+
+  @override
+  String get saveSuccessTitleCreate => '¡Lugar guardado!';
+
+  @override
+  String get saveSuccessTitleUpdate => '¡Actualizado!';
+
+  @override
+  String get saveSuccessStaffBody => 'Cambios del sitio guardados.';
+
+  @override
+  String get saveSuccessCompleteBody => 'Quedó completo en tu lista.';
+
+  @override
+  String get saveSuccessPrivateSuffix => ' Privado por defecto.';
+
+  @override
+  String get saveLinkFallback => 'Enlace';
+
+  @override
+  String get adminTransportInactive => 'Inactivo';
+
+  @override
+  String get adminTransportNoKmCap => 'Sin tope km';
+
+  @override
+  String adminTransportMaxKmShort(int km) {
+    return 'Máx $km km';
+  }
+
+  @override
+  String get adminTransportGroupOther => 'Otro (plataformas)';
 }

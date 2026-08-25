@@ -52,7 +52,7 @@ class _SameSitePickerPageState extends State<SameSitePickerPage> {
               widget.allowCreateAnyway
                   ? l10n.sameSiteHardPickHint
                   : l10n.sameSitePickHint,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 13,
                 color: AppColors.muted,
               ),
@@ -62,7 +62,7 @@ class _SameSitePickerPageState extends State<SameSitePickerPage> {
             child: ListView.separated(
               padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
               itemCount: widget.matches.length,
-              separatorBuilder: (_, _) => const SizedBox(height: 8),
+              separatorBuilder: (_, _) => SizedBox(height: 8),
               itemBuilder: (context, i) {
                 final d = widget.matches[i];
                 final on = d.siteId == _selectedId;
@@ -99,7 +99,7 @@ class _SameSitePickerPageState extends State<SameSitePickerPage> {
                                   child: SiteLookCover(siteId: d.siteId),
                                 ),
                               ),
-                              const SizedBox(width: 10),
+                              SizedBox(width: 10),
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -108,7 +108,7 @@ class _SameSitePickerPageState extends State<SameSitePickerPage> {
                                       d.siteName,
                                       maxLines: 2,
                                       overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         fontWeight: FontWeight.w700,
                                         color: AppColors.foreground,
                                       ),
@@ -118,7 +118,7 @@ class _SameSitePickerPageState extends State<SameSitePickerPage> {
                                         padding: const EdgeInsets.only(top: 2),
                                         child: Text(
                                           _meta(d),
-                                          style: const TextStyle(
+                                          style: TextStyle(
                                             fontSize: 12,
                                             color: AppColors.muted,
                                           ),
@@ -128,7 +128,7 @@ class _SameSitePickerPageState extends State<SameSitePickerPage> {
                                       padding: const EdgeInsets.only(top: 4),
                                       child: Text(
                                         l10n.sameSiteTapForDetail,
-                                        style: const TextStyle(
+                                        style: TextStyle(
                                           fontSize: 11,
                                           fontWeight: FontWeight.w600,
                                           color: AppColors.primary,
@@ -138,7 +138,7 @@ class _SameSitePickerPageState extends State<SameSitePickerPage> {
                                   ],
                                 ),
                               ),
-                              const Icon(
+                              Icon(
                                 Icons.chevron_right,
                                 color: AppColors.mutedDark,
                               ),
@@ -171,7 +171,7 @@ class _SameSitePickerPageState extends State<SameSitePickerPage> {
                             ),
                     child: Text(l10n.sameSiteReviewPublic),
                   ),
-                  const SizedBox(height: 8),
+                  SizedBox(height: 8),
                   OutlinedButton(
                     key: WidgetKeys.dupeJournal,
                     onPressed: !selected

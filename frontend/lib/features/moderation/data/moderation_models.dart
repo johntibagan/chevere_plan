@@ -1,3 +1,5 @@
+import '../../../core/l10n/display_defaults.dart';
+
 class SitePhoto {
   const SitePhoto({
     required this.id,
@@ -68,7 +70,8 @@ class ContentReport {
       status: json['status'] as String? ?? 'open',
       createdAt: DateTime.parse(json['created_at'] as String),
       reporterId: json['reporter_id'] as String,
-      reporterName: (json['reporter_name'] as String?) ?? 'Usuario',
+      reporterName: (json['reporter_name'] as String?) ??
+          DisplayDefaults.userDisplayName,
       photoPath: json['photo_path'] as String?,
       siteName: json['site_name'] as String?,
     );
