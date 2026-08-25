@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../core/errors/user_facing_error.dart';
+import '../../../core/logging/app_log.dart';
 import '../domain/save_policies.dart';
 import 'save_models.dart';
 import 'site_ficha.dart';
@@ -21,18 +22,25 @@ class SavesRepository {
       'is_possible_duplicate, possible_duplicate_of_site_id, '
       'sites!user_saves_site_id_fkey(name, city, city_id, department, department_id, address_line, is_public, '
       'is_physical_place, google_place_id, use_exact_pin, created_by, created_at, updated_at, external_id, '
+      'cover_photo_id, '
       'profiles!sites_created_by_fkey(display_name, avatar_url), '
       'site_categories(categories(name_i18n)), '
-      'site_photos(storage_path, sort_order), '
+      'site_photos(id, storage_path, sort_order, created_at), '
       'site_contributors(user_id, created_at, profiles(display_name, avatar_url)))';
 
   /// Select liviano para Inicio (cards): sin contributors, notes, address, etc.
   static const _saveSelectSummary =
       'id, user_id, site_id, status, is_public, created_at, '
       'sites!user_saves_site_id_fkey(name, city, department, address_line, use_exact_pin, '
-      'google_place_id, '
+      'google_place_id, cover_photo_id, '
       'site_categories(categories(name_i18n)), '
-      'site_photos(storage_path, sort_order))';
+      'site_photos(id, storage_path, sort_order, created_at))';
+
+  static const _saveSelectSummaryLite =
+      'id, user_id, site_id, status, is_public, created_at, '
+      'sites!user_saves_site_id_fkey(name, city, department, address_line, use_exact_pin, '
+      'google_place_id, '
+      'site_categories(categories(name_i18n)))';
 
   String? get _uid => _client.auth.currentUser?.id;
 
@@ -59,16 +67,39 @@ class SavesRepository {
     final from = offset < 0 ? 0 : offset;
     final to = from + (limit < 1 ? 20 : limit) - 1;
 
-    final rows = await _client
-        .from('user_saves')
-        .select(_saveSelectSummary)
-        .eq('user_id', uid)
-        .order('created_at', ascending: false)
-        .range(from, to);
+    Future<List<dynamic>> query(String select) async {
+      final rows = await _client
+          .from('user_saves')
+          .select(select)
+          .eq('user_id', uid)
+          .order('created_at', ascending: false)
+          .range(from, to);
+      return rows as List<dynamic>;
+    }
 
-    return (rows as List)
-        .map((e) => UserSave.fromJoinedJson(Map<String, dynamic>.from(e as Map)))
-        .toList();
+    List<dynamic> rows;
+    try {
+      rows = await query(_saveSelectSummary);
+    } on PostgrestException catch (e) {
+      AppLog.error('listMineSummary', name: 'saves', error: e);
+      rows = await query(_saveSelectSummaryLite);
+    }
+
+    final out = <UserSave>[];
+    for (final e in rows) {
+      if (e is! Map) continue;
+      try {
+        out.add(UserSave.fromJoinedJson(Map<String, dynamic>.from(e)));
+      } catch (err, st) {
+        AppLog.error(
+          'listMineSummary row',
+          name: 'saves',
+          error: err,
+          stackTrace: st,
+        );
+      }
+    }
+    return out;
   }
 
   Future<List<PossibleDuplicate>> findPossibleDuplicates({
@@ -385,6 +416,31 @@ class SavesRepository {
     }
   }
 
+  Future<void> setSiteCoverPhoto({
+    required String siteId,
+    required String photoId,
+  }) async {
+    try {
+      final updated = await _client
+          .from('sites')
+          .update({'cover_photo_id': photoId})
+          .eq('id', siteId)
+          .select('cover_photo_id');
+      if (updated.isEmpty) {
+        throw const AppUserError(
+          'Solo el creador puede cambiar la portada del sitio.',
+        );
+      }
+    } on PostgrestException catch (e) {
+      if (e.code == '42501' || e.message.toLowerCase().contains('policy')) {
+        throw const AppUserError(
+          'Solo el creador puede cambiar la portada del sitio.',
+        );
+      }
+      throw const AppUserError('Error en la app. Intenta de nuevo.');
+    }
+  }
+
   Future<void> discardSave(String saveId) async {
     await _client.from('user_saves').delete().eq('id', saveId);
   }
@@ -683,6 +739,7 @@ class SavesRepository {
   static const _siteSelect =
       'id, name, city, department, address_line, is_public, is_physical_place, '
       'google_place_id, use_exact_pin, created_by, created_at, updated_at, external_id, '
+      'cover_photo_id, '
       'profiles!sites_created_by_fkey(display_name, avatar_url), '
       'site_categories(categories(name_i18n)), '
       'site_contributors(user_id, created_at, profiles(display_name, avatar_url))';

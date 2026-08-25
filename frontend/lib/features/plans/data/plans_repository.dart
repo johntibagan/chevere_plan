@@ -20,9 +20,9 @@ class PlansRepository {
       'plan_stops(id, plan_id, site_id, sort_order, visited_at, '
       'estimated_price_amount, lat, lng, '
       'sites(name, city, department, google_place_id, use_exact_pin, '
-      'estimated_price_amount, '
+      'estimated_price_amount, cover_photo_id, '
       'site_categories(categories(name_i18n)), '
-      'site_photos(storage_path, sort_order)))';
+      'site_photos(id, storage_path, sort_order, created_at)))';
 
   /// Listado liviano (cards): count de paradas sin hidratar cada stop.
   static const _planListSelect =
@@ -30,7 +30,8 @@ class PlansRepository {
       'include_public, max_budget_amount, currency_code, status, '
       'plan_stops(id, plan_id, site_id, sort_order, '
       'sites(name, site_categories(categories(name_i18n)), '
-      'site_photos(storage_path, sort_order)))';
+      'cover_photo_id, '
+      'site_photos(id, storage_path, sort_order, created_at)))';
 
   Future<List<PlanCandidate>> listCandidates({
     required String locationQuery,
@@ -361,8 +362,9 @@ class PlansRepository {
               categoryNames: categoryNamesFromJoin(
                 siteMap?['site_categories'],
               ),
-              coverStoragePath: firstCoverStoragePath(
-                siteMap?['site_photos'],
+              coverStoragePath: siteCoverStoragePath(
+                photos: siteMap?['site_photos'],
+                coverPhotoId: siteMap?['cover_photo_id'] as String?,
               ),
             ),
           );

@@ -688,6 +688,78 @@ abstract class AppLocalizations {
   /// **'Fotos'**
   String get siteDetailPhotos;
 
+  /// No description provided for @photoAddTooltip.
+  ///
+  /// In es, this message translates to:
+  /// **'Añadir foto'**
+  String get photoAddTooltip;
+
+  /// No description provided for @siteDetailPhotosEmptyManage.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin fotos. Usa el icono de cámara para añadir.'**
+  String get siteDetailPhotosEmptyManage;
+
+  /// No description provided for @siteDetailPhotosEmpty.
+  ///
+  /// In es, this message translates to:
+  /// **'Este sitio no tiene fotos.'**
+  String get siteDetailPhotosEmpty;
+
+  /// No description provided for @sitePhotoViewerClose.
+  ///
+  /// In es, this message translates to:
+  /// **'Cerrar'**
+  String get sitePhotoViewerClose;
+
+  /// No description provided for @sitePhotoViewerIndex.
+  ///
+  /// In es, this message translates to:
+  /// **'{current} de {total}'**
+  String sitePhotoViewerIndex(int current, int total);
+
+  /// No description provided for @sitePhotoMenuTooltip.
+  ///
+  /// In es, this message translates to:
+  /// **'Opciones de la foto'**
+  String get sitePhotoMenuTooltip;
+
+  /// No description provided for @sitePhotoSetAsCover.
+  ///
+  /// In es, this message translates to:
+  /// **'Usar como portada del sitio'**
+  String get sitePhotoSetAsCover;
+
+  /// No description provided for @sitePhotoAlreadyCover.
+  ///
+  /// In es, this message translates to:
+  /// **'Esta es la portada'**
+  String get sitePhotoAlreadyCover;
+
+  /// No description provided for @sitePhotoUploadedBy.
+  ///
+  /// In es, this message translates to:
+  /// **'Subida por {name}'**
+  String sitePhotoUploadedBy(String name);
+
+  /// No description provided for @sitePhotoUploadedAt.
+  ///
+  /// In es, this message translates to:
+  /// **'{date}'**
+  String sitePhotoUploadedAt(String date);
+
+  /// No description provided for @sitePhotoUploaderUnknown.
+  ///
+  /// In es, this message translates to:
+  /// **'alguien'**
+  String get sitePhotoUploaderUnknown;
+
+  /// No description provided for @photoCoverSet.
+  ///
+  /// In es, this message translates to:
+  /// **'Portada del sitio actualizada.'**
+  String get photoCoverSet;
+
   /// No description provided for @siteDetailSource.
   ///
   /// In es, this message translates to:

@@ -7,6 +7,7 @@ import '../../../core/cache/cache_ttl.dart';
 import '../../../core/di/providers.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_form_card.dart';
+import '../../../core/widgets/app_retry_callout.dart';
 import '../../../core/widgets/app_stat_card.dart';
 import '../../../core/widgets/app_toast.dart';
 import '../../../core/l10n/context_l10n.dart';
@@ -67,7 +68,7 @@ class _AdminPageState extends ConsumerState<AdminPage>
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _error = 'failed';
+        _error = 'retry';
         _loading = false;
       });
       AppToast.error(context, e, logContext: 'admin');
@@ -288,25 +289,7 @@ class _AdminPageState extends ConsumerState<AdminPage>
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
-              ? Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          l10n.errorLoadRetry,
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 12),
-                        FilledButton(
-                          onPressed: _load,
-                          child: Text(l10n.actionRetry),
-                        ),
-                      ],
-                    ),
-                  ),
-                )
+              ? Center(child: AppRetryCallout(onRetry: _load))
               : Column(
                   children: [
                     Padding(

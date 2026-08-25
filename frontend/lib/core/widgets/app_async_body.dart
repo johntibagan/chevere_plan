@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'app_retry_callout.dart';
+
 /// Cuerpo de lista con pull-to-refresh: loading / error / vacío / contenido.
 ///
 /// El [child] debe ser scrollable (p. ej. [ListView]) para que [RefreshIndicator]
@@ -12,12 +14,12 @@ class AppAsyncBody extends StatelessWidget {
     required this.isEmpty,
     required this.emptyMessage,
     required this.child,
-    this.error,
+    this.hasError = false,
     this.emptyAction,
   });
 
   final bool loading;
-  final String? error;
+  final bool hasError;
   final bool isEmpty;
   final String emptyMessage;
   final Future<void> Function() onRefresh;
@@ -37,16 +39,13 @@ class AppAsyncBody extends StatelessWidget {
                 Center(child: CircularProgressIndicator()),
               ],
             )
-          : error != null
+          : hasError
               ? ListView(
                   physics: const AlwaysScrollableScrollPhysics(),
                   padding: const EdgeInsets.all(24),
-                  children: const [
-                    SizedBox(height: 48),
-                    Text(
-                      'No se pudo cargar. Desliza para reintentar.',
-                      textAlign: TextAlign.center,
-                    ),
+                  children: [
+                    const SizedBox(height: 48),
+                    AppRetryCallout(onRetry: () { onRefresh(); }),
                   ],
                 )
               : isEmpty

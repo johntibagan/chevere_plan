@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 import '../errors/user_facing_error.dart';
 import '../theme/app_theme.dart';
 
-/// Avisos flotantes (toast). Preferir esto a texto de error incrustado en la UI.
+/// Avisos flotantes de **confirmación** o validación de formulario.
+/// Los errores técnicos no van aquí: [AppRetryCallout] en el bloque que falló.
 abstract final class AppToast {
   static void show(
     BuildContext context,
@@ -24,16 +25,14 @@ abstract final class AppToast {
     );
   }
 
+  /// Solo log. La UI de error es [AppRetryCallout], no un snackbar.
   static void error(
     BuildContext context,
     Object err, {
     StackTrace? stackTrace,
     String? logContext,
   }) {
-    show(
-      context,
-      userFacingError(err, stackTrace: stackTrace, context: logContext),
-      error: true,
-    );
+    userFacingError(err, stackTrace: stackTrace, context: logContext);
+    if (!context.mounted) return;
   }
 }

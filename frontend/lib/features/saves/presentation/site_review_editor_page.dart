@@ -74,7 +74,8 @@ class _SiteReviewEditorPageState extends ConsumerState<SiteReviewEditorPage> {
     }
     final file = await ImagePicker().pickImage(
       source: ImageSource.gallery,
-      imageQuality: 85,
+      imageQuality: 92,
+      maxWidth: 2560,
     );
     if (file == null) return;
     setState(() => _newPhotos.add(File(file.path)));

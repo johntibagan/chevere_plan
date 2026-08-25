@@ -177,6 +177,6 @@ class SearchFilters {
         budgetMin?.toString() ?? '',
         budgetMax?.toString() ?? '',
         includePublic ? '1' : '0',
-        'v5', // address_line en cards
+        'v6', // portada cover_photo_id
       ].join('|');
 }

@@ -13,7 +13,6 @@ import '../../../core/widgets/app_async_body.dart';
 import '../../../core/widgets/app_create_cta_card.dart';
 import '../../../core/widgets/app_section_label.dart';
 import '../../../core/widgets/app_status_pill.dart';
-import '../../../core/widgets/app_toast.dart';
 import '../../../core/widgets/site_cover.dart';
 import '../../../core/widgets/tab_screen_header.dart';
 import '../../saves/presentation/site_look_cover.dart';
@@ -83,13 +82,7 @@ class _PlansListPageState extends ConsumerState<PlansListPage> {
     final page = async.valueOrNull;
     final plans = page?.items ?? const <Plan>[];
     final loading = async.isLoading && page == null;
-    final error = async.hasError && page == null ? 'failed' : null;
-
-    ref.listen(plansProvider, (prev, next) {
-      if (next.hasError && !(prev?.hasError ?? false)) {
-        AppToast.error(context, next.error!);
-      }
-    });
+    final loadFailed = async.hasError && page == null;
 
     return Scaffold(
       key: WidgetKeys.plansList,
@@ -104,7 +97,7 @@ class _PlansListPageState extends ConsumerState<PlansListPage> {
             Expanded(
               child: AppAsyncBody(
                 loading: loading,
-                error: error,
+                hasError: loadFailed,
                 isEmpty: false,
                 emptyMessage: l10n.plansEmpty,
                 onRefresh: _refresh,

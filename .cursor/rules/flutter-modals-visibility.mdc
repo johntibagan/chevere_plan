@@ -12,8 +12,10 @@ Eso es un modal/sheet mal montado, no “datos vacíos”.
 
 ## Reglas
 
-1. **Galerías de fotos del sitio** → incrustadas en la ficha (`SiteDetailPage`),
-   no en otra pantalla ni bottom sheet. Acciones por foto con menú ⋮.
+1. **Galerías de fotos del sitio** → tira horizontal incrustada en la ficha
+   (`SiteDetailPage`), no un bottom sheet. Acciones por foto con menú ⋮.
+   Tocar una miniatura abre **página** a pantalla completa (`SitePhotoViewerPage`),
+   no un sheet.
 
 2. **Otras listas altas / formularios largos** → `Navigator.push` + `Scaffold`
    si no van embebidos en una ficha.

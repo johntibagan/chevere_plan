@@ -8,6 +8,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/di/providers.dart';
 import '../../../core/testing/widget_keys.dart';
+import '../../../core/widgets/app_retry_callout.dart';
 import '../../../core/widgets/app_toast.dart';
 import '../../../core/formatters/date_format.dart';
 import '../../../core/formatters/money_format.dart';
@@ -15,10 +16,11 @@ import '../../../core/l10n/context_l10n.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_network_image.dart';
 import '../../../core/widgets/site_cover.dart';
+import '../../../core/widgets/site_photo_overflow_button.dart';
+import '../../../core/widgets/site_photo_viewer_page.dart';
 import '../../../core/widgets/site_origin_tags.dart';
 import '../../../core/widgets/tab_screen_header.dart';
 import '../../../core/widgets/visibility_badge.dart';
-import '../../admin/data/admin_models.dart';
 import '../../auth/data/profile.dart';
 import '../../moderation/data/moderation_models.dart';
 import '../../search/data/search_models.dart';
@@ -28,6 +30,7 @@ import '../data/site_ficha.dart';
 import '../data/social_link_models.dart';
 import 'favorite_heart_button.dart';
 import 'save_place_page.dart';
+import 'site_look_cover.dart';
 import 'site_reviews_tab.dart';
 import 'site_status_l10n.dart';
 import 'social_link_preview_card.dart';
@@ -62,6 +65,7 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
 
   List<SitePhoto> _photos = const [];
   final Map<String, String> _photoUrls = {};
+  String? _coverPhotoId;
   bool _photosLoading = true;
   bool _photosBusy = false;
   List<SiteSocialLink> _socialLinks = const [];
@@ -70,6 +74,20 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
     final f = _ficha;
     if (f == null) return false;
     return f.isOwn || f.isCreatorOf(_uid) || _isStaff;
+  }
+
+  bool get _canSetCover =>
+      _ficha != null && (_ficha!.isCreatorOf(_uid) || _isStaff);
+
+  SitePhoto? get _headerPhoto {
+    if (_photos.isEmpty) return null;
+    final id = _coverPhotoId;
+    if (id != null) {
+      for (final p in _photos) {
+        if (p.id == id) return p;
+      }
+    }
+    return _photos.first;
   }
 
   @override
@@ -146,7 +164,7 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
         return;
       }
       setState(() {
-        _error = 'failed';
+        _error = 'retry';
         _loading = false;
       });
       AppToast.error(context, e, logContext: 'site_detail');
@@ -161,12 +179,19 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
       final urls = await moderation.signedPhotoUrlsParallel(
         photos.map((p) => (id: p.id, storagePath: p.storagePath)),
       );
+      final coverRow = await ref
+          .read(supabaseClientProvider)
+          .from('sites')
+          .select('cover_photo_id')
+          .eq('id', widget.siteId)
+          .maybeSingle();
       if (!mounted) return;
       setState(() {
         _photos = photos;
         _photoUrls
           ..clear()
           ..addAll(urls);
+        _coverPhotoId = coverRow?['cover_photo_id'] as String?;
         _photosLoading = false;
       });
     } catch (_) {
@@ -364,8 +389,8 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
 
     final picked = await ImagePicker().pickImage(
       source: ImageSource.gallery,
-      imageQuality: 85,
-      maxWidth: 2000,
+      imageQuality: 92,
+      maxWidth: 2560,
     );
     if (picked == null || !mounted) return;
 
@@ -466,6 +491,32 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
         _deletePhoto(photo);
       case 'report':
         _reportPhoto(photo);
+      case 'cover':
+        _setCoverPhoto(photo);
+    }
+  }
+
+  Future<void> _setCoverPhoto(SitePhoto photo) async {
+    if (_coverPhotoId == photo.id) return;
+    setState(() => _photosBusy = true);
+    try {
+      await ref.read(savesRepositoryProvider).setSiteCoverPhoto(
+            siteId: widget.siteId,
+            photoId: photo.id,
+          );
+      if (!mounted) return;
+      setState(() => _coverPhotoId = photo.id);
+      ref.invalidate(siteLookProvider(widget.siteId));
+      ref.invalidate(mySavesProvider);
+      ref.invalidate(homeNearbyProvider);
+      ref.invalidate(plansProvider);
+      ref.invalidate(siteFichaProvider(widget.siteId));
+      AppToast.show(context, context.l10n.photoCoverSet);
+    } catch (e) {
+      if (!mounted) return;
+      AppToast.error(context, e);
+    } finally {
+      if (mounted) setState(() => _photosBusy = false);
     }
   }
 
@@ -557,20 +608,15 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
-                    SiteCoverCarousel(
-                      imageUrls: [
-                        for (final p in _photos)
-                          if ((_photoUrls[p.id] ?? '').isNotEmpty)
-                            _photoUrls[p.id]!,
-                      ],
-                      categoryHint: Category.parentNameEs(
-                        ref.watch(
-                          categoriesProvider.select(
-                            (a) => a.valueOrNull ?? const <Category>[],
-                          ),
-                        ),
-                        ficha.categoryNames,
-                      ),
+                    SiteLookCover(
+                      siteId: widget.siteId,
+                      categoryNames: ficha.categoryNames,
+                      coverStoragePath: _headerPhoto?.storagePath ??
+                          ficha.ownSave?.coverStoragePath ??
+                          widget.initialHit?.coverStoragePath,
+                      imageUrl: _headerPhoto == null
+                          ? null
+                          : _photoUrls[_headerPhoto!.id],
                     ),
                     const SiteCoverScrim(),
                     Align(
@@ -630,23 +676,7 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
                   ? const Center(child: CircularProgressIndicator())
                   : _error != null && ficha == null
                 ? Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(24),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            l10n.errorLoadRetry,
-                            textAlign: TextAlign.center,
-                          ),
-                          const SizedBox(height: 16),
-                          FilledButton(
-                            onPressed: _load,
-                            child: Text(l10n.actionRetry),
-                          ),
-                        ],
-                      ),
-                    ),
+                    child: AppRetryCallout(onRetry: _load),
                   )
                 : TabBarView(
                     controller: _tabs,
@@ -668,6 +698,8 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
                                 ? _addPhoto
                                 : null,
                         onPhotoMenu: _onPhotoMenu,
+                        canSetCover: _canSetCover,
+                        coverPhotoId: _coverPhotoId,
                         onOpenLink: _openUrl,
                         onOpenPlaceOnMaps: _canOpenMaps(ficha)
                             ? () => _openPlaceOnMaps(ficha)
@@ -704,6 +736,8 @@ class _InfoTab extends StatelessWidget {
     required this.photosBusy,
     required this.socialLinks,
     required this.onPhotoMenu,
+    required this.canSetCover,
+    this.coverPhotoId,
     required this.onOpenLink,
     this.isStaff = false,
     this.staffRoleLabel,
@@ -719,6 +753,8 @@ class _InfoTab extends StatelessWidget {
   final bool photosBusy;
   final List<SiteSocialLink> socialLinks;
   final void Function(SitePhoto photo, String action) onPhotoMenu;
+  final bool canSetCover;
+  final String? coverPhotoId;
   final void Function(String? url) onOpenLink;
   final bool isStaff;
   final String? staffRoleLabel;
@@ -806,6 +842,8 @@ class _InfoTab extends StatelessWidget {
           loading: photosLoading,
           busy: photosBusy,
           canManage: onAddPhoto != null,
+          canSetCover: canSetCover,
+          coverPhotoId: coverPhotoId,
           onAddPhoto: onAddPhoto,
           onPhotoMenu: onPhotoMenu,
         ),
@@ -1116,6 +1154,8 @@ class _GallerySection extends StatelessWidget {
     required this.loading,
     required this.busy,
     required this.canManage,
+    required this.canSetCover,
+    this.coverPhotoId,
     required this.onPhotoMenu,
     this.onAddPhoto,
   });
@@ -1125,6 +1165,8 @@ class _GallerySection extends StatelessWidget {
   final bool loading;
   final bool busy;
   final bool canManage;
+  final bool canSetCover;
+  final String? coverPhotoId;
   final void Function(SitePhoto photo, String action) onPhotoMenu;
   final VoidCallback? onAddPhoto;
 
@@ -1137,7 +1179,7 @@ class _GallerySection extends StatelessWidget {
       title: l10n.siteDetailPhotos,
       trailing: canManage
           ? IconButton(
-              tooltip: 'Añadir foto',
+              tooltip: l10n.photoAddTooltip,
               onPressed: busy ? null : onAddPhoto,
               icon: const Icon(Icons.add_a_photo_outlined, size: 20),
             )
@@ -1156,25 +1198,71 @@ class _GallerySection extends StatelessWidget {
           : photos.isEmpty
               ? Text(
                   canManage
-                      ? 'Sin fotos. Usa el icono de cámara para añadir.'
-                      : 'Este sitio no tiene fotos.',
+                      ? l10n.siteDetailPhotosEmptyManage
+                      : l10n.siteDetailPhotosEmpty,
                   style: const TextStyle(color: AppColors.muted),
                 )
               : SizedBox(
-                  height: 148,
+                  height: _PhotoTile.stripHeight,
                   child: ListView.separated(
                     scrollDirection: Axis.horizontal,
+                    clipBehavior: Clip.none,
                     itemCount: photos.length,
-                    separatorBuilder: (_, _) => const SizedBox(width: 10),
+                    separatorBuilder: (_, _) => const SizedBox(width: 8),
                     itemBuilder: (context, index) {
                       final photo = photos[index];
                       final url = photoUrls[photo.id];
+                      String? effectiveCover = coverPhotoId;
+                      if (effectiveCover != null) {
+                        final exists = photos.any((p) => p.id == effectiveCover);
+                        if (!exists) effectiveCover = null;
+                      }
+                      effectiveCover ??= photos.first.id;
                       return _PhotoTile(
                         url: url,
                         cacheKey: photo.id,
                         canDelete: canManage,
+                        canSetCover: canSetCover,
+                        isCover: photo.id == effectiveCover,
                         busy: busy,
                         onMenu: (action) => onPhotoMenu(photo, action),
+                        onOpen: () {
+                          final items = <SitePhotoViewItem>[];
+                          var start = 0;
+                          for (final p in photos) {
+                            final u = photoUrls[p.id];
+                            if (u == null || u.isEmpty) continue;
+                            if (p.id == photo.id) start = items.length;
+                            items.add(
+                              SitePhotoViewItem(
+                                id: p.id,
+                                url: u,
+                                cacheKey: p.id,
+                                uploaderName: p.uploaderName,
+                                uploadedAt: p.createdAt,
+                                canDelete: canManage,
+                                canSetCover: canSetCover,
+                                isCover: p.id == effectiveCover,
+                              ),
+                            );
+                          }
+                          SitePhotoViewerPage.open(
+                            context,
+                            photos: items,
+                            initialIndex: start,
+                            onMenu: (item, action) {
+                              SitePhoto? match;
+                              for (final p in photos) {
+                                if (p.id == item.id) {
+                                  match = p;
+                                  break;
+                                }
+                              }
+                              if (match == null) return;
+                              onPhotoMenu(match, action);
+                            },
+                          );
+                        },
                       );
                     },
                   ),
@@ -1188,81 +1276,72 @@ class _PhotoTile extends StatelessWidget {
     required this.url,
     required this.cacheKey,
     required this.canDelete,
+    required this.canSetCover,
+    required this.isCover,
     required this.busy,
     required this.onMenu,
+    required this.onOpen,
   });
+
+  static const stripHeight = 160.0;
 
   final String? url;
   final String cacheKey;
   final bool canDelete;
+  final bool canSetCover;
+  final bool isCover;
   final bool busy;
   final ValueChanged<String> onMenu;
+  final VoidCallback onOpen;
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: 140,
-      child: Stack(
-        children: [
-          Positioned.fill(
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: url != null && url!.isNotEmpty
-                  ? AppNetworkImage(
-                      url: url!,
-                      cacheKey: cacheKey,
-                      width: 140,
-                      height: 148,
-                      fit: BoxFit.cover,
-                    )
-                  : ColoredBox(
-                      color: AppColors.surfaceElevated,
-                      child: const Icon(
-                        Icons.broken_image,
-                        color: AppColors.muted,
+    final hasUrl = url != null && url!.isNotEmpty;
+    return GestureDetector(
+      onTap: hasUrl ? onOpen : null,
+      child: SizedBox(
+        height: stripHeight,
+        child: Stack(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: hasUrl
+                  ? UnconstrainedBox(
+                      constrainedAxis: Axis.vertical,
+                      alignment: Alignment.centerLeft,
+                      child: AppNetworkImage(
+                        url: url!,
+                        cacheKey: cacheKey,
+                        height: stripHeight,
+                        fit: BoxFit.fitHeight,
+                        quality: AppImageQuality.photo,
                       ),
-                    ),
-            ),
-          ),
-          Positioned(
-            top: 4,
-            right: 4,
-            child: Material(
-              color: AppColors.scrim,
-              shape: const CircleBorder(),
-              child: PopupMenuButton<String>(
-                enabled: !busy,
-                padding: EdgeInsets.zero,
-                icon: const Icon(Icons.more_vert, color: AppColors.onImage, size: 20),
-                onSelected: onMenu,
-                itemBuilder: (context) {
-                  final l10n = context.l10n;
-                  return [
-                    if (canDelete)
-                      PopupMenuItem(
-                        value: 'delete',
-                        child: ListTile(
-                          dense: true,
-                          contentPadding: EdgeInsets.zero,
-                          leading: const Icon(Icons.delete_outline),
-                          title: Text(l10n.actionDelete),
+                    )
+                  : SizedBox(
+                      width: stripHeight * 0.72,
+                      height: stripHeight,
+                      child: const ColoredBox(
+                        color: AppColors.surfaceElevated,
+                        child: Icon(
+                          Icons.broken_image,
+                          color: AppColors.muted,
                         ),
                       ),
-                    PopupMenuItem(
-                      value: 'report',
-                      child: ListTile(
-                        dense: true,
-                        contentPadding: EdgeInsets.zero,
-                        leading: const Icon(Icons.flag_outlined),
-                        title: Text(l10n.actionReport),
-                      ),
                     ),
-                  ];
-                },
+            ),
+            Positioned(
+              top: 4,
+              right: 4,
+              child: SitePhotoOverflowButton(
+                enabled: !busy,
+                canDelete: canDelete,
+                canSetCover: canSetCover,
+                isCover: isCover,
+                onSelected: onMenu,
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

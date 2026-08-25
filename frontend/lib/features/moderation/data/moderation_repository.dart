@@ -15,9 +15,13 @@ class ModerationRepository {
   Future<List<SitePhoto>> listSitePhotos(String siteId) async {
     final rows = await _client
         .from('site_photos')
-        .select('id, site_id, storage_path, uploaded_by')
+        .select(
+          'id, site_id, storage_path, uploaded_by, created_at, '
+          'profiles!site_photos_uploaded_by_fkey(display_name)',
+        )
         .eq('site_id', siteId)
-        .order('sort_order');
+        .order('sort_order')
+        .order('created_at');
     return (rows as List<dynamic>)
         .map((e) => SitePhoto.fromJson(Map<String, dynamic>.from(e as Map)))
         .toList();

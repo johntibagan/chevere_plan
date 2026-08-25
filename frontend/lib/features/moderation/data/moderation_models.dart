@@ -4,19 +4,32 @@ class SitePhoto {
     required this.siteId,
     required this.storagePath,
     this.uploadedBy,
+    this.uploaderName,
+    this.createdAt,
   });
 
   final String id;
   final String siteId;
   final String storagePath;
   final String? uploadedBy;
+  final String? uploaderName;
+  final DateTime? createdAt;
 
   factory SitePhoto.fromJson(Map<String, dynamic> json) {
+    String? uploaderName;
+    final profiles = json['profiles'];
+    if (profiles is Map) {
+      uploaderName = profiles['display_name'] as String?;
+    }
+    final createdRaw = json['created_at'] as String?;
+    final name = uploaderName?.trim();
     return SitePhoto(
       id: json['id'] as String,
       siteId: json['site_id'] as String,
       storagePath: json['storage_path'] as String,
       uploadedBy: json['uploaded_by'] as String?,
+      uploaderName: (name != null && name.isNotEmpty) ? name : null,
+      createdAt: createdRaw == null ? null : DateTime.tryParse(createdRaw),
     );
   }
 }

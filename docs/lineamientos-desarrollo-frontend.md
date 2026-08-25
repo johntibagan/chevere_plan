@@ -54,7 +54,7 @@ Esta es la sección más crítica del documento. Ninguna funcionalidad nueva se 
   | Planes / rutas | 5–10 min | 24 h |
   | Búsqueda | 1–2 min por query | 30–60 min |
   | Populares cerca (Inicio) | misma celda (~2 km) | 24 h |
-- **Imágenes**: `cached_network_image` en todo lugar donde se muestren fotos, con límite explícito de caché en disco/memoria (para no generar crashes en equipos de gama media/baja) y `memCacheWidth/Height` acotado según el tamaño real mostrado en pantalla.
+- **Imágenes**: `cached_network_image` en todo lugar donde se muestren fotos, con límite explícito de caché en disco/memoria (para no generar crashes en equipos de gama media/baja). Decode en **un solo eje**, tope 2048 px: tira de fotos ~2× el alto (mín. 720); visor = lado largo de la pantalla (mín. 1080). No decodificar a ~400 px. Al subir: JPEG calidad ~92, lado largo ≤ 2560.
 - **Selectores/autocompletados que dependen de catálogos "fríos"** (categorías, ubicación) deben resolverse 100% desde memoria/disco tras la primera sincronización, sin golpe de red por interacción del usuario, incluso sin conexión.
 - **Paginación y lazy loading** en toda lista potencialmente larga (Inicio, Explorar, Mis rutas). Nunca traer todo de una vez.
 - **Prefetching liviano** de la pantalla siguiente probable en momentos de inactividad del usuario, sin consumir datos móviles de forma agresiva.
@@ -67,10 +67,10 @@ Esta es la sección más crítica del documento. Ninguna funcionalidad nueva se 
 
 ## 5. Manejo de errores (regla no negociable)
 
-- Nunca mostrar en la UI mensajes técnicos: nada de PostgREST, SQL, stack traces, nombres de tablas/FK, códigos `PGRST*`, paths, tokens, keys, SDKs, Gradle, etc.
-- Solo mensajes de negocio claros (ej. "Máximo 15 fotos por sitio").
-- Ante cualquier fallo técnico o de infraestructura (incluida caché corrupta o falla de red), mostrar únicamente algo genérico: **"Error en la app. Intenta de nuevo."**
-- El detalle técnico se registra en logs de depuración (`developer.log`/consola), nunca en pantalla.
+- Nunca mostrar en la UI mensajes técnicos: nada de PostgREST, SQL, stack traces, nombres de tablas/FK, códigos `PGRST*`, paths, tokens, keys, SDKs, Gradle, `failed`, etc.
+- Solo mensajes de negocio claros (ej. "Máximo 15 fotos por sitio") en el formulario o campo, no como toast de error de red.
+- Ante fallo técnico o de red: en **el mismo bloque** (Guardados recientes, Explorar, ficha…), **"Error en la app. Intenta de nuevo."** Tocar reintenta esa carga. Sin snackbar rojo.
+- El detalle técnico se registra en logs de depuración (`developer.log`/`AppLog`), nunca en pantalla.
 
 ## 6. UX — pantallas intuitivas y formularios rápidos
 

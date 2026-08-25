@@ -74,9 +74,9 @@ Alto riesgo: `save_place_page.dart`, `google_maps_link_importer.dart`, `save_pol
 - Público = verde; privado = morado. Si ya hay borde/franja de color, **no** repetir “Público/Privado”.
 - Corazón = **favorito** del usuario (`site_favorites`), no “es tuyo”. Relleno si está marcado. No crear un `user_saves` ni tocar coords al favoritar.
 - Listas clicables: chevron; fecha si aporta.
-- Errores en UI: mensaje de negocio o **"Error en la app. Intenta de nuevo."** Nunca SQL, PostgREST, stacks, keys.
+- Errores en UI: **en el bloque que falló**, texto **"Error en la app. Intenta de nuevo."**; tocarlo reintenta. Nunca “failed”, SQL, PostgREST, stacks, keys. **No** toasts de error técnico. Detalle en `developer.log`.
 - Modales: nada de barrier sin contenido. Fotos del sitio en la ficha, no en sheet.
-- Portada: el **mismo sitio** se ve igual en lista, tarjeta, ficha, planes y rutas (`SiteLookCover`: padre + primera foto). Un plan muestra el primer sitio, no una ilustración del plan. Ficha con varias fotos = carrusel. Verde/morado de visibilidad se mantiene.
+- Portada: el **mismo sitio** se ve igual en lista, tarjeta, ficha, planes y rutas (`SiteLookCover`: padre + foto de encabezado). Encabezado = portada elegida (`sites.cover_photo_id`) o, si no hay, la primera foto. Miniaturas = esa misma foto. En visor: autor, fecha, ⋮, asignar portada. Verde/morado de visibilidad se mantiene.
 
 ## Datos
 

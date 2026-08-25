@@ -385,7 +385,7 @@ class UserSave {
   }
 
   factory UserSave.fromJoinedJson(Map<String, dynamic> json) {
-    final site = Map<String, dynamic>.from(json['sites'] as Map? ?? {});
+    final site = joinMap(json['sites']);
     final catsRaw = site['site_categories'] as List? ?? const [];
     final names = categoryNamesFromJoin(catsRaw);
     final createdBy = site['created_by'] as String?;
@@ -447,9 +447,28 @@ class UserSave {
       isPhysicalPlace: site['is_physical_place'] as bool? ?? true,
       googlePlaceId: site['google_place_id'] as String?,
       useExactPin: parsePgBool(site['use_exact_pin']),
-      coverStoragePath: firstCoverStoragePath(site['site_photos']),
+      coverStoragePath: siteCoverStoragePath(
+        photos: site['site_photos'],
+        coverPhotoId: site['cover_photo_id'] as String?,
+      ),
     );
   }
+}
+
+String? siteCoverStoragePath({
+  required Object? photos,
+  String? coverPhotoId,
+}) {
+  final id = coverPhotoId?.trim();
+  if (id != null && id.isNotEmpty && photos is List) {
+    for (final e in photos) {
+      if (e is! Map) continue;
+      if (e['id']?.toString() != id) continue;
+      final path = e['storage_path'] as String?;
+      if (path != null && path.trim().isNotEmpty) return path.trim();
+    }
+  }
+  return firstCoverStoragePath(photos);
 }
 
 String? firstCoverStoragePath(Object? raw) {
@@ -462,7 +481,11 @@ String? firstCoverStoragePath(Object? raw) {
   rows.sort((a, b) {
     final sa = (a['sort_order'] as num?)?.toInt() ?? 0;
     final sb = (b['sort_order'] as num?)?.toInt() ?? 0;
-    return sa.compareTo(sb);
+    final byOrder = sa.compareTo(sb);
+    if (byOrder != 0) return byOrder;
+    final ta = a['created_at'] as String? ?? '';
+    final tb = b['created_at'] as String? ?? '';
+    return ta.compareTo(tb);
   });
   final path = rows.first['storage_path'] as String?;
   if (path == null || path.trim().isEmpty) return null;
@@ -485,6 +508,16 @@ List<String> categoryNamesFromJoin(Object? raw) {
   return names;
 }
 
+Map<String, dynamic> joinMap(Object? raw) {
+  if (raw is Map) return Map<String, dynamic>.from(raw);
+  if (raw is List) {
+    for (final e in raw) {
+      if (e is Map) return Map<String, dynamic>.from(e);
+    }
+  }
+  return {};
+}
+
 class SiteLook {
   const SiteLook({
     this.categoryNames = const [],
@@ -498,7 +531,10 @@ class SiteLook {
     if (site == null) return const SiteLook();
     return SiteLook(
       categoryNames: categoryNamesFromJoin(site['site_categories']),
-      coverStoragePath: firstCoverStoragePath(site['site_photos']),
+      coverStoragePath: siteCoverStoragePath(
+        photos: site['site_photos'],
+        coverPhotoId: site['cover_photo_id'] as String?,
+      ),
     );
   }
 }

@@ -28,7 +28,7 @@ Catálogos fríos (categorías, depto/ciudad) **solo** desde memoria/disco tras 
 
 ## Errores (no negociable)
 
-UI: solo negocio o **"Error en la app. Intenta de nuevo."** Nunca PostgREST, SQL, stacks, keys. Detalle en `developer.log`.
+UI: en el bloque que falló, **"Error en la app. Intenta de nuevo."** (tocar = reintentar). Nunca PostgREST, SQL, stacks, keys, `failed`. Sin toast de error técnico. Detalle en `developer.log`.
 
 ## Formularios / UX
 

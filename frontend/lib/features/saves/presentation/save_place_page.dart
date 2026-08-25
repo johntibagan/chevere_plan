@@ -956,7 +956,8 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
     final picker = ImagePicker();
     final file = await picker.pickImage(
       source: ImageSource.gallery,
-      imageQuality: 85,
+      imageQuality: 92,
+      maxWidth: 2560,
     );
     if (file == null) return;
     setState(() => _pendingPhoto = File(file.path));

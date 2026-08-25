@@ -45,7 +45,7 @@ sequenceDiagram
 | **Planes** | Tus itinerarios (tarjeta de crear + lista; **un solo** CTA, sin FAB duplicado) |
 | **Rutas** | Historial de paradas visitadas (stats del listado + timeline Make). Admin no vive acá |
 
-Los tabs que ya abriste se quedan en memoria para que cambiar de pestaña se sienta instantáneo. Las listas pintan caché primero y refrescan detrás.
+Los tabs que ya abriste se quedan en memoria para que cambiar de pestaña se sienta instantáneo. Las listas pintan caché primero y refrescan detrás. Si una sección no carga, ves **Error en la app. Intenta de nuevo.** y al tocarlo se reintenta; no hay toasts de error ni la palabra “failed”.
 
 **Atrás en el shell:** si estás en Explorar, Planes o Rutas, el botón atrás vuelve a **Inicio**. En Inicio, el primer atrás muestra “Pulsa atrás otra vez para salir”; el segundo (en ~2 s) cierra la app. En fichas, guardar, mapas, etc. atrás sigue cerrando esa pantalla.
 
@@ -129,7 +129,7 @@ Staff/admin **no** ve bitácoras ajenas privadas.
 
 Tres pestañas: **info**, **reseñas**, **más** (quién lo creó, catálogo, fechas, “también lo guardaron”).
 
-En info: nombre, visibilidad por color/icono (hero con franja), ciudad, pin, abrir/cómo llegar en Google Maps, categorías, precio, notas, fotos embebidas (menú ⋮ por foto: no un sheet vacío), enlaces. En el header, corazón de **favorito** (igual que en las cards). **No** hay “agregar a un plan” en esta ficha.
+En info: nombre, visibilidad por color/icono (hero con franja), ciudad, pin, abrir/cómo llegar en Google Maps, categorías, precio, notas, fotos en tira horizontal (altura fija, ancho proporcional; menú ⋮: portada / eliminar / reportar). Tocar una foto la abre a pantalla completa (quién la subió, cuándo, mismo menú, swipe). Enlaces. En el header, corazón de **favorito** (igual que en las cards). **No** hay “agregar a un plan” en esta ficha.
 
 Editar: creador, quien lo tiene en su lista como propio, o staff sobre **público**.
 
@@ -208,7 +208,7 @@ En Inicio, arriba de **Guardados recientes**, elegís **lista** o **cuadrícula 
 
 Las cards/listas muestran **nombre**, **departamento - municipio** y **dirección** si hay. Si el texto no cabe en el alto de la tarjeta, esa zona hace **scroll**.
 
-Sin foto: ilustración de la **categoría padre** (`SiteLookCover`), la misma en Inicio, Explorar, **Planes** (la card usa el primer sitio) y Rutas. Con fotos: primera en listas; carrusel en la ficha.
+Sin foto: ilustración de la **categoría padre** (`SiteLookCover`), la misma en Inicio, Explorar, **Planes** (la card usa el primer sitio) y Rutas. Con fotos: encabezado = **portada** (elegida o la primera), igual en tarjetas/listas y ficha. En el visor: autor, fecha y ⋮. El resto se ve en la tira de la ficha.
 
 ```mermaid
 flowchart TD

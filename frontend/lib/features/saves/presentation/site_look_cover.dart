@@ -6,6 +6,9 @@ import '../../../core/widgets/site_cover.dart';
 import '../../admin/data/admin_models.dart';
 
 /// Portada de **un sitio**: igual en lista, grilla, ficha, planes y rutas.
+///
+/// La foto es la de encabezado (`cover_photo_id`, o la primera si no hay).
+/// Las miniaturas de tarjetas y listas usan esa misma portada.
 class SiteLookCover extends ConsumerWidget {
   const SiteLookCover({
     super.key,

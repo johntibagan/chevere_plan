@@ -330,6 +330,49 @@ class AppLocalizationsEs extends AppLocalizations {
   String get siteDetailPhotos => 'Fotos';
 
   @override
+  String get photoAddTooltip => 'Añadir foto';
+
+  @override
+  String get siteDetailPhotosEmptyManage =>
+      'Sin fotos. Usa el icono de cámara para añadir.';
+
+  @override
+  String get siteDetailPhotosEmpty => 'Este sitio no tiene fotos.';
+
+  @override
+  String get sitePhotoViewerClose => 'Cerrar';
+
+  @override
+  String sitePhotoViewerIndex(int current, int total) {
+    return '$current de $total';
+  }
+
+  @override
+  String get sitePhotoMenuTooltip => 'Opciones de la foto';
+
+  @override
+  String get sitePhotoSetAsCover => 'Usar como portada del sitio';
+
+  @override
+  String get sitePhotoAlreadyCover => 'Esta es la portada';
+
+  @override
+  String sitePhotoUploadedBy(String name) {
+    return 'Subida por $name';
+  }
+
+  @override
+  String sitePhotoUploadedAt(String date) {
+    return '$date';
+  }
+
+  @override
+  String get sitePhotoUploaderUnknown => 'alguien';
+
+  @override
+  String get photoCoverSet => 'Portada del sitio actualizada.';
+
+  @override
   String get siteDetailSource => 'Origen';
 
   @override

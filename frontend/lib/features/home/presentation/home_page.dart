@@ -7,6 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/cache/session_cache_cleanup.dart';
 import '../../../core/di/providers.dart';
 import '../../../core/l10n/context_l10n.dart';
+import '../../../core/widgets/app_retry_callout.dart';
 import '../../../core/widgets/app_toast.dart';
 import '../../../core/prefetch/site_prefetch.dart';
 import '../../../core/theme/app_theme.dart';
@@ -170,7 +171,7 @@ class _HomePageState extends ConsumerState<HomePage> {
       if (!mounted) return;
       setState(() {
         _loading = false;
-        _error = 'failed';
+        _error = 'retry';
       });
       AppToast.error(context, e, logContext: 'home_load');
     }
@@ -765,12 +766,10 @@ class _InicioTab extends ConsumerWidget {
               )
             else if (error != null)
               SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                  child: Text(
-                    error!,
-                    style: const TextStyle(color: AppColors.accent),
-                  ),
+                child: AppRetryCallout(
+                  onRetry: () {
+                    onRefresh();
+                  },
                 ),
               )
             else if (saves.isEmpty)

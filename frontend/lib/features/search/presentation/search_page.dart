@@ -10,6 +10,7 @@ import '../../../core/widgets/app_toast.dart';
 import '../../../core/l10n/context_l10n.dart';
 import '../../../core/prefetch/site_prefetch.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/app_retry_callout.dart';
 import '../../../core/widgets/app_search_field.dart';
 import '../../../core/widgets/app_select_chip.dart';
 import '../../../core/prefs/feed_layout.dart';
@@ -44,6 +45,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
   bool _includePublic = true;
   bool _useMyLocation = false;
   bool _loading = false;
+  bool _searchFailed = false;
   List<SearchHit> _hits = const [];
   bool _searched = false;
   int _visibleCount = PagedItems.defaultPageSize;
@@ -106,6 +108,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
     setState(() {
       _loading = true;
       _searched = true;
+      _searchFailed = false;
       _hits = const [];
       _visibleCount = PagedItems.defaultPageSize;
     });
@@ -155,7 +158,10 @@ class _SearchPageState extends ConsumerState<SearchPage> {
           );
     } catch (e, st) {
       if (!mounted) return;
-      setState(() => _loading = false);
+      setState(() {
+        _loading = false;
+        _searchFailed = true;
+      });
       AppToast.error(context, e, stackTrace: st, logContext: 'search');
     }
   }
@@ -492,6 +498,10 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                         padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
                         child: Text(l10n.searchEmptyHint),
                       ),
+                    )
+                  else if (_searchFailed)
+                    SliverToBoxAdapter(
+                      child: AppRetryCallout(onRetry: _runSearch),
                     )
                   else if (_hits.isEmpty)
                     SliverToBoxAdapter(

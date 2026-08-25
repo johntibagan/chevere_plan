@@ -56,7 +56,7 @@ class _AdminReportsPageState extends State<AdminReportsPage> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _error = 'failed';
+        _error = 'retry';
         _loading = false;
       });
       AppToast.error(context, e, logContext: 'admin_reports');
@@ -83,7 +83,7 @@ class _AdminReportsPageState extends State<AdminReportsPage> {
       appBar: AppBar(title: Text(l10n.reportsTitle)),
       body: AppAsyncBody(
         loading: _loading,
-        error: _error,
+        hasError: _error != null,
         isEmpty: _reports.isEmpty,
         emptyMessage: l10n.reportsEmpty,
         onRefresh: _load,

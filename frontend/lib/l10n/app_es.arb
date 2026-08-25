@@ -144,6 +144,34 @@
   },
   "siteDetailTraceEmpty": "Sin más datos de trazabilidad por ahora.",
   "siteDetailPhotos": "Fotos",
+  "photoAddTooltip": "Añadir foto",
+  "siteDetailPhotosEmptyManage": "Sin fotos. Usa el icono de cámara para añadir.",
+  "siteDetailPhotosEmpty": "Este sitio no tiene fotos.",
+  "sitePhotoViewerClose": "Cerrar",
+  "sitePhotoViewerIndex": "{current} de {total}",
+  "@sitePhotoViewerIndex": {
+    "placeholders": {
+      "current": {"type": "int"},
+      "total": {"type": "int"}
+    }
+  },
+  "sitePhotoMenuTooltip": "Opciones de la foto",
+  "sitePhotoSetAsCover": "Usar como portada del sitio",
+  "sitePhotoAlreadyCover": "Esta es la portada",
+  "sitePhotoUploadedBy": "Subida por {name}",
+  "@sitePhotoUploadedBy": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "sitePhotoUploadedAt": "{date}",
+  "@sitePhotoUploadedAt": {
+    "placeholders": {
+      "date": {"type": "String"}
+    }
+  },
+  "sitePhotoUploaderUnknown": "alguien",
+  "photoCoverSet": "Portada del sitio actualizada.",
   "siteDetailSource": "Origen",
   "siteDetailNotPhysical": "No es lugar físico",
   "siteDetailReviewsSoonTitle": "Reseñas próximamente",

@@ -55,14 +55,14 @@ class _MyRoutesPageState extends ConsumerState<MyRoutesPage> {
     final async = ref.watch(routesProvider);
     final all = async.valueOrNull ?? const <RouteHistoryEntry>[];
     final loading = async.isLoading && async.valueOrNull == null;
-    final error = async.hasError && async.valueOrNull == null ? 'failed' : null;
+    final loadFailed = async.hasError && async.valueOrNull == null;
     final visible = all.take(_visible).toList();
     final hasMore = _visible < all.length;
 
     final stats = RouteStats.fromEntries(all);
 
     ref.listen(routesProvider, (prev, next) {
-      if (next.hasError && !(prev?.hasError ?? false)) {
+      if (next.hasError && !(prev?.hasError ?? false) && next.error != null) {
         AppToast.error(context, next.error!);
       }
       next.whenData((entries) {
@@ -85,7 +85,7 @@ class _MyRoutesPageState extends ConsumerState<MyRoutesPage> {
             Expanded(
               child: AppAsyncBody(
                 loading: loading,
-                error: error,
+                hasError: loadFailed,
                 isEmpty: false,
                 emptyMessage: l10n.routesEmpty,
                 onRefresh: _refresh,

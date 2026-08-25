@@ -1,0 +1,22 @@
+---
+description: Errores en UI — sin toast, sin “failed”, reintentar en el lugar
+alwaysApply: true
+---
+
+# Errores en pantalla (Chevere Plan)
+
+## Qué ve el usuario
+
+- Un fallo de **carga o de una acción** se muestra **en el mismo bloque** que falló.
+- Texto único: **"Error en la app. Intenta de nuevo."** (`errorGeneric`). Tocar ese texto **reintenta** la llamada (lista, sección, ficha, búsqueda…).
+- Toasts/snackbars **no** son para errores técnicos ni de red. Sí para confirmaciones (foto añadida, “pulsa atrás otra vez para salir”) y validaciones de formulario (nombre vacío, etc.).
+
+## Prohibido
+
+- Pintar `failed`, `error`, códigos PostgREST, SQL, stacks, “Exception”.
+- `AppToast.error` en pantalla (solo log).
+- Un toast rojo + “failed” en Guardados recientes u otra sección.
+
+## Detalle técnico
+
+Va a `developer.log` / `AppLog`, nunca a la UI.

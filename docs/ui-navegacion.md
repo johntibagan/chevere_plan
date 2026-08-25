@@ -17,7 +17,7 @@ Contratos que no se pueden romper: [`invariantes.md`](invariantes.md).
 2. Respetar **tokens** (§3) y **señales** (§4). No introducir tema claro ni iOS-only.
 3. Mejorar jerarquía, ritmo, fotos, iconografía y microcopy **sin** agregar flujos (favoritos = solo el corazón; no hay IA, no hay admin en Rutas).
 4. **Guardar lugar:** el CTA **Guardar** va **abajo**, ancho, al alcance del pulgar. El Make a veces lo pone en el AppBar: **no replicar eso**.
-5. Las fotos de sitios: en listas la **primera**; en la ficha **carrusel**. Sin foto, ilustración de la **categoría padre**. El mismo sitio se ve igual en Inicio, Explorar, Planes y Rutas.
+5. Las fotos de sitios: encabezado = **portada** (elegida o primera), igual en listas, tarjetas y ficha. Visor a pantalla completa con autor, fecha y ⋮. El resto en la tira de info. Sin foto, ilustración de la **categoría padre**. El mismo sitio se ve igual en Inicio, Explorar, Planes y Rutas.
 6. Entregar frames nombrados como las pantallas de la §6 para mapear 1:1 a widgets Flutter.
 
 ---
@@ -62,7 +62,7 @@ flowchart TB
   Save --> Cats[CategoryPickerPage fullscreen]
 ```
 
-**Push vs sheet (regla actual):** galerías y listas altas van en **página** (`Navigator.push` + `Scaffold`). Sheets solo cortos (proximidad, menú ⋮ del plan). Sheet mal montado = oscurece y no se ve contenido: hay que evitarlo.
+**Push vs sheet (regla actual):** galerías de la ficha van **incrustadas** (tira horizontal). El visor a pantalla completa y las listas altas van en **página** (`Navigator.push` + `Scaffold`). Sheets solo cortos (proximidad, menú ⋮ del plan). Sheet mal montado = oscurece y no se ve contenido: hay que evitarlo.
 
 ---
 
@@ -174,7 +174,8 @@ Todo el texto de producto está en `app_es.arb` (i18n).
 | `HomeQuickAction` | mismo | Tile 3 acciones: icono en círculo tintado + label 10 px. |
 | `VisibilityBadge` | `visibility_badge.dart` | Icono público/privado. |
 | `AppListCard` | `app_list_card.dart` | `Card` theme, margin bottom 8. |
-| `AppAsyncBody` | `app_async_body.dart` | Pull-to-refresh: loading / error genérico / vacío / lista. |
+| `AppAsyncBody` | `app_async_body.dart` | Pull-to-refresh: loading / `AppRetryCallout` / vacío / lista. |
+| `AppRetryCallout` | `app_retry_callout.dart` | “Error en la app. Intenta de nuevo.” Tocar reintenta. |
 | `FieldActionIcon` | `field_action_icon.dart` | Suffix: buscar/pegar con loading. |
 | `AppNetworkImage` | `app_network_image.dart` | `cached_network_image` + decode acotado. |
 | `AppToast` | `app_toast.dart` | Snackbar; error de negocio o “Error en la app…”. |
@@ -246,9 +247,9 @@ Tab activo: icono + label `primary`. Inactivo: `mutedDark`, label 10 px.
 ### 6.5 Ficha de sitio — `SiteDetailPage`
 
 - Header in-body: back circular, título, corazón favorito, ⋮ (editar/descartar).
-- Hero 176: `SiteCoverCarousel` / `SiteLookCover` (padre + fotos) + scrim + franja verde/morada + origen + precio.
+- Hero 176: `SiteLookCover` (padre + primera foto / encabezado) + scrim + franja verde/morada + origen + precio.
 - `TabBar`: Info, Reseñas, Más (trazabilidad).
-- Info: datos, galería **incrustada** (menú ⋮ por foto), enlaces, Maps real (abrir / cómo llegar).
+- Info: datos, galería **incrustada** en tira horizontal (altura fija, ancho proporcional, menú ⋮: portada / eliminar / reportar). Tocar abre visor a pantalla completa (autor, fecha, mismo menú). Enlaces, Maps real (abrir / cómo llegar).
 - Reseñas / bitácoras reales (no scores inventados).
 - **No** hay FAB “Agregar a un plan”.
 

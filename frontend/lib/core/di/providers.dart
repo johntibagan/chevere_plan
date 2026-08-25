@@ -75,8 +75,9 @@ final siteLookProvider =
   final id = siteId.trim();
   if (id.isEmpty) return const SiteLook();
   final row = await ref.watch(supabaseClientProvider).from('sites').select(
+        'cover_photo_id, '
         'site_categories(categories(name_i18n)), '
-        'site_photos(storage_path, sort_order)',
+        'site_photos(id, storage_path, sort_order, created_at)',
       ).eq('id', id).maybeSingle();
   if (row == null) return const SiteLook();
   return SiteLook.fromSiteMap(Map<String, dynamic>.from(row));
@@ -148,10 +149,14 @@ final draftReminderServiceProvider = Provider<DraftReminderService>((ref) {
 
 List<UserSave> _decodeSaves(Object? payload) {
   final list = payload as List? ?? const [];
-  return list
-      .whereType<Map>()
-      .map((e) => UserSave.fromCacheJson(Map<String, dynamic>.from(e)))
-      .toList();
+  final out = <UserSave>[];
+  for (final e in list) {
+    if (e is! Map) continue;
+    try {
+      out.add(UserSave.fromCacheJson(Map<String, dynamic>.from(e)));
+    } catch (_) {}
+  }
+  return out;
 }
 
 Object? _encodeSaves(List<UserSave> value) =>
