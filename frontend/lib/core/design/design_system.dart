@@ -12,4 +12,6 @@ export '../theme/app_radius.dart';
 export '../theme/app_theme.dart';
 export '../theme/app_typography.dart';
 export '../theme/chevere_theme_colors.dart';
+export '../theme/chevere_theme_scope.dart';
+export '../theme/theme_rebuild.dart';
 export '../theme/google_brand_colors.dart';

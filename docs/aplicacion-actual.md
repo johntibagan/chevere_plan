@@ -20,7 +20,7 @@ Público y privado se distinguen por **color** (verde / morado), no hace falta r
 1. Abrís la app → pantalla de **iniciar sesión con Google**.
 2. El servidor crea un perfil (nombre, foto, rol `usuario`).
 3. Un correo concreto queda como **root** al resetear la base (dueño del catálogo masivo). Hay también rol **admin**.
-4. Admin y root entran al **panel** desde el menú **☰** de Inicio (Más opciones). Ahí también podés cambiar entre **tema oscuro y claro** (interruptor, sin pantalla aparte; se recuerda en el celular). Reportes viven ahí. Sobre **contenido público** actúan casi como dueños. Las **bitácoras privadas no las ven**: solo quien las escribió.
+4. Admin y root entran al **panel** desde el menú **☰** de Inicio (Más opciones). Ahí también elegís el **tema**: Claro, Oscuro o Sistema (selector segmentado; se recuerda en el celular). Reportes viven ahí. Sobre **contenido público** actúan casi como dueños. Las **bitácoras privadas no las ven**: solo quien las escribió.
 
 ```mermaid
 sequenceDiagram
@@ -296,7 +296,7 @@ flowchart TB
 
 ## Datos que la app trata como “la verdad”
 
-- Categorías y transporte: **base de datos** + caché larga
+- Categorías y transporte: **base de datos** + caché larga (24 h / 7 d). Listas vacías **no** se guardan en caché; si falla la carga, la app borra la caché y reintenta desde Supabase (Guardar sitio muestra «Intenta de nuevo» en la sección Categorías).
 - Geografía: **DIVIPOLA** + caché 30/90 días
 - Sitios, saves, planes, reseñas: servidor; la app muestra caché y confirma después
 - **Populares cerca:** Hive + ancla GPS; nueva red solo si te salís ~2 km, pasaron 24 h, o tirás a refrescar Inicio

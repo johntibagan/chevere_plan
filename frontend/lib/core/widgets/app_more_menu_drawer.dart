@@ -5,9 +5,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../di/providers.dart';
 import '../l10n/context_l10n.dart';
-import '../theme/app_typography.dart';
 import '../theme/app_theme.dart';
+import '../theme/app_typography.dart';
+import '../theme/theme_rebuild.dart';
 import 'app_network_image.dart';
+import 'app_segmented_control.dart';
 
 /// Menú lateral derecho (estilo Google): cuenta arriba, acciones, salir al final.
 class AppMoreMenuDrawer extends ConsumerWidget {
@@ -38,9 +40,10 @@ class AppMoreMenuDrawer extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    ref.watchAppThemeMode();
     final l10n = context.l10n;
     final width = MediaQuery.sizeOf(context).width * 0.86;
-    final isDark = ref.watch(appThemeModeProvider) == ThemeMode.dark;
+    final themeMode = ref.watch(appThemeModeProvider);
 
     return Drawer(
       backgroundColor: AppColors.surface,
@@ -110,40 +113,46 @@ class AppMoreMenuDrawer extends ConsumerWidget {
               child: ListView(
                 padding: const EdgeInsets.symmetric(vertical: 8),
                 children: [
-                  SwitchListTile(
-                    secondary: Icon(
-                      isDark
-                          ? Icons.dark_mode_outlined
-                          : Icons.light_mode_outlined,
-                      color: AppColors.muted,
-                      size: 22,
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          l10n.moreMenuTheme,
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.foreground,
+                          ),
+                        ),
+                        SizedBox(height: 10),
+                        AppSegmentedControl<ThemeMode>(
+                          value: themeMode,
+                          options: [
+                            AppSegmentOption(
+                              value: ThemeMode.light,
+                              label: l10n.moreMenuThemeLight,
+                            ),
+                            AppSegmentOption(
+                              value: ThemeMode.dark,
+                              label: l10n.moreMenuThemeDark,
+                            ),
+                            AppSegmentOption(
+                              value: ThemeMode.system,
+                              label: l10n.moreMenuThemeSystem,
+                            ),
+                          ],
+                          onChanged: (mode) {
+                            unawaited(
+                              ref
+                                  .read(appThemeModeProvider.notifier)
+                                  .setMode(mode),
+                            );
+                          },
+                        ),
+                      ],
                     ),
-                    title: Text(
-                      l10n.moreMenuDarkMode,
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.foreground,
-                      ),
-                    ),
-                    subtitle: Text(
-                      isDark
-                          ? l10n.moreMenuDarkModeOn
-                          : l10n.moreMenuDarkModeOff,
-                      style: TextStyle(fontSize: 11, color: AppColors.muted),
-                    ),
-                    value: isDark,
-                    activeThumbColor: AppColors.onPrimary,
-                    activeTrackColor: AppColors.primary,
-                    inactiveThumbColor: AppColors.muted,
-                    inactiveTrackColor: AppColors.surfaceElevated,
-                    onChanged: (value) {
-                      unawaited(
-                        ref.read(appThemeModeProvider.notifier).setDark(value),
-                      );
-                    },
-                    contentPadding:
-                        const EdgeInsets.symmetric(horizontal: 20, vertical: 2),
                   ),
                   _MenuTile(
                     icon: Icons.notifications_active_outlined,

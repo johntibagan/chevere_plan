@@ -156,10 +156,10 @@ class _AdminPageState extends ConsumerState<AdminPage>
         ageRestricted: ageRestricted,
         keywords: keywords,
       );
-      ref.invalidate(categoriesProvider);
-      unawaited(
-        ref.read(entityCacheStoreProvider).invalidate(CacheKeys.categories()),
-      );
+      await ref
+          .read(entityCacheStoreProvider)
+          .invalidate(CacheKeys.categories());
+      await ref.read(categoriesProvider.notifier).refresh(force: true);
       await _load();
     } catch (e) {
       if (!mounted) return;

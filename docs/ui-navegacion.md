@@ -27,7 +27,7 @@ Contratos que no se pueden romper: [`invariantes.md`](invariantes.md).
 | Dato | Hoy |
 |---|---|
 | Plataforma | Android (Flutter, Material 3) |
-| Tema | **Oscuro** (default) y **claro**; interruptor en menú ☰, sin pantalla aparte. Persiste en el dispositivo. |
+| Tema | **Oscuro** (default), **claro** o **sistema**; selector segmentado en menú ☰ (Claro · Oscuro · Sistema). Persiste en el dispositivo. |
 | Idioma UI | Español (strings en `.arb`; no hardcodear copy en Figma si se puede evitar) |
 | Navegación raíz | `MaterialApp` + `Navigator` implícito. Sin GoRouter. |
 | Sesión | Sin login → `LoginPage`. Con sesión → `HomePage` (shell de 4 tabs + FAB). |
@@ -57,7 +57,7 @@ flowchart TB
   Detail --> Ficha
   T3 --> PlanDetailFromRoute[PlanDetailPage]
   T0 --> Menu[Más opciones endDrawer]
-  Menu --> ThemeToggle[Modo oscuro ON/OFF]
+  Menu --> ThemePicker[Tema Claro / Oscuro / Sistema]
   Menu --> Admin[AdminPage / Reportes]
   Menu --> Prox[Bottom sheet proximidad]
   Menu --> ProfileSoon[ComingSoon perfil]
@@ -189,7 +189,8 @@ Todo el texto de producto está en `app_es.arb` (i18n).
 | `AppNetworkImage` | `app_network_image.dart` | `cached_network_image` + decode acotado. |
 | `AppToast` | `app_toast.dart` | Snackbar; error de negocio o “Error en la app…”. |
 | `AppBusyOverlay` | `app_busy_overlay.dart` | Bloqueo breve (p. ej. abrir Maps). |
-| `AppMoreMenuDrawer` | `app_more_menu_drawer.dart` | `endDrawer` derecha: cuenta, **modo oscuro** (toggle), recuerdos, admin, cerrar sesión. |
+| `AppMoreMenuDrawer` | `app_more_menu_drawer.dart` | `endDrawer` derecha: cuenta, **tema** (segmentado Claro/Oscuro/Sistema), recuerdos, admin, cerrar sesión. |
+| `AppSegmentedControl` | `app_segmented_control.dart` | Selección única en grupo redondeado (tema, etc.). |
 
 **Iconografía:** Material Icons. Redes en cards son **texto** (IG/TK/FB/GM), no SVG de marca.
 

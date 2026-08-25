@@ -38,7 +38,7 @@ alwaysApply: true
 1. Color nuevo → token en `ChevereThemeColors` (dark **y** light) + getter en `AppColors`.
 2. String visible → clave en `app_es.arb` + `flutter gen-l10n`.
 3. Formato fecha/moneda/distancia → formatter en `core/formatters/`, no inline.
-4. Categoría con hex de DB → parse + fallback `AppColors.primary` (no hex fijo en widget).
+Al tocar UI con [AppColors]: llamar `ref.watchAppThemeMode()` (o `ChevereThemeScope.of(context)`) al inicio de `build` para repintar al cambiar claro/oscuro. Scaffold: preferir fondo del [ThemeData], no `backgroundColor` duplicado.
 
 ## Excepciones (OK)
 

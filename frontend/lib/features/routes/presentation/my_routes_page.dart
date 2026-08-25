@@ -11,6 +11,7 @@ import '../../../core/formatters/date_format.dart';
 import '../../../core/l10n/context_l10n.dart';
 import '../../../core/prefetch/site_prefetch.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/theme/theme_rebuild.dart';
 import '../../../core/widgets/app_async_body.dart';
 import '../../../core/widgets/app_section_label.dart';
 import '../../../core/widgets/app_stat_card.dart';
@@ -51,6 +52,7 @@ class _MyRoutesPageState extends ConsumerState<MyRoutesPage> {
 
   @override
   Widget build(BuildContext context) {
+    ref.watchAppThemeMode();
     final l10n = context.l10n;
     final async = ref.watch(routesProvider);
     final all = async.valueOrNull ?? const <RouteHistoryEntry>[];

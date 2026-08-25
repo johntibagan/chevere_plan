@@ -13,7 +13,8 @@ import '../../../core/widgets/app_retry_callout.dart';
 import '../../../core/widgets/app_toast.dart';
 import '../../../core/prefetch/site_prefetch.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../../core/theme/chevere_theme_colors.dart';
+import '../../../core/theme/chevere_theme_scope.dart';
+import '../../../core/theme/theme_rebuild.dart';
 import '../../../core/testing/widget_keys.dart';
 import '../../../core/widgets/app_feed_layout_toggle.dart';
 import '../../../core/widgets/app_more_menu_drawer.dart';
@@ -118,7 +119,10 @@ class _HomePageState extends ConsumerState<HomePage> {
         child: SizedBox.expand(),
       );
     }
-    return KeyedSubtree(key: ValueKey('tab-$slot'), child: page);
+    return KeyedSubtree(
+      key: ValueKey('tab-$slot'),
+      child: AppThemeDependent(child: page),
+    );
   }
 
   Future<void> _bootstrap({bool forceRefresh = false}) async {
@@ -291,6 +295,8 @@ class _HomePageState extends ConsumerState<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    ref.watchAppThemeMode();
+
     // Mantener lista al día si SWR refresca en background.
     ref.listen(mySavesProvider, (prev, next) {
       next.whenData((page) {
@@ -346,7 +352,6 @@ class _HomePageState extends ConsumerState<HomePage> {
       },
       child: Scaffold(
         key: _scaffoldKey,
-        backgroundColor: AppColors.background,
         extendBody: true,
         endDrawer: AppMoreMenuDrawer(
           displayName: name,
@@ -546,6 +551,7 @@ class _InicioTab extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    ref.watchAppThemeMode();
     final l10n = context.l10n;
     final drafts = saves.where((s) => s.isIncomplete).toList();
     final sections = ref.watch(homeSectionsOpenProvider);

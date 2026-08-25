@@ -425,11 +425,21 @@ final favoriteSiteIdsProvider =
 class CategoriesNotifier extends AsyncNotifier<List<Category>> {
   var _refreshing = false;
 
+  static bool _cacheUsable(List<Category> list) => list.isNotEmpty;
+
   @override
   Future<List<Category>> build() => _load(forceNetwork: false);
 
   Future<void> refresh({bool force = true}) async {
     state = await AsyncValue.guard(() => _load(forceNetwork: force));
+  }
+
+  /// Borra caché local y vuelve a pedir el catálogo a Supabase.
+  Future<List<Category>> reloadFromNetwork() async {
+    await ref.read(entityCacheStoreProvider).invalidate(CacheKeys.categories());
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(() => _load(forceNetwork: true));
+    return state.requireValue;
   }
 
   Future<List<Category>> _load({required bool forceNetwork}) {
@@ -440,14 +450,30 @@ class CategoriesNotifier extends AsyncNotifier<List<Category>> {
       decode: _decodeCategories,
       encode: _encodeCategories,
       forceNetwork: forceNetwork,
+      isUsableCache: _cacheUsable,
+      shouldPersist: _cacheUsable,
       network: () => ref.read(adminRepositoryProvider).fetchCategories(),
       onBackgroundRefresh: (pending) {
         if (_refreshing) return;
         _refreshing = true;
         unawaited(
           pending.then((fresh) {
-            state = AsyncData(fresh);
-          }).catchError((_) {}).whenComplete(() {
+            if (_cacheUsable(fresh)) {
+              state = AsyncData(fresh);
+            } else {
+              unawaited(
+                ref
+                    .read(entityCacheStoreProvider)
+                    .invalidate(CacheKeys.categories()),
+              );
+            }
+          }).catchError((_) {
+            unawaited(
+              ref
+                  .read(entityCacheStoreProvider)
+                  .invalidate(CacheKeys.categories()),
+            );
+          }).whenComplete(() {
             _refreshing = false;
           }),
         );
@@ -894,16 +920,21 @@ class AppThemeModeNotifier extends Notifier<ThemeMode> {
     final next = switch (raw) {
       'light' => ThemeMode.light,
       'dark' => ThemeMode.dark,
+      'system' => ThemeMode.system,
       _ => ThemeMode.dark,
     };
     if (next != state) state = next;
   }
 
-  Future<void> setDark(bool isDark) async {
-    final next = isDark ? ThemeMode.dark : ThemeMode.light;
-    state = next;
+  Future<void> setMode(ThemeMode mode) async {
+    state = mode;
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_prefsKey, isDark ? 'dark' : 'light');
+    final key = switch (mode) {
+      ThemeMode.light => 'light',
+      ThemeMode.dark => 'dark',
+      ThemeMode.system => 'system',
+    };
+    await prefs.setString(_prefsKey, key);
   }
 }
 

@@ -119,6 +119,8 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
   /// Si el usuario eligió/quitó categorías a mano, no sobrescribir la sugerencia.
   bool _categoriesUserTouched = false;
   bool _categoryWasAutoSuggested = false;
+  bool _categoriesUnavailable = false;
+  bool _reloadingCategories = false;
 
   bool get _isEditing => _editSaveId != null || _editSiteId != null;
   bool get _isStaffSiteEdit =>
@@ -207,9 +209,53 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
     _bootstrapForm();
   }
 
+  Future<List<Category>> _loadCategoriesForForm() async {
+    try {
+      var cats = await ref.read(categoriesProvider.future);
+      var active = cats.where((c) => c.isActive).toList();
+      if (active.isEmpty) {
+        cats = await ref.read(categoriesProvider.notifier).reloadFromNetwork();
+        active = cats.where((c) => c.isActive).toList();
+      }
+      return active;
+    } catch (_) {
+      final cats =
+          await ref.read(categoriesProvider.notifier).reloadFromNetwork();
+      return cats.where((c) => c.isActive).toList();
+    }
+  }
+
+  void _applyCategories(List<Category> active) {
+    _categories = active;
+    _categoriesUnavailable = active.isEmpty;
+  }
+
+  Future<void> _reloadCategories() async {
+    if (_reloadingCategories) return;
+    _reloadingCategories = true;
+    if (mounted) {
+      setState(() => _categoriesUnavailable = false);
+    }
+    try {
+      final cats =
+          await ref.read(categoriesProvider.notifier).reloadFromNetwork();
+      if (!mounted) return;
+      final active = cats.where((c) => c.isActive).toList();
+      setState(() => _applyCategories(active));
+      if (active.isNotEmpty && !_categoriesUserTouched) {
+        _maybeSuggestCategories();
+      }
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _categoriesUnavailable = true);
+    } finally {
+      _reloadingCategories = false;
+    }
+  }
+
   Future<void> _bootstrapForm() async {
     try {
-      final catsFuture = ref.read(categoriesProvider.future);
+      final catsFuture = _loadCategoriesForForm();
       GeoCatalog? catalog;
       try {
         catalog = await ref.read(geoCatalogProvider.future);
@@ -220,7 +266,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
       if (!mounted) return;
       setState(() {
         _geoCatalog = catalog;
-        _categories = cats.where((c) => c.isActive).toList();
+        _applyCategories(cats);
       });
 
       final saveId = widget.existingSaveId;
@@ -345,7 +391,10 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
       }
     } catch (e) {
       if (!mounted) return;
-      setState(() => _loadingCats = false);
+      setState(() {
+        _loadingCats = false;
+        _categoriesUnavailable = true;
+      });
       AppToast.error(context, e, logContext: 'save_place_bootstrap');
     }
   }
@@ -650,43 +699,20 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
   }
 
   Future<void> _openCategoryTree() async {
-    // Refetch por si el form quedó sin datos o el seed se aplicó después.
     if (_categories.isEmpty) {
-      try {
-        final cats = await ref.read(categoriesProvider.future);
-        if (!mounted) return;
-        setState(() {
-          _categories = cats.where((c) => c.isActive).toList();
-        });
-      } catch (e) {
-        if (!mounted) return;
-        AppToast.error(context, e, logContext: 'categories');
-        return;
-      }
-    }
-
-    if (_categories.isEmpty) {
-      // Reintento forzado si el seed se aplicó después del primer fetch cacheado.
-      ref.invalidate(categoriesProvider);
-      try {
-        final cats = await ref.read(categoriesProvider.future);
-        if (!mounted) return;
-        setState(() {
-          _categories = cats.where((c) => c.isActive).toList();
-        });
-      } catch (_) {}
+      await _reloadCategories();
     }
 
     if (_categories.isEmpty) {
       if (!mounted) return;
-      AppToast.show(
-        context,
-        'No hay categorías. Aplica el seed SQL (migración 2 y 10) en Supabase.',
-        error: true,
-      );
+      setState(() {
+        _categoriesUnavailable = true;
+        _openExtras.add(_SaveExtra.categories);
+      });
       return;
     }
 
+    if (!mounted) return;
     final result = await showCategoryPickerSheet(
       context: context,
       categories: List<Category>.from(_categories),
@@ -985,11 +1011,15 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
     final categoryIds = _resolvedCategoryIds();
     if (categoryIds.isEmpty) {
       if (!mounted) return;
-      AppToast.show(
-        context,
-        'No hay categorías en la base. Aplica el seed / reseed de categorías.',
-        error: true,
-      );
+      if (_categories.isEmpty) {
+        setState(() {
+          _openExtras.add(_SaveExtra.categories);
+          _categoriesUnavailable = true;
+        });
+        unawaited(_reloadCategories());
+        return;
+      }
+      AppToast.show(context, context.l10n.errorLoadRetry, error: true);
       return;
     }
     if (_selectedCategoryIds.isEmpty) {
@@ -1731,6 +1761,11 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
       title: l10n.saveCategoriesSection,
       info: l10n.saveInfoCategories,
       children: [
+        if (_categoriesUnavailable || _categories.isEmpty)
+          AppRetryCallout(
+            onRetry: _reloadCategories,
+            padding: const EdgeInsets.only(bottom: 8),
+          ),
         if (_categoryWasAutoSuggested && _selectedCategories.isNotEmpty)
           Padding(
             padding: const EdgeInsets.only(bottom: 6),

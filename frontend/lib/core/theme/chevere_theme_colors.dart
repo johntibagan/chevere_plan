@@ -301,7 +301,3 @@ class ChevereThemeColors extends ThemeExtension<ChevereThemeColors> {
   }
 }
 
-extension ChevereThemeColorsX on BuildContext {
-  ChevereThemeColors get chevereColors =>
-      Theme.of(this).extension<ChevereThemeColors>() ?? ChevereThemeColors.dark;
-}

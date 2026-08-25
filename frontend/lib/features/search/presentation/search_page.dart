@@ -9,6 +9,7 @@ import '../../../core/widgets/app_toast.dart';
 import '../../../core/l10n/context_l10n.dart';
 import '../../../core/prefetch/site_prefetch.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/theme/theme_rebuild.dart';
 import '../../../core/widgets/app_retry_callout.dart';
 import '../../../core/widgets/app_search_field.dart';
 import '../../../core/widgets/app_select_chip.dart';
@@ -180,6 +181,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
 
   @override
   Widget build(BuildContext context) {
+    ref.watchAppThemeMode();
     final l10n = context.l10n;
     final categories = ref.watch(
       categoriesProvider.select((a) => a.valueOrNull ?? const <Category>[]),

@@ -16,6 +16,8 @@ import 'core/l10n/context_l10n.dart';
 import 'core/notifications/local_notification_router.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/chevere_theme_colors.dart';
+import 'core/theme/chevere_theme_scope.dart';
+import 'core/theme/theme_rebuild.dart';
 
 final GlobalKey<NavigatorState> appNavigatorKey = GlobalKey<NavigatorState>();
 
@@ -102,7 +104,10 @@ class _CheverePlanAppState extends ConsumerState<CheverePlanApp> {
             Theme.of(context).extension<ChevereThemeColors>() ??
                 ChevereThemeColors.dark;
         AppColors.bind(colors);
-        return child ?? SizedBox.shrink();
+        return ChevereThemeScope(
+          colors: colors,
+          child: child ?? const SizedBox.shrink(),
+        );
       },
       home: const AuthGate(),
     );
@@ -121,6 +126,7 @@ class _AuthGateState extends ConsumerState<AuthGate> {
 
   @override
   Widget build(BuildContext context) {
+    ref.watchAppThemeMode();
     final authRepository = ref.watch(authRepositoryProvider);
 
     return StreamBuilder<AuthState>(
@@ -151,6 +157,7 @@ class _AuthGateState extends ConsumerState<AuthGate> {
         if (session != null) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             LocalNotificationRouter.tryOpenPending();
+            unawaited(ref.read(categoriesProvider.future));
           });
           return HomePage(session: session);
         }

@@ -46,13 +46,16 @@ class AppLocalizationsEs extends AppLocalizations {
   String get moreMenuSignOut => 'Cerrar sesión';
 
   @override
-  String get moreMenuDarkMode => 'Modo oscuro';
+  String get moreMenuTheme => 'Tema';
 
   @override
-  String get moreMenuDarkModeOn => 'Tema oscuro activo';
+  String get moreMenuThemeLight => 'Claro';
 
   @override
-  String get moreMenuDarkModeOff => 'Tema claro activo';
+  String get moreMenuThemeDark => 'Oscuro';
+
+  @override
+  String get moreMenuThemeSystem => 'Sistema';
 
   @override
   String get moreMenuProfileComingTitle => 'Tu perfil';

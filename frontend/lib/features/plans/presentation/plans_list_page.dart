@@ -9,6 +9,7 @@ import '../../../core/testing/widget_keys.dart';
 import '../../../core/formatters/money_format.dart';
 import '../../../core/l10n/context_l10n.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/theme/theme_rebuild.dart';
 import '../../../core/widgets/app_async_body.dart';
 import '../../../core/widgets/app_create_cta_card.dart';
 import '../../../core/widgets/app_section_label.dart';
@@ -77,6 +78,7 @@ class _PlansListPageState extends ConsumerState<PlansListPage> {
 
   @override
   Widget build(BuildContext context) {
+    ref.watchAppThemeMode();
     final l10n = context.l10n;
     final async = ref.watch(plansProvider);
     final page = async.valueOrNull;

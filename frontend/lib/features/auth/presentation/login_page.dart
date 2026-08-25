@@ -7,8 +7,9 @@ import '../../../core/di/providers.dart';
 import '../../../core/l10n/context_l10n.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/app_typography.dart';
-import '../../../core/theme/chevere_theme_colors.dart';
+import '../../../core/theme/chevere_theme_scope.dart';
 import '../../../core/theme/google_brand_colors.dart';
+import '../../../core/theme/theme_rebuild.dart';
 import '../../../core/widgets/app_toast.dart';
 import '../../legal/legal_texts.dart';
 import '../../legal/presentation/legal_document_page.dart';
@@ -78,11 +79,11 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
+    ref.watchAppThemeMode();
     final canSignIn = _acceptedLegal && !_loading;
     final colors = context.chevereColors;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24),

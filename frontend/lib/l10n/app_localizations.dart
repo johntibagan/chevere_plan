@@ -166,23 +166,29 @@ abstract class AppLocalizations {
   /// **'Cerrar sesión'**
   String get moreMenuSignOut;
 
-  /// No description provided for @moreMenuDarkMode.
+  /// No description provided for @moreMenuTheme.
   ///
   /// In es, this message translates to:
-  /// **'Modo oscuro'**
-  String get moreMenuDarkMode;
+  /// **'Tema'**
+  String get moreMenuTheme;
 
-  /// No description provided for @moreMenuDarkModeOn.
+  /// No description provided for @moreMenuThemeLight.
   ///
   /// In es, this message translates to:
-  /// **'Tema oscuro activo'**
-  String get moreMenuDarkModeOn;
+  /// **'Claro'**
+  String get moreMenuThemeLight;
 
-  /// No description provided for @moreMenuDarkModeOff.
+  /// No description provided for @moreMenuThemeDark.
   ///
   /// In es, this message translates to:
-  /// **'Tema claro activo'**
-  String get moreMenuDarkModeOff;
+  /// **'Oscuro'**
+  String get moreMenuThemeDark;
+
+  /// No description provided for @moreMenuThemeSystem.
+  ///
+  /// In es, this message translates to:
+  /// **'Sistema'**
+  String get moreMenuThemeSystem;
 
   /// No description provided for @moreMenuProfileComingTitle.
   ///
