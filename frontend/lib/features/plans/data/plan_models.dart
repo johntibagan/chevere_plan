@@ -14,6 +14,8 @@ class PlanStop {
     this.visitedAt,
     this.estimatedPriceAmount,
     this.siteEstimatedPriceAmount,
+    this.categoryNames = const [],
+    this.coverStoragePath,
   });
 
   final String id;
@@ -31,6 +33,8 @@ class PlanStop {
   final DateTime? visitedAt;
   final double? estimatedPriceAmount;
   final double? siteEstimatedPriceAmount;
+  final List<String> categoryNames;
+  final String? coverStoragePath;
 
   bool get isVisited => visitedAt != null;
 
@@ -59,6 +63,8 @@ class PlanStop {
       estimatedPriceAmount:
           estimatedPriceAmount ?? this.estimatedPriceAmount,
       siteEstimatedPriceAmount: siteEstimatedPriceAmount,
+      categoryNames: categoryNames,
+      coverStoragePath: coverStoragePath,
     );
   }
 }

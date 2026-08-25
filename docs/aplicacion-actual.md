@@ -206,7 +206,9 @@ El teléfono registra geocercas (tope práctico ~100, priorizando los tuyos). Si
 
 En Inicio, arriba de **Guardados recientes**, elegís **lista** o **cuadrícula de 2, 3 o 4**; vale para recientes y populares (y Explorar usa la misma preferencia). Las secciones se **pliegan** tocando el título. **Ver más** abre **Explorar**.
 
-Sin foto: ilustración de la **categoría padre**. Con fotos: primera en listas; **carrusel** en la ficha. El borde/franja verde o morado sigue marcando público o privado.
+Las cards/listas muestran **nombre**, **departamento - municipio** y **dirección** si hay. Si el texto no cabe en el alto de la tarjeta, esa zona hace **scroll**.
+
+Sin foto: ilustración de la **categoría padre** (`SiteLookCover`), la misma en Inicio, Explorar, **Planes** (la card usa el primer sitio) y Rutas. Con fotos: primera en listas; carrusel en la ficha.
 
 ```mermaid
 flowchart TD

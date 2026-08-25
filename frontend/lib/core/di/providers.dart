@@ -70,6 +70,18 @@ final coverSignedUrlProvider =
   return ref.watch(savesRepositoryProvider).signedPhotoUrl(path);
 });
 
+final siteLookProvider =
+    FutureProvider.family<SiteLook, String>((ref, siteId) async {
+  final id = siteId.trim();
+  if (id.isEmpty) return const SiteLook();
+  final row = await ref.watch(supabaseClientProvider).from('sites').select(
+        'site_categories(categories(name_i18n)), '
+        'site_photos(storage_path, sort_order)',
+      ).eq('id', id).maybeSingle();
+  if (row == null) return const SiteLook();
+  return SiteLook.fromSiteMap(Map<String, dynamic>.from(row));
+});
+
 final favoritesRepositoryProvider = Provider<FavoritesRepository>((ref) {
   return FavoritesRepository(client: ref.watch(supabaseClientProvider));
 });

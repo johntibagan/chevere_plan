@@ -212,7 +212,7 @@ class SearchRepository {
         .from('user_saves')
         .select(
           'site_id, sites!user_saves_site_id_fkey(id, name, city, department, '
-          'estimated_price_amount, currency_code, is_public, external_id)',
+          'address_line, estimated_price_amount, currency_code, is_public, external_id)',
         )
         .eq('user_id', uid)
         .eq('status', 'complete');
@@ -241,7 +241,7 @@ class SearchRepository {
       final pubRows = await _client
           .from('sites')
           .select(
-            'id, name, city, department, estimated_price_amount, currency_code, is_public, external_id',
+            'id, name, city, department, address_line, estimated_price_amount, currency_code, is_public, external_id',
           )
           .eq('is_public', true)
           .not('location', 'is', null)
@@ -303,6 +303,7 @@ class SearchRepository {
       name: (s['name'] as String?) ?? 'Sitio',
       city: s['city'] as String?,
       department: s['department'] as String?,
+      addressLine: s['address_line'] as String?,
       lat: lat,
       lng: lng,
       estimatedPriceAmount: price == null ? null : (price as num).toDouble(),
@@ -316,7 +317,8 @@ class SearchRepository {
   bool _matchesText(SearchHit hit, String q) {
     if (q.isEmpty) return true;
     final blob =
-        '${hit.name} ${hit.city ?? ''} ${hit.department ?? ''}'.toLowerCase();
+        '${hit.name} ${hit.city ?? ''} ${hit.department ?? ''} ${hit.addressLine ?? ''}'
+            .toLowerCase();
     return blob.contains(q);
   }
 

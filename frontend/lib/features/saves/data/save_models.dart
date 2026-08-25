@@ -387,17 +387,7 @@ class UserSave {
   factory UserSave.fromJoinedJson(Map<String, dynamic> json) {
     final site = Map<String, dynamic>.from(json['sites'] as Map? ?? {});
     final catsRaw = site['site_categories'] as List? ?? const [];
-    final names = <String>[];
-    for (final row in catsRaw) {
-      if (row is! Map) continue;
-      final cat = row['categories'];
-      if (cat is Map) {
-        final i18n = cat['name_i18n'];
-        if (i18n is Map && i18n['es'] is String) {
-          names.add(i18n['es'] as String);
-        }
-      }
-    }
+    final names = categoryNamesFromJoin(catsRaw);
     final createdBy = site['created_by'] as String?;
     final creatorProf = site['profiles'];
     final contribs = SitePerson.parseContributorRows(
@@ -477,6 +467,40 @@ String? firstCoverStoragePath(Object? raw) {
   final path = rows.first['storage_path'] as String?;
   if (path == null || path.trim().isEmpty) return null;
   return path.trim();
+}
+
+List<String> categoryNamesFromJoin(Object? raw) {
+  if (raw is! List) return const [];
+  final names = <String>[];
+  for (final row in raw) {
+    if (row is! Map) continue;
+    final cat = row['categories'];
+    if (cat is Map) {
+      final i18n = cat['name_i18n'];
+      if (i18n is Map && i18n['es'] is String) {
+        names.add(i18n['es'] as String);
+      }
+    }
+  }
+  return names;
+}
+
+class SiteLook {
+  const SiteLook({
+    this.categoryNames = const [],
+    this.coverStoragePath,
+  });
+
+  final List<String> categoryNames;
+  final String? coverStoragePath;
+
+  factory SiteLook.fromSiteMap(Map<String, dynamic>? site) {
+    if (site == null) return const SiteLook();
+    return SiteLook(
+      categoryNames: categoryNamesFromJoin(site['site_categories']),
+      coverStoragePath: firstCoverStoragePath(site['site_photos']),
+    );
+  }
 }
 
 /// Datos para editar un guardado existente.

@@ -18,6 +18,7 @@ class SearchHit {
     this.coverStoragePath,
     this.isIncomplete = false,
     this.sourceNetwork,
+    this.addressLine,
   });
 
   final String siteId;
@@ -39,6 +40,7 @@ class SearchHit {
   final String? coverStoragePath;
   final bool isIncomplete;
   final String? sourceNetwork;
+  final String? addressLine;
 
   factory SearchHit.fromJson(Map<String, dynamic> json) {
     final price = json['estimated_price_amount'];
@@ -68,6 +70,7 @@ class SearchHit {
       coverStoragePath: json['cover_storage_path'] as String?,
       isIncomplete: json['is_incomplete'] as bool? ?? false,
       sourceNetwork: json['source_network'] as String?,
+      addressLine: json['address_line'] as String?,
     );
   }
 
@@ -90,6 +93,7 @@ class SearchHit {
         'cover_storage_path': coverStoragePath,
         'is_incomplete': isIncomplete,
         'source_network': sourceNetwork,
+        'address_line': addressLine,
       };
 
   SearchHit copyWith({
@@ -111,6 +115,7 @@ class SearchHit {
     String? coverStoragePath,
     bool? isIncomplete,
     String? sourceNetwork,
+    String? addressLine,
   }) {
     return SearchHit(
       siteId: siteId ?? this.siteId,
@@ -131,6 +136,7 @@ class SearchHit {
       coverStoragePath: coverStoragePath ?? this.coverStoragePath,
       isIncomplete: isIncomplete ?? this.isIncomplete,
       sourceNetwork: sourceNetwork ?? this.sourceNetwork,
+      addressLine: addressLine ?? this.addressLine,
     );
   }
 }
@@ -171,6 +177,6 @@ class SearchFilters {
         budgetMin?.toString() ?? '',
         budgetMax?.toString() ?? '',
         includePublic ? '1' : '0',
-        'v4', // cover + categorías padre
+        'v5', // address_line en cards
       ].join('|');
 }

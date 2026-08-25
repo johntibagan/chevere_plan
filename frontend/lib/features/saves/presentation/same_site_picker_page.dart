@@ -4,10 +4,10 @@ import '../../../core/l10n/context_l10n.dart';
 import '../../../core/testing/widget_keys.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_form_card.dart';
-import '../../../core/widgets/site_cover.dart';
 import '../data/save_models.dart';
 import '../data/site_review_models.dart';
 import 'open_site_detail.dart';
+import 'site_look_cover.dart';
 
 /// Lista de coincidencias: ver la ficha (como en Explorar) y luego usarla.
 class SameSitePickerPage extends StatefulWidget {
@@ -94,7 +94,7 @@ class _SameSitePickerPageState extends State<SameSitePickerPage> {
                                 child: SizedBox(
                                   width: 72,
                                   height: 72,
-                                  child: SiteCover(seed: d.siteId),
+                                  child: SiteLookCover(siteId: d.siteId),
                                 ),
                               ),
                               const SizedBox(width: 10),

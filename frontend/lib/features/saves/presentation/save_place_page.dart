@@ -18,7 +18,7 @@ import '../../../core/widgets/app_section_label.dart';
 import '../../../core/widgets/app_select_chip.dart';
 import '../../../core/widgets/app_toast.dart';
 import '../../../core/widgets/field_action_icon.dart';
-import '../../../core/widgets/site_cover.dart';
+import 'site_look_cover.dart';
 import '../../admin/data/admin_models.dart';
 import '../../geo/domain/geo_models.dart';
 import '../../geo/domain/geo_fuzzy.dart';
@@ -1515,14 +1515,11 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
               child: Stack(
                 fit: StackFit.expand,
                 children: [
-                  SiteCover(
+                  SiteLookCover(
                     imageUrl: _pendingMapImageUrl,
-                    cacheKey: _pendingMapImageUrl == null
-                        ? null
-                        : 'map:$_pendingMapImageUrl',
-                    categoryHint: _selectedCategories.isEmpty
-                        ? null
-                        : _selectedCategories.first.nameEs,
+                    categoryNames: [
+                      for (final c in _selectedCategories) c.nameEs,
+                    ],
                   ),
                   Align(
                     alignment: Alignment.bottomLeft,

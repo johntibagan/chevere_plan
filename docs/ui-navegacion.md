@@ -17,7 +17,7 @@ Contratos que no se pueden romper: [`invariantes.md`](invariantes.md).
 2. Respetar **tokens** (§3) y **señales** (§4). No introducir tema claro ni iOS-only.
 3. Mejorar jerarquía, ritmo, fotos, iconografía y microcopy **sin** agregar flujos (favoritos = solo el corazón; no hay IA, no hay admin en Rutas).
 4. **Guardar lugar:** el CTA **Guardar** va **abajo**, ancho, al alcance del pulgar. El Make a veces lo pone en el AppBar: **no replicar eso**.
-5. Las fotos de sitios: en listas la **primera**; en la ficha **carrusel**. Sin foto, ilustración de la **categoría padre**.
+5. Las fotos de sitios: en listas la **primera**; en la ficha **carrusel**. Sin foto, ilustración de la **categoría padre**. El mismo sitio se ve igual en Inicio, Explorar, Planes y Rutas.
 6. Entregar frames nombrados como las pantallas de la §6 para mapear 1:1 a widgets Flutter.
 
 ---
@@ -170,7 +170,7 @@ Todo el texto de producto está en `app_es.arb` (i18n).
 | `HomeCategoryChip` | mismo | Chip 9 px, tinte por nombre de categoría. |
 | `HomeSectionHeader` | mismo | Título de sección + “ver todo” primary. |
 | `HomeRecentRailCard` | mismo | Carrusel: cover 144×176, badge red, borrador, corazón, ojo/candado, nombre/ciudad, chip categoría. |
-| `HomePopularCard` | mismo | Grid: franja verde/morado 3 px, cover 100 px, corazón, ciudad, nombre, km y precio. |
+| `HomePopularCard` | mismo | Grid: franja, cover, corazón, nombre, departamento-municipio, dirección (scroll si no cabe), km/precio. |
 | `HomeQuickAction` | mismo | Tile 3 acciones: icono en círculo tintado + label 10 px. |
 | `VisibilityBadge` | `visibility_badge.dart` | Icono público/privado. |
 | `AppListCard` | `app_list_card.dart` | `Card` theme, margin bottom 8. |
@@ -227,7 +227,7 @@ Tab activo: icono + label `primary`. Inactivo: `mutedDark`, label 10 px.
 - Switch incluir públicos; limpiar.
 - Avanzado (scroll): ubicación extra, categoría (incluye hijas), transporte, presupuesto min/max, GPS + radio km, texto de horario (placeholder, **no filtra**).
 - Tras buscar: `{n} resultados` + `AppFeedLayoutToggle` (lista / 2 / 3 / 4; misma preferencia que Inicio).
-- Grilla: `HomePopularCard(showOriginRow: true)`. Lista: `HomeSearchListCard` (misma ficha: franja, origen, corazón).
+- Grilla: `HomePopularCard(showOriginRow: true)`. Lista: `HomeSearchListCard` (misma ficha: franja, origen, corazón, nombre, depto-municipio, dirección).
 - Modo simple: **query obligatorio**.
 
 ### 6.4 Guardar / editar — `SavePlacePage` (misma pantalla)
@@ -246,7 +246,7 @@ Tab activo: icono + label `primary`. Inactivo: `mutedDark`, label 10 px.
 ### 6.5 Ficha de sitio — `SiteDetailPage`
 
 - Header in-body: back circular, título, corazón favorito, ⋮ (editar/descartar).
-- Hero 176: `SiteCover` (primera foto si hay) + scrim + franja verde/morada + origen (Tuyo/Catálogo) + precio.
+- Hero 176: `SiteCoverCarousel` / `SiteLookCover` (padre + fotos) + scrim + franja verde/morada + origen + precio.
 - `TabBar`: Info, Reseñas, Más (trazabilidad).
 - Info: datos, galería **incrustada** (menú ⋮ por foto), enlaces, Maps real (abrir / cómo llegar).
 - Reseñas / bitácoras reales (no scores inventados).
@@ -257,7 +257,7 @@ Tab activo: icono + label `primary`. Inactivo: `mutedDark`, label 10 px.
 - `TabScreenHeader` + subtítulo.
 - Card CTA `AppCreateCtaCard` “Crear un plan” (único punto de alta; **sin FAB** duplicado).
 - `AppSectionLabel` “Mis planes guardados”.
-- Card de plan: portada 96 px (`SiteCover` + `SiteCoverScrim`) + `AppStatusPill` + título overlay + fila meta (zona, N sitios, presupuesto).
+- Card de plan: portada 96 px del **primer sitio** (`SiteLookCover`) + `AppStatusPill` + título overlay + fila meta (zona, N sitios, presupuesto).
 - Vacío: mensaje bajo el heading, CTA sigue visible.
 
 ### 6.7 Crear / editar plan — `CreatePlanPage`

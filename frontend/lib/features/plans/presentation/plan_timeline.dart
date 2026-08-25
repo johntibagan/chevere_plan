@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/l10n/context_l10n.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/testing/widget_keys.dart';
+import '../../saves/presentation/site_look_cover.dart';
 import '../data/plan_models.dart';
 
 /// Línea de tiempo minimalista de paradas del plan.
@@ -185,6 +186,19 @@ class _StopTile extends StatelessWidget {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: SizedBox(
+                        width: 40,
+                        height: 40,
+                        child: SiteLookCover(
+                          siteId: stop.siteId,
+                          categoryNames: stop.categoryNames,
+                          coverStoragePath: stop.coverStoragePath,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,

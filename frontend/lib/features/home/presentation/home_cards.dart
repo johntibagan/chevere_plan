@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import '../../../core/di/providers.dart';
 import '../../../core/formatters/money_format.dart';
+import '../../../core/formatters/place_format.dart';
 import '../../../core/l10n/context_l10n.dart';
 import '../../../core/prefs/feed_layout.dart';
 import '../../../core/theme/app_theme.dart';
@@ -11,9 +10,9 @@ import '../../../core/testing/widget_keys.dart';
 import '../../../core/widgets/site_cover.dart';
 import '../../../core/widgets/site_origin_tags.dart';
 import '../../../core/widgets/visibility_badge.dart';
-import '../../admin/data/admin_models.dart';
 import '../../saves/data/save_models.dart';
 import '../../saves/presentation/favorite_heart_button.dart';
+import '../../saves/presentation/site_look_cover.dart';
 import '../../search/data/search_models.dart';
 
 String homeSavedAgo(AppLocalizations l10n, DateTime? at) {
@@ -38,6 +37,7 @@ SearchHit hitFromSave(UserSave save) {
     isLinked: save.isPossibleDuplicate,
     city: save.city,
     department: save.department,
+    addressLine: save.addressLine,
     categoryNames: save.categoryNames,
     coverStoragePath: save.coverStoragePath,
     isIncomplete: save.isIncomplete,
@@ -235,9 +235,10 @@ class HomeRecentRailCard extends StatelessWidget {
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
-                    SiteCover(
-                      categoryHint: cat,
-                      seed: save.siteId,
+                    SiteLookCover(
+                      siteId: save.siteId,
+                      categoryNames: save.categoryNames,
+                      coverStoragePath: save.coverStoragePath,
                     ),
                     const SiteCoverScrim(bottomOpacity: 0.75),
                     Positioned(
@@ -336,8 +337,68 @@ class HomeRecentRailCard extends StatelessWidget {
   }
 }
 
+/// Nombre, departamento-municipio y dirección. Scroll si no cabe.
+class SiteCardPlaceTexts extends StatelessWidget {
+  const SiteCardPlaceTexts({
+    super.key,
+    required this.name,
+    this.department,
+    this.city,
+    this.addressLine,
+    this.nameSize = 12,
+  });
+
+  final String name;
+  final String? department;
+  final String? city;
+  final String? addressLine;
+  final double nameSize;
+
+  @override
+  Widget build(BuildContext context) {
+    final place = formatDeptCity(department, city);
+    final address = (addressLine ?? '').trim();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          name,
+          style: TextStyle(
+            fontSize: nameSize,
+            fontWeight: FontWeight.w800,
+            color: AppColors.foreground,
+            height: 1.25,
+          ),
+        ),
+        if (place.isNotEmpty) ...[
+          const SizedBox(height: 4),
+          Text(
+            place,
+            style: const TextStyle(
+              fontSize: 10,
+              color: AppColors.mutedDark,
+              height: 1.25,
+            ),
+          ),
+        ],
+        if (address.isNotEmpty) ...[
+          const SizedBox(height: 4),
+          Text(
+            address,
+            style: const TextStyle(
+              fontSize: 10,
+              color: AppColors.muted,
+              height: 1.25,
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
 /// Grilla: franja + borde de visibilidad, foto o ilustración padre.
-class HomePopularCard extends ConsumerWidget {
+class HomePopularCard extends StatelessWidget {
   const HomePopularCard({
     super.key,
     required this.hit,
@@ -355,7 +416,7 @@ class HomePopularCard extends ConsumerWidget {
   final bool showPlaceOnCover;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final l10n = context.l10n;
     final price = hit.estimatedPriceAmount;
     final origin = SiteOriginTags(
@@ -363,14 +424,6 @@ class HomePopularCard extends ConsumerWidget {
       isLinked: hit.isLinked,
       isCatalog: hit.isCatalog,
     );
-    final cats = ref.watch(
-      categoriesProvider.select((a) => a.valueOrNull ?? const <Category>[]),
-    );
-    final hint = Category.parentNameEs(cats, hit.categoryNames);
-    final path = hit.coverStoragePath?.trim();
-    final signed = (path == null || path.isEmpty)
-        ? null
-        : ref.watch(coverSignedUrlProvider(path)).valueOrNull;
     final vis = hit.isPublic ? AppColors.success : AppColors.purple;
     return Material(
       color: AppColors.surface,
@@ -389,10 +442,10 @@ class HomePopularCard extends ConsumerWidget {
               child: Stack(
                 fit: StackFit.expand,
                 children: [
-                  SiteCover(
-                    imageUrl: signed,
-                    cacheKey: path,
-                    categoryHint: hint,
+                  SiteLookCover(
+                    siteId: hit.siteId,
+                    categoryNames: hit.categoryNames,
+                    coverStoragePath: hit.coverStoragePath,
                   ),
                   const SiteCoverScrim(),
                   Positioned(
@@ -440,88 +493,66 @@ class HomePopularCard extends ConsumerWidget {
                     right: 6,
                     child: FavoriteHeartButton(siteId: hit.siteId),
                   ),
-                  if (showPlaceOnCover)
-                    Positioned(
-                      left: 10,
-                      bottom: 6,
-                      right: 36,
-                      child: Row(
-                        children: [
-                          const Icon(
-                            Icons.place,
-                            size: 9,
-                            color: AppColors.primary,
-                          ),
-                          const SizedBox(width: 4),
-                          Expanded(
-                            child: Text(
-                              hit.city ?? hit.department ?? '',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w500,
-                                color: AppColors.onImage,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
                 ],
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (showOriginRow) ...[
-                    Row(
-                      children: [
-                        VisibilityBadge(isPublic: hit.isPublic, compact: true),
-                        if (origin.hasAny) ...[
-                          const SizedBox(width: 6),
-                          Expanded(child: origin),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (showOriginRow) ...[
+                      Row(
+                        children: [
+                          VisibilityBadge(
+                            isPublic: hit.isPublic,
+                            compact: true,
+                          ),
+                          if (origin.hasAny) ...[
+                            const SizedBox(width: 6),
+                            Expanded(child: origin),
+                          ],
                         ],
-                      ],
+                      ),
+                      const SizedBox(height: 4),
+                    ],
+                    Expanded(
+                      child: SingleChildScrollView(
+                        physics: const ClampingScrollPhysics(),
+                        child: SiteCardPlaceTexts(
+                          name: hit.name,
+                          department: hit.department,
+                          city: hit.city,
+                          addressLine: hit.addressLine,
+                        ),
+                      ),
                     ),
                     const SizedBox(height: 4),
-                  ],
-                  Text(
-                    hit.name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.foreground,
+                    Row(
+                      children: [
+                        if (hit.distanceKm != null)
+                          Text(
+                            '${hit.distanceKm!.toStringAsFixed(1)} km',
+                            style: const TextStyle(
+                              fontSize: 10,
+                              color: AppColors.mutedDark,
+                            ),
+                          ),
+                        const Spacer(),
+                        if (price != null)
+                          Text(
+                            formatMoney(price, currencyCode: hit.currencyCode),
+                            style: const TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.primary,
+                            ),
+                          ),
+                      ],
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      if (hit.distanceKm != null)
-                        Text(
-                          '${hit.distanceKm!.toStringAsFixed(1)} km',
-                          style: const TextStyle(
-                            fontSize: 10,
-                            color: AppColors.mutedDark,
-                          ),
-                        ),
-                      const Spacer(),
-                      if (price != null)
-                        Text(
-                          formatMoney(price, currencyCode: hit.currencyCode),
-                          style: const TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w800,
-                            color: AppColors.primary,
-                          ),
-                        ),
-                    ],
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ],
@@ -532,7 +563,7 @@ class HomePopularCard extends ConsumerWidget {
 }
 
 /// Fila de Explorar: misma ficha que la grilla, en formato lista.
-class HomeSearchListCard extends ConsumerWidget {
+class HomeSearchListCard extends StatelessWidget {
   const HomeSearchListCard({
     super.key,
     required this.hit,
@@ -543,25 +574,13 @@ class HomeSearchListCard extends ConsumerWidget {
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final origin = SiteOriginTags(
       isOwn: hit.isOwn,
       isLinked: hit.isLinked,
       isCatalog: hit.isCatalog,
     );
-    final place = [
-      if (hit.city != null && hit.city!.isNotEmpty) hit.city!,
-      if (hit.department != null && hit.department!.isNotEmpty) hit.department!,
-    ].join(' · ');
     final price = hit.estimatedPriceAmount;
-    final cats = ref.watch(
-      categoriesProvider.select((a) => a.valueOrNull ?? const <Category>[]),
-    );
-    final hint = Category.parentNameEs(cats, hit.categoryNames);
-    final path = hit.coverStoragePath?.trim();
-    final signed = (path == null || path.isEmpty)
-        ? null
-        : ref.watch(coverSignedUrlProvider(path)).valueOrNull;
     final vis = hit.isPublic ? AppColors.success : AppColors.purple;
 
     return Padding(
@@ -587,10 +606,10 @@ class HomeSearchListCard extends ConsumerWidget {
                     child: SizedBox(
                       width: 80,
                       height: 80,
-                      child: SiteCover(
-                        imageUrl: signed,
-                        cacheKey: path,
-                        categoryHint: hint,
+                      child: SiteLookCover(
+                        siteId: hit.siteId,
+                        categoryNames: hit.categoryNames,
+                        coverStoragePath: hit.coverStoragePath,
                       ),
                     ),
                   ),
@@ -617,27 +636,21 @@ class HomeSearchListCard extends ConsumerWidget {
                             ),
                           ],
                         ),
-                        Text(
-                          hit.name,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w800,
-                            color: AppColors.foreground,
-                          ),
-                        ),
-                        if (place.isNotEmpty)
-                          Text(
-                            place,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 10,
-                              color: AppColors.muted,
+                        const SizedBox(height: 4),
+                        ConstrainedBox(
+                          constraints: const BoxConstraints(maxHeight: 96),
+                          child: SingleChildScrollView(
+                            physics: const ClampingScrollPhysics(),
+                            child: SiteCardPlaceTexts(
+                              name: hit.name,
+                              department: hit.department,
+                              city: hit.city,
+                              addressLine: hit.addressLine,
+                              nameSize: 13,
                             ),
                           ),
-                        const Spacer(),
+                        ),
+                        const SizedBox(height: 6),
                         Row(
                           children: [
                             if (hit.distanceKm != null)

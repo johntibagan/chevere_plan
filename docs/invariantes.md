@@ -76,7 +76,7 @@ Alto riesgo: `save_place_page.dart`, `google_maps_link_importer.dart`, `save_pol
 - Listas clicables: chevron; fecha si aporta.
 - Errores en UI: mensaje de negocio o **"Error en la app. Intenta de nuevo."** Nunca SQL, PostgREST, stacks, keys.
 - Modales: nada de barrier sin contenido. Fotos del sitio en la ficha, no en sheet.
-- Portada: si hay fotos, la ficha las muestra en **carrusel** y las listas solo la **primera**. Sin foto, ilustración de la **categoría padre** (si hay varias, la primera y su padre). Mismo criterio en card y ficha. Bordes/franja verde-morado de visibilidad se mantienen.
+- Portada: el **mismo sitio** se ve igual en lista, tarjeta, ficha, planes y rutas (`SiteLookCover`: padre + primera foto). Un plan muestra el primer sitio, no una ilustración del plan. Ficha con varias fotos = carrusel. Verde/morado de visibilidad se mantiene.
 
 ## Datos
 

@@ -13,9 +13,9 @@ import '../../../core/widgets/app_form_card.dart';
 import '../../../core/widgets/app_search_field.dart';
 import '../../../core/widgets/app_select_chip.dart';
 import '../../../core/widgets/app_toast.dart';
-import '../../../core/widgets/site_cover.dart';
 import '../../admin/data/admin_models.dart';
 import '../../saves/presentation/open_site_detail.dart';
+import '../../saves/presentation/site_look_cover.dart';
 import '../../search/data/search_models.dart';
 import '../data/plan_models.dart';
 import '../data/plans_repository.dart';
@@ -529,7 +529,11 @@ class _PlanBuilderPageState extends ConsumerState<PlanBuilderPage> {
                   child: SizedBox(
                     width: 44,
                     height: 44,
-                    child: SiteCover(seed: h.siteId),
+                    child: SiteLookCover(
+                      siteId: h.siteId,
+                      categoryNames: h.categoryNames,
+                      coverStoragePath: h.coverStoragePath,
+                    ),
                   ),
                 ),
                 const SizedBox(width: 10),

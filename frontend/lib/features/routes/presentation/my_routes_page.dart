@@ -15,8 +15,8 @@ import '../../../core/widgets/app_async_body.dart';
 import '../../../core/widgets/app_section_label.dart';
 import '../../../core/widgets/app_stat_card.dart';
 import '../../../core/widgets/app_toast.dart';
-import '../../../core/widgets/site_cover.dart';
 import '../../../core/widgets/tab_screen_header.dart';
+import '../../saves/presentation/site_look_cover.dart';
 import '../../plans/presentation/plan_detail_page.dart';
 import '../data/route_models.dart';
 import '../data/routes_repository.dart';
@@ -259,7 +259,7 @@ class _RouteTimelineTile extends StatelessWidget {
                           child: SizedBox(
                             width: 40,
                             height: 40,
-                            child: SiteCover(seed: entry.siteId),
+                            child: SiteLookCover(siteId: entry.siteId),
                           ),
                         ),
                         const SizedBox(width: 10),

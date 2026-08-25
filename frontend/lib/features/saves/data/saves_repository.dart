@@ -29,7 +29,7 @@ class SavesRepository {
   /// Select liviano para Inicio (cards): sin contributors, notes, address, etc.
   static const _saveSelectSummary =
       'id, user_id, site_id, status, is_public, created_at, '
-      'sites!user_saves_site_id_fkey(name, city, use_exact_pin, '
+      'sites!user_saves_site_id_fkey(name, city, department, address_line, use_exact_pin, '
       'google_place_id, '
       'site_categories(categories(name_i18n)), '
       'site_photos(storage_path, sort_order))';

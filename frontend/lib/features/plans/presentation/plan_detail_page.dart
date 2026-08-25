@@ -15,9 +15,9 @@ import '../../../core/widgets/app_section_label.dart';
 import '../../../core/widgets/app_stat_card.dart';
 import '../../../core/widgets/app_toast.dart';
 import '../../../core/widgets/coming_soon_page.dart';
-import '../../../core/widgets/site_cover.dart';
 import '../../../core/widgets/tab_screen_header.dart';
 import '../../saves/presentation/open_site_detail.dart';
+import '../../saves/presentation/site_look_cover.dart';
 import '../data/maps_export.dart';
 import '../data/plan_models.dart';
 import '../data/plans_repository.dart';
@@ -459,10 +459,14 @@ class _PlanHero extends StatelessWidget {
       child: Stack(
         fit: StackFit.expand,
         children: [
-          SiteCover(
-            seed: plan.stops.isNotEmpty
-                ? plan.stops.first.siteId
-                : plan.id,
+          SiteLookCover(
+            siteId: plan.stops.isNotEmpty ? plan.stops.first.siteId : null,
+            categoryNames: plan.stops.isNotEmpty
+                ? plan.stops.first.categoryNames
+                : const [],
+            coverStoragePath: plan.stops.isNotEmpty
+                ? plan.stops.first.coverStoragePath
+                : null,
           ),
           const DecoratedBox(
             decoration: BoxDecoration(

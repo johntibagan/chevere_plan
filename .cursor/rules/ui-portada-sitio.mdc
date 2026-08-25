@@ -1,0 +1,20 @@
+---
+description: Un sitio se ve igual en lista, tarjeta, ficha, planes y rutas
+alwaysApply: true
+---
+
+# UI — portada del sitio (identidad)
+
+El mismo sitio debe **verse igual** en todos lados: Inicio, Explorar, planes (card, detalle, paradas), rutas, duplicados. Lista o grilla no cambia la ilustración ni la foto.
+
+## Obligatorio
+
+- Portada de **sitio** = `SiteLookCover` (categoría **padre** + primera foto). No `SiteCover(seed: plan.id)` ni hash del id.
+- Varias categorías: la **primera**, luego su padre.
+- Con fotos: listas = primera; ficha = carrusel. Sin foto: ilustración del padre (no “Otros” si hay categoría).
+- Un plan usa la portada del **primer sitio** del itinerario, no una ilustración propia del plan.
+
+## Prohibido
+
+- Una ilustración en la card y otra en la ficha o en Planes.
+- Pintar “Otros” porque faltó pasar categoría/`siteId`.

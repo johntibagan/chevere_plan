@@ -16,6 +16,7 @@ import '../../../core/widgets/app_status_pill.dart';
 import '../../../core/widgets/app_toast.dart';
 import '../../../core/widgets/site_cover.dart';
 import '../../../core/widgets/tab_screen_header.dart';
+import '../../saves/presentation/site_look_cover.dart';
 import '../data/plan_models.dart';
 import '../data/plans_repository.dart';
 import 'create_plan_page.dart';
@@ -211,7 +212,17 @@ class _PlanCard extends StatelessWidget {
               child: Stack(
                 fit: StackFit.expand,
                 children: [
-                  SiteCover(seed: plan.id),
+                  SiteLookCover(
+                    siteId: plan.stops.isNotEmpty
+                        ? plan.stops.first.siteId
+                        : null,
+                    categoryNames: plan.stops.isNotEmpty
+                        ? plan.stops.first.categoryNames
+                        : const [],
+                    coverStoragePath: plan.stops.isNotEmpty
+                        ? plan.stops.first.coverStoragePath
+                        : null,
+                  ),
                   const SiteCoverScrim(bottomOpacity: 0.8),
                   Positioned(
                     top: 8,
