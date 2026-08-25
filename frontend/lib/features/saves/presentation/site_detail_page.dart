@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../../core/cache/signed_url_cache.dart';
 import '../../../core/di/providers.dart';
 import '../../../core/testing/widget_keys.dart';
 import '../../../core/widgets/app_retry_callout.dart';
@@ -65,6 +66,7 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
   List<SitePhoto> _photos = const [];
   final Map<String, String> _photoUrls = {};
   String? _coverPhotoId;
+  String? _coverStoragePath;
   bool _photosLoading = true;
   bool _photosBusy = false;
   List<SiteSocialLink> _socialLinks = const [];
@@ -91,7 +93,30 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
         if (p.id == id) return p;
       }
     }
-    return _photos.first;
+    final path = _coverStoragePath?.trim();
+    if (path != null && path.isNotEmpty) {
+      for (final p in _photos) {
+        if (p.storagePath == path) return p;
+      }
+      return SitePhoto(
+        id: path,
+        siteId: widget.siteId,
+        storagePath: path,
+      );
+    }
+    return null;
+  }
+
+  String? get _headerCoverUrl {
+    final photo = _headerPhoto;
+    if (photo != null) {
+      return _photoUrls[photo.id] ??
+          _photoUrls[photo.storagePath] ??
+          SignedUrlCache.instance.get(photo.storagePath);
+    }
+    final path = _coverStoragePath?.trim();
+    if (path == null || path.isEmpty) return null;
+    return _photoUrls[path] ?? SignedUrlCache.instance.get(path);
   }
 
   @override
@@ -102,12 +127,30 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
     if (widget.initialSave != null) {
       _ficha = SiteFicha.fromSave(widget.initialSave!);
       _loading = false;
+      _seedCoverPhoto(widget.initialSave!.coverStoragePath);
     } else if (widget.initialHit != null) {
       _ficha = SiteFicha.fromSearchHit(widget.initialHit!);
       _loading = false;
+      _seedCoverPhoto(widget.initialHit!.coverStoragePath);
     }
     _loadStaffFlag();
     _load();
+  }
+
+  void _seedCoverPhoto(String? storagePath) {
+    final path = storagePath?.trim();
+    if (path == null || path.isEmpty) return;
+    final url = SignedUrlCache.instance.get(path);
+    _coverStoragePath = path;
+    _photos = [
+      SitePhoto(
+        id: path,
+        siteId: widget.siteId,
+        storagePath: path,
+      ),
+    ];
+    if (url != null) _photoUrls[path] = url;
+    _photosLoading = false;
   }
 
   Future<void> _loadStaffFlag() async {
@@ -177,31 +220,68 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
   }
 
   Future<void> _loadPhotos() async {
-    setState(() => _photosLoading = true);
+    if (_photos.isEmpty) {
+      setState(() => _photosLoading = true);
+    }
     try {
       final moderation = ref.read(moderationRepositoryProvider);
-      final photos = await moderation.listSitePhotos(widget.siteId);
+      final photosFuture = moderation.listSitePhotos(widget.siteId);
+      final coverFuture = _fetchCoverPhotoId();
+      final photos = await photosFuture;
+      var coverId = await coverFuture;
+      if (coverId != null && !photos.any((p) => p.id == coverId)) {
+        coverId = null;
+      }
+      final seededPath = _coverStoragePath?.trim();
+      if (coverId == null && seededPath != null && seededPath.isNotEmpty) {
+        for (final p in photos) {
+          if (p.storagePath == seededPath) {
+            coverId = p.id;
+            break;
+          }
+        }
+      }
+      String? coverPath = seededPath;
+      if (coverId != null) {
+        for (final p in photos) {
+          if (p.id == coverId) {
+            coverPath = p.storagePath;
+            break;
+          }
+        }
+      }
       final urls = await moderation.signedPhotoUrlsParallel(
         photos.map((p) => (id: p.id, storagePath: p.storagePath)),
       );
-      final coverRow = await ref
-          .read(supabaseClientProvider)
-          .from('sites')
-          .select('cover_photo_id')
-          .eq('id', widget.siteId)
-          .maybeSingle();
       if (!mounted) return;
       setState(() {
         _photos = photos;
         _photoUrls
           ..clear()
           ..addAll(urls);
-        _coverPhotoId = coverRow?['cover_photo_id'] as String?;
+        _coverPhotoId = coverId;
+        if (coverPath != null && coverPath.isNotEmpty) {
+          _coverStoragePath = coverPath;
+        }
         _photosLoading = false;
       });
     } catch (_) {
       if (!mounted) return;
       setState(() => _photosLoading = false);
+    }
+  }
+
+  Future<String?> _fetchCoverPhotoId() async {
+    try {
+      final coverRow = await ref
+          .read(supabaseClientProvider)
+          .from('sites')
+          .select('cover_photo_id')
+          .eq('id', widget.siteId)
+          .maybeSingle();
+      return coverRow?['cover_photo_id']?.toString();
+    } catch (_) {
+      return null;
     }
   }
 
@@ -395,22 +475,22 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
     final picked = await ImagePicker().pickImage(
       source: ImageSource.gallery,
       imageQuality: 92,
-      maxWidth: 2560,
+      maxWidth: 1920,
     );
     if (picked == null || !mounted) return;
 
     setState(() => _photosBusy = true);
     try {
+      final realCount =
+          _photos.where((p) => p.id != p.storagePath).length;
       await ref.read(savesRepositoryProvider).uploadPhoto(
             siteId: widget.siteId,
             file: File(picked.path),
+            knownCount: realCount,
           );
+      ref.invalidate(siteLookProvider(widget.siteId));
       await _loadPhotos();
       if (!mounted) return;
-      ref.invalidate(siteLookProvider(widget.siteId));
-      ref.invalidate(mySavesProvider);
-      ref.invalidate(homeNearbyProvider);
-      ref.invalidate(plansProvider);
       AppToast.show(context, context.l10n.photoAdded);
     } catch (e) {
       if (!mounted) return;
@@ -514,7 +594,10 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
             photoId: photo.id,
           );
       if (!mounted) return;
-      setState(() => _coverPhotoId = photo.id);
+      setState(() {
+        _coverPhotoId = photo.id;
+        _coverStoragePath = photo.storagePath;
+      });
       ref.invalidate(siteLookProvider(widget.siteId));
       ref.invalidate(mySavesProvider);
       ref.invalidate(homeNearbyProvider);
@@ -621,11 +704,10 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
                       siteId: widget.siteId,
                       categoryNames: ficha.categoryNames,
                       coverStoragePath: _headerPhoto?.storagePath ??
+                          _coverStoragePath ??
                           ficha.ownSave?.coverStoragePath ??
                           widget.initialHit?.coverStoragePath,
-                      imageUrl: _headerPhoto == null
-                          ? null
-                          : _photoUrls[_headerPhoto!.id],
+                      imageUrl: _headerCoverUrl,
                     ),
                     const SiteCoverScrim(),
                     Align(
@@ -1193,7 +1275,7 @@ class _GallerySection extends StatelessWidget {
               icon: const Icon(Icons.add_a_photo_outlined, size: 20),
             )
           : null,
-      child: loading
+      child: loading && photos.isEmpty
           ? const Padding(
               padding: EdgeInsets.symmetric(vertical: 24),
               child: Center(
@@ -1220,7 +1302,9 @@ class _GallerySection extends StatelessWidget {
                     separatorBuilder: (_, _) => const SizedBox(width: 8),
                     itemBuilder: (context, index) {
                       final photo = photos[index];
-                      final url = photoUrls[photo.id];
+                      final url = photoUrls[photo.id] ??
+                          photoUrls[photo.storagePath] ??
+                          SignedUrlCache.instance.get(photo.storagePath);
                       String? effectiveCover = coverPhotoId;
                       if (effectiveCover != null) {
                         final exists = photos.any((p) => p.id == effectiveCover);
@@ -1229,19 +1313,21 @@ class _GallerySection extends StatelessWidget {
                       effectiveCover ??= photos.first.id;
                       return _PhotoTile(
                         url: url,
-                        cacheKey: photo.id,
+                        cacheKey: photo.storagePath,
                         onOpen: () {
                           final items = <SitePhotoViewItem>[];
                           var start = 0;
                           for (final p in photos) {
-                            final u = photoUrls[p.id];
+                            final u = photoUrls[p.id] ??
+                                photoUrls[p.storagePath] ??
+                                SignedUrlCache.instance.get(p.storagePath);
                             if (u == null || u.isEmpty) continue;
                             if (p.id == photo.id) start = items.length;
                             items.add(
                               SitePhotoViewItem(
                                 id: p.id,
                                 url: u,
-                                cacheKey: p.id,
+                                cacheKey: p.storagePath,
                                 uploaderName: p.uploaderName,
                                 uploadedAt: p.createdAt,
                                 canDelete: canManage,

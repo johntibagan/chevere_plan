@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -114,22 +116,36 @@ class _HomePageState extends ConsumerState<HomePage> {
     final hasSaves =
         (ref.read(mySavesProvider).valueOrNull?.items.isNotEmpty ?? false) ||
             _saves.isNotEmpty;
-    setState(() {
-      if (!hasSaves) _loading = true;
-      _error = null;
-    });
+    if (!hasSaves) {
+      setState(() {
+        _loading = true;
+        _error = null;
+      });
+    } else {
+      setState(() => _error = null);
+    }
     try {
-      final profileRepo = ref.read(profileRepositoryProvider);
-      final geofenceSync = ref.read(geofenceSyncServiceProvider);
-
       if (forceRefresh) {
-        await ref.read(mySavesProvider.notifier).refresh(force: true);
+        unawaited(ref.read(mySavesProvider.notifier).refresh(force: true));
       }
 
-      final profile = await profileRepo.fetchCurrent();
-      // SWR: sirve caché fresca/stale de inmediato; red en background si aplica.
+      // Guardados primero (caché SWR). Perfil y geofence no bloquean la lista.
       final page = await ref.read(mySavesProvider.future);
       final saves = page.items;
+      if (!mounted) return;
+      setState(() {
+        _saves = saves;
+        _loading = false;
+      });
+      ref.read(sitePrefetchProvider).scheduleVisibleSites(
+            saves.map((s) => s.siteId),
+          );
+      ref.read(sitePrefetchProvider).warmupCoverPaths([
+        for (final s in saves.take(8)) s.coverStoragePath,
+      ]);
+
+      unawaited(_loadProfileAndGeofence());
+
       final cutoff =
           DateTime.now().toUtc().subtract(SavePolicies.draftRemindAfter);
       final stale = saves
@@ -140,16 +156,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                 s.createdAt!.toUtc().isBefore(cutoff),
           )
           .toList();
-      if (!mounted) return;
-      setState(() {
-        _profile = profile;
-        _saves = saves;
-        _loading = false;
-      });
-      ref.read(sitePrefetchProvider).scheduleVisibleSites(
-            saves.map((s) => s.siteId),
-          );
-      if (stale.isNotEmpty) {
+      if (stale.isNotEmpty && mounted) {
         final l10n = context.l10n;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -164,9 +171,6 @@ class _HomePageState extends ConsumerState<HomePage> {
           ),
         );
       }
-      if (profile != null) {
-        await geofenceSync.syncFromProfile(profile: profile);
-      }
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -175,6 +179,19 @@ class _HomePageState extends ConsumerState<HomePage> {
       });
       AppToast.error(context, e, logContext: 'home_load');
     }
+  }
+
+  Future<void> _loadProfileAndGeofence() async {
+    try {
+      final profile = await ref.read(profileRepositoryProvider).fetchCurrent();
+      if (!mounted) return;
+      setState(() => _profile = profile);
+      if (profile != null) {
+        await ref.read(geofenceSyncServiceProvider).syncFromProfile(
+              profile: profile,
+            );
+      }
+    } catch (_) {}
   }
 
   Future<void> _openProximityPrefs() async {
@@ -239,6 +256,18 @@ class _HomePageState extends ConsumerState<HomePage> {
         ref.read(sitePrefetchProvider).scheduleVisibleSites(
               page.items.map((s) => s.siteId),
             );
+        ref.read(sitePrefetchProvider).warmupCoverPaths([
+          for (final s in page.items.take(8)) s.coverStoragePath,
+        ]);
+      });
+    });
+
+    ref.listen(homeNearbyProvider, (prev, next) {
+      next.whenData((snap) {
+        if (!mounted) return;
+        ref.read(sitePrefetchProvider).warmupCoverPaths([
+          for (final h in snap.hits.take(8)) h.coverStoragePath,
+        ]);
       });
     });
 

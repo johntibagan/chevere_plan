@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -180,21 +182,31 @@ class _PlanBuilderPageState extends ConsumerState<PlanBuilderPage> {
     if (_mutating || _addedSiteIds.contains(hit.siteId)) return;
     setState(() => _mutating = true);
     try {
-      await widget.repository.addStop(
+      final stop = await widget.repository.addStop(
         planId: widget.planId,
         siteId: hit.siteId,
         lat: hit.lat,
         lng: hit.lng,
         estimatedPriceAmount: hit.estimatedPriceAmount,
+        siteName: hit.name,
+        city: hit.city,
+        department: hit.department,
+        categoryNames: hit.categoryNames,
+        coverStoragePath: hit.coverStoragePath,
       );
-      await _invalidatePlansCache();
-      await _loadPlan();
+      final plan = _plan;
       if (!mounted) return;
+      if (plan != null) {
+        setState(() {
+          _plan = plan.copyWith(stops: [...plan.stops, stop]);
+          _mutating = false;
+          _tab = _PlanBuilderTab.added;
+        });
+      } else {
+        setState(() => _mutating = false);
+      }
+      unawaited(_invalidatePlansCache());
       AppToast.show(context, context.l10n.planSiteAdded);
-      setState(() {
-        _mutating = false;
-        _tab = _PlanBuilderTab.added;
-      });
     } catch (e) {
       if (!mounted) return;
       setState(() => _mutating = false);

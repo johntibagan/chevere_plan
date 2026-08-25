@@ -46,29 +46,64 @@ class ModerationRepository {
     return url;
   }
 
-  /// Firma varias fotos en paralelo (usa [SignedUrlCache] por path).
-  ///
-  /// Clave del mapa = [id] de cada ítem; paths que fallen se omiten.
+  /// Firma varias fotos (caché + un lote Storage). Clave = [id] de cada ítem.
   Future<Map<String, String>> signedPhotoUrlsParallel(
     Iterable<({String id, String storagePath})> items, {
     int expiresInSeconds = 3600,
   }) async {
-    final entries = await Future.wait(
-      items.map((item) async {
-        try {
-          final url = await signedPhotoUrl(
-            item.storagePath,
-            expiresInSeconds: expiresInSeconds,
+    final out = <String, String>{};
+    final missing = <({String id, String storagePath})>[];
+    for (final item in items) {
+      final cached = SignedUrlCache.instance.get(item.storagePath);
+      if (cached != null) {
+        out[item.id] = cached;
+      } else if (item.storagePath.trim().isNotEmpty) {
+        missing.add(item);
+      }
+    }
+    if (missing.isEmpty) return out;
+
+    try {
+      final paths = [
+        for (final m in missing) m.storagePath,
+      ];
+      final results = await _client.storage
+          .from('site-photos')
+          .createSignedUrlsResult(paths, expiresInSeconds);
+      final byPath = <String, String>{};
+      for (final r in results) {
+        if (r is SignedUrlSuccess) {
+          byPath[r.path] = r.signedUrl;
+          SignedUrlCache.instance.put(
+            r.path,
+            r.signedUrl,
+            ttlSeconds: expiresInSeconds,
           );
-          return MapEntry(item.id, url);
-        } catch (_) {
-          return null;
         }
-      }),
-    );
-    return Map<String, String>.fromEntries(
-      entries.whereType<MapEntry<String, String>>(),
-    );
+      }
+      for (final m in missing) {
+        final url = byPath[m.storagePath];
+        if (url != null) out[m.id] = url;
+      }
+    } catch (_) {
+      final entries = await Future.wait(
+        missing.map((item) async {
+          try {
+            final url = await signedPhotoUrl(
+              item.storagePath,
+              expiresInSeconds: expiresInSeconds,
+            );
+            return MapEntry(item.id, url);
+          } catch (_) {
+            return null;
+          }
+        }),
+      );
+      for (final e in entries.whereType<MapEntry<String, String>>()) {
+        out[e.key] = e.value;
+      }
+    }
+    return out;
   }
 
   Future<void> deletePhoto(SitePhoto photo) async {

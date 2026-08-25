@@ -45,7 +45,7 @@ sequenceDiagram
 | **Planes** | Tus itinerarios (tarjeta de crear + lista; **un solo** CTA, sin FAB duplicado) |
 | **Rutas** | Historial de paradas visitadas (stats del listado + timeline Make). Admin no vive acá |
 
-Los tabs que ya abriste se quedan en memoria para que cambiar de pestaña se sienta instantáneo. Las listas pintan caché primero y refrescan detrás. Si una sección no carga, ves **Error en la app.** y el botón/enlace **Intenta de nuevo** (icono de refrescar) reintenta esa sección; no hay toasts de error ni la palabra “failed”.
+Los tabs que ya abriste se quedan en memoria para que cambiar de pestaña se sienta instantáneo. Las listas pintan caché primero y refrescan detrás. Las fotos de portada que ya viste se reutilizan de disco (sin fade de “cargando”). Si una sección no carga, ves **Error en la app.** y el botón/enlace **Intenta de nuevo** (icono de refrescar) reintenta esa sección; no hay toasts de error ni la palabra “failed”.
 
 **Atrás en el shell:** si estás en Explorar, Planes o Rutas, el botón atrás vuelve a **Inicio**. En Inicio, el primer atrás muestra “Pulsa atrás otra vez para salir”; el segundo (en ~2 s) cierra la app. En fichas, guardar, mapas, etc. atrás sigue cerrando esa pantalla.
 
@@ -130,7 +130,7 @@ Staff/admin **no** ve bitácoras ajenas privadas.
 
 Tres pestañas: **info**, **reseñas**, **más** (quién lo creó, catálogo, fechas, “también lo guardaron”).
 
-En info: nombre, visibilidad por color/icono (hero con franja), ciudad, pin, abrir/cómo llegar en Google Maps, categorías, precio, notas, fotos en tira horizontal (altura fija, ancho proporcional; tocar abre el visor). En pantalla completa: quién la subió, **fecha** `dd/mmm/aaaa` (sin hora), menú ⋮ (portada / eliminar / reportar), swipe. Enlaces. En el header, corazón de **favorito** (igual que en las cards). **No** hay “agregar a un plan” en esta ficha.
+En info: nombre, visibilidad por color/icono (hero con franja), ciudad, pin, abrir/cómo llegar en Google Maps, categorías, precio, notas, fotos en tira (si ya viste la portada en Inicio, aparece al toque; el resto se completa atrás). Tocar abre el visor. En pantalla completa: quién la subió, **fecha** `dd/mmm/aaaa` (sin hora), menú ⋮ (portada / eliminar / reportar), swipe. Enlaces. En el header, corazón de **favorito** (igual que en las cards). **No** hay “agregar a un plan” en esta ficha.
 
 Editar: creador, quien lo tiene en su lista como propio, o staff sobre **público**.
 
@@ -172,7 +172,7 @@ flowchart LR
 1. Crear o **editar** plan: misma pantalla (título, zona, públicos, tope de presupuesto). Al crear, sigue el armado de paradas. Al editar (⋮ en el detalle) guarda y vuelve. Hay una fila “IA” que abre **en construcción** (no arma el plan sola).
 2. El servidor propone **candidatos** de tus guardados (y públicos si marcaste).
 3. Armás paradas. En la lista “añadidos” y en el detalle, con **2+ paradas**, arrastrás el orden; se guarda.
-4. Detalle (look Figma): portada, stats de paradas/presupuesto/zona, itinerario, **Llevar a Maps**, compartir y `+` en la misma barra. Seguir: abrir ficha, marcar visitado (pasa a **Rutas**), reordenar. El `+` agrega sitios. No hay transporte inventado en stats. **Llevar a Maps** usa tu GPS como origen y el **nombre** de cada parada como destino (no el centroide DIVIPOLA: ese pin lo convierte Maps en el negocio más cercano). Si el sitio tiene **Punto exacto**, ahí sí manda lat/lng.
+4. Detalle (look Figma): portada, stats de paradas/presupuesto/zona, itinerario, **Llevar a Maps**, compartir y `+` en la misma barra. Seguir: abrir ficha, marcar visitado (pasa a **Rutas**), reordenar. El `+` agrega sitios. No hay transporte inventado en stats. **Llevar a Maps** abre al toque con la última posición conocida (no espera un GPS fino ni recarga todas las paradas). Origen = GPS; cada destino = **nombre** del sitio (no el centroide DIVIPOLA). Si el sitio tiene **Punto exacto**, ahí sí manda lat/lng.
 5. Transporte “sugerido por distancia” está **parametrizado en admin** (tipos y km), pero **la app no calcula aún** el medio: la fila abre la pantalla **en construcción**.
 
 ```mermaid

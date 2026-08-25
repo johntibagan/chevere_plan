@@ -72,7 +72,7 @@ Esta es la sección más crítica del documento. Ninguna funcionalidad nueva se 
   | Planes / rutas | 5–10 min | 24 h |
   | Búsqueda | 1–2 min por query | 30–60 min |
   | Populares cerca (Inicio) | misma celda (~2 km) | 24 h |
-- **Imágenes**: `cached_network_image` en todo lugar donde se muestren fotos, con límite explícito de caché en disco/memoria (para no generar crashes en equipos de gama media/baja). Decode en **un solo eje**, tope 2048 px: tira de fotos ~2× el alto (mín. 720); visor = lado largo de la pantalla (mín. 1080). No decodificar a ~400 px. Al subir: JPEG calidad ~92, lado largo ≤ 2560.
+- **Imágenes**: `cached_network_image` en todo lugar donde se muestren fotos, con límite explícito de caché en disco/memoria (para no generar crashes en equipos de gama media/baja). Decode en **un solo eje**, tope 2048 px: tira de fotos ~2× el alto (mín. 720); visor = lado largo de la pantalla (mín. 1080). No decodificar a ~400 px. Al subir: JPEG calidad ~92, lado largo ≤ 1920 (tope de archivo 2560). Sin fade al pintar desde caché. Portadas visibles en Inicio se precargan al disco.
 - **Selectores/autocompletados que dependen de catálogos "fríos"** (categorías, ubicación) deben resolverse 100% desde memoria/disco tras la primera sincronización, sin golpe de red por interacción del usuario, incluso sin conexión.
 - **Paginación y lazy loading** en toda lista potencialmente larga (Inicio, Explorar, Mis rutas). Nunca traer todo de una vez.
 - **Prefetching liviano** de la pantalla siguiente probable en momentos de inactividad del usuario, sin consumir datos móviles de forma agresiva.

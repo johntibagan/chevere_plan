@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/errors/user_facing_error.dart';
@@ -230,15 +232,24 @@ class PlansRepository {
     double? lat,
     double? lng,
     double? estimatedPriceAmount,
+    String? siteName,
+    String? city,
+    String? department,
+    List<String> categoryNames = const [],
+    String? coverStoragePath,
   }) async {
     final existing = await _client
         .from('plan_stops')
-        .select('id')
-        .eq('plan_id', planId)
-        .eq('site_id', siteId)
-        .maybeSingle();
-    if (existing != null) {
-      throw const AppUserError('Ese sitio ya está en el plan.');
+        .select('id, site_id, sort_order')
+        .eq('plan_id', planId);
+    var nextOrder = 0;
+    for (final raw in existing as List) {
+      if (raw is! Map) continue;
+      if (raw['site_id']?.toString() == siteId) {
+        throw const AppUserError('Ese sitio ya está en el plan.');
+      }
+      final order = (raw['sort_order'] as num?)?.toInt() ?? 0;
+      if (order + 1 > nextOrder) nextOrder = order + 1;
     }
 
     var stopLat = lat;
@@ -260,50 +271,68 @@ class PlansRepository {
       );
     }
 
-    final maxRow = await _client
-        .from('plan_stops')
-        .select('sort_order')
-        .eq('plan_id', planId)
-        .order('sort_order', ascending: false)
-        .limit(1)
-        .maybeSingle();
-    final nextOrder = ((maxRow?['sort_order'] as num?)?.toInt() ?? -1) + 1;
-
-    await _client.from('plan_stops').insert({
+    final inserted = await _client.from('plan_stops').insert({
       'plan_id': planId,
       'site_id': siteId,
       'sort_order': nextOrder,
       'lat': stopLat,
       'lng': stopLng,
       'estimated_price_amount': estimatedPriceAmount,
-    });
+    }).select('id').single();
 
-    await _client.from('plans').update({'status': 'active'}).eq('id', planId);
+    unawaited(
+      _client.from('plans').update({'status': 'active'}).eq('id', planId),
+    );
 
-    final plan = await fetchById(planId);
-    return plan.stops.firstWhere((s) => s.siteId == siteId);
+    return PlanStop(
+      id: inserted['id'].toString(),
+      planId: planId,
+      siteId: siteId,
+      sortOrder: nextOrder,
+      siteName: (siteName == null || siteName.trim().isEmpty)
+          ? 'Sitio'
+          : siteName.trim(),
+      city: city,
+      department: department,
+      lat: stopLat,
+      lng: stopLng,
+      estimatedPriceAmount: estimatedPriceAmount,
+      categoryNames: categoryNames,
+      coverStoragePath: coverStoragePath,
+    );
   }
 
   /// Rellena lat/lng de paradas desde `sites.location` (p. ej. sitio editado después).
-  Future<Plan> hydrateMissingStopCoords(String planId) async {
-    final plan = await fetchById(planId);
-    for (final stop in plan.stops) {
-      if (stop.lat != null && stop.lng != null) continue;
-      try {
-        final coords = await _client.rpc(
-          'get_site_coords',
-          params: {'p_site_id': stop.siteId},
-        );
-        final parsed = _parseSiteCoords(coords);
-        final lat = parsed.$1;
-        final lng = parsed.$2;
-        if (lat == null || lng == null) continue;
-        await _client.from('plan_stops').update({
-          'lat': lat,
-          'lng': lng,
-        }).eq('id', stop.id);
-      } catch (_) {}
-    }
+  Future<Plan> hydrateMissingStopCoords(String planId, {Plan? known}) async {
+    var plan = known;
+    final missing = plan?.stops
+            .where((s) => s.lat == null || s.lng == null)
+            .toList() ??
+        const <PlanStop>[];
+    if (plan != null && missing.isEmpty) return plan;
+
+    plan ??= await fetchById(planId);
+    final toFill = plan.stops.where((s) => s.lat == null || s.lng == null);
+    if (toFill.isEmpty) return plan;
+
+    await Future.wait(
+      toFill.map((stop) async {
+        try {
+          final coords = await _client.rpc(
+            'get_site_coords',
+            params: {'p_site_id': stop.siteId},
+          );
+          final parsed = _parseSiteCoords(coords);
+          final lat = parsed.$1;
+          final lng = parsed.$2;
+          if (lat == null || lng == null) return;
+          await _client.from('plan_stops').update({
+            'lat': lat,
+            'lng': lng,
+          }).eq('id', stop.id);
+        } catch (_) {}
+      }),
+    );
     return fetchById(planId);
   }
 

@@ -424,11 +424,12 @@ class SavesRepository {
   Future<void> uploadPhoto({
     required String siteId,
     required File file,
+    int? knownCount,
   }) async {
     final uid = _uid;
     if (uid == null) throw const AppUserError('Sin sesión');
 
-    final current = await countPhotos(siteId);
+    final current = knownCount ?? await countPhotos(siteId);
     if (current >= SavePolicies.maxPhotosPerSite) {
       throw AppUserError(
         'Máximo ${SavePolicies.maxPhotosPerSite} fotos por sitio.',

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:geolocator/geolocator.dart';
 
 import '../../../core/cache/cache_ttl.dart';
 import '../../../core/di/providers.dart';
@@ -52,9 +53,37 @@ class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
   }
 
   Future<void> _prefetchOrigin() async {
-    final origin = await _currentLocation();
-    if (!mounted || origin == null) return;
-    _cachedOrigin = origin;
+    final loc = ref.read(deviceLocationProvider);
+    final last = await loc.lastKnown();
+    if (last != null && mounted) {
+      _cachedOrigin = (last.lat, last.lng);
+    }
+    final fresh = await loc.tryCurrent(
+      accuracy: LocationAccuracy.low,
+      timeLimit: const Duration(seconds: 3),
+      request: true,
+    );
+    if (fresh != null && mounted) {
+      _cachedOrigin = (fresh.lat, fresh.lng);
+    }
+  }
+
+  Future<(double, double)?> _originFast() async {
+    if (_cachedOrigin != null) return _cachedOrigin;
+    final loc = ref.read(deviceLocationProvider);
+    final last = await loc.lastKnown();
+    if (last != null) {
+      _cachedOrigin = (last.lat, last.lng);
+      return _cachedOrigin;
+    }
+    final fresh = await loc.tryCurrent(
+      accuracy: LocationAccuracy.low,
+      timeLimit: const Duration(seconds: 4),
+      request: true,
+    );
+    if (fresh == null) return null;
+    _cachedOrigin = (fresh.lat, fresh.lng);
+    return _cachedOrigin;
   }
 
   Future<void> _load() async {
@@ -124,56 +153,65 @@ class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
     AppToast.show(context, context.l10n.planShareCopied);
   }
 
-  Future<(double, double)?> _currentLocation() async {
-    final fix = await ref.read(deviceLocationProvider).tryCurrent();
-    if (fix == null) return null;
-    return (fix.lat, fix.lng);
-  }
-
   Future<void> _openMaps() async {
     final plan = _plan;
     if (plan == null || _busy) return;
     final l10n = context.l10n;
+    final pending = plan.stops.where((s) => !s.isVisited).toList();
+    if (pending.isEmpty) {
+      AppToast.show(context, l10n.planNoPendingStops, error: true);
+      return;
+    }
+
+    final needsExactCoords = pending.any(
+      (s) => s.useExactPin && (s.lat == null || s.lng == null),
+    );
+
     setState(() => _busy = true);
     try {
-      await AppBusyOverlay.run(
-        context,
-        message: l10n.planOpeningMaps,
-        action: () async {
-          final results = await Future.wait<Object?>([
-            widget.repository.hydrateMissingStopCoords(widget.planId),
-            _cachedOrigin != null
-                ? Future<(double, double)?>.value(_cachedOrigin)
-                : _currentLocation(),
-          ]);
-          final hydrated = results[0] as Plan;
-          final origin = results[1] as (double, double)?;
-          if (origin != null) _cachedOrigin = origin;
+      var toExport = plan;
+      var origin = await _originFast();
 
-          if (!mounted) return;
-          setState(() => _plan = hydrated);
+      if (needsExactCoords || origin == null) {
+        if (!mounted) return;
+        await AppBusyOverlay.run(
+          context,
+          message: l10n.planOpeningMaps,
+          action: () async {
+            if (needsExactCoords) {
+              toExport = await widget.repository.hydrateMissingStopCoords(
+                widget.planId,
+                known: plan,
+              );
+              if (mounted) setState(() => _plan = toExport);
+            }
+            origin ??= await _originFast();
+          },
+        );
+      }
 
-          final pending = hydrated.stops.where((s) => !s.isVisited).toList();
-          if (pending.isEmpty) {
-            throw AppUserError(l10n.planNoPendingStops);
-          }
-          final missing = pending.where((s) => s.lat == null || s.lng == null);
-          if (missing.isNotEmpty) {
-            throw AppUserError(l10n.planStopsMissingCoords);
-          }
-          if (origin == null) {
-            throw AppUserError(l10n.planNeedLocation);
-          }
-          final ok = await openGoogleMapsDirections(
-            originLat: origin.$1,
-            originLng: origin.$2,
-            stopsInOrder: pending,
-          );
-          if (!ok) {
-            throw const AppUserError(kGenericAppError);
-          }
-        },
+      if (!mounted) return;
+      final start = origin;
+      if (start == null) {
+        throw AppUserError(l10n.planNeedLocation);
+      }
+
+      final routeStops = toExport.stops.where((s) => !s.isVisited).toList();
+      final stillMissingExact = routeStops.where(
+        (s) => s.useExactPin && (s.lat == null || s.lng == null),
       );
+      if (stillMissingExact.isNotEmpty) {
+        throw AppUserError(l10n.planStopsMissingCoords);
+      }
+
+      final ok = await openGoogleMapsDirections(
+        originLat: start.$1,
+        originLng: start.$2,
+        stopsInOrder: routeStops,
+      );
+      if (!ok) {
+        throw const AppUserError(kGenericAppError);
+      }
     } catch (e) {
       if (!mounted) return;
       if (e is AppUserError) {

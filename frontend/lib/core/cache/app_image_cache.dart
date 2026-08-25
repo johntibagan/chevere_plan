@@ -3,15 +3,15 @@ import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 
 /// Caché de imágenes acotada para equipos de gama media/baja (Colombia).
 ///
-/// Disco: ~180 objetos, stale 14 días.
-/// Memoria Flutter ImageCache: ~80 imágenes / 48 MB (ver [configurePaintingCache]).
+/// Disco: ~400 objetos, stale 14 días.
+/// Memoria Flutter ImageCache: ~120 imágenes / 64 MB (ver [configurePaintingCache]).
 class AppImageCacheManager extends CacheManager with ImageCacheManager {
   AppImageCacheManager._()
       : super(
           Config(
             key,
             stalePeriod: const Duration(days: 14),
-            maxNrOfCacheObjects: 180,
+            maxNrOfCacheObjects: 400,
           ),
         );
 
@@ -21,7 +21,7 @@ class AppImageCacheManager extends CacheManager with ImageCacheManager {
   /// Limita el decode en memoria del motor Flutter (además de memCacheWidth).
   static void configurePaintingCache() {
     final cache = PaintingBinding.instance.imageCache;
-    cache.maximumSize = 80;
-    cache.maximumSizeBytes = 48 << 20; // 48 MiB
+    cache.maximumSize = 120;
+    cache.maximumSizeBytes = 64 << 20; // 64 MiB
   }
 }

@@ -3,7 +3,9 @@ import 'dart:async';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../cache/app_image_cache.dart';
 import '../cache/cache_ttl.dart';
+import '../cache/signed_url_cache.dart';
 import '../di/providers.dart';
 
 /// Prefetch liviano de fichas de sitio (ciclo 4).
@@ -22,6 +24,7 @@ class SitePrefetchCoordinator {
   Timer? _idle;
   final Set<String> _inflight = {};
   final Set<String> _doneSession = {};
+  final Set<String> _coverWarm = {};
   var _disposed = false;
 
   /// Programa prefetch de los [siteIds] visibles (toma los primeros [max]).
@@ -41,6 +44,33 @@ class SitePrefetchCoordinator {
     _idle = Timer(idleDelay, () {
       unawaited(_run(ids));
     });
+  }
+
+  /// Descarga portadas visibles al disco (mismo cacheKey que [AppNetworkImage]).
+  void warmupCoverPaths(Iterable<String?> paths) {
+    if (_disposed) return;
+    final uniq = <String>[];
+    for (final raw in paths) {
+      final p = raw?.trim();
+      if (p == null || p.isEmpty) continue;
+      if (_coverWarm.contains(p)) continue;
+      _coverWarm.add(p);
+      uniq.add(p);
+    }
+    if (uniq.isEmpty) return;
+    unawaited(_warmupCovers(uniq.take(8).toList()));
+  }
+
+  Future<void> _warmupCovers(List<String> paths) async {
+    final moderation = _ref.read(moderationRepositoryProvider);
+    for (final path in paths) {
+      if (_disposed) return;
+      try {
+        final cached = SignedUrlCache.instance.get(path);
+        final url = cached ?? await moderation.signedPhotoUrl(path);
+        await AppImageCacheManager.instance.downloadFile(url, key: path);
+      } catch (_) {}
+    }
   }
 
   void cancelPending() {

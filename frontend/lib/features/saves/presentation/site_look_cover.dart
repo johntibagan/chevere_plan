@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/cache/signed_url_cache.dart';
 import '../../../core/di/providers.dart';
 import '../../../core/widgets/site_cover.dart';
 import '../../admin/data/admin_models.dart';
@@ -36,9 +37,9 @@ class SiteLookCover extends ConsumerWidget {
     if (path != null && path.isEmpty) path = null;
 
     final id = siteId?.trim();
-    // Las cards siempre traen categoría; si no pedimos el look, nunca llega
-    // la foto de portada y se queda la ilustración.
-    if (id != null &&
+    // Si la lista ya trae portada, no pegar red por cada card (Inicio).
+    if (path == null &&
+        id != null &&
         id.isNotEmpty &&
         (imageUrl == null || imageUrl!.trim().isEmpty)) {
       final look = ref.watch(siteLookProvider(id)).valueOrNull;
@@ -52,11 +53,11 @@ class SiteLookCover extends ConsumerWidget {
     final hint = names.isNotEmpty
         ? Category.parentNameEs(cats, names)
         : categoryHint;
-    final signed = imageUrl?.trim().isNotEmpty == true
-        ? imageUrl
-        : (path == null
-            ? null
-            : ref.watch(coverSignedUrlProvider(path)).valueOrNull);
+    String? signed = imageUrl?.trim().isNotEmpty == true ? imageUrl : null;
+    if ((signed == null || signed.isEmpty) && path != null) {
+      signed = SignedUrlCache.instance.get(path) ??
+          ref.watch(coverSignedUrlProvider(path)).valueOrNull;
+    }
 
     return SiteCover(
       imageUrl: signed,

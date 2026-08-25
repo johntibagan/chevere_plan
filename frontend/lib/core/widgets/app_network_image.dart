@@ -118,7 +118,8 @@ class AppNetworkImage extends StatelessWidget {
       width: width,
       height: height,
       fit: fit,
-      fadeInDuration: const Duration(milliseconds: 120),
+      fadeInDuration: Duration.zero,
+      fadeOutDuration: Duration.zero,
       memCacheWidth: memW,
       memCacheHeight: memH,
       filterQuality: quality == AppImageQuality.standard

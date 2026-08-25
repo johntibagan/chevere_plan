@@ -67,17 +67,19 @@ final savesRepositoryProvider = Provider<SavesRepository>((ref) {
 
 final coverSignedUrlProvider =
     FutureProvider.family<String?, String>((ref, path) async {
+  ref.keepAlive();
   final p = path.trim();
   if (p.isEmpty) return null;
   try {
-    return await ref.watch(moderationRepositoryProvider).signedPhotoUrl(p);
+    return await ref.read(moderationRepositoryProvider).signedPhotoUrl(p);
   } catch (_) {
-    return ref.watch(savesRepositoryProvider).signedPhotoUrl(p);
+    return ref.read(savesRepositoryProvider).signedPhotoUrl(p);
   }
 });
 
 final siteLookProvider =
     FutureProvider.family<SiteLook, String>((ref, siteId) async {
+  ref.keepAlive();
   final id = siteId.trim();
   if (id.isEmpty) return const SiteLook();
   final client = ref.watch(supabaseClientProvider);
@@ -765,14 +767,15 @@ class HomeNearbyNotifier extends AsyncNotifier<HomeNearbySnapshot> {
     }
 
     GeoFix pos;
-    try {
-      pos = await loc.current();
-    } catch (_) {
-      final last = await loc.lastKnown();
-      if (last == null) {
+    final last = await loc.lastKnown();
+    if (last != null) {
+      pos = last;
+    } else {
+      try {
+        pos = await loc.current();
+      } catch (_) {
         return fallback ?? const HomeNearbySnapshot(hits: []);
       }
-      pos = last;
     }
 
     if (fallback != null &&
