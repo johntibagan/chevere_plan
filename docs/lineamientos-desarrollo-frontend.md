@@ -32,7 +32,7 @@ La prioridad número uno de este proyecto es **la agilidad percibida por el usua
 ## 3. Multi-idioma y multi-región (preparación a futuro)
 
 - Internacionalización completa desde ya con `intl` + archivos `.arb`, aunque el MVP solo use español. Ningún string de UI debe quedar hardcodeado fuera de los `.arb`.
-- Fechas y horas siempre en UTC internamente; conversión a la zona local del usuario solo en la capa de presentación. Nunca asumir una sola zona horaria fija.
+- Fechas y horas siempre en UTC internamente; conversión a la zona local del usuario solo en la capa de presentación. En UI: **`DateFormat('dd/MMM/y')`** del locale (`es` → `25/ago/2026`; septiembre CLDR: `sept`). Sin hora. Nunca asumir una sola zona horaria fija.
 - Formateo de moneda desacoplado del valor numérico (multi-moneda desde el modelo de datos, aunque el MVP solo use COP).
 - División político-administrativa (departamentos/ciudades) modelada con `country_code` desde el día uno, para poder agregar otros países sin cambiar esquema ni UI.
 

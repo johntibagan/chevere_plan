@@ -130,7 +130,7 @@ Staff/admin **no** ve bitácoras ajenas privadas.
 
 Tres pestañas: **info**, **reseñas**, **más** (quién lo creó, catálogo, fechas, “también lo guardaron”).
 
-En info: nombre, visibilidad por color/icono (hero con franja), ciudad, pin, abrir/cómo llegar en Google Maps, categorías, precio, notas, fotos en tira horizontal (altura fija, ancho proporcional; tocar abre el visor). En pantalla completa: quién la subió, cuándo, menú ⋮ (portada / eliminar / reportar), swipe. Enlaces. En el header, corazón de **favorito** (igual que en las cards). **No** hay “agregar a un plan” en esta ficha.
+En info: nombre, visibilidad por color/icono (hero con franja), ciudad, pin, abrir/cómo llegar en Google Maps, categorías, precio, notas, fotos en tira horizontal (altura fija, ancho proporcional; tocar abre el visor). En pantalla completa: quién la subió, **fecha** `dd/mmm/aaaa` (sin hora), menú ⋮ (portada / eliminar / reportar), swipe. Enlaces. En el header, corazón de **favorito** (igual que en las cards). **No** hay “agregar a un plan” en esta ficha.
 
 Editar: creador, quien lo tiene en su lista como propio, o staff sobre **público**.
 

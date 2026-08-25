@@ -215,7 +215,7 @@ class _SitePhotoViewerPageState extends State<SitePhotoViewerPage> {
                             const SizedBox(height: 4),
                             Text(
                               l10n.sitePhotoUploadedAt(
-                                formatDateTimeShort(when),
+                                formatDateDmY(when),
                               ),
                               style: TextStyle(
                                 color: AppColors.onImage.withValues(alpha: 0.85),

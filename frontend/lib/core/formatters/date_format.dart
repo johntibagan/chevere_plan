@@ -1,13 +1,13 @@
 import 'package:intl/intl.dart';
 
-/// Formato de fecha corto para UI (`dd/MM/yyyy` en locale del dispositivo).
+/// Fecha visible: `dd/MMM/y` del locale (`es` → `25/ago/2026`).
+/// Meses: CLDR vía `intl` (no una lista propia). UTC → local.
 String formatDateDmY(DateTime value, {bool toLocal = true, String? locale}) {
   final d = toLocal ? value.toLocal() : value;
-  return DateFormat.yMd(locale).format(d);
+  return DateFormat('dd/MMM/y', locale ?? 'es').format(d);
 }
 
-/// Fecha + hora corta (UTC → local).
+/// Misma fecha (sin hora en UI).
 String formatDateTimeShort(DateTime value, {bool toLocal = true, String? locale}) {
-  final d = toLocal ? value.toLocal() : value;
-  return DateFormat.yMd(locale).add_Hm().format(d);
+  return formatDateDmY(value, toLocal: toLocal, locale: locale);
 }
