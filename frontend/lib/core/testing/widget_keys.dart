@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 /// Keys estables para Patrol / widget tests. No usar copy i18n como finder.
 abstract final class WidgetKeys {
   static const homeShell = Key('home_shell');
+  static const homeMoreMenu = Key('home_more_menu');
   static const homeFabSave = Key('home_fab_save');
   static const homeTabInicio = Key('home_tab_0');
   static const homeTabExplorar = Key('home_tab_1');

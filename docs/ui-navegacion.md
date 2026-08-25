@@ -56,8 +56,11 @@ flowchart TB
   Detail --> Builder
   Detail --> Ficha
   T3 --> PlanDetailFromRoute[PlanDetailPage]
-  T0 --> Admin[AdminPage / Reportes]
-  T0 --> Prox[Bottom sheet proximidad]
+  T0 --> Menu[Más opciones endDrawer]
+  Menu --> Admin[AdminPage / Reportes]
+  Menu --> Prox[Bottom sheet proximidad]
+  Menu --> ProfileSoon[ComingSoon perfil]
+  T0 --> Prox
   Save --> Map[LocationPickerPage]
   Save --> Cats[CategoryPickerPage fullscreen]
 ```
@@ -180,6 +183,7 @@ Todo el texto de producto está en `app_es.arb` (i18n).
 | `AppNetworkImage` | `app_network_image.dart` | `cached_network_image` + decode acotado. |
 | `AppToast` | `app_toast.dart` | Snackbar; error de negocio o “Error en la app…”. |
 | `AppBusyOverlay` | `app_busy_overlay.dart` | Bloqueo breve (p. ej. abrir Maps). |
+| `AppMoreMenuDrawer` | `app_more_menu_drawer.dart` | `endDrawer` derecha: cuenta, recuerdos, admin, cerrar sesión. |
 
 **Iconografía:** Material Icons. Redes en cards son **texto** (IG/TK/FB/GM), no SVG de marca.
 
@@ -211,7 +215,7 @@ Tab activo: icono + label `primary`. Inactivo: `mutedDark`, label 10 px.
 
 **Inicio (`_InicioTab`)** — sin AppBar:
 
-1. Saludo 11 mutedDark + título app 22 ExtraBold. Campana (proximidad, punto accent) + logout. Staff: avatar initial → Admin.
+1. Saludo 11 mutedDark + título app 22 ExtraBold. Botón **☰** (derecha) abre `endDrawer` Más opciones: perfil (próximamente), Recuerdos cercanos, Admin/Reportes si staff, **Cerrar sesión** al final. Banner de recuerdo sigue en el feed.
 2. Banner **Recuerdo cercano** (gradiente primary, abre sheet de radio).
 3. Aviso de **borradores** (card naranja, no el gradiente).
 4. **Vista** (lista / 2 / 3 / 4) arriba, aplica a recientes y populares.
@@ -315,8 +319,12 @@ Chips internos: buscar / resultados / añadidos. `AppSearchField` + filtros avan
 | `SameSitePickerPage` | fila / chevron | `SiteDetailPage` (atrás vuelve a la lista) |
 | Share OS | | `SavePlacePage` |
 | Card sitio (inicio, explorar, plan) | | `SiteDetailPage` |
-| Inicio campana | | Sheet proximidad |
-| Inicio avatar staff | | `AdminPage` |
+| Inicio ☰ | | `endDrawer` Más opciones |
+| Más opciones → Recuerdos | | Sheet proximidad |
+| Más opciones → Admin (staff) | | `AdminPage` |
+| Más opciones → Reportes (staff) | | `AdminReportsPage` |
+| Más opciones → Perfil | | `ComingSoonPage` |
+| Banner recuerdo | | Sheet proximidad |
 | Planes CTA crear | | `CreatePlanPage` → builder |
 | Card plan / item ruta | | `PlanDetailPage` |
 | Plan `+` | | `PlanBuilderPage` |

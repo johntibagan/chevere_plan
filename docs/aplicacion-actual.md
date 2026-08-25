@@ -20,7 +20,7 @@ Público y privado se distinguen por **color** (verde / morado), no hace falta r
 1. Abrís la app → pantalla de **iniciar sesión con Google**.
 2. El servidor crea un perfil (nombre, foto, rol `usuario`).
 3. Un correo concreto queda como **root** al resetear la base (dueño del catálogo masivo). Hay también rol **admin**.
-4. Admin y root entran al **panel** desde el avatar en Inicio. Reportes viven en ese panel. Sobre **contenido público** actúan casi como dueños. Las **bitácoras privadas no las ven**: solo quien las escribió.
+4. Admin y root entran al **panel** desde el menú **☰** de Inicio (Más opciones). Reportes viven ahí. Sobre **contenido público** actúan casi como dueños. Las **bitácoras privadas no las ven**: solo quien las escribió.
 
 ```mermaid
 sequenceDiagram
@@ -39,7 +39,7 @@ sequenceDiagram
 
 | Sitio | Qué ves |
 |---|---|
-| **Inicio** | Saludo + título, campana, banner de recuerdo, borradores, **Vista** (lista / 2 / 3 / 4, aplica a recientes y populares), esas dos secciones y **acciones rápidas** (se pliegan). **Ver más** abre Explorar. Portada: foto o ilustración de categoría padre; borde verde/morado. |
+| **Inicio** | Saludo + título, menú **☰** (perfil, recuerdos cercanos, admin si sos staff, cerrar sesión), banner de recuerdo, borradores, **Vista** (lista / 2 / 3 / 4, aplica a recientes y populares), esas dos secciones y **acciones rápidas** (se pliegan). **Ver más** abre Explorar. Portada: foto o ilustración de categoría padre; borde verde/morado. |
 | **Explorar** | Búsqueda de sitios (cabecera Figma, chips de categoría, lista o cuadrícula 2/3/4). Misma lógica: texto obligatorio en modo simple, filtros avanzados, incluir públicos |
 | **+ (centro)** | Guardar o completar un lugar (crear y editar son la **misma pantalla**) |
 | **Planes** | Tus itinerarios (tarjeta de crear + lista; **un solo** CTA, sin FAB duplicado) |
@@ -199,7 +199,7 @@ Lista de paradas que marcaste hechas (sitio, plan, fecha). Sirve como “ya pas�
 
 ## 8. Cercanía (“recuerdos”)
 
-En Inicio, el banner **Recuerdo cercano** (y la campana) abre una hoja corta: radio (100–2000 m) y si querés que cuenten **sitios públicos** además de los tuyos.
+En Inicio, el banner **Recuerdo cercano** (y **Más opciones → Recuerdos cercanos**) abre una hoja corta: radio (100–2000 m) y si querés que cuenten **sitios públicos** además de los tuyos.
 
 El teléfono registra geocercas (tope práctico ~100, priorizando los tuyos). Si entrás al radio, notificación tipo recuerdo. Pedir ubicación “siempre” y el gasto de batería aún se pueden pulir.
 
@@ -223,7 +223,7 @@ flowchart TD
 
 ## 9. Admin y moderación
 
-Solo staff.
+Solo staff. Entrás por **Más opciones (☰)** en Inicio → Panel administrador / Reportes.
 
 - **Categorías**: árbol, keywords para autocomplete, activar/desactivar, +18.
 - **Tipos de transporte**: grupo (particular / público / otro), km máximos por defecto, icono.

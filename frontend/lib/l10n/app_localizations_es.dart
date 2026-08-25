@@ -31,6 +31,28 @@ class AppLocalizationsEs extends AppLocalizations {
   String get navRoutes => 'Rutas';
 
   @override
+  String get moreMenuOpenTooltip => 'Más opciones';
+
+  @override
+  String get moreMenuManageAccount => 'Ver perfil';
+
+  @override
+  String get moreMenuProximitySubtitle => 'Radio y sitios públicos';
+
+  @override
+  String get moreMenuReports => 'Reportes';
+
+  @override
+  String get moreMenuSignOut => 'Cerrar sesión';
+
+  @override
+  String get moreMenuProfileComingTitle => 'Tu perfil';
+
+  @override
+  String get moreMenuProfileComingBody =>
+      'Pronto vas a poder ver y editar tu cuenta desde aquí.';
+
+  @override
   String get actionCancel => 'Cancelar';
 
   @override

@@ -136,6 +136,48 @@ abstract class AppLocalizations {
   /// **'Rutas'**
   String get navRoutes;
 
+  /// No description provided for @moreMenuOpenTooltip.
+  ///
+  /// In es, this message translates to:
+  /// **'Más opciones'**
+  String get moreMenuOpenTooltip;
+
+  /// No description provided for @moreMenuManageAccount.
+  ///
+  /// In es, this message translates to:
+  /// **'Ver perfil'**
+  String get moreMenuManageAccount;
+
+  /// No description provided for @moreMenuProximitySubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Radio y sitios públicos'**
+  String get moreMenuProximitySubtitle;
+
+  /// No description provided for @moreMenuReports.
+  ///
+  /// In es, this message translates to:
+  /// **'Reportes'**
+  String get moreMenuReports;
+
+  /// No description provided for @moreMenuSignOut.
+  ///
+  /// In es, this message translates to:
+  /// **'Cerrar sesión'**
+  String get moreMenuSignOut;
+
+  /// No description provided for @moreMenuProfileComingTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Tu perfil'**
+  String get moreMenuProfileComingTitle;
+
+  /// No description provided for @moreMenuProfileComingBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Pronto vas a poder ver y editar tu cuenta desde aquí.'**
+  String get moreMenuProfileComingBody;
+
   /// No description provided for @actionCancel.
   ///
   /// In es, this message translates to:

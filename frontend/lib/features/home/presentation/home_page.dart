@@ -15,6 +15,8 @@ import '../../../core/prefetch/site_prefetch.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/testing/widget_keys.dart';
 import '../../../core/widgets/app_feed_layout_toggle.dart';
+import '../../../core/widgets/app_more_menu_drawer.dart';
+import '../../../core/widgets/coming_soon_page.dart';
 import '../../admin/presentation/admin_page.dart';
 import '../../auth/data/profile.dart';
 import '../../moderation/presentation/admin_reports_page.dart';
@@ -48,6 +50,7 @@ class _HomePageState extends ConsumerState<HomePage> {
   int _tab = 0; // 0 inicio, 1 explorar, 2 planes, 3 rutas
   DateTime? _exitArmedAt;
   static const _exitWindow = Duration(seconds: 2);
+  final _scaffoldKey = GlobalKey<ScaffoldState>();
 
   /// Instancias cacheadas: se crean al primer toque (lazy) y se reutilizan.
   Widget? _exploreTab;
@@ -61,6 +64,11 @@ class _HomePageState extends ConsumerState<HomePage> {
   }
 
   void _onRootBack() {
+    final scaffold = _scaffoldKey.currentState;
+    if (scaffold?.isEndDrawerOpen ?? false) {
+      scaffold!.closeEndDrawer();
+      return;
+    }
     if (_tab != 0) {
       _selectTab(0);
       return;
@@ -208,6 +216,43 @@ class _HomePageState extends ConsumerState<HomePage> {
     }
   }
 
+  void _openAdmin() {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => AdminPage(
+          repository: ref.read(adminRepositoryProvider),
+        ),
+      ),
+    );
+  }
+
+  void _openReports() {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => AdminReportsPage(
+          repository: ref.read(moderationRepositoryProvider),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _signOut() async {
+    await clearSessionCaches(
+      invalidate: ref.invalidate,
+      read: ref.read,
+    );
+    await ref.read(authRepositoryProvider).signOut();
+  }
+
+  void _openProfileSoon() {
+    final l10n = context.l10n;
+    ComingSoonPage.open(
+      context,
+      title: l10n.moreMenuProfileComingTitle,
+      body: l10n.moreMenuProfileComingBody,
+    );
+  }
+
   Future<void> _openSite({UserSave? existing}) async {
     if (existing == null) return;
     final outcome = await openSiteDetail(context, save: existing);
@@ -279,9 +324,10 @@ class _HomePageState extends ConsumerState<HomePage> {
         'Usuario';
     final isStaff = _profile?.role.isStaff ?? false;
     final initial = name.trim().isNotEmpty ? name.trim()[0].toUpperCase() : 'U';
-
-    final adminRepo = ref.read(adminRepositoryProvider);
-    final moderationRepo = ref.read(moderationRepositoryProvider);
+    final email = user.email;
+    final avatarUrl = _profile?.avatarUrl ??
+        user.userMetadata?['avatar_url'] as String? ??
+        user.userMetadata?['picture'] as String?;
 
     final nearbyAsync = ref.watch(homeNearbyProvider);
     final nearbySnap = nearbyAsync.valueOrNull;
@@ -291,79 +337,70 @@ class _HomePageState extends ConsumerState<HomePage> {
     final nearbyNeedGps = nearbySnap?.needGps ?? false;
 
     return PopScope(
+      key: WidgetKeys.homeShell,
       canPop: false,
       onPopInvokedWithResult: (didPop, _) {
         if (didPop) return;
         _onRootBack();
       },
       child: Scaffold(
-        key: const Key('home_shell'),
+        key: _scaffoldKey,
         backgroundColor: AppColors.background,
         extendBody: true,
-      body: SafeArea(
-        bottom: false,
-        child: IndexedStack(
+        endDrawer: AppMoreMenuDrawer(
+          displayName: name,
+          initial: initial,
+          email: email,
+          avatarUrl: avatarUrl,
+          isStaff: isStaff,
+          onProfile: _openProfileSoon,
+          onProximity: _openProximityPrefs,
+          onAdmin: _openAdmin,
+          onReports: _openReports,
+          onSignOut: () {
+            unawaited(_signOut());
+          },
+        ),
+        body: SafeArea(
+          bottom: false,
+          child: IndexedStack(
+            index: _tab,
+            sizing: StackFit.expand,
+            children: [
+              _InicioTab(
+                greeting: _greeting(l10n),
+                loading: _loading,
+                error: _error,
+                saves: _saves,
+                nearby: nearbyHits,
+                nearbyLoading: nearbyLoading,
+                nearbyNeedGps: nearbyNeedGps,
+                profile: _profile,
+                onRefresh: () async {
+                  await Future.wait([
+                    _bootstrap(forceRefresh: true),
+                    ref.read(homeNearbyProvider.notifier).refresh(force: true),
+                  ]);
+                },
+                onOpenSave: _openSave,
+                onOpenSite: _openSite,
+                onOpenHit: _openHit,
+                onProximity: _openProximityPrefs,
+                onOpenMenu: () => _scaffoldKey.currentState?.openEndDrawer(),
+                onExplore: () => _selectTab(1),
+              ),
+              _tabSlot(slot: 1, page: _exploreTab),
+              _tabSlot(slot: 2, page: _plansTab),
+              _tabSlot(slot: 3, page: _routesTab),
+            ],
+          ),
+        ),
+        bottomNavigationBar: _ChevereBottomNav(
           index: _tab,
-          sizing: StackFit.expand,
-          children: [
-            _InicioTab(
-              greeting: _greeting(l10n),
-              name: name,
-              initial: initial,
-              isStaff: isStaff,
-              loading: _loading,
-              error: _error,
-              saves: _saves,
-              nearby: nearbyHits,
-              nearbyLoading: nearbyLoading,
-              nearbyNeedGps: nearbyNeedGps,
-              profile: _profile,
-              onRefresh: () async {
-                await Future.wait([
-                  _bootstrap(forceRefresh: true),
-                  ref.read(homeNearbyProvider.notifier).refresh(force: true),
-                ]);
-              },
-              onOpenSave: _openSave,
-              onOpenSite: _openSite,
-              onOpenHit: _openHit,
-              onProximity: _openProximityPrefs,
-              onAdmin: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => AdminPage(repository: adminRepo),
-                  ),
-                );
-              },
-              onReports: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) =>
-                        AdminReportsPage(repository: moderationRepo),
-                  ),
-                );
-              },
-              onSignOut: () async {
-                await clearSessionCaches(
-                  invalidate: ref.invalidate,
-                  read: ref.read,
-                );
-                await ref.read(authRepositoryProvider).signOut();
-              },
-              onExplore: () => _selectTab(1),
-            ),
-            _tabSlot(slot: 1, page: _exploreTab),
-            _tabSlot(slot: 2, page: _plansTab),
-            _tabSlot(slot: 3, page: _routesTab),
-          ],
+          onChanged: _selectTab,
+          onGuardar: () => _openSave(),
         ),
       ),
-      bottomNavigationBar: _ChevereBottomNav(
-        index: _tab,
-        onChanged: _selectTab,
-        onGuardar: () => _openSave(),
-      ),
-    ),
     );
   }
 }
@@ -478,9 +515,6 @@ class _ChevereBottomNav extends StatelessWidget {
 class _InicioTab extends ConsumerWidget {
   const _InicioTab({
     required this.greeting,
-    required this.name,
-    required this.initial,
-    required this.isStaff,
     required this.loading,
     required this.error,
     required this.saves,
@@ -493,16 +527,11 @@ class _InicioTab extends ConsumerWidget {
     required this.onOpenSite,
     required this.onOpenHit,
     required this.onProximity,
-    required this.onAdmin,
-    required this.onReports,
-    required this.onSignOut,
+    required this.onOpenMenu,
     required this.onExplore,
   });
 
   final String greeting;
-  final String name;
-  final String initial;
-  final bool isStaff;
   final bool loading;
   final String? error;
   final List<UserSave> saves;
@@ -515,9 +544,7 @@ class _InicioTab extends ConsumerWidget {
   final Future<void> Function({UserSave? existing}) onOpenSite;
   final Future<void> Function(SearchHit hit) onOpenHit;
   final VoidCallback onProximity;
-  final VoidCallback onAdmin;
-  final VoidCallback onReports;
-  final VoidCallback onSignOut;
+  final VoidCallback onOpenMenu;
   final VoidCallback onExplore;
 
   @override
@@ -561,52 +588,14 @@ class _InicioTab extends ConsumerWidget {
                       ],
                     ),
                   ),
-                  Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      _roundIcon(
-                        icon: Icons.notifications_none_rounded,
-                        onTap: onProximity,
-                      ),
-                      if (profile != null)
-                        Positioned(
-                          top: 6,
-                          right: 6,
-                          child: Container(
-                            width: 7,
-                            height: 7,
-                            decoration: const BoxDecoration(
-                              color: AppColors.accent,
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                  const SizedBox(width: 8),
-                  if (isStaff) ...[
-                    GestureDetector(
-                      onTap: onAdmin,
-                      child: Container(
-                        width: 36,
-                        height: 36,
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          color: AppColors.primary.withValues(alpha: 0.2),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Text(
-                          initial,
-                          style: GoogleFonts.plusJakartaSans(
-                            fontWeight: FontWeight.w800,
-                            color: AppColors.primary,
-                          ),
-                        ),
-                      ),
+                  Tooltip(
+                    message: l10n.moreMenuOpenTooltip,
+                    child: _roundIcon(
+                      key: WidgetKeys.homeMoreMenu,
+                      icon: Icons.menu_rounded,
+                      onTap: onOpenMenu,
                     ),
-                    const SizedBox(width: 8),
-                  ],
-                  _roundIcon(icon: Icons.logout_rounded, onTap: onSignOut),
+                  ),
                 ],
               ),
             ),
@@ -918,8 +907,13 @@ class _InicioTab extends ConsumerWidget {
     );
   }
 
-  Widget _roundIcon({required IconData icon, required VoidCallback onTap}) {
+  Widget _roundIcon({
+    Key? key,
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
     return Material(
+      key: key,
       color: AppColors.surface,
       shape: const CircleBorder(),
       child: InkWell(
