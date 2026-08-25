@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:path/path.dart' as p;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
@@ -434,7 +435,7 @@ class SavesRepository {
       );
     }
 
-    final rawExt = file.path.split('.').last.toLowerCase();
+    final rawExt = p.extension(file.path).replaceFirst('.', '').toLowerCase();
     final ext = (rawExt == 'jpg' ||
             rawExt == 'jpeg' ||
             rawExt == 'png' ||

@@ -2,7 +2,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:patrol/patrol.dart';
 
 import '../helpers/critical_harness.dart';
-import '../robots/robots.dart';
 
 void main() {
   patrolTest(

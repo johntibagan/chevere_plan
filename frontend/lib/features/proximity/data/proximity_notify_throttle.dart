@@ -2,6 +2,8 @@ import 'dart:convert';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../../core/formatters/date_format.dart';
+
 /// Tope: 1 recuerdo local por sitio y día civil (hora local del dispositivo).
 class ProximityNotifyThrottle {
   ProximityNotifyThrottle._();
@@ -9,13 +11,7 @@ class ProximityNotifyThrottle {
   static const _kLastShownMap = 'proximity_last_shown_v1';
 
   /// Día local `yyyy-MM-dd`.
-  static String dayKey([DateTime? now]) {
-    final n = now ?? DateTime.now();
-    final y = n.year.toString().padLeft(4, '0');
-    final m = n.month.toString().padLeft(2, '0');
-    final d = n.day.toString().padLeft(2, '0');
-    return '$y-$m-$d';
-  }
+  static String dayKey([DateTime? now]) => formatLocalDayIso(now);
 
   static Future<bool> shouldNotify(String siteId, {DateTime? now}) async {
     final id = siteId.trim();

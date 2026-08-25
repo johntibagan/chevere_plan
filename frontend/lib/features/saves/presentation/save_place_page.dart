@@ -907,7 +907,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
 
       setState(() => _saving = false);
       final seed = <File>[
-        if (_pendingPhoto != null) _pendingPhoto!,
+        ?_pendingPhoto,
       ];
       await Navigator.of(context).push<bool>(
         MaterialPageRoute(
@@ -1267,7 +1267,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
       if (linkedToExisting) {
         setState(() => _saving = false);
         final seed = <File>[
-          if (_pendingPhoto != null) _pendingPhoto!,
+          ?_pendingPhoto,
         ];
         await Navigator.of(context).push<bool>(
           MaterialPageRoute(

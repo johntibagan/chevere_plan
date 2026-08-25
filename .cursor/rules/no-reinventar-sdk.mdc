@@ -1,0 +1,24 @@
+---
+description: No reinventar Dart, Flutter ni librerías ya en el pubspec
+alwaysApply: true
+globs: frontend/**/*.dart
+---
+
+# No reinventar (frontend)
+
+Si Dart, Flutter o una lib **ya** en `frontend/pubspec.yaml` hace lo mismo, usala. No copies un algoritmo “por si acaso”.
+
+## Obligatorio
+
+- Fechas de UI: `formatDateDmY` / `DateFormat('dd/MMM/y', 'es')`. Sin listas de meses.
+- Claves de día: `formatUtcDayCompact` / `formatLocalDayIso` (`DateFormat`), no `padLeft`.
+- Distancia GPS: `Geolocator.distanceBetween` (m), no Haversine con `dart:math`.
+- Posición del dispositivo: `DeviceLocation` / `tryCurrent`, no copiar `checkPermission`+`getCurrentPosition` en cada pantalla.
+- Extensión de archivo: `package:path` (`p.extension`), no `split('.')`.
+- Antes de un util nuevo: buscar en `pubspec.yaml` y `lib/core/`.
+
+## No sustituir (negocio)
+
+Anti-dupe, fuzzy DIVIPOLA, `ShareParser`, `parsePgBool`, embeds PostgREST, caché SWR/Hive, flujo Guardar sitio.
+
+Detalle: [`docs/lineamientos-desarrollo-frontend.md`](docs/lineamientos-desarrollo-frontend.md) §2.2.

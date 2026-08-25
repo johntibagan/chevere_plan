@@ -11,3 +11,13 @@ String formatDateDmY(DateTime value, {bool toLocal = true, String? locale}) {
 String formatDateTimeShort(DateTime value, {bool toLocal = true, String? locale}) {
   return formatDateDmY(value, toLocal: toLocal, locale: locale);
 }
+
+/// Clave de cupo UTC `yyyyMMdd` (no es fecha de UI).
+String formatUtcDayCompact([DateTime? now]) {
+  return DateFormat('yyyyMMdd').format((now ?? DateTime.now()).toUtc());
+}
+
+/// Día civil local `yyyy-MM-dd`.
+String formatLocalDayIso([DateTime? now]) {
+  return DateFormat('yyyy-MM-dd').format(now ?? DateTime.now());
+}

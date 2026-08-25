@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:path/path.dart' as p;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
@@ -121,7 +122,7 @@ class SiteReviewsRepository {
   }) async {
     final uid = _uid;
     if (uid == null) throw const AppUserError('Sin sesión');
-    final ext = file.path.split('.').last.toLowerCase();
+    final ext = p.extension(file.path).replaceFirst('.', '').toLowerCase();
     final safeExt = ['jpg', 'jpeg', 'png', 'webp', 'heic'].contains(ext)
         ? (ext == 'jpeg' ? 'jpg' : ext)
         : 'jpg';

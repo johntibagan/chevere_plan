@@ -1,6 +1,7 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../core/config/env.dart';
+import '../../../core/formatters/date_format.dart';
 
 /// Cupo diario local para Places + Geocoding (anti-fugas de factura).
 class GooglePlacesQuota {
@@ -9,13 +10,8 @@ class GooglePlacesQuota {
 
   final int dailyLimit;
 
-  static String _dayKey() {
-    final now = DateTime.now().toUtc();
-    final y = now.year.toString().padLeft(4, '0');
-    final m = now.month.toString().padLeft(2, '0');
-    final d = now.day.toString().padLeft(2, '0');
-    return 'google_places_quota_$y$m$d';
-  }
+  static String _dayKey() =>
+      'google_places_quota_${formatUtcDayCompact()}';
 
   Future<int> usedToday() async {
     final prefs = await SharedPreferences.getInstance();

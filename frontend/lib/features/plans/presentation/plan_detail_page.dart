@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:geolocator/geolocator.dart';
 
 import '../../../core/cache/cache_ttl.dart';
 import '../../../core/di/providers.dart';
@@ -126,24 +125,9 @@ class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
   }
 
   Future<(double, double)?> _currentLocation() async {
-    try {
-      var permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-      }
-      if (permission == LocationPermission.denied ||
-          permission == LocationPermission.deniedForever) {
-        return null;
-      }
-      final pos = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.medium,
-        ),
-      );
-      return (pos.latitude, pos.longitude);
-    } catch (_) {
-      return null;
-    }
+    final fix = await ref.read(deviceLocationProvider).tryCurrent();
+    if (fix == null) return null;
+    return (fix.lat, fix.lng);
   }
 
   Future<void> _openMaps() async {

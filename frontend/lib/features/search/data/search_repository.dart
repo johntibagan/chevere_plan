@@ -1,5 +1,4 @@
-import 'dart:math' as math;
-
+import 'package:geolocator/geolocator.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/logging/app_log.dart';
@@ -186,18 +185,8 @@ class SearchRepository {
   }
 
   double _approxKm(double lat1, double lng1, double lat2, double lng2) {
-    const r = 6371.0;
-    final dLat = _rad(lat2 - lat1);
-    final dLng = _rad(lng2 - lng1);
-    final a = math.sin(dLat / 2) * math.sin(dLat / 2) +
-        math.cos(_rad(lat1)) *
-            math.cos(_rad(lat2)) *
-            math.sin(dLng / 2) *
-            math.sin(dLng / 2);
-    return 2 * r * math.asin(math.sqrt(a));
+    return Geolocator.distanceBetween(lat1, lng1, lat2, lng2) / 1000.0;
   }
-
-  double _rad(double d) => d * math.pi / 180.0;
 
   /// Fallback sin RPC: mis guardados complete (+ públicos si se pide).
   Future<List<SearchHit>> _searchLocalFallback(SearchFilters filters) async {

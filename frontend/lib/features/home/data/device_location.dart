@@ -38,4 +38,26 @@ class DeviceLocation {
     );
     return GeoFix(pos.latitude, pos.longitude);
   }
+
+  /// Permiso + fix, o null (denegado o error). No cambia [current] (Inicio).
+  Future<GeoFix?> tryCurrent({
+    LocationAccuracy accuracy = LocationAccuracy.medium,
+    Duration? timeLimit,
+    bool request = true,
+  }) async {
+    if (await access(request: request) == LocationAccess.denied) {
+      return null;
+    }
+    try {
+      final pos = await Geolocator.getCurrentPosition(
+        locationSettings: LocationSettings(
+          accuracy: accuracy,
+          timeLimit: timeLimit,
+        ),
+      );
+      return GeoFix(pos.latitude, pos.longitude);
+    } catch (_) {
+      return null;
+    }
+  }
 }

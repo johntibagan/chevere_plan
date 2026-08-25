@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:geolocator/geolocator.dart';
 
 import '../../../core/cache/cache_ttl.dart';
 import '../../../core/cache/paged_items.dart';
@@ -107,24 +106,9 @@ class _PlanBuilderPageState extends ConsumerState<PlanBuilderPage> {
 
   Future<(double?, double?)> _maybeLocation() async {
     if (!_useMyLocation) return (null, null);
-    try {
-      var permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-      }
-      if (permission == LocationPermission.denied ||
-          permission == LocationPermission.deniedForever) {
-        return (null, null);
-      }
-      final pos = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.medium,
-        ),
-      );
-      return (pos.latitude, pos.longitude);
-    } catch (_) {
-      return (null, null);
-    }
+    final fix = await ref.read(deviceLocationProvider).tryCurrent();
+    if (fix == null) return (null, null);
+    return (fix.lat, fix.lng);
   }
 
   double? _parseNum(String raw) {

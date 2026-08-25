@@ -160,7 +160,7 @@ class SiteFicha {
       sharedPeople: people.isNotEmpty
           ? people
           : [
-              if (resolvedCreator != null) resolvedCreator,
+              ?resolvedCreator,
               ...resolvedAlso,
             ],
       createdByPerson: resolvedCreator,
@@ -257,7 +257,7 @@ class SiteFicha {
       createdById: createdBy,
     );
     final people = [
-      if (creator != null) creator,
+      ?creator,
       ...also,
     ];
     final ext = site['external_id'] as String?;

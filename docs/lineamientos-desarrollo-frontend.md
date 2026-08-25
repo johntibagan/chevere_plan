@@ -19,6 +19,7 @@ La prioridad número uno de este proyecto es **la agilidad percibida por el usua
 - **Código legible antes que ingenioso**: nombres explícitos, funciones cortas y de una sola responsabilidad, comentarios solo donde el código no se explica solo. Preferir claridad sobre abstracciones prematuras.
 - **Nada de reglas de negocio hardcodeadas**: todo lo parametrizable (categorías, vehículos, tarifas, topes, divisiones político-administrativas) vive en base de datos, nunca en el código.
 - **No inventar comportamiento**: si la especificación no cubre un detalle necesario para codificar, se pregunta antes de asumir.
+- **No reinventar el SDK ni el pubspec:** ver [§2.2](#22-no-reinventar-dartflutterpubspec).
 
 ## 2.1 Seguridad (cliente)
 
@@ -28,6 +29,23 @@ La prioridad número uno de este proyecto es **la agilidad percibida por el usua
 - Share/deep link: `ShareParser` recorta y rechaza `javascript:` / `data:` / `file:` / `content:`.
 - Release Android: R8 minify + shrink resources. Ubicación “siempre” sigue en el manifiesto porque el geofencing de proximidad lo usa; pulir el prompt in-app sigue pendiente de producto.
 - i18n: `flutter_localizations` + `generate: true` + `app_es.arb` (ICU). No `intl_utils` (doble codegen). Moneda: `NumberFormat` / `formatMoney`, código desde el modelo.
+
+## 2.2 No reinventar Dart / Flutter / pubspec
+
+Antes de un helper o lista quemada: ¿lo resuelve el SDK o una dependencia **ya** en `pubspec.yaml`? Si sí, usá eso. Si no está en el pubspec, **no** agregues un paquete “por las dudas”; preguntá.
+
+| En vez de | Usar |
+|---|---|
+| Lista `ene, feb, ago…` | `DateFormat('dd/MMM/y', 'es')` / `formatDateDmY` |
+| `padLeft` para armar `yyyyMMdd` | `DateFormat('yyyyMMdd')` / `formatUtcDayCompact` |
+| Haversine a mano (`sin`/`asin`/`6371`) | `Geolocator.distanceBetween` |
+| `checkPermission` + `getCurrentPosition` copiado | `DeviceLocation.tryCurrent` |
+| `file.path.split('.').last` | `package:path` → `p.extension` |
+| Parser de fecha a mano | `DateTime.tryParse` + `DateFormat` |
+
+**Sí se escribe a mano** (no hay equivalente fiel): anti-dupe, fuzzy DIVIPOLA, `ShareParser`, `parsePgBool`, `joinMap` de PostgREST, SWR/Hive, políticas de Guardar sitio.
+
+Al tocar `frontend/`: `flutter analyze`; `dart fix --dry-run` y `--apply` solo de códigos seguros (no un apply ciego que meta deps raras).
 
 ## 3. Multi-idioma y multi-región (preparación a futuro)
 

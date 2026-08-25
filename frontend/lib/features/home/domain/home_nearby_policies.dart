@@ -1,4 +1,4 @@
-import 'dart:math' as math;
+import 'package:geolocator/geolocator.dart';
 
 /// Celdas para «populares cerca»: no reconsultar si seguís cerca del ancla.
 /// Misma idea que las geocercas de recuerdos (salís del radio → evento).
@@ -49,16 +49,6 @@ abstract final class HomeNearbyPolicies {
     double lat2,
     double lng2,
   ) {
-    const r = 6371000.0;
-    final dLat = _rad(lat2 - lat1);
-    final dLng = _rad(lng2 - lng1);
-    final a = math.sin(dLat / 2) * math.sin(dLat / 2) +
-        math.cos(_rad(lat1)) *
-            math.cos(_rad(lat2)) *
-            math.sin(dLng / 2) *
-            math.sin(dLng / 2);
-    return 2 * r * math.asin(math.min(1.0, math.sqrt(a)));
+    return Geolocator.distanceBetween(lat1, lng1, lat2, lng2);
   }
-
-  static double _rad(double d) => d * math.pi / 180.0;
 }

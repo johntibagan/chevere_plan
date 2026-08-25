@@ -11,6 +11,7 @@ import '../../../core/l10n/context_l10n.dart';
 import '../../../core/testing/widget_keys.dart';
 import '../../../core/widgets/app_toast.dart';
 import '../../../core/widgets/field_action_icon.dart';
+import '../../home/data/device_location.dart';
 import '../data/geo_place.dart';
 import '../data/google_places_client.dart';
 import '../data/place_geocoder.dart';
@@ -238,25 +239,29 @@ class _LocationPickerPageState extends ConsumerState<LocationPickerPage> {
       _locating = true;
       _hint = null;
     });
+    final loc = ref.read(deviceLocationProvider);
+    if (await loc.access(request: true) == LocationAccess.denied) {
+      if (!mounted) return;
+      setState(() {
+        _hint = context.l10n.locationNeedGps;
+        _locating = false;
+      });
+      return;
+    }
+    final fix = await loc.tryCurrent(
+      accuracy: LocationAccuracy.high,
+      request: false,
+    );
+    if (!mounted) return;
+    if (fix == null) {
+      setState(() {
+        _hint = context.l10n.locationGpsFail;
+        _locating = false;
+      });
+      return;
+    }
     try {
-      var permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-      }
-      if (permission == LocationPermission.denied ||
-          permission == LocationPermission.deniedForever) {
-        setState(() {
-          _hint = context.l10n.locationNeedGps;
-          _locating = false;
-        });
-        return;
-      }
-      final pos = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.high,
-        ),
-      );
-      final next = LatLng(pos.latitude, pos.longitude);
+      final next = LatLng(fix.lat, fix.lng);
       setState(() => _locating = false);
       await _mapController?.animateCamera(
         CameraUpdate.newLatLngZoom(next, 16),

@@ -46,8 +46,8 @@ class BigDataCloudGeocoder {
         _nonEmpty(json['locality']?.toString());
     final department = _nonEmpty(json['principalSubdivision']?.toString());
     final address = [
-      if (city != null) city,
-      if (department != null) department,
+      ?city,
+      ?department,
     ].join(', ');
 
     return GeoPlace(
