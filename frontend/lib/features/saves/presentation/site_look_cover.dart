@@ -36,16 +36,16 @@ class SiteLookCover extends ConsumerWidget {
     if (path != null && path.isEmpty) path = null;
 
     final id = siteId?.trim();
-    final needLook = names.isEmpty &&
-        path == null &&
-        (imageUrl == null || imageUrl!.trim().isEmpty) &&
-        id != null &&
-        id.isNotEmpty;
-    if (needLook) {
+    // Las cards siempre traen categoría; si no pedimos el look, nunca llega
+    // la foto de portada y se queda la ilustración.
+    if (id != null &&
+        id.isNotEmpty &&
+        (imageUrl == null || imageUrl!.trim().isEmpty)) {
       final look = ref.watch(siteLookProvider(id)).valueOrNull;
       if (look != null) {
-        names = look.categoryNames;
-        path = look.coverStoragePath;
+        if (names.isEmpty) names = look.categoryNames;
+        final lookPath = look.coverStoragePath?.trim();
+        if (lookPath != null && lookPath.isNotEmpty) path = lookPath;
       }
     }
 

@@ -13,9 +13,9 @@ Eso es un modal/sheet mal montado, no “datos vacíos”.
 ## Reglas
 
 1. **Galerías de fotos del sitio** → tira horizontal incrustada en la ficha
-   (`SiteDetailPage`), no un bottom sheet. Acciones por foto con menú ⋮.
-   Tocar una miniatura abre **página** a pantalla completa (`SitePhotoViewerPage`),
-   no un sheet.
+   (`SiteDetailPage`), no un bottom sheet. La tira **no** lleva menú ⋮.
+   Tocar una miniatura abre **página** a pantalla completa (`SitePhotoViewerPage`);
+   ahí van autor, fecha y ⋮ (portada / eliminar / reportar). No un sheet.
 
 2. **Otras listas altas / formularios largos** → `Navigator.push` + `Scaffold`
    si no van embebidos en una ficha.

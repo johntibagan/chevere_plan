@@ -11,7 +11,7 @@ El mismo sitio debe **verse igual** en todos lados: Inicio, Explorar, planes (ca
 
 - Portada de **sitio** = `SiteLookCover` (categoría **padre** + foto de encabezado). No `SiteCover(seed: plan.id)` ni hash del id.
 - Varias categorías: la **primera**, luego su padre.
-- Foto de encabezado = `sites.cover_photo_id` si existe; si no, la **primera** (`sort_order`, fecha). Misma en listas, tarjetas y ficha. El creador (o staff) puede **Usar como portada** desde el menú ⋮ (tira o visor). Miniaturas siguen esa portada.
+- Foto de encabezado = `sites.cover_photo_id`. Si no hay, la **primera** foto se asigna como portada y no se reemplaza al subir más. El creador (o staff) cambia la portada solo desde el ⋮ del visor. Miniaturas y tarjetas usan esa misma foto.
 - Sin foto: ilustración del padre (no “Otros” si hay categoría).
 - Un plan usa la portada del **primer sitio** del itinerario, no una ilustración propia del plan.
 

@@ -84,7 +84,9 @@ class _SameSitePickerPageState extends State<SameSitePickerPage> {
                       ),
                       Expanded(
                         child: InkWell(
-                          onTap: () => _openFicha(d),
+                          onTap: d.siteId.isEmpty
+                              ? null
+                              : () => _openFicha(d),
                           child: Row(
                             children: [
                               ClipRRect(

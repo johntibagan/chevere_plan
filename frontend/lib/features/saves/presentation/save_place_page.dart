@@ -14,6 +14,7 @@ import '../../../core/testing/widget_keys.dart';
 import '../../../core/l10n/context_l10n.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_form_card.dart';
+import '../../../core/widgets/app_retry_callout.dart';
 import '../../../core/widgets/app_section_label.dart';
 import '../../../core/widgets/app_select_chip.dart';
 import '../../../core/widgets/app_toast.dart';
@@ -95,6 +96,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
   bool _isPhysical = true;
   bool _loadingCats = true;
   bool _saving = false;
+  bool _submitFailed = false;
   bool _importingMaps = false;
   bool _addingSocial = false;
   /// true = pegar enlace Google Maps; false = mapa interactivo.
@@ -1091,7 +1093,10 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
       }
     }
 
-    setState(() => _saving = true);
+    setState(() {
+      _saving = true;
+      _submitFailed = false;
+    });
     try {
       String resultSiteId;
       UserSave? saved;
@@ -1312,7 +1317,10 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
       Navigator.pop(context, saved ?? resultSiteId);
     } catch (e) {
       if (!mounted) return;
-      setState(() => _saving = false);
+      setState(() {
+        _saving = false;
+        _submitFailed = true;
+      });
       AppToast.error(context, e, logContext: 'save_place_submit');
     }
   }
@@ -1888,23 +1896,34 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
                 top: false,
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
-                  child: FilledButton(
-                    key: WidgetKeys.saveSubmit,
-                    onPressed: (_saving || !nameOk) ? null : _submit,
-                    style: FilledButton.styleFrom(
-                      minimumSize: const Size.fromHeight(52),
-                    ),
-                    child: _saving
-                        ? const SizedBox(
-                            width: 22,
-                            height: 22,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : Text(
-                            _isEditing
-                                ? l10n.savePlaceSubmitEdit
-                                : l10n.savePlaceSubmit,
-                          ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      if (_submitFailed)
+                        AppRetryCallout(
+                          onRetry: _submit,
+                          padding: const EdgeInsets.only(bottom: 8),
+                        ),
+                      FilledButton(
+                        key: WidgetKeys.saveSubmit,
+                        onPressed: (_saving || !nameOk) ? null : _submit,
+                        style: FilledButton.styleFrom(
+                          minimumSize: const Size.fromHeight(52),
+                        ),
+                        child: _saving
+                            ? const SizedBox(
+                                width: 22,
+                                height: 22,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : Text(
+                                _isEditing
+                                    ? l10n.savePlaceSubmitEdit
+                                    : l10n.savePlaceSubmit,
+                              ),
+                      ),
+                    ],
                   ),
                 ),
               ),

@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../l10n/context_l10n.dart';
 import '../theme/app_theme.dart';
 
-/// Menú ⋮ de una foto de sitio (tira y visor).
+/// Menú ⋮ de una foto: solo en el visor a pantalla completa.
 class SitePhotoOverflowButton extends StatelessWidget {
   const SitePhotoOverflowButton({
     super.key,

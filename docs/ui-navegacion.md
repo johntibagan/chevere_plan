@@ -17,7 +17,7 @@ Contratos que no se pueden romper: [`invariantes.md`](invariantes.md).
 2. Respetar **tokens** (§3) y **señales** (§4). No introducir tema claro ni iOS-only.
 3. Mejorar jerarquía, ritmo, fotos, iconografía y microcopy **sin** agregar flujos (favoritos = solo el corazón; no hay IA, no hay admin en Rutas).
 4. **Guardar lugar:** el CTA **Guardar** va **abajo**, ancho, al alcance del pulgar. El Make a veces lo pone en el AppBar: **no replicar eso**.
-5. Las fotos de sitios: encabezado = **portada** (elegida o primera), igual en listas, tarjetas y ficha. Visor a pantalla completa con autor, fecha y ⋮. El resto en la tira de info. Sin foto, ilustración de la **categoría padre**. El mismo sitio se ve igual en Inicio, Explorar, Planes y Rutas.
+5. Las fotos de sitios: encabezado = **portada** (elegida o primera), igual en listas, tarjetas y ficha. Visor a pantalla completa con autor, fecha y ⋮ (portada / eliminar / reportar). La tira de info no lleva ⋮. Sin foto, ilustración de la **categoría padre**. El mismo sitio se ve igual en Inicio, Explorar, Planes y Rutas.
 6. Entregar frames nombrados como las pantallas de la §6 para mapear 1:1 a widgets Flutter.
 
 ---
@@ -249,7 +249,7 @@ Tab activo: icono + label `primary`. Inactivo: `mutedDark`, label 10 px.
 - Header in-body: back circular, título, corazón favorito, ⋮ (editar/descartar).
 - Hero 176: `SiteLookCover` (padre + primera foto / encabezado) + scrim + franja verde/morada + origen + precio.
 - `TabBar`: Info, Reseñas, Más (trazabilidad).
-- Info: datos, galería **incrustada** en tira horizontal (altura fija, ancho proporcional, menú ⋮: portada / eliminar / reportar). Tocar abre visor a pantalla completa (autor, fecha, mismo menú). Enlaces, Maps real (abrir / cómo llegar).
+- Info: datos, galería **incrustada** en tira horizontal (altura fija, ancho proporcional; tocar abre visor). Visor a pantalla completa: autor, fecha, ⋮ (portada / eliminar / reportar). Enlaces, Maps real (abrir / cómo llegar).
 - Reseñas / bitácoras reales (no scores inventados).
 - **No** hay FAB “Agregar a un plan”.
 

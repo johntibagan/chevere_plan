@@ -67,20 +67,46 @@ final savesRepositoryProvider = Provider<SavesRepository>((ref) {
 
 final coverSignedUrlProvider =
     FutureProvider.family<String?, String>((ref, path) async {
-  return ref.watch(savesRepositoryProvider).signedPhotoUrl(path);
+  final p = path.trim();
+  if (p.isEmpty) return null;
+  try {
+    return await ref.watch(moderationRepositoryProvider).signedPhotoUrl(p);
+  } catch (_) {
+    return ref.watch(savesRepositoryProvider).signedPhotoUrl(p);
+  }
 });
 
 final siteLookProvider =
     FutureProvider.family<SiteLook, String>((ref, siteId) async {
   final id = siteId.trim();
   if (id.isEmpty) return const SiteLook();
-  final row = await ref.watch(supabaseClientProvider).from('sites').select(
-        'cover_photo_id, '
-        'site_categories(categories(name_i18n)), '
-        'site_photos(id, storage_path, sort_order, created_at)',
-      ).eq('id', id).maybeSingle();
-  if (row == null) return const SiteLook();
-  return SiteLook.fromSiteMap(Map<String, dynamic>.from(row));
+  final client = ref.watch(supabaseClientProvider);
+  Map<String, dynamic> site = {};
+  try {
+    final raw = await client
+        .from('sites')
+        .select(
+          'cover_photo_id, site_categories(categories(name_i18n))',
+        )
+        .eq('id', id)
+        .maybeSingle();
+    if (raw != null) site = Map<String, dynamic>.from(raw);
+  } catch (_) {
+    final raw = await client
+        .from('sites')
+        .select('site_categories(categories(name_i18n))')
+        .eq('id', id)
+        .maybeSingle();
+    if (raw != null) site = Map<String, dynamic>.from(raw);
+  }
+  try {
+    final photos = await client
+        .from('site_photos')
+        .select('id, storage_path, sort_order, created_at')
+        .eq('site_id', id);
+    site['site_photos'] = photos;
+  } catch (_) {}
+  return SiteLook.fromSiteMap(site);
 });
 
 final favoritesRepositoryProvider = Provider<FavoritesRepository>((ref) {

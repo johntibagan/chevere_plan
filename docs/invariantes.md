@@ -63,7 +63,7 @@ Público es **sección siempre visible**. Sin pin, el interruptor se muestra **d
 - Depto → ciudad (DIVIPOLA, ids, no listas en Dart).
 - Crear: categoría default Otros. Editar: no pisar categorías cargadas.
 - Pegar = icono **dentro** del campo, no botón “Buscar” aparte.
-- Anti-dupe: suave al Maps/pin; en Guardar, “de todas formas”. Lista de coincidencias (públicos + los tuyos; Place ID, pin ~250 m, nombre/ciudad). Fila abre la ficha. Vincular + reseña o bitácora.
+- Anti-dupe: suave al Maps/pin; en Guardar, “de todas formas”. Lista de coincidencias (públicos + los tuyos; Place ID, pin ~250 m, nombre/ciudad). Fila abre la ficha. Vincular + reseña o bitácora. Tras reset full, las coincidencias del catálogo son sitios vivos; abrir/guardar no debe fallar por un select de portada.
 
 Alto riesgo: `save_place_page.dart`, `google_maps_link_importer.dart`, `save_policies.dart`, `saves_repository.dart`, `location_picker_page.dart`.
 
@@ -76,7 +76,7 @@ Alto riesgo: `save_place_page.dart`, `google_maps_link_importer.dart`, `save_pol
 - Listas clicables: chevron; fecha si aporta.
 - Errores en UI: **en el bloque que falló**, texto **"Error en la app. Intenta de nuevo."**; tocarlo reintenta. Nunca “failed”, SQL, PostgREST, stacks, keys. **No** toasts de error técnico. Detalle en `developer.log`.
 - Modales: nada de barrier sin contenido. Fotos del sitio en la ficha, no en sheet.
-- Portada: el **mismo sitio** se ve igual en lista, tarjeta, ficha, planes y rutas (`SiteLookCover`: padre + foto de encabezado). Encabezado = portada elegida (`sites.cover_photo_id`) o, si no hay, la primera foto. Miniaturas = esa misma foto. En visor: autor, fecha, ⋮, asignar portada. Verde/morado de visibilidad se mantiene.
+- Portada: el **mismo sitio** se ve igual en lista, tarjeta, ficha, planes y rutas (`SiteLookCover`: padre + foto de encabezado). Encabezado = portada elegida (`sites.cover_photo_id`). Si no hay portada, la **primera foto** queda como portada y **no** cambia al añadir más; solo “Usar como portada” en el visor la cambia. Miniaturas = esa misma foto. En visor: autor, fecha, ⋮. La tira pequeña no lleva ⋮. Verde/morado de visibilidad se mantiene.
 
 ## Datos
 

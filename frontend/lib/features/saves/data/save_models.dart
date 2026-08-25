@@ -55,9 +55,13 @@ class PossibleDuplicate {
   final int contributorCount;
 
   factory PossibleDuplicate.fromJson(Map<String, dynamic> json) {
+    final rawId = json['site_id'] ?? json['id'];
+    final siteId = rawId?.toString().trim() ?? '';
     return PossibleDuplicate(
-      siteId: json['site_id'] as String,
-      siteName: json['site_name'] as String? ?? 'Sitio',
+      siteId: siteId,
+      siteName: json['site_name'] as String? ??
+          json['name'] as String? ??
+          'Sitio',
       city: json['city'] as String?,
       distanceM: json['distance_m'] == null
           ? null
@@ -449,7 +453,7 @@ class UserSave {
       useExactPin: parsePgBool(site['use_exact_pin']),
       coverStoragePath: siteCoverStoragePath(
         photos: site['site_photos'],
-        coverPhotoId: site['cover_photo_id'] as String?,
+        coverPhotoId: site['cover_photo_id']?.toString(),
       ),
     );
   }
@@ -533,7 +537,7 @@ class SiteLook {
       categoryNames: categoryNamesFromJoin(site['site_categories']),
       coverStoragePath: siteCoverStoragePath(
         photos: site['site_photos'],
-        coverPhotoId: site['cover_photo_id'] as String?,
+        coverPhotoId: site['cover_photo_id']?.toString(),
       ),
     );
   }

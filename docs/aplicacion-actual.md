@@ -114,6 +114,7 @@ flowchart TD
 La app no quiere dos fichas públicas del mismo parque a 80 metros.
 
 - Busca públicos **y tus propios** (aunque sean privados): mismo Place ID, pin cercano (~250 m), nombre parecido hasta 2,5 km, o misma ciudad + nombre.
+- Tras un **reset completo** el catálogo masivo vuelve: si el pin/nombre coincide, **sí hay un sitio real** (no es caché fantasma). Abrir la fila debe mostrar esa ficha; **Guardar de todas formas** crea el tuyo aunque el aviso siga saliendo.
 - **Aviso suave** al pegar Maps o elegir pin: ves **la lista** de sitios parecidos. Tocás la fila para **abrir la ficha** (igual que en Explorar). El círculo marca cuál usar (reseña o bitácora) o seguís con el tuyo. **No** aparece “guardar de todas formas”.
 - **Al Guardar**: la misma lista, más **crear el tuyo público igual** (“de todas formas”).
 - Vincular:
@@ -129,7 +130,7 @@ Staff/admin **no** ve bitácoras ajenas privadas.
 
 Tres pestañas: **info**, **reseñas**, **más** (quién lo creó, catálogo, fechas, “también lo guardaron”).
 
-En info: nombre, visibilidad por color/icono (hero con franja), ciudad, pin, abrir/cómo llegar en Google Maps, categorías, precio, notas, fotos en tira horizontal (altura fija, ancho proporcional; menú ⋮: portada / eliminar / reportar). Tocar una foto la abre a pantalla completa (quién la subió, cuándo, mismo menú, swipe). Enlaces. En el header, corazón de **favorito** (igual que en las cards). **No** hay “agregar a un plan” en esta ficha.
+En info: nombre, visibilidad por color/icono (hero con franja), ciudad, pin, abrir/cómo llegar en Google Maps, categorías, precio, notas, fotos en tira horizontal (altura fija, ancho proporcional; tocar abre el visor). En pantalla completa: quién la subió, cuándo, menú ⋮ (portada / eliminar / reportar), swipe. Enlaces. En el header, corazón de **favorito** (igual que en las cards). **No** hay “agregar a un plan” en esta ficha.
 
 Editar: creador, quien lo tiene en su lista como propio, o staff sobre **público**.
 
@@ -208,7 +209,7 @@ En Inicio, arriba de **Guardados recientes**, elegís **lista** o **cuadrícula 
 
 Las cards/listas muestran **nombre**, **departamento - municipio** y **dirección** si hay. Si el texto no cabe en el alto de la tarjeta, esa zona hace **scroll**.
 
-Sin foto: ilustración de la **categoría padre** (`SiteLookCover`), la misma en Inicio, Explorar, **Planes** (la card usa el primer sitio) y Rutas. Con fotos: encabezado = **portada** (elegida o la primera), igual en tarjetas/listas y ficha. En el visor: autor, fecha y ⋮. El resto se ve en la tira de la ficha.
+Sin foto: ilustración de la **categoría padre** (`SiteLookCover`), la misma en Inicio, Explorar, **Planes** (la card usa el primer sitio) y Rutas. Con fotos: encabezado = **portada**. La primera foto se guarda como portada; las siguientes no la pisan. En el visor, ⋮ → usar como portada. Esa misma foto va en tarjetas y listas.
 
 ```mermaid
 flowchart TD

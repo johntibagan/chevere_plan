@@ -262,14 +262,14 @@ class SiteFicha {
     ];
     final ext = site['external_id'] as String?;
     return SiteFicha(
-      siteId: site['id'] as String,
+      siteId: site['id']?.toString() ?? '',
       name: (site['name'] as String?) ?? 'Sitio',
       city: site['city'] as String?,
       department: site['department'] as String?,
       addressLine: site['address_line'] as String?,
       categoryNames: names,
-      isPublic: site['is_public'] as bool? ?? false,
-      isPhysicalPlace: site['is_physical_place'] as bool? ?? true,
+      isPublic: parsePgBool(site['is_public']),
+      isPhysicalPlace: parsePgBool(site['is_physical_place'], orElse: true),
       alsoSharedBy: also.map((p) => p.tooltipName).toList(),
       sharedPeople: people,
       createdByPerson: creator,

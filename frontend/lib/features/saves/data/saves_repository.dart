@@ -36,6 +36,14 @@ class SavesRepository {
       'site_categories(categories(name_i18n)), '
       'site_photos(id, storage_path, sort_order, created_at))';
 
+  /// Fotos sí (misma portada en cards); sin `cover_photo_id` si PostgREST no la ve.
+  static const _saveSelectSummaryNoCover =
+      'id, user_id, site_id, status, is_public, created_at, '
+      'sites!user_saves_site_id_fkey(name, city, department, address_line, use_exact_pin, '
+      'google_place_id, '
+      'site_categories(categories(name_i18n)), '
+      'site_photos(id, storage_path, sort_order, created_at))';
+
   static const _saveSelectSummaryLite =
       'id, user_id, site_id, status, is_public, created_at, '
       'sites!user_saves_site_id_fkey(name, city, department, address_line, use_exact_pin, '
@@ -82,7 +90,12 @@ class SavesRepository {
       rows = await query(_saveSelectSummary);
     } on PostgrestException catch (e) {
       AppLog.error('listMineSummary', name: 'saves', error: e);
-      rows = await query(_saveSelectSummaryLite);
+      try {
+        rows = await query(_saveSelectSummaryNoCover);
+      } on PostgrestException catch (e2) {
+        AppLog.error('listMineSummary noCover', name: 'saves', error: e2);
+        rows = await query(_saveSelectSummaryLite);
+      }
     }
 
     final out = <UserSave>[];
@@ -129,11 +142,23 @@ class SavesRepository {
         'p_google_place_id': (pid == null || pid.isEmpty) ? null : pid,
       },
     );
-    return (rows as List)
-        .map(
-          (e) => PossibleDuplicate.fromJson(Map<String, dynamic>.from(e as Map)),
-        )
-        .toList();
+    final out = <PossibleDuplicate>[];
+    for (final e in rows as List) {
+      if (e is! Map) continue;
+      try {
+        final d = PossibleDuplicate.fromJson(Map<String, dynamic>.from(e));
+        if (d.siteId.isEmpty) continue;
+        out.add(d);
+      } catch (err, st) {
+        AppLog.error(
+          'findPossibleDuplicates row',
+          name: 'saves',
+          error: err,
+          stackTrace: st,
+        );
+      }
+    }
+    return out;
   }
 
   /// Bloqueos al pasar un sitio público → privado.
@@ -167,7 +192,7 @@ class SavesRepository {
       },
     );
 
-    final save = await _client
+    await _client
         .from('user_saves')
         .update({
           'status': 'complete',
@@ -178,11 +203,9 @@ class SavesRepository {
           'draft_remind_at': null,
         })
         .eq('id', saveId)
-        .eq('user_id', uid)
-        .select(_saveSelect)
-        .single();
+        .eq('user_id', uid);
 
-    return UserSave.fromJoinedJson(Map<String, dynamic>.from(save));
+    return _readUserSave(saveId);
   }
 
   /// Crea o actualiza mi guardado apuntando a un sitio público existente.
@@ -210,22 +233,7 @@ class SavesRepository {
       throw const AppUserError('No se pudo vincular al sitio existente.');
     }
 
-    try {
-      final row = await _client
-          .from('user_saves')
-          .select(_saveSelect)
-          .eq('id', saveId)
-          .single();
-      return UserSave.fromJoinedJson(Map<String, dynamic>.from(row));
-    } catch (_) {
-      // Embed completo a veces falla; basta con el resumen para seguir a reseña.
-      final row = await _client
-          .from('user_saves')
-          .select(_saveSelectSummary)
-          .eq('id', saveId)
-          .single();
-      return UserSave.fromJoinedJson(Map<String, dynamic>.from(row));
-    }
+    return _readUserSave(saveId);
   }
 
   Future<UserSave> createSave(SaveDraftInput input) async {
@@ -320,10 +328,78 @@ class SavesRepository {
           'draft_remind_at': draftRemindAt?.toIso8601String(),
           'is_possible_duplicate': false,
         })
-        .select(_saveSelect)
+        .select('id')
         .single();
 
-    return UserSave.fromJoinedJson(Map<String, dynamic>.from(save));
+    final saveId = save['id'] as String;
+    try {
+      return await _readUserSave(saveId);
+    } catch (e, st) {
+      AppLog.error(
+        'createSave read after insert',
+        name: 'saves',
+        error: e,
+        stackTrace: st,
+      );
+      return UserSave(
+        id: saveId,
+        userId: uid,
+        siteId: siteId,
+        status: status,
+        isPublic: isPublic,
+        siteName: name,
+        sourceUrl: input.sourceUrl,
+        sourceNetwork: input.sourceNetwork,
+        notes: input.notes,
+        city: input.city,
+        cityId: input.cityId,
+        department: input.department,
+        departmentId: input.departmentId,
+        addressLine: input.addressLine,
+        isPhysicalPlace: input.isPhysicalPlace,
+        googlePlaceId: input.googlePlaceId,
+        useExactPin: input.useExactPin,
+      );
+    }
+  }
+
+  /// Join gordo (portada/fotos) puede fallar si PostgREST no ve columnas nuevas.
+  Future<UserSave> _readUserSave(String saveId) async {
+    Future<UserSave> one(String select) async {
+      final row = await _client
+          .from('user_saves')
+          .select(select)
+          .eq('id', saveId)
+          .single();
+      return UserSave.fromJoinedJson(Map<String, dynamic>.from(row));
+    }
+
+    try {
+      return await one(_saveSelect);
+    } catch (e, st) {
+      AppLog.error('readUserSave full', name: 'saves', error: e, stackTrace: st);
+      try {
+        return await one(_saveSelectSummary);
+      } catch (e2, st2) {
+        AppLog.error(
+          'readUserSave summary',
+          name: 'saves',
+          error: e2,
+          stackTrace: st2,
+        );
+        try {
+          return await one(_saveSelectSummaryNoCover);
+        } catch (e3, st3) {
+          AppLog.error(
+            'readUserSave noCover',
+            name: 'saves',
+            error: e3,
+            stackTrace: st3,
+          );
+          return one(_saveSelectSummaryLite);
+        }
+      }
+    }
   }
 
   Future<int> countPhotos(String siteId) async {
@@ -392,13 +468,22 @@ class SavesRepository {
     }
 
     try {
-      await _client.from('site_photos').insert({
+      final inserted = await _client.from('site_photos').insert({
         'site_id': siteId,
         'storage_path': objectPath,
         'source': 'user',
         'uploaded_by': uid,
         'sort_order': current,
-      });
+      }).select('id').single();
+      // Primera foto = portada hasta que elijan otra en el visor.
+      if (current == 0) {
+        final photoId = inserted['id']?.toString();
+        if (photoId != null && photoId.isNotEmpty) {
+          try {
+            await setSiteCoverPhoto(siteId: siteId, photoId: photoId);
+          } catch (_) {}
+        }
+      }
     } on PostgrestException catch (e) {
       try {
         await _client.storage.from('site-photos').remove([objectPath]);
@@ -451,15 +536,10 @@ class SavesRepository {
       throw const AppUserError('Debes iniciar sesión.');
     }
 
-    final row = await _client
-        .from('user_saves')
-        .select(_saveSelect)
-        .eq('id', saveId)
-        .eq('user_id', uid)
-        .single();
-
-    final save =
-        UserSave.fromJoinedJson(Map<String, dynamic>.from(row as Map));
+    final save = await _readUserSave(saveId);
+    if (save.userId != uid) {
+      throw const AppUserError('Debes iniciar sesión.');
+    }
 
     final catRows = await _client
         .from('site_categories')
@@ -702,7 +782,7 @@ class SavesRepository {
         ? DateTime.now().toUtc().add(SavePolicies.draftRemindAfter)
         : null;
 
-    final save = await _client
+    await _client
         .from('user_saves')
         .update({
           'status': status.dbValue,
@@ -713,11 +793,9 @@ class SavesRepository {
           'draft_remind_at': draftRemindAt?.toIso8601String(),
         })
         .eq('id', saveId)
-        .eq('user_id', uid)
-        .select(_saveSelect)
-        .single();
+        .eq('user_id', uid);
 
-    return UserSave.fromJoinedJson(Map<String, dynamic>.from(save));
+    return _readUserSave(saveId);
   }
 
   /// Guardado propio ligado a un sitio, si existe.
@@ -725,15 +803,51 @@ class SavesRepository {
     final uid = _uid;
     if (uid == null) return null;
 
-    final row = await _client
-        .from('user_saves')
-        .select(_saveSelect)
-        .eq('user_id', uid)
-        .eq('site_id', siteId)
-        .maybeSingle();
+    Future<Map<String, dynamic>?> query(String select) async {
+      final row = await _client
+          .from('user_saves')
+          .select(select)
+          .eq('user_id', uid)
+          .eq('site_id', siteId)
+          .maybeSingle();
+      if (row == null) return null;
+      return Map<String, dynamic>.from(row);
+    }
 
-    if (row == null) return null;
-    return UserSave.fromJoinedJson(Map<String, dynamic>.from(row));
+    try {
+      final row = await query(_saveSelect);
+      if (row == null) return null;
+      return UserSave.fromJoinedJson(row);
+    } catch (e, st) {
+      AppLog.error('findMineBySiteId', name: 'saves', error: e, stackTrace: st);
+      try {
+        final row = await query(_saveSelectSummary);
+        if (row == null) return null;
+        return UserSave.fromJoinedJson(row);
+      } catch (e2, st2) {
+        AppLog.error(
+          'findMineBySiteId summary',
+          name: 'saves',
+          error: e2,
+          stackTrace: st2,
+        );
+        try {
+          final row = await query(_saveSelectSummaryNoCover);
+          if (row == null) return null;
+          return UserSave.fromJoinedJson(row);
+        } catch (e3, st3) {
+          AppLog.error(
+            'findMineBySiteId lite',
+            name: 'saves',
+            error: e3,
+            stackTrace: st3,
+          );
+          final row = await query(_saveSelectSummaryLite);
+          if (row == null) return null;
+          return UserSave.fromJoinedJson(row);
+        }
+      }
+    }
   }
 
   static const _siteSelect =
@@ -744,21 +858,57 @@ class SavesRepository {
       'site_categories(categories(name_i18n)), '
       'site_contributors(user_id, created_at, profiles(display_name, avatar_url))';
 
+  static const _siteSelectLite =
+      'id, name, city, department, address_line, is_public, is_physical_place, '
+      'google_place_id, use_exact_pin, created_by, created_at, updated_at, external_id, '
+      'profiles!sites_created_by_fkey(display_name, avatar_url), '
+      'site_categories(categories(name_i18n)), '
+      'site_contributors(user_id, created_at, profiles(display_name, avatar_url))';
+
   /// Ficha de sitio (propia o pública visible por RLS).
   Future<SiteFicha> loadSiteFicha(String siteId) async {
-    final row = await _client
-        .from('sites')
-        .select(_siteSelect)
-        .eq('id', siteId)
-        .maybeSingle();
+    Map<String, dynamic>? row;
+    try {
+      final raw = await _client
+          .from('sites')
+          .select(_siteSelect)
+          .eq('id', siteId)
+          .maybeSingle();
+      if (raw != null) row = Map<String, dynamic>.from(raw);
+    } catch (e, st) {
+      AppLog.error(
+        'loadSiteFicha select',
+        name: 'saves',
+        error: e,
+        stackTrace: st,
+      );
+    }
+    if (row == null) {
+      final raw = await _client
+          .from('sites')
+          .select(_siteSelectLite)
+          .eq('id', siteId)
+          .maybeSingle();
+      if (raw != null) row = Map<String, dynamic>.from(raw);
+    }
 
     if (row == null) {
       throw const AppUserError('No se encontró el sitio.');
     }
-    final siteMap = Map<String, dynamic>.from(row);
+    final siteMap = row;
     final fromSite = SiteFicha.fromSiteRow(siteMap);
 
-    final mine = await findMineBySiteId(siteId);
+    UserSave? mine;
+    try {
+      mine = await findMineBySiteId(siteId);
+    } catch (e, st) {
+      AppLog.error(
+        'loadSiteFicha mine',
+        name: 'saves',
+        error: e,
+        stackTrace: st,
+      );
+    }
     var ficha = mine != null
         ? SiteFicha.fromSave(mine).copyWithMeta(
             googlePlaceId: fromSite.googlePlaceId,

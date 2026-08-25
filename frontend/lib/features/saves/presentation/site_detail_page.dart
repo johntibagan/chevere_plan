@@ -16,7 +16,6 @@ import '../../../core/l10n/context_l10n.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_network_image.dart';
 import '../../../core/widgets/site_cover.dart';
-import '../../../core/widgets/site_photo_overflow_button.dart';
 import '../../../core/widgets/site_photo_viewer_page.dart';
 import '../../../core/widgets/site_origin_tags.dart';
 import '../../../core/widgets/tab_screen_header.dart';
@@ -76,8 +75,13 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
     return f.isOwn || f.isCreatorOf(_uid) || _isStaff;
   }
 
-  bool get _canSetCover =>
-      _ficha != null && (_ficha!.isCreatorOf(_uid) || _isStaff);
+  bool get _canSetCover {
+    final f = _ficha;
+    if (f == null) return false;
+    if (_isStaff || f.isCreatorOf(_uid)) return true;
+    // Sitio propio (no catálogo): el join a veces no trae created_by.
+    return f.isOwn && !f.isCatalogSite;
+  }
 
   SitePhoto? get _headerPhoto {
     if (_photos.isEmpty) return null;
@@ -94,6 +98,7 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
   void initState() {
     super.initState();
     _tabs = TabController(length: 3, vsync: this);
+    _uid = ref.read(supabaseClientProvider).auth.currentUser?.id;
     if (widget.initialSave != null) {
       _ficha = SiteFicha.fromSave(widget.initialSave!);
       _loading = false;
@@ -402,6 +407,10 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
           );
       await _loadPhotos();
       if (!mounted) return;
+      ref.invalidate(siteLookProvider(widget.siteId));
+      ref.invalidate(mySavesProvider);
+      ref.invalidate(homeNearbyProvider);
+      ref.invalidate(plansProvider);
       AppToast.show(context, context.l10n.photoAdded);
     } catch (e) {
       if (!mounted) return;
@@ -1221,11 +1230,6 @@ class _GallerySection extends StatelessWidget {
                       return _PhotoTile(
                         url: url,
                         cacheKey: photo.id,
-                        canDelete: canManage,
-                        canSetCover: canSetCover,
-                        isCover: photo.id == effectiveCover,
-                        busy: busy,
-                        onMenu: (action) => onPhotoMenu(photo, action),
                         onOpen: () {
                           final items = <SitePhotoViewItem>[];
                           var start = 0;
@@ -1275,11 +1279,6 @@ class _PhotoTile extends StatelessWidget {
   const _PhotoTile({
     required this.url,
     required this.cacheKey,
-    required this.canDelete,
-    required this.canSetCover,
-    required this.isCover,
-    required this.busy,
-    required this.onMenu,
     required this.onOpen,
   });
 
@@ -1287,11 +1286,6 @@ class _PhotoTile extends StatelessWidget {
 
   final String? url;
   final String cacheKey;
-  final bool canDelete;
-  final bool canSetCover;
-  final bool isCover;
-  final bool busy;
-  final ValueChanged<String> onMenu;
   final VoidCallback onOpen;
 
   @override
@@ -1301,46 +1295,31 @@ class _PhotoTile extends StatelessWidget {
       onTap: hasUrl ? onOpen : null,
       child: SizedBox(
         height: stripHeight,
-        child: Stack(
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: hasUrl
-                  ? UnconstrainedBox(
-                      constrainedAxis: Axis.vertical,
-                      alignment: Alignment.centerLeft,
-                      child: AppNetworkImage(
-                        url: url!,
-                        cacheKey: cacheKey,
-                        height: stripHeight,
-                        fit: BoxFit.fitHeight,
-                        quality: AppImageQuality.photo,
-                      ),
-                    )
-                  : SizedBox(
-                      width: stripHeight * 0.72,
-                      height: stripHeight,
-                      child: const ColoredBox(
-                        color: AppColors.surfaceElevated,
-                        child: Icon(
-                          Icons.broken_image,
-                          color: AppColors.muted,
-                        ),
-                      ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: hasUrl
+              ? UnconstrainedBox(
+                  constrainedAxis: Axis.vertical,
+                  alignment: Alignment.centerLeft,
+                  child: AppNetworkImage(
+                    url: url!,
+                    cacheKey: cacheKey,
+                    height: stripHeight,
+                    fit: BoxFit.fitHeight,
+                    quality: AppImageQuality.photo,
+                  ),
+                )
+              : SizedBox(
+                  width: stripHeight * 0.72,
+                  height: stripHeight,
+                  child: const ColoredBox(
+                    color: AppColors.surfaceElevated,
+                    child: Icon(
+                      Icons.broken_image,
+                      color: AppColors.muted,
                     ),
-            ),
-            Positioned(
-              top: 4,
-              right: 4,
-              child: SitePhotoOverflowButton(
-                enabled: !busy,
-                canDelete: canDelete,
-                canSetCover: canSetCover,
-                isCover: isCover,
-                onSelected: onMenu,
-              ),
-            ),
-          ],
+                  ),
+                ),
         ),
       ),
     );
