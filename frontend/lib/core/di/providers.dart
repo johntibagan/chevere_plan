@@ -587,6 +587,9 @@ class PlansNotifier extends AsyncNotifier<PagedItems<Plan>> {
   Future<PagedItems<Plan>> build() => _loadPage0(forceNetwork: false);
 
   Future<void> refresh({bool force = true}) async {
+    if (!state.hasValue) {
+      state = const AsyncLoading();
+    }
     state = await AsyncValue.guard(() => _loadPage0(forceNetwork: force));
   }
 

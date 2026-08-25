@@ -2344,6 +2344,18 @@ abstract class AppLocalizations {
   /// **'Error en la app. Intenta de nuevo.'**
   String get errorGeneric;
 
+  /// No description provided for @errorGenericLead.
+  ///
+  /// In es, this message translates to:
+  /// **'Error en la app.'**
+  String get errorGenericLead;
+
+  /// No description provided for @errorRetryAction.
+  ///
+  /// In es, this message translates to:
+  /// **'Intenta de nuevo'**
+  String get errorRetryAction;
+
   /// No description provided for @errorLoadRetry.
   ///
   /// In es, this message translates to:

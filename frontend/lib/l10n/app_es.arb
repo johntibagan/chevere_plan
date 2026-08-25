@@ -499,6 +499,8 @@
   "adminStatVehicles": "Vehículos",
   "adminStatReports": "Reportes abiertos",
   "errorGeneric": "Error en la app. Intenta de nuevo.",
+  "errorGenericLead": "Error en la app.",
+  "errorRetryAction": "Intenta de nuevo",
   "errorLoadRetry": "No se pudo cargar. Intenta de nuevo.",
   "siteDetailOpenMapsFail": "No se pudo abrir Google Maps.",
   "photoTermsBody": "Al subir una foto confirmas que cumple los Términos de Uso de Chevere Plan (turismo, gastronomía y planes de ocio; sin contenido sexual, ilegal o de acoso).",

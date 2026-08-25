@@ -87,7 +87,7 @@ Esta es la sección más crítica del documento. Ninguna funcionalidad nueva se 
 
 - Nunca mostrar en la UI mensajes técnicos: nada de PostgREST, SQL, stack traces, nombres de tablas/FK, códigos `PGRST*`, paths, tokens, keys, SDKs, Gradle, `failed`, etc.
 - Solo mensajes de negocio claros (ej. "Máximo 15 fotos por sitio") en el formulario o campo, no como toast de error de red.
-- Ante fallo técnico o de red: en **el mismo bloque** (Guardados recientes, Explorar, ficha…), **"Error en la app. Intenta de nuevo."** Tocar reintenta esa carga. Sin snackbar rojo.
+- Ante fallo técnico o de red: en **el mismo bloque** (Guardados recientes, Explorar, Planes, ficha…), **"Error en la app."** y el botón **"Intenta de nuevo"**. Tocar reintenta esa carga. Sin snackbar rojo.
 - El detalle técnico se registra en logs de depuración (`developer.log`/`AppLog`), nunca en pantalla.
 
 ## 6. UX — pantallas intuitivas y formularios rápidos

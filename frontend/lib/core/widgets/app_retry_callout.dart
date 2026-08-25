@@ -19,15 +19,13 @@ class AppRetryCallout extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onRetry,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: padding,
-          child: Text(
-            l10n.errorGeneric,
+    return Padding(
+      padding: padding,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            l10n.errorGenericLead,
             textAlign: TextAlign.center,
             style: const TextStyle(
               color: AppColors.muted,
@@ -35,7 +33,19 @@ class AppRetryCallout extends StatelessWidget {
               fontSize: 14,
             ),
           ),
-        ),
+          const SizedBox(height: 8),
+          TextButton.icon(
+            onPressed: onRetry,
+            icon: const Icon(Icons.refresh, size: 18),
+            label: Text(
+              l10n.errorRetryAction,
+              style: const TextStyle(
+                decoration: TextDecoration.underline,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

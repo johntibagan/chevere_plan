@@ -45,7 +45,7 @@ sequenceDiagram
 | **Planes** | Tus itinerarios (tarjeta de crear + lista; **un solo** CTA, sin FAB duplicado) |
 | **Rutas** | Historial de paradas visitadas (stats del listado + timeline Make). Admin no vive acá |
 
-Los tabs que ya abriste se quedan en memoria para que cambiar de pestaña se sienta instantáneo. Las listas pintan caché primero y refrescan detrás. Si una sección no carga, ves **Error en la app. Intenta de nuevo.** y al tocarlo se reintenta; no hay toasts de error ni la palabra “failed”.
+Los tabs que ya abriste se quedan en memoria para que cambiar de pestaña se sienta instantáneo. Las listas pintan caché primero y refrescan detrás. Si una sección no carga, ves **Error en la app.** y el botón/enlace **Intenta de nuevo** (icono de refrescar) reintenta esa sección; no hay toasts de error ni la palabra “failed”.
 
 **Atrás en el shell:** si estás en Explorar, Planes o Rutas, el botón atrás vuelve a **Inicio**. En Inicio, el primer atrás muestra “Pulsa atrás otra vez para salir”; el segundo (en ~2 s) cierra la app. En fichas, guardar, mapas, etc. atrás sigue cerrando esa pantalla.
 
@@ -252,7 +252,7 @@ El reset completo vuelve a cargar un **JSON masivo** de sitios públicos de Colo
 | Bitácora privada | Solo el autor |
 | Catálogo masivo | Público; no se privatiza |
 
-Errores en pantalla: mensaje de negocio o *«Error en la app. Intenta de nuevo.»* Nunca SQL ni claves.
+Errores en pantalla: mensaje de negocio o *«Error en la app.»* + botón **Intenta de nuevo**. Nunca SQL ni claves.
 
 ---
 

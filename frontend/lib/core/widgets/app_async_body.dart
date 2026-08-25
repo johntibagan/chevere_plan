@@ -45,7 +45,11 @@ class AppAsyncBody extends StatelessWidget {
                   padding: const EdgeInsets.all(24),
                   children: [
                     const SizedBox(height: 48),
-                    AppRetryCallout(onRetry: () { onRefresh(); }),
+                    AppRetryCallout(
+                      onRetry: () {
+                        onRefresh();
+                      },
+                    ),
                   ],
                 )
               : isEmpty

@@ -8,7 +8,8 @@ alwaysApply: true
 ## Qué ve el usuario
 
 - Un fallo de **carga o de una acción** se muestra **en el mismo bloque** que falló.
-- Texto único: **"Error en la app. Intenta de nuevo."** (`errorGeneric`). Tocar ese texto **reintenta** la llamada (lista, sección, ficha, búsqueda…).
+- **"Error en la app."** (`errorGenericLead`) y botón/enlace **"Intenta de nuevo"** (`errorRetryAction`). Tocar **reintenta** esa llamada (lista, sección, ficha, búsqueda…).
+- El string completo `errorGeneric` queda para mensajes genéricos fuera de ese callout.
 - Toasts/snackbars **no** son para errores técnicos ni de red. Sí para confirmaciones (foto añadida, “pulsa atrás otra vez para salir”) y validaciones de formulario (nombre vacío, etc.).
 
 ## Prohibido

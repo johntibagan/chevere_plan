@@ -175,7 +175,7 @@ Todo el texto de producto está en `app_es.arb` (i18n).
 | `VisibilityBadge` | `visibility_badge.dart` | Icono público/privado. |
 | `AppListCard` | `app_list_card.dart` | `Card` theme, margin bottom 8. |
 | `AppAsyncBody` | `app_async_body.dart` | Pull-to-refresh: loading / `AppRetryCallout` / vacío / lista. |
-| `AppRetryCallout` | `app_retry_callout.dart` | “Error en la app. Intenta de nuevo.” Tocar reintenta. |
+| `AppRetryCallout` | `app_retry_callout.dart` | “Error en la app.” + botón subrayado “Intenta de nuevo”. |
 | `FieldActionIcon` | `field_action_icon.dart` | Suffix: buscar/pegar con loading. |
 | `AppNetworkImage` | `app_network_image.dart` | `cached_network_image` + decode acotado. |
 | `AppToast` | `app_toast.dart` | Snackbar; error de negocio o “Error en la app…”. |

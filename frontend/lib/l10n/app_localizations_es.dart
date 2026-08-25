@@ -1240,6 +1240,12 @@ class AppLocalizationsEs extends AppLocalizations {
   String get errorGeneric => 'Error en la app. Intenta de nuevo.';
 
   @override
+  String get errorGenericLead => 'Error en la app.';
+
+  @override
+  String get errorRetryAction => 'Intenta de nuevo';
+
+  @override
   String get errorLoadRetry => 'No se pudo cargar. Intenta de nuevo.';
 
   @override

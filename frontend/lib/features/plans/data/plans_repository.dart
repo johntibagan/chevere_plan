@@ -1,6 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/errors/user_facing_error.dart';
+import '../../../core/logging/app_log.dart';
 import '../../saves/data/save_models.dart';
 import 'plan_builder.dart';
 import 'plan_hours_policy.dart';
@@ -24,6 +25,25 @@ class PlansRepository {
       'site_categories(categories(name_i18n)), '
       'site_photos(id, storage_path, sort_order, created_at)))';
 
+  static const _planSelectNoCover =
+      'id, user_id, title, location_query, start_lat, start_lng, '
+      'include_public, max_budget_amount, currency_code, status, '
+      'plan_stops(id, plan_id, site_id, sort_order, visited_at, '
+      'estimated_price_amount, lat, lng, '
+      'sites(name, city, department, google_place_id, use_exact_pin, '
+      'estimated_price_amount, '
+      'site_categories(categories(name_i18n)), '
+      'site_photos(id, storage_path, sort_order, created_at)))';
+
+  static const _planSelectLite =
+      'id, user_id, title, location_query, start_lat, start_lng, '
+      'include_public, max_budget_amount, currency_code, status, '
+      'plan_stops(id, plan_id, site_id, sort_order, visited_at, '
+      'estimated_price_amount, lat, lng, '
+      'sites(name, city, department, google_place_id, use_exact_pin, '
+      'estimated_price_amount, '
+      'site_categories(categories(name_i18n))))';
+
   /// Listado liviano (cards): count de paradas sin hidratar cada stop.
   static const _planListSelect =
       'id, user_id, title, location_query, start_lat, start_lng, '
@@ -32,6 +52,19 @@ class PlansRepository {
       'sites(name, site_categories(categories(name_i18n)), '
       'cover_photo_id, '
       'site_photos(id, storage_path, sort_order, created_at)))';
+
+  static const _planListSelectNoCover =
+      'id, user_id, title, location_query, start_lat, start_lng, '
+      'include_public, max_budget_amount, currency_code, status, '
+      'plan_stops(id, plan_id, site_id, sort_order, '
+      'sites(name, site_categories(categories(name_i18n)), '
+      'site_photos(id, storage_path, sort_order, created_at)))';
+
+  static const _planListSelectLite =
+      'id, user_id, title, location_query, start_lat, start_lng, '
+      'include_public, max_budget_amount, currency_code, status, '
+      'plan_stops(id, plan_id, site_id, sort_order, '
+      'sites(name, site_categories(categories(name_i18n))))';
 
   Future<List<PlanCandidate>> listCandidates({
     required String locationQuery,
@@ -57,24 +90,68 @@ class PlansRepository {
     if (uid == null) return const [];
     final from = offset < 0 ? 0 : offset;
     final to = from + (limit < 1 ? 20 : limit) - 1;
-    final rows = await _client
-        .from('plans')
-        .select(_planListSelect)
-        .eq('user_id', uid)
-        .order('created_at', ascending: false)
-        .range(from, to);
-    return (rows as List<dynamic>)
-        .map((e) => _planFromJson(Map<String, dynamic>.from(e as Map)))
-        .toList();
+
+    Future<List<dynamic>> query(String select) async {
+      final rows = await _client
+          .from('plans')
+          .select(select)
+          .eq('user_id', uid)
+          .order('created_at', ascending: false)
+          .range(from, to);
+      return rows as List<dynamic>;
+    }
+
+    List<dynamic> rows;
+    try {
+      rows = await query(_planListSelect);
+    } on PostgrestException catch (e) {
+      AppLog.error('listMine', name: 'plans', error: e);
+      try {
+        rows = await query(_planListSelectNoCover);
+      } on PostgrestException catch (e2) {
+        AppLog.error('listMine noCover', name: 'plans', error: e2);
+        rows = await query(_planListSelectLite);
+      }
+    }
+
+    final out = <Plan>[];
+    for (final e in rows) {
+      if (e is! Map) continue;
+      try {
+        out.add(_planFromJson(Map<String, dynamic>.from(e)));
+      } catch (err, st) {
+        AppLog.error(
+          'listMine row',
+          name: 'plans',
+          error: err,
+          stackTrace: st,
+        );
+      }
+    }
+    return out;
   }
 
   Future<Plan> fetchById(String planId) async {
-    final row = await _client
-        .from('plans')
-        .select(_planSelect)
-        .eq('id', planId)
-        .single();
-    return _planFromJson(Map<String, dynamic>.from(row));
+    Future<Map<String, dynamic>> one(String select) async {
+      final row = await _client
+          .from('plans')
+          .select(select)
+          .eq('id', planId)
+          .single();
+      return Map<String, dynamic>.from(row);
+    }
+
+    try {
+      return _planFromJson(await one(_planSelect));
+    } on PostgrestException catch (e) {
+      AppLog.error('fetchById', name: 'plans', error: e);
+      try {
+        return _planFromJson(await one(_planSelectNoCover));
+      } on PostgrestException catch (e2) {
+        AppLog.error('fetchById noCover', name: 'plans', error: e2);
+        return _planFromJson(await one(_planSelectLite));
+      }
+    }
   }
 
   Future<Plan> createDraft({required String title}) async {
@@ -330,55 +407,77 @@ class PlansRepository {
             ((stopsRaw.first as Map)['count'] as num?)?.toInt() ?? 0;
       } else {
         for (final raw in stopsRaw) {
-          final m = Map<String, dynamic>.from(raw as Map);
-          final sites = m['sites'];
-          Map<String, dynamic>? siteMap;
-          if (sites is Map) {
-            siteMap = Map<String, dynamic>.from(sites);
+          if (raw is! Map) continue;
+          try {
+            final m = Map<String, dynamic>.from(raw);
+            final id = m['id']?.toString();
+            final planId = m['plan_id']?.toString();
+            final siteId = m['site_id']?.toString();
+            if (id == null ||
+                id.isEmpty ||
+                planId == null ||
+                planId.isEmpty ||
+                siteId == null ||
+                siteId.isEmpty) {
+              continue;
+            }
+            final sites = m['sites'];
+            Map<String, dynamic>? siteMap;
+            if (sites is Map) {
+              siteMap = Map<String, dynamic>.from(sites);
+            }
+            final visited = m['visited_at'];
+            final est = m['estimated_price_amount'];
+            final siteEst = siteMap?['estimated_price_amount'];
+            stops.add(
+              PlanStop(
+                id: id,
+                planId: planId,
+                siteId: siteId,
+                sortOrder: (m['sort_order'] as num?)?.toInt() ?? 0,
+                siteName: (siteMap?['name'] as String?) ?? 'Sitio',
+                city: siteMap?['city'] as String?,
+                department: siteMap?['department'] as String?,
+                googlePlaceId: siteMap?['google_place_id'] as String?,
+                useExactPin: parsePgBool(siteMap?['use_exact_pin']),
+                lat: (m['lat'] as num?)?.toDouble(),
+                lng: (m['lng'] as num?)?.toDouble(),
+                visitedAt: visited == null
+                    ? null
+                    : DateTime.tryParse(visited.toString()),
+                estimatedPriceAmount:
+                    est == null ? null : (est as num).toDouble(),
+                siteEstimatedPriceAmount:
+                    siteEst == null ? null : (siteEst as num).toDouble(),
+                categoryNames: categoryNamesFromJoin(
+                  siteMap?['site_categories'],
+                ),
+                coverStoragePath: siteCoverStoragePath(
+                  photos: siteMap?['site_photos'],
+                  coverPhotoId: siteMap?['cover_photo_id']?.toString(),
+                ),
+              ),
+            );
+          } catch (err, st) {
+            AppLog.error(
+              'plan stop row',
+              name: 'plans',
+              error: err,
+              stackTrace: st,
+            );
           }
-          final visited = m['visited_at'];
-          final est = m['estimated_price_amount'];
-          final siteEst = siteMap?['estimated_price_amount'];
-          stops.add(
-            PlanStop(
-              id: m['id'] as String,
-              planId: m['plan_id'] as String,
-              siteId: m['site_id'] as String,
-              sortOrder: m['sort_order'] as int? ?? 0,
-              siteName: (siteMap?['name'] as String?) ?? 'Sitio',
-              city: siteMap?['city'] as String?,
-              department: siteMap?['department'] as String?,
-              googlePlaceId: siteMap?['google_place_id'] as String?,
-              useExactPin: parsePgBool(siteMap?['use_exact_pin']),
-              lat: (m['lat'] as num?)?.toDouble(),
-              lng: (m['lng'] as num?)?.toDouble(),
-              visitedAt: visited == null
-                  ? null
-                  : DateTime.tryParse(visited as String),
-              estimatedPriceAmount:
-                  est == null ? null : (est as num).toDouble(),
-              siteEstimatedPriceAmount:
-                  siteEst == null ? null : (siteEst as num).toDouble(),
-              categoryNames: categoryNamesFromJoin(
-                siteMap?['site_categories'],
-              ),
-              coverStoragePath: siteCoverStoragePath(
-                photos: siteMap?['site_photos'],
-                coverPhotoId: siteMap?['cover_photo_id'] as String?,
-              ),
-            ),
-          );
         }
         stops.sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
       }
     }
 
     final budget = json['max_budget_amount'];
+    final titleRaw = (json['title'] as String?)?.trim();
     return Plan(
-      id: json['id'] as String,
-      userId: json['user_id'] as String,
-      title: json['title'] as String,
-      locationQuery: json['location_query'] as String,
+      id: json['id'].toString(),
+      userId: json['user_id'].toString(),
+      title: (titleRaw == null || titleRaw.isEmpty) ? 'Plan' : titleRaw,
+      locationQuery: (json['location_query'] as String?) ?? '',
       startLat: (json['start_lat'] as num?)?.toDouble(),
       startLng: (json['start_lng'] as num?)?.toDouble(),
       includePublic: json['include_public'] as bool? ?? false,
