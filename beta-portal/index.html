@@ -140,81 +140,130 @@
     .okmsg { color: var(--ok); font-size: 0.85rem; margin-top: 8px; }
     .hint { color: var(--muted); font-size: 0.8rem; margin: 0 0 8px; }
 
-    .table-wrap {
-      width: 100%;
-      overflow-x: auto;
-      margin-top: 8px;
-      -webkit-overflow-scrolling: touch;
+    .reports-list {
+      margin-top: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
     }
-    table.reports-table {
-      width: 100%;
-      border-collapse: collapse;
-      min-width: 640px;
+    .reports-head,
+    .report-row {
+      display: grid;
+      grid-template-columns: 40px minmax(0, 1fr) 88px 138px 84px;
+      gap: 10px;
+      align-items: center;
+      padding: 12px 4px;
     }
-    table.reports-table th,
-    table.reports-table td {
-      border: 0;
-      text-align: left;
-      vertical-align: middle;
-      padding: 12px 10px;
-    }
-    table.reports-table thead th {
+    .reports-head {
       color: var(--muted);
       font-size: 0.72rem;
       font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 0.05em;
-      padding-top: 4px;
-      padding-bottom: 8px;
+      padding-top: 2px;
+      padding-bottom: 6px;
     }
-    table.reports-table tbody tr + tr td {
+    .report-row {
       box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
     }
-    table.reports-table td.col-check {
-      width: 44px;
-      text-align: center;
+    .report-row.done .col-desc {
+      text-decoration: line-through;
+      color: var(--muted);
     }
-    table.reports-table td.col-desc {
-      min-width: 220px;
-      width: 42%;
+    .col-check {
+      display: flex;
+      justify-content: center;
     }
-    table.reports-table td.col-ver {
-      width: 110px;
+    .col-desc {
+      min-width: 0;
+      word-break: break-word;
+    }
+    .col-ver {
       color: var(--ok);
       font-size: 0.88rem;
       white-space: nowrap;
     }
-    table.reports-table td.col-date {
-      width: 140px;
+    .col-date {
       color: var(--muted);
       font-size: 0.85rem;
       white-space: nowrap;
     }
-    table.reports-table td.col-actions {
-      width: 96px;
+    .col-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 2px;
       white-space: nowrap;
     }
-    table.reports-table tr.done td.col-desc {
-      text-decoration: line-through;
-      color: var(--muted);
+
+    /* Edición: casi todo el ancho del bloque */
+    .report-row.editing {
+      grid-template-columns: 40px minmax(0, 1fr);
+      align-items: start;
+      gap: 10px 12px;
     }
-    .edit-row {
+    .report-row.editing .edit-panel {
+      grid-column: 2;
       display: flex;
-      gap: 8px;
-      align-items: flex-start;
+      flex-direction: column;
+      gap: 10px;
+      min-width: 0;
       width: 100%;
     }
-    .edit-row textarea {
-      flex: 1;
-      min-height: 64px;
+    .report-row.editing .edit-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px 16px;
+      color: var(--muted);
+      font-size: 0.82rem;
+    }
+    .report-row.editing textarea {
+      width: 100%;
+      min-height: 96px;
       background: var(--bg);
       border: 1px solid var(--line);
-      border-radius: 8px;
+      border-radius: 10px;
       color: var(--text);
-      padding: 8px 10px;
+      padding: 12px;
       font: inherit;
       resize: vertical;
     }
+    .report-row.editing .edit-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    @media (max-width: 720px) {
+      .reports-head { display: none; }
+      .report-row:not(.editing) {
+        grid-template-columns: 40px minmax(0, 1fr) auto;
+        grid-template-areas:
+          "check desc actions"
+          "check meta actions";
+        gap: 6px 10px;
+        padding: 14px 2px;
+      }
+      .report-row:not(.editing) .col-check { grid-area: check; align-self: start; }
+      .report-row:not(.editing) .col-desc { grid-area: desc; }
+      .report-row:not(.editing) .col-actions { grid-area: actions; align-self: start; }
+      .report-row:not(.editing) .meta-mobile {
+        grid-area: meta;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0 8px;
+        align-items: center;
+      }
+      .report-row.editing {
+        grid-template-columns: 40px minmax(0, 1fr);
+      }
+    }
+
+    @media (min-width: 721px) {
+      .report-row:not(.editing) .meta-mobile {
+        display: contents;
+      }
+    }
+
     .icon-btn {
       width: 36px;
       height: 36px;
@@ -277,19 +326,15 @@
       <textarea class="add" id="body" maxlength="500" placeholder="¿Qué falló o qué mejorar?"></textarea>
       <button class="btn" id="add" type="button">Agregar</button>
       <div id="msg"></div>
-      <div class="table-wrap">
-        <table class="reports-table" aria-label="Mejoras y reportes">
-          <thead>
-            <tr>
-              <th class="col-check"></th>
-              <th>Descripción</th>
-              <th>Versión</th>
-              <th>Actualizado</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody id="list"></tbody>
-        </table>
+      <div class="reports-list" aria-label="Mejoras y reportes">
+        <div class="reports-head" aria-hidden="true">
+          <div></div>
+          <div>Descripción</div>
+          <div>Versión</div>
+          <div>Actualizado</div>
+          <div>Acciones</div>
+        </div>
+        <div id="list"></div>
       </div>
       <div class="empty" id="empty" hidden>Nada aún. Sé el primero.</div>
     </section>
@@ -398,12 +443,13 @@
     }
 
     function renderRow(row) {
-      const tr = document.createElement("tr");
-      if (row.done) tr.classList.add("done");
+      const el = document.createElement("div");
+      el.className = "report-row" + (row.done ? " done" : "") +
+        (editingId === row.id && !row.done ? " editing" : "");
+      el.dataset.id = row.id;
 
-      // Check
-      const tdCheck = document.createElement("td");
-      tdCheck.className = "col-check";
+      const checkWrap = document.createElement("div");
+      checkWrap.className = "col-check";
       const cb = document.createElement("input");
       cb.type = "checkbox";
       cb.checked = !!row.done;
@@ -430,18 +476,27 @@
           await loadFeedback();
         });
       }
-      tdCheck.appendChild(cb);
-      tr.appendChild(tdCheck);
+      checkWrap.appendChild(cb);
+      el.appendChild(checkWrap);
 
-      // Descripción
-      const tdDesc = document.createElement("td");
-      tdDesc.className = "col-desc";
       if (editingId === row.id && !row.done) {
-        const wrap = document.createElement("div");
-        wrap.className = "edit-row";
+        const panel = document.createElement("div");
+        panel.className = "edit-panel";
+
+        const meta = document.createElement("div");
+        meta.className = "edit-meta";
+        meta.innerHTML =
+          `<span>Actualizado: ${fmtDateTime(row.updated_at || row.created_at)}</span>` +
+          `<span>Versión: —</span>`;
+        panel.appendChild(meta);
+
         const ta = document.createElement("textarea");
         ta.maxLength = 500;
         ta.value = row.body;
+        panel.appendChild(ta);
+
+        const actions = document.createElement("div");
+        actions.className = "edit-actions";
         const save = document.createElement("button");
         save.type = "button";
         save.className = "btn small";
@@ -472,38 +527,44 @@
           editingId = null;
           await loadFeedback();
         });
-        wrap.appendChild(ta);
-        wrap.appendChild(save);
-        wrap.appendChild(cancel);
-        tdDesc.appendChild(wrap);
-      } else {
-        tdDesc.textContent = row.body;
+        actions.appendChild(save);
+        actions.appendChild(cancel);
+        panel.appendChild(actions);
+        el.appendChild(panel);
+        queueMicrotask(() => ta.focus());
+        return el;
       }
-      tr.appendChild(tdDesc);
 
-      // Versión
-      const tdVer = document.createElement("td");
-      tdVer.className = "col-ver";
-      tdVer.textContent = row.done && row.fixed_in_version ? row.fixed_in_version : "—";
-      tr.appendChild(tdVer);
+      const desc = document.createElement("div");
+      desc.className = "col-desc";
+      desc.textContent = row.body;
+      el.appendChild(desc);
 
-      // Actualizado
-      const tdDate = document.createElement("td");
-      tdDate.className = "col-date";
-      tdDate.textContent = fmtDateTime(row.updated_at || row.created_at);
-      tr.appendChild(tdDate);
+      const metaMobile = document.createElement("div");
+      metaMobile.className = "meta-mobile";
 
-      // Acciones
-      const tdAct = document.createElement("td");
-      tdAct.className = "col-actions";
-      if (!row.done && editingId !== row.id) {
-        tdAct.appendChild(
+      const ver = document.createElement("div");
+      ver.className = "col-ver";
+      ver.textContent = row.done && row.fixed_in_version ? row.fixed_in_version : "—";
+
+      const date = document.createElement("div");
+      date.className = "col-date";
+      date.textContent = fmtDateTime(row.updated_at || row.created_at);
+
+      metaMobile.appendChild(ver);
+      metaMobile.appendChild(date);
+      el.appendChild(metaMobile);
+
+      const act = document.createElement("div");
+      act.className = "col-actions";
+      if (!row.done) {
+        act.appendChild(
           iconButton(ICON_EDIT, "Editar", "", () => {
             editingId = row.id;
             loadFeedback();
           }),
         );
-        tdAct.appendChild(
+        act.appendChild(
           iconButton(ICON_TRASH, "Eliminar", "danger", async () => {
             if (!confirm("¿Eliminar este reporte?")) return;
             const { error } = await sb
@@ -520,9 +581,9 @@
           }),
         );
       }
-      tr.appendChild(tdAct);
+      el.appendChild(act);
 
-      return tr;
+      return el;
     }
 
     async function loadFeedback() {
@@ -531,11 +592,11 @@
         .select("id, body, done, fixed_in_version, created_at, updated_at")
         .order("created_at", { ascending: false });
       if (error) throw error;
-      const tbody = document.getElementById("list");
+      const list = document.getElementById("list");
       const empty = document.getElementById("empty");
-      tbody.innerHTML = "";
+      list.innerHTML = "";
       const rows = data || [];
-      rows.forEach((row) => tbody.appendChild(renderRow(row)));
+      rows.forEach((row) => list.appendChild(renderRow(row)));
       empty.hidden = rows.length > 0;
     }
 
