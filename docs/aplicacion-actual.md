@@ -20,7 +20,7 @@ Público y privado se distinguen por **color** (verde / morado), no hace falta r
 1. Abrís la app → pantalla de **iniciar sesión con Google**.
 2. El servidor crea un perfil (nombre, foto, rol `usuario`).
 3. Un correo concreto queda como **root** al resetear la base (dueño del catálogo masivo). Hay también rol **admin**.
-4. Admin y root entran al **panel** desde el menú **☰** de Inicio (Más opciones). Ahí también elegís el **tema**: Claro, Oscuro o Sistema (selector segmentado; se recuerda en el celular). Reportes viven ahí. Sobre **contenido público** actúan casi como dueños. Las **bitácoras privadas no las ven**: solo quien las escribió.
+4. Admin y root entran al **panel** desde el menú **☰** de Inicio (Más opciones). Ahí también elegís el **tema**: Claro, Oscuro o Sistema (selector segmentado; se recuerda en el celular). Antes de **Cerrar sesión** se muestra la **versión** de la app (`x.y.z+build`). Reportes viven ahí. Sobre **contenido público** actúan casi como dueños. Las **bitácoras privadas no las ven**: solo quien las escribió.
 
 ```mermaid
 sequenceDiagram
@@ -142,10 +142,10 @@ Pasar de público a privado se bloquea si otros lo usan (otros guardados, aporte
 
 En un sitio **público**:
 
-- **Reseña pública**: texto, estrellas, hasta 3 fotos. Varias por persona a lo largo del tiempo. El promedio usa solo las públicas.
-- **Bitácora privada**: mismo formulario, solo el autor la lee. Admin **no**.
+- **Reseña pública**: texto, estrellas, hasta 3 fotos. Varias por persona a lo largo del tiempo. El promedio usa solo las públicas. Tocar una foto abre el **mismo visor** que las del sitio (autor, fecha `dd/mmm/aaaa`, ⋮ eliminar/reportar; sin “usar como portada”). Si hay varias en la reseña, se navega entre ellas. En la tarjeta, ⋮ **Reportar** (reseñas ajenas públicas; un reporte por usuario).
+- **Bitácora privada**: mismo formulario, solo el autor la lee. Admin **no**. Misma UI de fotos al ampliar. No se reportan (solo las ve el autor).
 
-Reportar foto inadecuada: el primer reporte avisa a staff (lista de reportes abiertos). Staff puede quitar la foto; borrar el archivo en Storage al cerrar el reporte aún es deuda.
+Reportar foto o reseña pública inadecuada: el primer reporte avisa a staff (lista de reportes abiertos, con vista previa del texto en reseñas). Staff puede quitar la foto o la reseña; borrar el archivo en Storage al cerrar el reporte aún es deuda.
 
 ---
 
@@ -227,7 +227,7 @@ Solo staff. Entrás por **Más opciones (☰)** en Inicio → Panel administrado
 
 - **Categorías**: árbol, keywords para autocomplete, activar/desactivar, +18.
 - **Tipos de transporte**: grupo (particular / público / otro), km máximos por defecto, icono.
-- **Reportes abiertos**: fotos (y tipos previstos sitio/perfil/evento; la UI cubre sobre todo fotos).
+- **Reportes abiertos**: fotos y **reseñas** (y tipos previstos sitio/perfil/evento). En reseñas se muestra el sitio y un recorte del texto.
 
 No hay panel de “tarifas de bus por ciudad” ni generación de plan por IA.
 

@@ -1,14 +1,17 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../core/di/providers.dart';
 import '../../../core/testing/widget_keys.dart';
 import '../../../core/l10n/context_l10n.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/theme/app_typography.dart';
+import '../../../core/theme/theme_rebuild.dart';
+import '../../../core/widgets/app_network_image.dart';
 import '../../../core/widgets/app_toast.dart';
 import '../data/site_review_models.dart';
 
@@ -43,9 +46,19 @@ class _SiteReviewEditorPageState extends ConsumerState<SiteReviewEditorPage> {
   int _rating = 5;
   late bool _isPublic;
   final List<File> _newPhotos = [];
+  /// Fotos ya en el servidor (editar).
+  final List<SiteReviewPhoto> _existingPhotos = [];
+  final Map<String, String> _existingUrls = {};
+  final Set<String> _removedExistingIds = {};
   bool _saving = false;
+  bool _loadingExisting = false;
 
   bool get _canChoosePrivacy => widget.siteIsPublic;
+
+  int get _keptExistingCount =>
+      _existingPhotos.where((p) => !_removedExistingIds.contains(p.id)).length;
+
+  int get _photoSlotsUsed => _keptExistingCount + _newPhotos.length;
 
   @override
   void initState() {
@@ -58,6 +71,29 @@ class _SiteReviewEditorPageState extends ConsumerState<SiteReviewEditorPage> {
         false; // bitácora por defecto
     if (!_canChoosePrivacy) _isPublic = false;
     _newPhotos.addAll(widget.seedPhotos.take(3));
+    if (r != null && r.photos.isNotEmpty) {
+      _existingPhotos.addAll(r.photos);
+      _loadingExisting = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        unawaited(_loadExistingUrls());
+      });
+    }
+  }
+
+  Future<void> _loadExistingUrls() async {
+    final repo = ref.read(siteReviewsRepositoryProvider);
+    final urls = <String, String>{};
+    for (final p in _existingPhotos) {
+      final u = await repo.signedUrl(p.storagePath);
+      if (u != null && u.isNotEmpty) urls[p.id] = u;
+    }
+    if (!mounted) return;
+    setState(() {
+      _existingUrls
+        ..clear()
+        ..addAll(urls);
+      _loadingExisting = false;
+    });
   }
 
   @override
@@ -67,8 +103,7 @@ class _SiteReviewEditorPageState extends ConsumerState<SiteReviewEditorPage> {
   }
 
   Future<void> _pickPhoto() async {
-    final existing = widget.initialReview?.photos.length ?? 0;
-    if (existing + _newPhotos.length >= 3) {
+    if (_photoSlotsUsed >= 3) {
       AppToast.show(context, context.l10n.reviewMaxPhotos, error: true);
       return;
     }
@@ -84,14 +119,18 @@ class _SiteReviewEditorPageState extends ConsumerState<SiteReviewEditorPage> {
   Future<void> _save() async {
     setState(() => _saving = true);
     try {
-      await ref.read(siteReviewsRepositoryProvider).saveReview(
-            siteId: widget.siteId,
-            body: _body.text,
-            rating: _rating,
-            isPublic: _canChoosePrivacy && _isPublic,
-            reviewId: widget.initialReview?.id,
-            newPhotos: _newPhotos,
-          );
+      final repo = ref.read(siteReviewsRepositoryProvider);
+      for (final id in _removedExistingIds) {
+        await repo.deleteReviewPhoto(id);
+      }
+      await repo.saveReview(
+        siteId: widget.siteId,
+        body: _body.text,
+        rating: _rating,
+        isPublic: _canChoosePrivacy && _isPublic,
+        reviewId: widget.initialReview?.id,
+        newPhotos: _newPhotos,
+      );
       if (!mounted) return;
       Navigator.pop(context, true);
     } catch (e) {
@@ -101,12 +140,44 @@ class _SiteReviewEditorPageState extends ConsumerState<SiteReviewEditorPage> {
     }
   }
 
+  Widget _thumbShell({required Widget child, required VoidCallback onRemove}) {
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: SizedBox(width: 72, height: 72, child: child),
+        ),
+        Positioned(
+          top: -6,
+          right: -6,
+          child: Material(
+            color: AppColors.surfaceElevated,
+            shape: const CircleBorder(),
+            child: InkWell(
+              customBorder: const CircleBorder(),
+              onTap: onRemove,
+              child: Padding(
+                padding: const EdgeInsets.all(4),
+                child: Icon(Icons.close, size: 16, color: AppColors.foreground),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    ref.watchAppThemeMode();
     final l10n = context.l10n;
+    final keptExisting = _existingPhotos
+        .where((p) => !_removedExistingIds.contains(p.id))
+        .toList();
+
     return Scaffold(
       key: WidgetKeys.reviewEditor,
-      backgroundColor: AppColors.background,
       appBar: AppBar(
         title: Text(l10n.reviewEditorTitle),
       ),
@@ -115,11 +186,7 @@ class _SiteReviewEditorPageState extends ConsumerState<SiteReviewEditorPage> {
         children: [
           Text(
             widget.siteName,
-            style: GoogleFonts.plusJakartaSans(
-              fontWeight: FontWeight.w700,
-              fontSize: 18,
-              color: AppColors.foreground,
-            ),
+            style: AppTypography.tabTitle(color: AppColors.foreground),
           ),
           SizedBox(height: 16),
           Text(l10n.reviewRatingLabel, style: TextStyle(color: AppColors.muted)),
@@ -169,17 +236,55 @@ class _SiteReviewEditorPageState extends ConsumerState<SiteReviewEditorPage> {
           Wrap(
             spacing: 8,
             runSpacing: 8,
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: [
-              for (final f in _newPhotos)
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: Image.file(f, width: 72, height: 72, fit: BoxFit.cover),
+              if (_loadingExisting)
+                const SizedBox(
+                  width: 72,
+                  height: 72,
+                  child: Center(
+                    child: SizedBox(
+                      width: 22,
+                      height: 22,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  ),
                 ),
-              OutlinedButton.icon(
-                onPressed: _pickPhoto,
-                icon: Icon(Icons.add_a_photo_outlined),
-                label: Text(l10n.reviewAddPhoto),
-              ),
+              for (final p in keptExisting)
+                _thumbShell(
+                  onRemove: () =>
+                      setState(() => _removedExistingIds.add(p.id)),
+                  child: _existingUrls[p.id] != null
+                      ? AppNetworkImage(
+                          url: _existingUrls[p.id]!,
+                          width: 72,
+                          height: 72,
+                          cacheKey: p.storagePath,
+                        )
+                      : ColoredBox(
+                          color: AppColors.surfaceElevated,
+                          child: Icon(
+                            Icons.image_outlined,
+                            color: AppColors.muted,
+                          ),
+                        ),
+                ),
+              for (var i = 0; i < _newPhotos.length; i++)
+                _thumbShell(
+                  onRemove: () => setState(() => _newPhotos.removeAt(i)),
+                  child: Image.file(
+                    _newPhotos[i],
+                    width: 72,
+                    height: 72,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              if (_photoSlotsUsed < 3)
+                OutlinedButton.icon(
+                  onPressed: _pickPhoto,
+                  icon: Icon(Icons.add_a_photo_outlined),
+                  label: Text(l10n.reviewAddPhoto),
+                ),
             ],
           ),
           SizedBox(height: 24),

@@ -6,8 +6,10 @@ import '../../../core/di/providers.dart';
 import '../../../core/formatters/date_format.dart';
 import '../../../core/l10n/context_l10n.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/theme/theme_rebuild.dart';
 import '../../../core/widgets/app_network_image.dart';
 import '../../../core/widgets/app_toast.dart';
+import '../../../core/widgets/site_photo_viewer_page.dart';
 import '../data/site_review_models.dart';
 import 'site_review_editor_page.dart';
 
@@ -173,6 +175,164 @@ class _SiteReviewsTabState extends ConsumerState<SiteReviewsTab> {
     }
   }
 
+  Future<void> _openReviewPhotos(SiteReview review, int initialIndex) async {
+    final author = () {
+      final n = review.authorName?.trim() ?? '';
+      if (n.isNotEmpty) return n;
+      if (review.userId == _uid) return context.l10n.reviewAuthorYou;
+      return context.l10n.defaultUserDisplayName;
+    }();
+    final canManage =
+        review.userId == _uid || (widget.isStaff && review.isPublic);
+    final targetId =
+        review.photos[initialIndex.clamp(0, review.photos.length - 1)].id;
+    final items = <SitePhotoViewItem>[];
+    var start = 0;
+    for (final p in review.photos) {
+      final u = _urls[p.id];
+      if (u == null || u.isEmpty) continue;
+      if (p.id == targetId) start = items.length;
+      items.add(
+        SitePhotoViewItem(
+          id: p.id,
+          url: u,
+          cacheKey: p.storagePath,
+          uploaderName: author,
+          uploadedAt: p.createdAt ?? review.createdAt,
+          canDelete: canManage,
+          canSetCover: false,
+          isCover: false,
+        ),
+      );
+    }
+    if (items.isEmpty || !mounted) return;
+    await SitePhotoViewerPage.open(
+      context,
+      photos: items,
+      initialIndex: start,
+      onMenu: (item, action) {
+        switch (action) {
+          case 'delete':
+            _deleteReviewPhoto(item);
+          case 'report':
+            _reportReviewPhoto(item);
+        }
+      },
+    );
+  }
+
+  Future<void> _deleteReviewPhoto(SitePhotoViewItem item) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(context.l10n.photoDeleteTitle),
+        content: Text(context.l10n.photoDeleteConfirm),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(context.l10n.actionCancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(context.l10n.actionDelete),
+          ),
+        ],
+      ),
+    );
+    if (ok != true || !mounted) return;
+    try {
+      await ref
+          .read(siteReviewsRepositoryProvider)
+          .deleteReviewPhoto(item.id);
+      if (!mounted) return;
+      AppToast.show(context, context.l10n.photoDeleted);
+      await _load();
+    } catch (e) {
+      if (!mounted) return;
+      AppToast.error(context, e, logContext: 'review_photo_delete');
+    }
+  }
+
+  Future<void> _reportReviewPhoto(SitePhotoViewItem item) async {
+    final reasonCtrl = TextEditingController();
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(context.l10n.photoReportTitle),
+        content: TextField(
+          controller: reasonCtrl,
+          decoration: InputDecoration(
+            labelText: context.l10n.photoReportReason,
+            border: OutlineInputBorder(),
+          ),
+          maxLines: 3,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(context.l10n.actionCancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(context.l10n.photoReportSend),
+          ),
+        ],
+      ),
+    );
+    if (ok != true || !mounted) return;
+    try {
+      await ref.read(moderationRepositoryProvider).reportPhoto(
+            photoId: item.id,
+            reason: reasonCtrl.text,
+          );
+      if (!mounted) return;
+      AppToast.show(context, context.l10n.photoReportSent);
+    } catch (e) {
+      if (!mounted) return;
+      AppToast.error(context, e, logContext: 'review_photo_report');
+    }
+  }
+
+  Future<void> _reportReview(SiteReview review) async {
+    final reasonCtrl = TextEditingController();
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(context.l10n.reviewReportTitle),
+        content: TextField(
+          controller: reasonCtrl,
+          decoration: InputDecoration(
+            labelText: context.l10n.photoReportReason,
+            border: OutlineInputBorder(),
+          ),
+          maxLines: 3,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(context.l10n.actionCancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(context.l10n.photoReportSend),
+          ),
+        ],
+      ),
+    );
+    if (ok != true || !mounted) return;
+    try {
+      await ref.read(moderationRepositoryProvider).reportReview(
+            reviewId: review.id,
+            reason: reasonCtrl.text,
+          );
+      if (!mounted) return;
+      AppToast.show(context, context.l10n.reviewReportSent);
+    } catch (e) {
+      if (!mounted) return;
+      AppToast.error(context, e, logContext: 'review_report');
+    }
+  }
+
   String _sortLabel(_ReviewSort sort) {
     final l10n = context.l10n;
     switch (sort) {
@@ -189,6 +349,7 @@ class _SiteReviewsTabState extends ConsumerState<SiteReviewsTab> {
 
   @override
   Widget build(BuildContext context) {
+    ref.watchAppThemeMode();
     final l10n = context.l10n;
     if (_loading) {
       return Center(child: CircularProgressIndicator());
@@ -305,8 +466,13 @@ class _SiteReviewsTabState extends ConsumerState<SiteReviewsTab> {
                   isMine: r.userId == _uid,
                   canManage:
                       r.userId == _uid || (widget.isStaff && r.isPublic),
+                  canReport: _uid != null &&
+                      r.userId != _uid &&
+                      r.isPublic,
                   onEdit: () => _openEditor(review: r),
                   onDelete: () => _confirmDelete(r),
+                  onReport: () => _reportReview(r),
+                  onOpenPhoto: (index) => _openReviewPhotos(r, index),
                 ),
                 SizedBox(height: 12),
               ],
@@ -372,16 +538,22 @@ class _ReviewCard extends StatelessWidget {
     required this.photoUrls,
     required this.isMine,
     required this.canManage,
+    required this.canReport,
     required this.onEdit,
     required this.onDelete,
+    required this.onReport,
+    required this.onOpenPhoto,
   });
 
   final SiteReview review;
   final Map<String, String> photoUrls;
   final bool isMine;
   final bool canManage;
+  final bool canReport;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
+  final VoidCallback onReport;
+  final ValueChanged<int> onOpenPhoto;
 
   @override
   Widget build(BuildContext context) {
@@ -459,7 +631,7 @@ class _ReviewCard extends StatelessWidget {
                               ),
                           ],
                         ),
-                        if (canManage)
+                        if (canManage || canReport)
                           PopupMenuButton<String>(
                             icon: Icon(
                               Icons.more_vert,
@@ -468,16 +640,24 @@ class _ReviewCard extends StatelessWidget {
                             onSelected: (v) {
                               if (v == 'edit') onEdit();
                               if (v == 'delete') onDelete();
+                              if (v == 'report') onReport();
                             },
                             itemBuilder: (context) => [
-                              PopupMenuItem(
-                                value: 'edit',
-                                child: Text(l10n.reviewEditMine),
-                              ),
-                              PopupMenuItem(
-                                value: 'delete',
-                                child: Text(l10n.reviewDelete),
-                              ),
+                              if (canManage)
+                                PopupMenuItem(
+                                  value: 'edit',
+                                  child: Text(l10n.reviewEditMine),
+                                ),
+                              if (canManage)
+                                PopupMenuItem(
+                                  value: 'delete',
+                                  child: Text(l10n.reviewDelete),
+                                ),
+                              if (canReport)
+                                PopupMenuItem(
+                                  value: 'report',
+                                  child: Text(l10n.actionReport),
+                                ),
                             ],
                           ),
                       ],
@@ -493,16 +673,20 @@ class _ReviewCard extends StatelessWidget {
                       SizedBox(height: 8),
                       Wrap(
                         spacing: 6,
+                        runSpacing: 6,
                         children: [
-                          for (final p in review.photos)
-                            if (photoUrls[p.id] != null)
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(6),
-                                child: AppNetworkImage(
-                                  url: photoUrls[p.id]!,
-                                  width: 64,
-                                  height: 64,
-                                  cacheKey: p.id,
+                          for (var i = 0; i < review.photos.length; i++)
+                            if (photoUrls[review.photos[i].id] != null)
+                              GestureDetector(
+                                onTap: () => onOpenPhoto(i),
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(6),
+                                  child: AppNetworkImage(
+                                    url: photoUrls[review.photos[i].id]!,
+                                    width: 64,
+                                    height: 64,
+                                    cacheKey: review.photos[i].id,
+                                  ),
                                 ),
                               ),
                         ],

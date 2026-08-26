@@ -20,17 +20,21 @@ class SiteReviewPhoto {
     required this.id,
     required this.storagePath,
     this.sortOrder = 0,
+    this.createdAt,
   });
 
   final String id;
   final String storagePath;
   final int sortOrder;
+  final DateTime? createdAt;
 
   factory SiteReviewPhoto.fromJson(Map<String, dynamic> json) {
+    final createdRaw = json['created_at'] as String?;
     return SiteReviewPhoto(
       id: json['id'] as String,
       storagePath: json['storage_path'] as String? ?? '',
       sortOrder: (json['sort_order'] as num?)?.toInt() ?? 0,
+      createdAt: createdRaw != null ? DateTime.tryParse(createdRaw) : null,
     );
   }
 }

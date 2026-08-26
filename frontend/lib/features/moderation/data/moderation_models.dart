@@ -48,6 +48,7 @@ class ContentReport {
     this.reason,
     this.photoPath,
     this.siteName,
+    this.snippet,
   });
 
   final String id;
@@ -60,8 +61,11 @@ class ContentReport {
   final String reporterName;
   final String? photoPath;
   final String? siteName;
+  /// Vista previa del cuerpo (p. ej. reseña reportada).
+  final String? snippet;
 
   factory ContentReport.fromJson(Map<String, dynamic> json) {
+    final rawSnippet = (json['snippet'] as String?)?.trim();
     return ContentReport(
       id: json['report_id'] as String,
       targetType: json['target_type'] as String,
@@ -74,6 +78,7 @@ class ContentReport {
           DisplayDefaults.userDisplayName,
       photoPath: json['photo_path'] as String?,
       siteName: json['site_name'] as String?,
+      snippet: (rawSnippet != null && rawSnippet.isNotEmpty) ? rawSnippet : null,
     );
   }
 }

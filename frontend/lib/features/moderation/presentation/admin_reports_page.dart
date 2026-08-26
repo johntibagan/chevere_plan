@@ -129,14 +129,22 @@ class _AdminReportsPageState extends State<AdminReportsPage> {
                         borderRadius: BorderRadius.circular(8),
                       )
                     else
-                      Icon(Icons.flag_outlined, color: AppColors.accent),
+                      Icon(
+                        r.targetType == 'review'
+                            ? Icons.rate_review_outlined
+                            : Icons.flag_outlined,
+                        color: AppColors.accent,
+                      ),
                     SizedBox(width: 10),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            r.siteName ?? l10n.reportsPhotoFallback,
+                            r.siteName ??
+                                (r.targetType == 'review'
+                                    ? l10n.reportsReviewFallback
+                                    : l10n.reportsPhotoFallback),
                             style: TextStyle(
                               fontWeight: FontWeight.w700,
                               color: AppColors.foreground,
@@ -144,6 +152,9 @@ class _AdminReportsPageState extends State<AdminReportsPage> {
                           ),
                           Text(
                             [
+                              r.targetType == 'review'
+                                  ? l10n.reportsReviewLabel
+                                  : l10n.reportsPhotoLabel,
                               l10n.reportsBy(r.reporterName),
                               formatDateDmY(r.createdAt),
                               if (r.reason != null && r.reason!.isNotEmpty)
@@ -154,6 +165,18 @@ class _AdminReportsPageState extends State<AdminReportsPage> {
                               color: AppColors.muted,
                             ),
                           ),
+                          if (r.snippet != null && r.snippet!.isNotEmpty) ...[
+                            SizedBox(height: 4),
+                            Text(
+                              r.snippet!,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: AppColors.foreground,
+                              ),
+                            ),
+                          ],
                         ],
                       ),
                     ),

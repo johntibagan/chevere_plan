@@ -166,6 +166,12 @@ abstract class AppLocalizations {
   /// **'Cerrar sesión'**
   String get moreMenuSignOut;
 
+  /// No description provided for @moreMenuAppVersion.
+  ///
+  /// In es, this message translates to:
+  /// **'Versión {version}'**
+  String moreMenuAppVersion(String version);
+
   /// No description provided for @moreMenuTheme.
   ///
   /// In es, this message translates to:
@@ -2475,6 +2481,42 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Reporte enviado. Un administrador lo revisará.'**
   String get photoReportSent;
+
+  /// No description provided for @reviewReportTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Reportar reseña'**
+  String get reviewReportTitle;
+
+  /// No description provided for @reviewReportSent.
+  ///
+  /// In es, this message translates to:
+  /// **'Reporte enviado. Un administrador lo revisará.'**
+  String get reviewReportSent;
+
+  /// No description provided for @reviewReportAlready.
+  ///
+  /// In es, this message translates to:
+  /// **'Ya reportaste esta reseña.'**
+  String get reviewReportAlready;
+
+  /// No description provided for @reportsReviewFallback.
+  ///
+  /// In es, this message translates to:
+  /// **'Reseña reportada'**
+  String get reportsReviewFallback;
+
+  /// No description provided for @reportsReviewLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Reseña'**
+  String get reportsReviewLabel;
+
+  /// No description provided for @reportsPhotoLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Foto'**
+  String get reportsPhotoLabel;
 
   /// No description provided for @adminInactive.
   ///

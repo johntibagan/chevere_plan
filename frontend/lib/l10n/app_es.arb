@@ -12,6 +12,14 @@
   "moreMenuProximitySubtitle": "Radio y sitios públicos",
   "moreMenuReports": "Reportes",
   "moreMenuSignOut": "Cerrar sesión",
+  "moreMenuAppVersion": "Versión {version}",
+  "@moreMenuAppVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
   "moreMenuTheme": "Tema",
   "moreMenuThemeLight": "Claro",
   "moreMenuThemeDark": "Oscuro",
@@ -521,6 +529,12 @@
   "photoDeleted": "Foto eliminada.",
   "photoReportReason": "Motivo (opcional)",
   "photoReportSent": "Reporte enviado. Un administrador lo revisará.",
+  "reviewReportTitle": "Reportar reseña",
+  "reviewReportSent": "Reporte enviado. Un administrador lo revisará.",
+  "reviewReportAlready": "Ya reportaste esta reseña.",
+  "reportsReviewFallback": "Reseña reportada",
+  "reportsReviewLabel": "Reseña",
+  "reportsPhotoLabel": "Foto",
   "adminInactive": "Inactiva",
   "adminKeywords": "Palabras clave",
   "adminKeywordsHint": "Separadas por coma (ej. nadar, agua, pool)",

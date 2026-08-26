@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../app_version.dart';
 import '../di/providers.dart';
 import '../l10n/context_l10n.dart';
 import '../theme/app_theme.dart';
@@ -185,6 +186,21 @@ class AppMoreMenuDrawer extends ConsumerWidget {
               ),
             ),
             Divider(height: 1, color: AppColors.border),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 4),
+              child: ref.watch(appVersionProvider).when(
+                    data: (version) => Text(
+                      l10n.moreMenuAppVersion(version),
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.muted,
+                      ),
+                    ),
+                    loading: () => const SizedBox.shrink(),
+                    error: (_, _) => const SizedBox.shrink(),
+                  ),
+            ),
             _MenuTile(
               icon: Icons.logout_rounded,
               label: l10n.moreMenuSignOut,

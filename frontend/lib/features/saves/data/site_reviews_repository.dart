@@ -19,7 +19,7 @@ class SiteReviewsRepository {
   static const _reviewSelect =
       'id, site_id, user_id, body, rating, is_public, created_at, updated_at, '
       'profiles!site_reviews_user_id_fkey(display_name, avatar_url), '
-      'site_review_photos(id, storage_path, sort_order)';
+      'site_review_photos(id, storage_path, sort_order, created_at)';
 
   String? get _uid => _client.auth.currentUser?.id;
 
@@ -160,5 +160,13 @@ class SiteReviewsRepository {
     if (_uid == null) return;
     // RLS: autor o staff.
     await _client.from('site_reviews').delete().eq('id', reviewId);
+  }
+
+  /// Borra una foto de reseña (RLS: autor de la reseña o staff en pública).
+  Future<void> deleteReviewPhoto(String photoId) async {
+    if (_uid == null) {
+      throw const AppUserError('Debes iniciar sesión.');
+    }
+    await _client.from('site_review_photos').delete().eq('id', photoId);
   }
 }

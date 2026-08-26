@@ -143,6 +143,30 @@ class ModerationRepository {
     }
   }
 
+  Future<void> reportReview({
+    required String reviewId,
+    String? reason,
+  }) async {
+    final uid = _uid;
+    if (uid == null) {
+      throw const AppUserError('Debes iniciar sesión.');
+    }
+    try {
+      await _client.from('content_reports').insert({
+        'reporter_id': uid,
+        'target_type': 'review',
+        'target_id': reviewId,
+        'reason': reason?.trim().isEmpty == true ? null : reason?.trim(),
+        'status': 'open',
+      });
+    } on PostgrestException catch (e) {
+      if (e.code == '23505') {
+        throw const AppUserError('Ya reportaste esta reseña.');
+      }
+      rethrow;
+    }
+  }
+
   Future<List<ContentReport>> listOpenReports() async {
     final rows = await _client.rpc('list_open_content_reports');
     return (rows as List<dynamic>)

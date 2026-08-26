@@ -46,6 +46,11 @@ class AppLocalizationsEs extends AppLocalizations {
   String get moreMenuSignOut => 'Cerrar sesión';
 
   @override
+  String moreMenuAppVersion(String version) {
+    return 'Versión $version';
+  }
+
+  @override
   String get moreMenuTheme => 'Tema';
 
   @override
@@ -1307,6 +1312,25 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get photoReportSent =>
       'Reporte enviado. Un administrador lo revisará.';
+
+  @override
+  String get reviewReportTitle => 'Reportar reseña';
+
+  @override
+  String get reviewReportSent =>
+      'Reporte enviado. Un administrador lo revisará.';
+
+  @override
+  String get reviewReportAlready => 'Ya reportaste esta reseña.';
+
+  @override
+  String get reportsReviewFallback => 'Reseña reportada';
+
+  @override
+  String get reportsReviewLabel => 'Reseña';
+
+  @override
+  String get reportsPhotoLabel => 'Foto';
 
   @override
   String get adminInactive => 'Inactiva';
