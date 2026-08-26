@@ -68,7 +68,27 @@ def _b64(s: str) -> str:
     return base64.b64encode(s.encode("utf-8")).decode("ascii")
 
 
-def upload(
+def delete_object(url: str, key: str, bucket: str, object_name: str) -> None:
+    """Borra si existe (para poder sobrescribir con TUS / POST)."""
+    endpoint = (
+        f"{url.rstrip('/')}/storage/v1/object/{bucket}/{object_name}"
+    )
+    req = urllib.request.Request(
+        endpoint,
+        method="DELETE",
+        headers={"Authorization": f"Bearer {key}", "apikey": key},
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=60):
+            pass
+    except urllib.error.HTTPError as e:
+        if e.code in (404, 400):
+            return
+        detail = e.read().decode("utf-8", errors="replace")
+        raise SystemExit(f"Delete HTTP {e.code}: {detail}") from e
+
+
+def upload_standard(
     url: str,
     key: str,
     bucket: str,
@@ -76,7 +96,38 @@ def upload(
     data: bytes,
     content_type: str,
 ) -> None:
-    """Subida TUS (resumable). La POST simple falla >~50 MB (413 EntityTooLarge)."""
+    """POST con upsert. OK bajo el tope global (~50 MB en plan Free)."""
+    endpoint = f"{url.rstrip('/')}/storage/v1/object/{bucket}/{object_name}"
+    req = urllib.request.Request(
+        endpoint,
+        data=data,
+        method="POST",
+        headers={
+            "Authorization": f"Bearer {key}",
+            "apikey": key,
+            "Content-Type": content_type,
+            "x-upsert": "true",
+        },
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=600) as resp:
+            if resp.status not in (200, 201):
+                body = resp.read().decode("utf-8", errors="replace")
+                raise SystemExit(f"Upload failed {resp.status}: {body}")
+    except urllib.error.HTTPError as e:
+        detail = e.read().decode("utf-8", errors="replace")
+        raise SystemExit(f"Upload HTTP {e.code}: {detail}") from e
+
+
+def upload_tus(
+    url: str,
+    key: str,
+    bucket: str,
+    object_name: str,
+    data: bytes,
+    content_type: str,
+) -> None:
+    """Subida TUS (resumable). Usar si el archivo supera ~50 MB."""
     endpoint = f"{storage_api_base(url)}/storage/v1/upload/resumable"
     meta = ",".join(
         [
@@ -124,6 +175,7 @@ def upload(
                 "Upload-Offset": str(offset),
                 "Content-Type": "application/offset+octet-stream",
                 "Content-Length": str(len(chunk)),
+                "x-upsert": "true",
             },
         )
         try:
@@ -135,6 +187,24 @@ def upload(
         except urllib.error.HTTPError as e:
             detail = e.read().decode("utf-8", errors="replace")
             raise SystemExit(f"TUS patch HTTP {e.code}: {detail}") from e
+
+
+def upload(
+    url: str,
+    key: str,
+    bucket: str,
+    object_name: str,
+    data: bytes,
+    content_type: str,
+) -> None:
+    delete_object(url, key, bucket, object_name)
+    # Plan Free ~50 MB global; margen de seguridad.
+    if len(data) < 45 * 1024 * 1024:
+        print(f"  {object_name}: POST upsert ({len(data)} bytes)")
+        upload_standard(url, key, bucket, object_name, data, content_type)
+    else:
+        print(f"  {object_name}: TUS ({len(data)} bytes)")
+        upload_tus(url, key, bucket, object_name, data, content_type)
 
 
 def main() -> int:
@@ -167,7 +237,7 @@ def main() -> int:
     latest_name = "latest/chevere-plan.apk"
     content_type = "application/vnd.android.package-archive"
 
-    print(f"Subiendo {len(data)} bytes (TUS)…")
+    print(f"Subiendo {len(data)} bytes…")
     upload(base, key, "beta-apks", versioned_name, data, content_type)
     upload(base, key, "beta-apks", latest_name, data, content_type)
 

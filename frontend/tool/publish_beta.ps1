@@ -1,7 +1,7 @@
 # Publica el APK más liviano al portal (círculo cerrado).
 #
 # - Sube solo el +N en pubspec (1.0.0+2 → 1.0.0+3)
-# - Release + R8 + solo arm64 (~20–25 MB; cabe en plan Free ≤50 MB)
+# - Release arm64 sin R8 (~25–35 MB; estable en dispositivo; Free ≤50 MB)
 # - Sube a Storage + actualiza beta_release
 #
 # Uso:
@@ -40,7 +40,7 @@ if (-not $SkipBump) {
   Write-Host "Versión (sin bump) $versionName+$build"
 }
 
-Write-Host "Compilando APK más liviano (release + R8 + arm64)…"
+Write-Host "Compilando APK arm64 (release sin R8; estable en beta)…"
 flutter build apk --release `
   --dart-define-from-file=.env `
   --target-platform android-arm64

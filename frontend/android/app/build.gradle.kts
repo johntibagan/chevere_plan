@@ -53,13 +53,11 @@ android {
         release {
             // Firma debug: solo pruebas cerradas (no Play Store).
             signingConfig = signingConfigs.getByName("debug")
-            // Mínimo peso: R8 + shrink. Publicar solo arm64 (ver tool/publish_beta.ps1).
-            isMinifyEnabled = true
-            isShrinkResources = true
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro",
-            )
+            // Beta cerrada: sin R8. Con minify la app abría y se cerraba al toque
+            // (plugins nativos). Peso sigue OK con --target-platform android-arm64.
+            // Al ir a Play: activar minify + revisar proguard-rules.pro.
+            isMinifyEnabled = false
+            isShrinkResources = false
         }
     }
 }
