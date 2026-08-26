@@ -69,18 +69,14 @@ Se guardan **las dos** ubicaciones: el **lugar** (nombre y Place ID) y el **punt
 
 ### Qué ves en el formulario
 
-Siempre visibles (crear vacío):
+Siempre visible al **crear** (vacío): **Ubicación** (tres pestañas: Mapa, Enlace, Cámara; debajo el interruptor de punto exacto). **Nombre** (con lugar físico + público en la misma card) va en **Añadir sección** como chip `+ Nombre - Visibilidad`; se abre sola cuando el autocompletado de ubicación rellena el nombre, o al tocar el chip. Al **compartir** desde una red social (no enlace Maps), **Nombre** y **Enlaces** se abren de inmediato, haya o no autocompletado. Al **editar** o completar borrador: todas las secciones visibles.
 
-1. **Ubicación** — campo para pegar enlace de Maps (icono pegar) y preview tappable del mapa, más interruptor de punto exacto (todo en la misma card)
-2. **Nombre** — obligatorio; el autocompletado de Maps lo rellena igual
-3. **Visibilidad** — una sola fila: **Lugar físico** (encendido por defecto) y **Público** (apagado; sin pin el interruptor se ve pero no se puede encender). Cada uno con icono **i**.
+El resto va detrás de **Añadir sección**: chips `+` (**Nombre - Visibilidad**, **Detalles**, **Enlaces**, **Categorías**, **Fotos**). Los que ya están abiertos dejan de mostrarse como chip. **Guardar** es un botón ancho **abajo** (un solo CTA; no está en el AppBar).
 
-El resto va detrás de **Añadir sección**: chips `+` por extra (**Detalles**, **Enlaces**, **Categorías**, **Fotos**). Si ya están todas, los chips desaparecen. **Guardar** es un botón ancho **abajo** (un solo CTA; no está en el AppBar).
-
-- Al **crear**, se asume lugar físico y privado; ambos interruptores ya están en la fila de Visibilidad.
+- Al **crear**, se asume lugar físico y privado; los interruptores van en la card de nombre cuando está abierta.
 - Al **editar** o completar un borrador: se muestran **todas** las secciones.
 - **Fotos** (sección extra): miniaturas de las ya guardadas (al editar) y de las nuevas elegidas (con ✕); las nuevas se guardan en memoria al elegirlas (no dependen de archivos temporales). Hasta 15.
-- Al **compartir** desde otra app: además de ubicación y nombre, se abre **Enlaces**.
+- Al **compartir** desde otra app (red social): se abren **Nombre** y **Enlaces**; Maps solo precarga ubicación/enlace.
 - Ayuda: icono **i** (tooltip al toque), no párrafos bajo cada campo.
 - Categorías: árbol de la base; al **crear**, default **Otros**; al **editar** no se pisa lo que ya tenía.
 - Sin nombre no se puede guardar (el botón queda desactivado). Sin ubicación el guardado puede quedar en borrador.

@@ -24,10 +24,15 @@ abstract final class WidgetKeys {
   static const savePhysicalSwitch = Key('save_physical_switch');
   static const saveExactPinSwitch = Key('save_exact_pin_switch');
   static const saveOpenMap = Key('save_open_map');
+  static const saveLocationTabMap = Key('save_location_tab_map');
+  static const saveLocationTabLink = Key('save_location_tab_link');
+  static const saveLocationTabCamera = Key('save_location_tab_camera');
+  static const saveCameraTake = Key('save_camera_take');
   static const saveLinksSection = Key('save_links_section');
   static const saveHasPin = Key('save_has_pin');
   static const saveNoPin = Key('save_no_pin');
   static const saveExtraDetails = Key('save_extra_details');
+  static const saveExtraName = Key('save_extra_name');
   static const saveExtraLinks = Key('save_extra_links');
   static const saveExtraCategories = Key('save_extra_categories');
   static const saveExtraPhoto = Key('save_extra_photo');

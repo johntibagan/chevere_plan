@@ -49,7 +49,7 @@ import 'site_review_editor_page.dart';
 import 'site_status_l10n.dart';
 import 'social_link_preview_card.dart';
 
-enum _SaveExtra { details, links, categories, photo }
+enum _SaveExtra { name, details, links, categories, photo }
 
 /// Foto pendiente en memoria (no archivo temp: Android puede borrarlo y la
 /// miniatura seguiría viéndose por ImageCache).
@@ -83,7 +83,8 @@ class SavePlacePage extends ConsumerStatefulWidget {
   ConsumerState<SavePlacePage> createState() => _SavePlacePageState();
 }
 
-class _SavePlacePageState extends ConsumerState<SavePlacePage> {
+class _SavePlacePageState extends ConsumerState<SavePlacePage>
+    with SingleTickerProviderStateMixin {
   final _nameCtrl = TextEditingController();
   final _mapsCtrl = TextEditingController();
   final _socialCtrl = TextEditingController();
@@ -113,6 +114,8 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
   bool _saving = false;
   bool _importingMaps = false;
   bool _addingSocial = false;
+  TabController? _locationTabCtrl;
+  bool _cameraBusy = false;
   /// true = pegar enlace Google Maps; false = mapa interactivo.
   final Set<_SaveExtra> _openExtras = {};
   final List<_PendingPhoto> _pendingPhotos = [];
@@ -144,6 +147,20 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
   bool get _isEditing => _editSaveId != null || _editSiteId != null;
   bool get _isStaffSiteEdit =>
       _editSaveId == null && _editSiteId != null;
+
+  void _openNameSectionIfNeeded({String? name}) {
+    if (_isEditing) return;
+    if (_openExtras.contains(_SaveExtra.name)) return;
+    if ((name ?? _nameCtrl.text).trim().isNotEmpty) {
+      setState(() => _openExtras.add(_SaveExtra.name));
+    }
+  }
+
+  Future<void> _warmDeviceLocation() async {
+    final loc = ref.read(deviceLocationProvider);
+    await loc.access(request: false);
+    await loc.lastKnown();
+  }
 
   void _bindGeo({
     String? departmentId,
@@ -213,17 +230,36 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
   @override
   void initState() {
     super.initState();
+    if (!_isEditing) {
+      _locationTabCtrl = TabController(length: 3, vsync: this)
+        ..addListener(() {
+          if (_locationTabCtrl!.indexIsChanging) return;
+          if (_locationTabCtrl!.index == 2) {
+            unawaited(_warmDeviceLocation());
+          }
+          setState(() {});
+        });
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        unawaited(_warmDeviceLocation());
+      });
+    }
     final parsed = ShareParser.parse(widget.initialSharedText);
     if (parsed.url != null) {
       if (GoogleMapsLinkImporter.looksLikeMapsUrl(parsed.url)) {
         _mapsCtrl.text = parsed.url!;
+        _locationTabCtrl?.index = 1;
       } else {
         _socialCtrl.text = parsed.url!;
       }
     }
     if (parsed.suggestedName != null) _nameCtrl.text = parsed.suggestedName!;
-    if (widget.initialSharedText?.trim().isNotEmpty ?? false) {
+    final shared = widget.initialSharedText?.trim();
+    if (shared != null && shared.isNotEmpty) {
       _openExtras.add(_SaveExtra.links);
+      final url = parsed.url;
+      if (url == null || !GoogleMapsLinkImporter.looksLikeMapsUrl(url)) {
+        _openExtras.add(_SaveExtra.name);
+      }
     }
     _bootstrapForm();
   }
@@ -420,6 +456,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
 
   @override
   void dispose() {
+    _locationTabCtrl?.dispose();
     _nameCtrl.dispose();
     _mapsCtrl.dispose();
     _socialCtrl.dispose();
@@ -459,8 +496,24 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
       if (staticMapUrl != null && staticMapUrl.isNotEmpty) {
         _pendingMapImageUrl = staticMapUrl;
       }
+      _openNameSectionIfNeeded(name: name);
     });
     if (!_isEditing) _maybeSuggestCategories(force: true);
+  }
+
+  String? _nameFromGeoPlace(GeoPlace? place) {
+    if (place == null) return null;
+    final city = place.city?.trim().toLowerCase();
+    final rawName = place.name?.trim();
+    if (rawName != null &&
+        rawName.isNotEmpty &&
+        (city == null || rawName.toLowerCase() != city)) {
+      return rawName;
+    }
+    final display = place.displayName?.trim();
+    if (display == null || display.isEmpty) return rawName;
+    final first = display.split(',').first.trim();
+    return first.isNotEmpty ? first : rawName;
   }
 
   Future<void> _importFromGoogleMaps() async {
@@ -552,7 +605,12 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
     }
     setState(() => _addingSocial = true);
     final draft = SocialLinkDraft(url: url, network: parsed.network);
-    setState(() => _socialLinks.add(draft));
+    setState(() {
+      _socialLinks.add(draft);
+      if (!_isEditing && !GoogleMapsLinkImporter.looksLikeMapsUrl(url)) {
+        _openExtras.add(_SaveExtra.name);
+      }
+    });
     try {
       final hint = await _socialExtractor.extract(url);
       if (!mounted) return;
@@ -569,6 +627,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
         }
         _addingSocial = false;
       });
+      _openNameSectionIfNeeded(name: hint.suggestedPlaceName);
       _maybeSuggestCategories();
       unawaited(_tryFillLocationFromHint(hint));
     } catch (_) {
@@ -1008,6 +1067,146 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
     return _PendingPhoto(bytes: bytes, ext: ext);
   }
 
+  int get _photoSlotsLeft =>
+      SavePolicies.maxPhotosPerSite -
+      _existingPhotos.length -
+      _pendingPhotos.length;
+
+  Future<bool> _confirmPhotoTerms() async {
+    final accepted = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(context.l10n.loginTerms),
+        content: Text(context.l10n.photoTermsBody),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(context.l10n.actionCancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(context.l10n.actionAcceptContinue),
+          ),
+        ],
+      ),
+    );
+    return accepted == true;
+  }
+
+  Future<void> _captureFromCamera() async {
+    if (_saving || _cameraBusy) return;
+    if (!await _confirmPhotoTerms() || !mounted) return;
+    if (_photoSlotsLeft <= 0) {
+      AppToast.show(
+        context,
+        context.l10n.savePhotoMaxReached(SavePolicies.maxPhotosPerSite),
+        error: true,
+      );
+      return;
+    }
+    final picker = ImagePicker();
+    final file = await picker.pickImage(
+      source: ImageSource.camera,
+      imageQuality: 92,
+      maxWidth: 1920,
+    );
+    if (file == null || !mounted) return;
+    try {
+      final persisted = await _persistPickedImage(file);
+      if (!mounted) return;
+      await _applyCameraPhoto(persisted);
+    } catch (e, st) {
+      ClientDebugLog.reportAsync(
+        context: 'save_camera_capture',
+        error: e,
+        stackTrace: st,
+        client: ref.read(supabaseClientProvider),
+      );
+      if (!mounted) return;
+      AppToast.show(context, context.l10n.savePhotoUploadPartialFail, error: true);
+    }
+  }
+
+  Future<void> _applyCameraPhoto(_PendingPhoto photo) async {
+    if (_saving || _cameraBusy) return;
+    setState(() {
+      _pendingPhotos.add(photo);
+      _openExtras.add(_SaveExtra.photo);
+    });
+
+    if (_hasFormLocation || !mounted) return;
+
+    setState(() => _cameraBusy = true);
+    try {
+      final fix =
+          await ref.read(deviceLocationProvider).tryQuickFix();
+      if (!mounted) return;
+      if (fix == null) {
+        AppToast.show(context, context.l10n.saveCameraNeedLocation, error: true);
+        return;
+      }
+
+      setState(() {
+        _lat = fix.lat;
+        _lng = fix.lng;
+        _useExactPin = true;
+      });
+
+      unawaited(_enrichLocationFromCoords(
+        fix.lat,
+        fix.lng,
+        showToast: true,
+        checkDuplicate: true,
+      ));
+    } finally {
+      if (mounted) setState(() => _cameraBusy = false);
+    }
+  }
+
+  Future<void> _enrichLocationFromCoords(
+    double lat,
+    double lng, {
+    bool showToast = false,
+    bool checkDuplicate = false,
+  }) async {
+    GeoPlace? place;
+    try {
+      place = await _placeGeocoder.reverse(lat: lat, lng: lng);
+    } catch (_) {}
+
+    if (!mounted) return;
+
+    final suggestedName = _nameFromGeoPlace(place);
+    _fillFromPlace(
+      name: _nameCtrl.text.trim().isEmpty ? suggestedName : null,
+      address: place?.addressLine ?? place?.displayName,
+      city: place?.city,
+      department: place?.department,
+      lat: lat,
+      lng: lng,
+      googlePlaceId: place?.placeId,
+    );
+    if (!mounted) return;
+
+    _openNameSectionIfNeeded(name: suggestedName);
+
+    if (checkDuplicate) {
+      final linked = await _softCheckDuplicateAfterLocation();
+      if (linked || !mounted) return;
+    }
+
+    if (showToast && mounted) {
+      final city = _cityCtrl.text.trim();
+      final name = _nameCtrl.text.trim();
+      AppToast.show(
+        context,
+        city.isNotEmpty && name.isNotEmpty
+            ? context.l10n.saveLocationAppliedNamed(name, city)
+            : context.l10n.saveLocationApplied,
+      );
+    }
+  }
+
   Future<void> _ensureExistingPhotosLoaded() async {
     final siteId = _editSiteId;
     if (siteId == null || _existingPhotosLoaded || _loadingExistingPhotos) {
@@ -1042,30 +1241,9 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
   }
 
   Future<void> _pickPhoto() async {
-    final accepted = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(context.l10n.loginTerms),
-        content: Text(context.l10n.photoTermsBody),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(context.l10n.actionCancel),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text(context.l10n.actionAcceptContinue),
-          ),
-        ],
-      ),
-    );
-    if (accepted != true || !mounted) return;
+    if (!await _confirmPhotoTerms() || !mounted) return;
 
-    final slotsLeft =
-        SavePolicies.maxPhotosPerSite -
-        _existingPhotos.length -
-        _pendingPhotos.length;
-    if (slotsLeft <= 0) {
+    if (_photoSlotsLeft <= 0) {
       AppToast.show(
         context,
         context.l10n.savePhotoMaxReached(SavePolicies.maxPhotosPerSite),
@@ -1629,6 +1807,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
 
   String _extraTitle(AppLocalizations l10n, _SaveExtra extra) {
     return switch (extra) {
+      _SaveExtra.name => l10n.saveExtraNameVisibility,
       _SaveExtra.details => l10n.saveExtraDetails,
       _SaveExtra.links => l10n.saveLinksSection,
       _SaveExtra.categories => l10n.saveCategoriesSection,
@@ -1654,6 +1833,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
               for (final extra in hidden)
                 AppSelectChip(
                   key: switch (extra) {
+                    _SaveExtra.name => WidgetKeys.saveExtraName,
                     _SaveExtra.details => WidgetKeys.saveExtraDetails,
                     _SaveExtra.links => WidgetKeys.saveExtraLinks,
                     _SaveExtra.categories => WidgetKeys.saveExtraCategories,
@@ -1677,105 +1857,197 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
     );
   }
 
-  Widget _locationSection(AppLocalizations l10n) {
+  Widget _mapPreview(AppLocalizations l10n) {
     final hasPin = _lat != null && _lng != null;
-    return _sectionCard(
-      title: l10n.saveLocationSection,
-      info: l10n.saveInfoLocation,
-      children: [
-        TextField(
-          key: WidgetKeys.saveMapsField,
-          controller: _mapsCtrl,
-          decoration: _dec(
-            l10n.saveMapsPasteLabel,
-            hint: l10n.saveLocationSearchHint,
-          ).copyWith(
-            suffixIcon: FieldActionIcon(
-              icon: Icons.content_paste,
-              tooltip: l10n.actionPaste,
-              loading: _importingMaps,
-              onPressed: (_saving || _importingMaps) ? null : _pasteMapsAndImport,
-            ),
-          ),
-          keyboardType: TextInputType.url,
-          textInputAction: TextInputAction.done,
-          onSubmitted: (_) {
-            if (!_saving && !_importingMaps) {
-              _importFromGoogleMaps();
-            }
-          },
-        ),
-        SizedBox(height: 10),
-        Material(
-          color: AppColors.surfaceElevated,
-          clipBehavior: Clip.antiAlias,
-          borderRadius: BorderRadius.circular(12),
-          child: InkWell(
-            key: WidgetKeys.saveOpenMap,
-            onTap: _saving ? null : _openMap,
-            child: SizedBox(
-              height: 112,
-              width: double.infinity,
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  SiteLookCover(
-                    imageUrl: _pendingMapImageUrl,
-                    categoryNames: [
-                      for (final c in _selectedCategories) c.nameEs,
-                    ],
-                  ),
-                  Align(
-                    alignment: Alignment.bottomLeft,
-                    child: Padding(
-                      padding: const EdgeInsets.all(10),
-                      child: Text(
-                        hasPin
-                            ? l10n.saveLocationPointReady
-                            : l10n.saveLocationPickMap,
-                        key: hasPin
-                            ? WidgetKeys.saveHasPin
-                            : WidgetKeys.saveNoPin,
-                        style: TextStyle(
-                          color: AppColors.foreground,
-                          fontWeight: FontWeight.w800,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ),
-                  ),
+    return Material(
+      color: AppColors.surfaceElevated,
+      clipBehavior: Clip.antiAlias,
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        key: WidgetKeys.saveOpenMap,
+        onTap: _saving ? null : _openMap,
+        child: SizedBox(
+          height: 112,
+          width: double.infinity,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              SiteLookCover(
+                imageUrl: _pendingMapImageUrl,
+                categoryNames: [
+                  for (final c in _selectedCategories) c.nameEs,
                 ],
               ),
-            ),
+              Align(
+                alignment: Alignment.bottomLeft,
+                child: Padding(
+                  padding: const EdgeInsets.all(10),
+                  child: Text(
+                    hasPin
+                        ? l10n.saveLocationPointReady
+                        : l10n.saveLocationPickMap,
+                    key: hasPin ? WidgetKeys.saveHasPin : WidgetKeys.saveNoPin,
+                    style: TextStyle(
+                      color: AppColors.foreground,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
-        SwitchListTile(
-          key: WidgetKeys.saveExactPinSwitch,
-          contentPadding: EdgeInsets.zero,
-          title: Text(l10n.saveExactPinSwitch),
-          subtitle: Text(
-            _useExactPin
-                ? l10n.saveExactPinMapsPin
-                : l10n.saveExactPinMapsPlace,
-          ),
-          secondary: _infoTip(l10n.saveInfoExactPin),
-          value: _useExactPin,
-          onChanged: _saving
-              ? null
-              : (v) async {
-                  if (v && (_lat == null || _lng == null)) {
-                    await _openMap();
-                    if (!mounted) return;
-                    if (_lat == null || _lng == null) return;
-                  }
-                  setState(() => _useExactPin = v);
-                },
+      ),
+    );
+  }
+
+  Widget _locationLinkField(AppLocalizations l10n) {
+    return TextField(
+      key: WidgetKeys.saveMapsField,
+      controller: _mapsCtrl,
+      decoration: _dec(
+        l10n.saveMapsPasteLabel,
+        hint: l10n.saveLocationSearchHint,
+        helper: l10n.saveMapsPasteHelper,
+      ).copyWith(
+        suffixIcon: FieldActionIcon(
+          icon: Icons.content_paste,
+          tooltip: l10n.actionPaste,
+          loading: _importingMaps,
+          onPressed: (_saving || _importingMaps) ? null : _pasteMapsAndImport,
         ),
+      ),
+      keyboardType: TextInputType.url,
+      textInputAction: TextInputAction.done,
+      onSubmitted: (_) {
+        if (!_saving && !_importingMaps) {
+          _importFromGoogleMaps();
+        }
+      },
+    );
+  }
+
+  Widget _locationCameraTab(AppLocalizations l10n) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          l10n.saveCameraHint,
+          style: TextStyle(color: AppColors.muted, fontSize: 13),
+        ),
+        SizedBox(height: 12),
+        FilledButton.icon(
+          key: WidgetKeys.saveCameraTake,
+          onPressed: (_saving || _cameraBusy) ? null : _captureFromCamera,
+          icon: Icon(Icons.photo_camera_outlined),
+          label: Text(l10n.saveCameraTake),
+        ),
+        if (_cameraBusy) ...[
+          SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+              SizedBox(width: 10),
+              Text(
+                l10n.saveCameraLocating,
+                style: TextStyle(color: AppColors.muted, fontSize: 13),
+              ),
+            ],
+          ),
+        ],
       ],
     );
   }
 
-  Widget _nameSection(AppLocalizations l10n) {
+  Widget _exactPinSwitch(AppLocalizations l10n) {
+    return SwitchListTile(
+      key: WidgetKeys.saveExactPinSwitch,
+      contentPadding: EdgeInsets.zero,
+      title: Text(l10n.saveExactPinSwitch),
+      subtitle: Text(
+        _useExactPin
+            ? l10n.saveExactPinMapsPin
+            : l10n.saveExactPinMapsPlace,
+      ),
+      secondary: _infoTip(l10n.saveInfoExactPin),
+      value: _useExactPin,
+      onChanged: _saving
+          ? null
+          : (v) async {
+              if (v && (_lat == null || _lng == null)) {
+                await _openMap();
+                if (!mounted) return;
+                if (_lat == null || _lng == null) return;
+              }
+              setState(() => _useExactPin = v);
+            },
+    );
+  }
+
+  Widget _locationSection(AppLocalizations l10n) {
+    if (_isEditing) {
+      return _sectionCard(
+        title: l10n.saveLocationSection,
+        info: l10n.saveInfoLocation,
+        children: [
+          _locationLinkField(l10n),
+          SizedBox(height: 10),
+          _mapPreview(l10n),
+          _exactPinSwitch(l10n),
+        ],
+      );
+    }
+
+    final tabs = _locationTabCtrl!;
+    return _sectionCard(
+      title: l10n.saveLocationSection,
+      info: l10n.saveInfoLocation,
+      children: [
+        TabBar(
+          controller: tabs,
+          tabs: [
+            Tab(
+              key: WidgetKeys.saveLocationTabMap,
+              text: l10n.saveLocationMap,
+            ),
+            Tab(
+              key: WidgetKeys.saveLocationTabLink,
+              text: l10n.saveLocationGoogleLink,
+            ),
+            Tab(
+              key: WidgetKeys.saveLocationTabCamera,
+              text: l10n.saveLocationCamera,
+            ),
+          ],
+        ),
+        SizedBox(height: 10),
+        switch (tabs.index) {
+          0 => _mapPreview(l10n),
+          1 => _locationLinkField(l10n),
+          _ => _locationCameraTab(l10n),
+        },
+        _exactPinSwitch(l10n),
+      ],
+    );
+  }
+
+  Widget _nameAndVisibilitySection(AppLocalizations l10n) {
+    final canPublish = _isPhysical && _hasFormLocation;
+    final isPublicOn = _isPublic && canPublish;
+    final publicColor =
+        isPublicOn ? AppColors.success : AppColors.purple;
+    final publicSwitchTip = !canPublish
+        ? (!_isPhysical
+            ? l10n.savePublicNonPhysical
+            : l10n.savePublicNeedLocation)
+        : (isPublicOn ? l10n.savePublicVisible : l10n.saveMakePublic);
+
     return _sectionCard(
       title: l10n.saveNameSection,
       info: l10n.saveInfoName,
@@ -1796,26 +2068,8 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
           },
           onSubmitted: (_) => _maybeSuggestCategories(),
         ),
-      ],
-    );
-  }
-
-  Widget _visibilitySection(AppLocalizations l10n) {
-    final canPublish = _isPhysical && _hasFormLocation;
-    final isPublicOn = _isPublic && canPublish;
-    final publicColor =
-        isPublicOn ? AppColors.success : AppColors.purple;
-    final publicSwitchTip = !canPublish
-        ? (!_isPhysical
-            ? l10n.savePublicNonPhysical
-            : l10n.savePublicNeedLocation)
-        : (isPublicOn ? l10n.savePublicVisible : l10n.saveMakePublic);
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: AppFormCard(
-        padding: const EdgeInsets.fromLTRB(10, 6, 6, 6),
-        child: Row(
+        SizedBox(height: 6),
+        Row(
           children: [
             Expanded(
               child: _visibilityToggle(
@@ -1834,7 +2088,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
             Container(
               width: 1,
               height: 32,
-              margin: const EdgeInsets.symmetric(horizontal: 12),
+              margin: const EdgeInsets.symmetric(horizontal: 8),
               color: AppColors.border,
             ),
             Expanded(
@@ -1855,7 +2109,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
             ),
           ],
         ),
-      ),
+      ],
     );
   }
 
@@ -2200,6 +2454,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
 
   Widget _extraSection(AppLocalizations l10n, _SaveExtra extra) {
     return switch (extra) {
+      _SaveExtra.name => _nameAndVisibilitySection(l10n),
       _SaveExtra.details => _detailsSection(l10n),
       _SaveExtra.links => _linksSection(l10n),
       _SaveExtra.categories => _categoriesSection(l10n),
@@ -2224,8 +2479,6 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
               children: [
                 _locationSection(l10n),
-                _nameSection(l10n),
-                _visibilitySection(l10n),
                 for (final extra in _SaveExtra.values)
                   if (_openExtras.contains(extra)) _extraSection(l10n, extra),
                 _addExtraChips(l10n),

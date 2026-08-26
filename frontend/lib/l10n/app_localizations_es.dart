@@ -720,7 +720,24 @@ class AppLocalizationsEs extends AppLocalizations {
   String get saveLocationMap => 'Mapa';
 
   @override
-  String get saveLocationGoogleLink => 'Enlace Google';
+  String get saveLocationGoogleLink => 'Enlace';
+
+  @override
+  String get saveLocationCamera => 'Cámara';
+
+  @override
+  String get saveCameraHint =>
+      'Toma una foto del lugar. Al confirmarla en la cámara se guarda la imagen y, si aún no hay ubicación, se captura la tuya automáticamente.';
+
+  @override
+  String get saveCameraTake => 'Tomar foto';
+
+  @override
+  String get saveCameraLocating => 'Capturando ubicación…';
+
+  @override
+  String get saveCameraNeedLocation =>
+      'Activa la ubicación para registrar el sitio.';
 
   @override
   String get saveLocationPointReady => 'Punto listo';
@@ -927,6 +944,9 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get saveNameSection => 'Nombre';
+
+  @override
+  String get saveExtraNameVisibility => 'Nombre - Visibilidad';
 
   @override
   String get savePublicSection => 'Público';

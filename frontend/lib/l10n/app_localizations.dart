@@ -1405,8 +1405,38 @@ abstract class AppLocalizations {
   /// No description provided for @saveLocationGoogleLink.
   ///
   /// In es, this message translates to:
-  /// **'Enlace Google'**
+  /// **'Enlace'**
   String get saveLocationGoogleLink;
+
+  /// No description provided for @saveLocationCamera.
+  ///
+  /// In es, this message translates to:
+  /// **'Cámara'**
+  String get saveLocationCamera;
+
+  /// No description provided for @saveCameraHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Toma una foto del lugar. Al confirmarla en la cámara se guarda la imagen y, si aún no hay ubicación, se captura la tuya automáticamente.'**
+  String get saveCameraHint;
+
+  /// No description provided for @saveCameraTake.
+  ///
+  /// In es, this message translates to:
+  /// **'Tomar foto'**
+  String get saveCameraTake;
+
+  /// No description provided for @saveCameraLocating.
+  ///
+  /// In es, this message translates to:
+  /// **'Capturando ubicación…'**
+  String get saveCameraLocating;
+
+  /// No description provided for @saveCameraNeedLocation.
+  ///
+  /// In es, this message translates to:
+  /// **'Activa la ubicación para registrar el sitio.'**
+  String get saveCameraNeedLocation;
 
   /// No description provided for @saveLocationPointReady.
   ///
@@ -1773,6 +1803,12 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Nombre'**
   String get saveNameSection;
+
+  /// No description provided for @saveExtraNameVisibility.
+  ///
+  /// In es, this message translates to:
+  /// **'Nombre - Visibilidad'**
+  String get saveExtraNameVisibility;
 
   /// No description provided for @savePublicSection.
   ///
