@@ -1401,6 +1401,70 @@ class AppLocalizationsEs extends AppLocalizations {
   String get reviewAuthorYou => 'Tú';
 
   @override
+  String get notifChannelProximityName => 'Recuerdos cercanos';
+
+  @override
+  String get notifChannelProximityDesc =>
+      'Avisos cuando estás cerca de un lugar guardado';
+
+  @override
+  String get notifChannelDraftName => 'Recordatorios de borradores';
+
+  @override
+  String get notifChannelDraftDesc =>
+      'Te recuerda completar lugares guardados incompletos';
+
+  @override
+  String get notifChannelEventName => 'Eventos de interés';
+
+  @override
+  String get notifChannelEventDesc =>
+      'Avisos de eventos cerca de tus guardados (próximamente)';
+
+  @override
+  String get notifChannelSummaryName => 'Resúmenes';
+
+  @override
+  String get notifChannelSummaryDesc =>
+      'Resumen mensual de planes y visitas (próximamente)';
+
+  @override
+  String get notifProximityContext => 'Lugar cerca de ti';
+
+  @override
+  String get notifDraftContext => 'Completa tu guardado';
+
+  @override
+  String get notifEventContext => 'Evento de interés';
+
+  @override
+  String get notifSummaryContext => 'Resumen del mes';
+
+  @override
+  String get notifPlaceFallback => 'Lugar guardado';
+
+  @override
+  String get notifTestSectionTitle => 'Pruebas · notificaciones';
+
+  @override
+  String get notifTestSectionHint => 'Solo etapa de pruebas; se quitará luego.';
+
+  @override
+  String get notifTestChipProximity => 'Cerca';
+
+  @override
+  String get notifTestChipDraft => 'Borrador';
+
+  @override
+  String get notifTestChipEvent => 'Evento';
+
+  @override
+  String get notifTestChipSummary => 'Resumen';
+
+  @override
+  String get notifTestSent => 'Notificación enviada.';
+
+  @override
   String reviewEditedOn(String date) {
     return ' · editado $date';
   }

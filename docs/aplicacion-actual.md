@@ -91,7 +91,7 @@ El resto va detrás de **Añadir sección**: chips `+` por extra (**Detalles**, 
 - **Pendiente de ubicación**: hay categoría explícita pero aún no hay coordenadas
 - **Completo**: categoría + (si es físico) coordenadas
 
-Los borradores viejos avisan en Inicio (“completalo”). Hay recordatorios locales espaciados (24 h / 3 días / 7 días) hasta que completes o descartes.
+Los borradores viejos avisan en Inicio (“completalo”). Hay recordatorios locales espaciados (24 h / 3 días / 7 días) con **tarjeta estándar** (nombre, depto–municipio, foto de portada si hay) hasta que completes o descartes. Tocar abre el formulario de edición.
 
 ```mermaid
 flowchart TD
@@ -202,7 +202,7 @@ Lista de paradas que marcaste hechas (sitio, plan, fecha). Sirve como “ya pas�
 
 En **Más opciones (☰)** → **Recuerdos cercanos** abrís la hoja de radio (100–2000 m) y si querés que cuenten **sitios públicos** además de los tuyos. Ya no hay banner de recuerdo en el feed de Inicio.
 
-El teléfono registra geocercas (tope práctico ~100, priorizando los tuyos). Si entrás al radio, notificación tipo recuerdo. Pedir ubicación “siempre” y el gasto de batería aún se pueden pulir.
+El teléfono registra geocercas (tope práctico ~100, priorizando los tuyos). Si entrás al radio, notificación tipo **tarjeta recuerdo** (foto de portada si hay, nombre, departamento–municipio, «Lugar cerca de ti»). Mismo formato que borradores / futuros eventos y resúmenes. Pedir ubicación “siempre” y el gasto de batería aún se pueden pulir.
 
 **Populares cerca** (Inicio) usa la misma idea de “celda”: guarda los 4 públicos del radio de 25 km junto con el punto GPS. Al volver a Inicio pinta esa lista al toque. Solo vuelve a consultar GPS fino + búsqueda si te moviste más de ~2 km (el tope de radio de recuerdos), si la caché tiene más de 24 h, o si deslizás para refrescar.
 

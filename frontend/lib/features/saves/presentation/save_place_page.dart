@@ -1385,6 +1385,9 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
             await ref.read(draftReminderServiceProvider).scheduleForSave(
               saveId: saved.id,
               title: saved.siteName,
+              city: saved.city,
+              department: saved.department,
+              coverStoragePath: saved.coverStoragePath,
             );
           }
         } catch (e, st) {

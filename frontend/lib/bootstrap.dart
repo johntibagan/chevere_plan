@@ -12,6 +12,7 @@ import 'core/cache/app_image_cache.dart';
 import 'core/cache/entity_cache_store.dart';
 import 'core/config/env.dart';
 import 'core/logging/app_log.dart';
+import 'core/notifications/app_local_notifications.dart';
 import 'core/notifications/fcm_bootstrap.dart';
 import 'features/proximity/data/proximity_reminder_service.dart';
 import 'features/saves/data/draft_reminder_service.dart';
@@ -98,6 +99,8 @@ Future<void> _initPushAndLocalNotifs({
         await bootstrapFcm();
       }
       if (initLocalNotifications) {
+        await AppLocalNotifications.instance.init();
+        // Mantienen API de dominio; delegan al plugin único.
         await DraftReminderService.instance.init();
         await ProximityReminderService.instance.init();
       }

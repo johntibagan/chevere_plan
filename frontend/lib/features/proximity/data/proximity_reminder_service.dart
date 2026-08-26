@@ -1,67 +1,38 @@
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import '../../../core/formatters/place_format.dart';
+import '../../../core/notifications/app_local_notifications.dart';
+import '../../../core/notifications/app_notification_card.dart';
+import '../../../core/notifications/notification_kind.dart';
+import '../../../l10n/app_localizations.dart';
+import '../../../core/l10n/app_locale.dart';
+import 'package:flutter/widgets.dart';
 
-import '../../../core/notifications/local_notification_router.dart';
-
-/// Notificaciones de recuerdo por proximidad (§6).
+/// Notificaciones de recuerdo por proximidad (§6) — tarjeta estándar.
 class ProximityReminderService {
   ProximityReminderService._();
 
   static final instance = ProximityReminderService._();
 
-  final FlutterLocalNotificationsPlugin _plugin =
-      FlutterLocalNotificationsPlugin();
-  bool _ready = false;
-
-  Future<void> init() async {
-    if (_ready) return;
-    const android = AndroidInitializationSettings('@mipmap/ic_launcher');
-    await _plugin.initialize(
-      settings: const InitializationSettings(android: android),
-      onDidReceiveNotificationResponse: (response) {
-        LocalNotificationRouter.handlePayload(response.payload);
-      },
-    );
-    await _plugin
-        .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>()
-        ?.createNotificationChannel(
-          const AndroidNotificationChannel(
-            'proximity_reminders',
-            'Recuerdos cercanos',
-            description: 'Avisos cuando estás cerca de un lugar guardado',
-            importance: Importance.high,
-          ),
-        );
-
-    final launch = await _plugin.getNotificationAppLaunchDetails();
-    if (launch?.didNotificationLaunchApp == true) {
-      LocalNotificationRouter.handlePayload(
-        launch!.notificationResponse?.payload,
-      );
-    }
-    _ready = true;
-  }
+  Future<void> init() => AppLocalNotifications.instance.init();
 
   Future<void> showNearby({
     required String siteId,
     required String siteName,
+    String? city,
+    String? department,
+    String? imageFilePath,
   }) async {
-    await init();
-    final id = siteId.hashCode & 0x7fffffff;
-    await _plugin.show(
-      id: id,
-      title: 'Chevere Plan',
-      body: 'Tienes guardado un lugar cerca de aquí: $siteName',
-      payload: '${LocalNotificationRouter.proximityPrefix}$siteId',
-      notificationDetails: const NotificationDetails(
-        android: AndroidNotificationDetails(
-          'proximity_reminders',
-          'Recuerdos cercanos',
-          channelDescription:
-              'Avisos cuando estás cerca de un lugar guardado',
-          importance: Importance.high,
-          priority: Priority.high,
-        ),
+    final l10n = lookupAppLocalizations(const Locale(kAppLocale));
+    final name = siteName.trim().isEmpty ? l10n.notifPlaceFallback : siteName.trim();
+    final place = formatDeptCity(department, city);
+    await AppLocalNotifications.instance.showCard(
+      AppNotificationCard(
+        kind: NotificationKind.proximity,
+        id: siteId,
+        title: name,
+        placeLine: place,
+        contextLine: l10n.notifProximityContext,
+        imageFilePath: imageFilePath,
+        notificationId: siteId.hashCode & 0x7fffffff,
       ),
     );
   }

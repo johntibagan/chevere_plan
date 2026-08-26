@@ -742,7 +742,16 @@ AS $function$
 $function$;
 
 CREATE OR REPLACE FUNCTION public.list_proximity_sites(p_include_public boolean DEFAULT false)
- RETURNS TABLE(site_id uuid, name text, lat double precision, lng double precision, is_own boolean)
+ RETURNS TABLE(
+   site_id uuid,
+   name text,
+   lat double precision,
+   lng double precision,
+   is_own boolean,
+   city text,
+   department text,
+   cover_storage_path text
+ )
  LANGUAGE sql
  STABLE SECURITY DEFINER
  SET search_path TO 'public'
@@ -753,7 +762,10 @@ AS $function$
       s.name,
       st_y(s.location::geometry) as lat,
       st_x(s.location::geometry) as lng,
-      true as is_own
+      true as is_own,
+      s.city,
+      s.department,
+      public.site_cover_storage_path(s.id) as cover_storage_path
     from public.user_saves us
     join public.sites s on s.id = us.site_id
     where us.user_id = auth.uid()
@@ -766,7 +778,10 @@ AS $function$
       s.name,
       st_y(s.location::geometry) as lat,
       st_x(s.location::geometry) as lng,
-      false as is_own
+      false as is_own,
+      s.city,
+      s.department,
+      public.site_cover_storage_path(s.id) as cover_storage_path
     from public.sites s
     where p_include_public = true
       and s.is_public = true

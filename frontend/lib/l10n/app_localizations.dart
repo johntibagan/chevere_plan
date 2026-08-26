@@ -2638,6 +2638,126 @@ abstract class AppLocalizations {
   /// **'Tú'**
   String get reviewAuthorYou;
 
+  /// No description provided for @notifChannelProximityName.
+  ///
+  /// In es, this message translates to:
+  /// **'Recuerdos cercanos'**
+  String get notifChannelProximityName;
+
+  /// No description provided for @notifChannelProximityDesc.
+  ///
+  /// In es, this message translates to:
+  /// **'Avisos cuando estás cerca de un lugar guardado'**
+  String get notifChannelProximityDesc;
+
+  /// No description provided for @notifChannelDraftName.
+  ///
+  /// In es, this message translates to:
+  /// **'Recordatorios de borradores'**
+  String get notifChannelDraftName;
+
+  /// No description provided for @notifChannelDraftDesc.
+  ///
+  /// In es, this message translates to:
+  /// **'Te recuerda completar lugares guardados incompletos'**
+  String get notifChannelDraftDesc;
+
+  /// No description provided for @notifChannelEventName.
+  ///
+  /// In es, this message translates to:
+  /// **'Eventos de interés'**
+  String get notifChannelEventName;
+
+  /// No description provided for @notifChannelEventDesc.
+  ///
+  /// In es, this message translates to:
+  /// **'Avisos de eventos cerca de tus guardados (próximamente)'**
+  String get notifChannelEventDesc;
+
+  /// No description provided for @notifChannelSummaryName.
+  ///
+  /// In es, this message translates to:
+  /// **'Resúmenes'**
+  String get notifChannelSummaryName;
+
+  /// No description provided for @notifChannelSummaryDesc.
+  ///
+  /// In es, this message translates to:
+  /// **'Resumen mensual de planes y visitas (próximamente)'**
+  String get notifChannelSummaryDesc;
+
+  /// No description provided for @notifProximityContext.
+  ///
+  /// In es, this message translates to:
+  /// **'Lugar cerca de ti'**
+  String get notifProximityContext;
+
+  /// No description provided for @notifDraftContext.
+  ///
+  /// In es, this message translates to:
+  /// **'Completa tu guardado'**
+  String get notifDraftContext;
+
+  /// No description provided for @notifEventContext.
+  ///
+  /// In es, this message translates to:
+  /// **'Evento de interés'**
+  String get notifEventContext;
+
+  /// No description provided for @notifSummaryContext.
+  ///
+  /// In es, this message translates to:
+  /// **'Resumen del mes'**
+  String get notifSummaryContext;
+
+  /// No description provided for @notifPlaceFallback.
+  ///
+  /// In es, this message translates to:
+  /// **'Lugar guardado'**
+  String get notifPlaceFallback;
+
+  /// No description provided for @notifTestSectionTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Pruebas · notificaciones'**
+  String get notifTestSectionTitle;
+
+  /// No description provided for @notifTestSectionHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Solo etapa de pruebas; se quitará luego.'**
+  String get notifTestSectionHint;
+
+  /// No description provided for @notifTestChipProximity.
+  ///
+  /// In es, this message translates to:
+  /// **'Cerca'**
+  String get notifTestChipProximity;
+
+  /// No description provided for @notifTestChipDraft.
+  ///
+  /// In es, this message translates to:
+  /// **'Borrador'**
+  String get notifTestChipDraft;
+
+  /// No description provided for @notifTestChipEvent.
+  ///
+  /// In es, this message translates to:
+  /// **'Evento'**
+  String get notifTestChipEvent;
+
+  /// No description provided for @notifTestChipSummary.
+  ///
+  /// In es, this message translates to:
+  /// **'Resumen'**
+  String get notifTestChipSummary;
+
+  /// No description provided for @notifTestSent.
+  ///
+  /// In es, this message translates to:
+  /// **'Notificación enviada.'**
+  String get notifTestSent;
+
   /// No description provided for @reviewEditedOn.
   ///
   /// In es, this message translates to:

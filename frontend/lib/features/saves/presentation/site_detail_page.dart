@@ -32,6 +32,7 @@ import '../data/social_link_models.dart';
 import 'favorite_heart_button.dart';
 import 'save_place_page.dart';
 import 'site_look_cover.dart';
+import 'site_notif_test_section.dart';
 import 'site_reviews_tab.dart';
 import 'site_status_l10n.dart';
 import 'social_link_preview_card.dart';
@@ -800,6 +801,9 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
                         onOpenDirectionsOnMaps: _canOpenMaps(ficha)
                             ? () => _openDirectionsOnMaps(ficha)
                             : null,
+                        coverStoragePath: _coverStoragePath ??
+                            ficha.ownSave?.coverStoragePath ??
+                            widget.initialHit?.coverStoragePath,
                       ),
                       SiteReviewsTab(
                         siteId: widget.siteId,
@@ -837,6 +841,7 @@ class _InfoTab extends StatelessWidget {
     this.onAddPhoto,
     this.onOpenPlaceOnMaps,
     this.onOpenDirectionsOnMaps,
+    this.coverStoragePath,
   });
 
   final SiteFicha ficha;
@@ -854,6 +859,7 @@ class _InfoTab extends StatelessWidget {
   final VoidCallback? onAddPhoto;
   final VoidCallback? onOpenPlaceOnMaps;
   final VoidCallback? onOpenDirectionsOnMaps;
+  final String? coverStoragePath;
 
   @override
   Widget build(BuildContext context) {
@@ -1089,6 +1095,15 @@ class _InfoTab extends StatelessWidget {
             ),
           ),
         ],
+        SizedBox(height: 24),
+        SiteNotifTestSection(
+          siteId: ficha.siteId,
+          siteName: ficha.name,
+          city: ficha.city,
+          department: ficha.department,
+          coverStoragePath: coverStoragePath,
+          draftSaveId: ficha.ownSave?.id,
+        ),
       ],
     );
   }
