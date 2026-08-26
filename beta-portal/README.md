@@ -25,9 +25,11 @@ Carpeta **única** que despliega Pages. Si no hay cambios aquí, el workflow **n
 | Marcar “en revisión” | Portal + PIN de dueño (bloquea editar/borrar) |
 | Marcar “listo” | Portal + PIN de dueño (en DB, no en Git) |
 | Número de ticket | Columna `#n` automática (tocar copia `#n` para el commit) |
+| Cómo probar (por versión) | Sección al final: desplegable por versión → `#n` + pasos. Datos en `beta_qa_flows` |
+| Publicar flujos | En el chat del agente: decir **publica** → te pide los `#` → escribe los flujos en la DB |
 | Subir APK nuevo | `frontend\tool\publish_beta.ps1` → release **arm64 sin R8** (estable; Free ≤ 50 MB). |
 
-Publicar un APK **no** requiere redeploy de Pages: el portal ya lee la URL desde Supabase.
+Publicar un APK **no** requiere redeploy de Pages: el portal ya lee la URL desde Supabase. Los flujos de “Cómo probar” tampoco: viven en `beta_qa_flows`.
 
 ## Activar Pages (una vez)
 

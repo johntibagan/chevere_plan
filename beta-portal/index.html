@@ -328,6 +328,91 @@
       cursor: default;
       opacity: 0.7;
     }
+
+    .qa-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 4px;
+    }
+    details.qa-ver {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--bg);
+      overflow: hidden;
+    }
+    details.qa-ver > summary {
+      list-style: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 14px;
+      font-weight: 600;
+      font-size: 0.95rem;
+      user-select: none;
+    }
+    details.qa-ver > summary::-webkit-details-marker { display: none; }
+    details.qa-ver > summary::after {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-right: 2px solid var(--muted);
+      border-bottom: 2px solid var(--muted);
+      transform: rotate(45deg);
+      flex-shrink: 0;
+      transition: transform 0.15s ease;
+    }
+    details.qa-ver[open] > summary::after {
+      transform: rotate(-135deg);
+      margin-top: 4px;
+    }
+    .qa-ver-meta {
+      color: var(--muted);
+      font-weight: 500;
+      font-size: 0.8rem;
+    }
+    .qa-items {
+      border-top: 1px solid var(--line);
+      padding: 4px 14px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .qa-item {
+      padding-top: 8px;
+    }
+    .qa-item-head {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+    .qa-ticket {
+      font-variant-numeric: tabular-nums;
+      font-weight: 700;
+      color: var(--accent);
+      font-size: 0.88rem;
+      flex-shrink: 0;
+    }
+    .qa-title {
+      font-weight: 600;
+      font-size: 0.9rem;
+      min-width: 0;
+    }
+    .qa-steps {
+      margin: 0;
+      padding-left: 1.2rem;
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+    .qa-steps li {
+      margin: 0 0 4px;
+    }
+    .qa-steps li:last-child {
+      margin-bottom: 0;
+    }
   </style>
 </head>
 <body>
@@ -353,7 +438,7 @@
     <section class="reports">
       <h2>Mejoras y reportes</h2>
       <p class="hint">Agrega pendientes. El dueño marca revisión (ya no se edita ni borra) o listo. El número corto va en el commit.</p>
-      <textarea class="add" id="body" maxlength="500" placeholder="¿Qué falló o qué mejorar?"></textarea>
+      <textarea class="add" id="body" maxlength="1000" placeholder="¿Qué falló o qué mejorar?"></textarea>
       <button class="btn" id="add" type="button">Agregar</button>
       <div id="msg"></div>
       <div class="reports-list" aria-label="Mejoras y reportes">
@@ -368,6 +453,13 @@
         <div id="list"></div>
       </div>
       <div class="empty" id="empty" hidden>Nada aún. Sé el primero.</div>
+    </section>
+
+    <section class="qa">
+      <h2>Cómo probar</h2>
+      <p class="hint">Por versión: tocá para ver el flujo de cada reporte o mejora (#).</p>
+      <div class="qa-list" id="qaList" aria-label="Flujos de prueba por versión"></div>
+      <div class="empty" id="qaEmpty">Aún no hay flujos. Aparecen al publicar una versión.</div>
     </section>
   </main>
 
@@ -558,7 +650,7 @@
         panel.appendChild(meta);
 
         const ta = document.createElement("textarea");
-        ta.maxLength = 500;
+        ta.maxLength = 1000;
         ta.value = row.body;
         panel.appendChild(ta);
 
@@ -696,6 +788,99 @@
       empty.hidden = rows.length > 0;
     }
 
+    function stepsToList(steps) {
+      const raw = String(steps || "").trim();
+      if (!raw) return [];
+      return raw
+        .split(/\n+/)
+        .map((line) => line.replace(/^\s*[-*•]?\s*/, "").replace(/^\d+[.)]\s*/, "").trim())
+        .filter(Boolean);
+    }
+
+    function compareVersions(a, b) {
+      const parse = (v) => {
+        const m = String(v).match(/^(\d+)\.(\d+)\.(\d+)(?:\+(\d+))?/);
+        if (!m) return [0, 0, 0, 0];
+        return m.slice(1).map((n) => Number(n || 0));
+      };
+      const aa = parse(a);
+      const bb = parse(b);
+      for (let i = 0; i < 4; i++) {
+        if (aa[i] !== bb[i]) return bb[i] - aa[i];
+      }
+      return String(b).localeCompare(String(a));
+    }
+
+    function renderQaFlows(rows) {
+      const list = document.getElementById("qaList");
+      const empty = document.getElementById("qaEmpty");
+      list.innerHTML = "";
+      const byVer = new Map();
+      (rows || []).forEach((row) => {
+        const ver = row.version || "—";
+        if (!byVer.has(ver)) byVer.set(ver, []);
+        byVer.get(ver).push(row);
+      });
+      const versions = Array.from(byVer.keys()).sort(compareVersions);
+      empty.hidden = versions.length > 0;
+      versions.forEach((ver, idx) => {
+        const items = byVer.get(ver).slice().sort((a, b) => a.ticket_no - b.ticket_no);
+        const details = document.createElement("details");
+        details.className = "qa-ver";
+        if (idx === 0) details.open = true;
+
+        const summary = document.createElement("summary");
+        const label = document.createElement("span");
+        label.textContent = `Versión ${ver}`;
+        const meta = document.createElement("span");
+        meta.className = "qa-ver-meta";
+        meta.textContent = `${items.length} ${items.length === 1 ? "ítem" : "ítems"}`;
+        summary.appendChild(label);
+        summary.appendChild(meta);
+        details.appendChild(summary);
+
+        const wrap = document.createElement("div");
+        wrap.className = "qa-items";
+        items.forEach((item) => {
+          const card = document.createElement("div");
+          card.className = "qa-item";
+
+          const head = document.createElement("div");
+          head.className = "qa-item-head";
+          const ticket = document.createElement("span");
+          ticket.className = "qa-ticket";
+          ticket.textContent = `#${item.ticket_no}`;
+          const title = document.createElement("span");
+          title.className = "qa-title";
+          title.textContent = item.title;
+          head.appendChild(ticket);
+          head.appendChild(title);
+          card.appendChild(head);
+
+          const ol = document.createElement("ol");
+          ol.className = "qa-steps";
+          stepsToList(item.steps).forEach((step) => {
+            const li = document.createElement("li");
+            li.textContent = step;
+            ol.appendChild(li);
+          });
+          card.appendChild(ol);
+          wrap.appendChild(card);
+        });
+        details.appendChild(wrap);
+        list.appendChild(details);
+      });
+    }
+
+    async function loadQaFlows() {
+      const { data, error } = await sb
+        .from("beta_qa_flows")
+        .select("id, version, ticket_no, title, steps, created_at")
+        .order("ticket_no", { ascending: true });
+      if (error) throw error;
+      renderQaFlows(data || []);
+    }
+
     document.getElementById("add").addEventListener("click", async () => {
       const ta = document.getElementById("body");
       const text = (ta.value || "").trim();
@@ -738,7 +923,7 @@
     });
 
     syncOwnerBtn();
-    Promise.all([loadRelease(), loadFeedback()]).catch(() => {
+    Promise.all([loadRelease(), loadFeedback(), loadQaFlows()]).catch(() => {
       document.getElementById("version").textContent = "Error al cargar";
     });
   </script>

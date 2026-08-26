@@ -1,0 +1,33 @@
+---
+description: Al decir “publica” en beta-portal, pedir # de tickets y publicar flujos de prueba por versión.
+alwaysApply: true
+---
+
+# Beta portal — “publica” (flujos de prueba)
+
+Cuando el dueño diga **publica** / **publicar** (notas / flujos / cómo probar del portal beta):
+
+## Obligatorio preguntar
+
+1. **IDs** de reporte/mejora (`#1`, `#2`…) que entraron en esta publicación.
+2. **Versión** del APK (ej. `1.0.0+3`) si no está clara en `beta_release` o en el mensaje.
+
+No inventar IDs. Si faltan, preguntar y esperar.
+
+## Qué hacer después
+
+1. Leer en Supabase `beta_feedback` esos `ticket_no` (texto del reporte).
+2. Revisar qué se arregló en el código / chat (si aplica).
+3. Por cada ticket, escribir en español:
+   - **title**: qué se solucionó o mejoró (corto, 1 línea).
+   - **steps**: flujo para probar en el celular (pasos numerados, 3–8, concretos: dónde tocar, qué debe verse).
+4. Upsert en `public.beta_qa_flows` (MCP `execute_sql` o RPC `beta_upsert_qa_flow` con el PIN de `private.beta_admin`).
+   - Clave única: `(version, ticket_no)`.
+5. Si el ticket aún no está “listo”, ofrecer marcar `done` + `fixed_in_version` (RPC `beta_mark_feedback`); no asumir.
+6. Confirmar: sección **Cómo probar** del portal muestra la versión (sin redeploy de Pages si solo cambió la DB).
+
+## No hacer
+
+- No publicar flujos sin IDs confirmados.
+- No poner SQL/stacks en el texto de prueba.
+- No redeploy de Pages solo por datos nuevos en `beta_qa_flows`.

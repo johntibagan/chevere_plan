@@ -307,7 +307,7 @@ flowchart TB
 
 ## Pruebas cerradas (APK)
 
-- Portal público (GitHub Pages): `https://johntibagan.github.io/chevere_plan/` — versión + descarga + reportes anónimos. Cada reporte tiene un consecutivo corto (`#1`, `#2`…) para commits (tocar copia). El dueño (PIN) puede marcar **en revisión**: el público ya no edita ni borra ese ítem. Deploy solo si cambia `beta-portal/`.
+- Portal público (GitHub Pages): `https://johntibagan.github.io/chevere_plan/` — versión + descarga + reportes anónimos. Cada reporte tiene un consecutivo corto (`#1`, `#2`…) para commits (tocar copia). El dueño (PIN) puede marcar **en revisión**: el público ya no edita ni borra ese ítem. Al final, **Cómo probar**: desplegables por versión con el flujo de cada `#` (tabla `beta_qa_flows`). Al decir **publica** en el chat, el agente pide los IDs y escribe esos flujos. Deploy de Pages solo si cambia `beta-portal/`.
 - Secrets en GitHub Actions: `BETA_SUPABASE_URL`, `BETA_SUPABASE_ANON_KEY` (nunca la service_role).
 - APK en Supabase Storage (`beta-apks`). Publicar: `frontend/tool/publish_beta.ps1` (bump `+N`, release **arm64 sin R8** — evita crash al abrir en beta; ~25–35 MB, subida TUS + `beta_release`). El portal lo lee; no hace falta redeploy de Pages. Plan Free ≤ 50 MB. Para vos en USB: `flutter run --release --dart-define-from-file=.env`.
 - Versionado en `frontend/pubspec.yaml` (`1.0.0+N` en beta: solo sube el número tras el `+`). PIN de dueño para marcar reportes: tabla `private.beta_admin` (default `chevere`).
