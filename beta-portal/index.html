@@ -15,6 +15,7 @@
       --accent: #2bb0a6;
       --line: #2a3542;
       --ok: #3dba7a;
+      --danger: #e57373;
     }
     * { box-sizing: border-box; }
     body {
@@ -26,34 +27,38 @@
     }
     .top {
       position: relative;
-      max-width: 720px;
+      max-width: 920px;
       margin: 0 auto;
       padding: 28px 18px 8px;
     }
     .owner-btn {
       position: absolute;
-      top: 22px;
-      right: 14px;
-      width: 36px;
-      height: 36px;
+      top: 18px;
+      right: 12px;
+      width: 44px;
+      height: 44px;
       border: 0;
       border-radius: 999px;
       background: transparent;
       color: var(--muted);
-      opacity: 0.35;
+      opacity: 0.4;
       cursor: pointer;
-      font-size: 1.05rem;
-      line-height: 1;
       display: grid;
       place-items: center;
+      padding: 0;
     }
     .owner-btn:hover,
     .owner-btn.on {
-      opacity: 0.9;
+      opacity: 0.95;
       color: var(--accent);
     }
+    .owner-btn svg {
+      width: 26px;
+      height: 26px;
+      fill: currentColor;
+    }
     main {
-      max-width: 720px;
+      max-width: 920px;
       margin: 0 auto;
       padding: 8px 18px 48px;
     }
@@ -62,7 +67,7 @@
       font-weight: 700;
       margin: 0 0 4px;
       letter-spacing: -0.02em;
-      padding-right: 44px;
+      padding-right: 52px;
     }
     .sub { color: var(--muted); font-size: 0.9rem; margin: 0 0 22px; }
     section {
@@ -73,7 +78,7 @@
       margin-bottom: 14px;
     }
     section.reports {
-      padding: 18px 18px 12px;
+      padding: 18px;
     }
     h2 {
       font-size: 0.78rem;
@@ -107,18 +112,19 @@
       opacity: 0.45;
       pointer-events: none;
     }
-    button.linkish {
-      border: 0;
-      background: transparent;
-      color: var(--accent);
-      font: inherit;
-      font-size: 0.82rem;
-      font-weight: 600;
-      padding: 0;
-      margin-top: 6px;
-      cursor: pointer;
+    button.btn.small {
+      width: auto;
+      display: inline-block;
+      padding: 8px 12px;
+      font-size: 0.88rem;
+      white-space: nowrap;
     }
-    textarea {
+    button.btn.ghost {
+      background: transparent;
+      color: var(--muted);
+      border: 1px solid var(--line);
+    }
+    textarea.add {
       width: 100%;
       background: var(--bg);
       border: 1px solid var(--line);
@@ -130,43 +136,129 @@
       min-height: 72px;
       resize: vertical;
     }
-    ul { list-style: none; padding: 0; margin: 12px 0 0; }
-    li {
-      display: grid;
-      grid-template-columns: auto 1fr;
-      gap: 12px;
-      align-items: start;
-      padding: 12px 0;
-      border-top: 1px solid var(--line);
-      font-size: 0.98rem;
-    }
-    li.done .body { text-decoration: line-through; color: var(--muted); }
-    .ver {
-      display: inline-block;
-      margin-top: 4px;
-      font-size: 0.78rem;
-      color: var(--ok);
-    }
-    .when {
-      display: block;
-      margin-top: 4px;
-      font-size: 0.75rem;
-      color: var(--muted);
-    }
     .err { color: #ff8f8f; font-size: 0.85rem; margin-top: 8px; }
     .okmsg { color: var(--ok); font-size: 0.85rem; margin-top: 8px; }
     .hint { color: var(--muted); font-size: 0.8rem; margin: 0 0 8px; }
+
+    .table-wrap {
+      width: 100%;
+      overflow-x: auto;
+      margin-top: 8px;
+      -webkit-overflow-scrolling: touch;
+    }
+    table.reports-table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 640px;
+    }
+    table.reports-table th,
+    table.reports-table td {
+      border: 0;
+      text-align: left;
+      vertical-align: middle;
+      padding: 12px 10px;
+    }
+    table.reports-table thead th {
+      color: var(--muted);
+      font-size: 0.72rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding-top: 4px;
+      padding-bottom: 8px;
+    }
+    table.reports-table tbody tr + tr td {
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    }
+    table.reports-table td.col-check {
+      width: 44px;
+      text-align: center;
+    }
+    table.reports-table td.col-desc {
+      min-width: 220px;
+      width: 42%;
+    }
+    table.reports-table td.col-ver {
+      width: 110px;
+      color: var(--ok);
+      font-size: 0.88rem;
+      white-space: nowrap;
+    }
+    table.reports-table td.col-date {
+      width: 110px;
+      color: var(--muted);
+      font-size: 0.85rem;
+      white-space: nowrap;
+    }
+    table.reports-table td.col-actions {
+      width: 96px;
+      white-space: nowrap;
+    }
+    table.reports-table tr.done td.col-desc {
+      text-decoration: line-through;
+      color: var(--muted);
+    }
+    .edit-row {
+      display: flex;
+      gap: 8px;
+      align-items: flex-start;
+      width: 100%;
+    }
+    .edit-row textarea {
+      flex: 1;
+      min-height: 64px;
+      background: var(--bg);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      color: var(--text);
+      padding: 8px 10px;
+      font: inherit;
+      resize: vertical;
+    }
+    .icon-btn {
+      width: 36px;
+      height: 36px;
+      border: 0;
+      border-radius: 8px;
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      display: inline-grid;
+      place-items: center;
+      padding: 0;
+    }
+    .icon-btn:hover { color: var(--accent); background: rgba(43, 176, 166, 0.12); }
+    .icon-btn.danger:hover { color: var(--danger); background: rgba(229, 115, 115, 0.12); }
+    .icon-btn svg {
+      width: 18px;
+      height: 18px;
+      fill: currentColor;
+    }
+    .empty {
+      color: var(--muted);
+      font-size: 0.9rem;
+      padding: 16px 4px;
+    }
+    input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+    input[type="checkbox"]:disabled {
+      cursor: default;
+      opacity: 0.7;
+    }
   </style>
 </head>
 <body>
   <div class="top">
-    <button
-      type="button"
-      class="owner-btn"
-      id="ownerBtn"
-      title=""
-      aria-label="Dueño"
-    >⚙</button>
+    <button type="button" class="owner-btn" id="ownerBtn" aria-label="Dueño">
+      <!-- lock (closed) -->
+      <svg id="ownerIcon" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M17 8h-1V6a4 4 0 0 0-8 0v2H7a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2zm-7-2a2 2 0 1 1 4 0v2h-4V6zm7 14H7V10h10v10zm-5-3a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/>
+      </svg>
+    </button>
     <h1>Chevere Plan</h1>
     <p class="sub">Pruebas cerradas · sin cuenta</p>
   </div>
@@ -182,10 +274,24 @@
     <section class="reports">
       <h2>Mejoras y reportes</h2>
       <p class="hint">Agrega o edita pendientes. El dueño marca “listo”.</p>
-      <textarea id="body" maxlength="500" placeholder="¿Qué falló o qué mejorar?"></textarea>
+      <textarea class="add" id="body" maxlength="500" placeholder="¿Qué falló o qué mejorar?"></textarea>
       <button class="btn" id="add" type="button">Agregar</button>
       <div id="msg"></div>
-      <ul id="list"></ul>
+      <div class="table-wrap">
+        <table class="reports-table" aria-label="Mejoras y reportes">
+          <thead>
+            <tr>
+              <th class="col-check"></th>
+              <th>Descripción</th>
+              <th>Versión</th>
+              <th>Actualizado</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="list"></tbody>
+        </table>
+      </div>
+      <div class="empty" id="empty" hidden>Nada aún. Sé el primero.</div>
     </section>
   </main>
 
@@ -194,8 +300,14 @@
     const SUPABASE_ANON_KEY = "__BETA_SUPABASE_ANON_KEY__";
     const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+    const ICON_LOCK = '<path d="M17 8h-1V6a4 4 0 0 0-8 0v2H7a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2zm-7-2a2 2 0 1 1 4 0v2h-4V6zm7 14H7V10h10v10zm-5-3a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/>';
+    const ICON_UNLOCK = '<path d="M17 8h-1V6a4 4 0 0 0-8 0h2a2 2 0 1 1 4 0v2H7a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2zm0 12H7V10h10v10zm-5-3a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/>';
+    const ICON_EDIT = '<path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>';
+    const ICON_TRASH = '<path d="M6 19a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>';
+
     let adminPin = sessionStorage.getItem("beta_pin") || "";
     let isAdmin = !!adminPin;
+    let editingId = null;
 
     function fmtDate(iso) {
       if (!iso) return "—";
@@ -213,8 +325,9 @@
 
     function syncOwnerBtn() {
       const btn = document.getElementById("ownerBtn");
+      const icon = document.getElementById("ownerIcon");
       btn.classList.toggle("on", isAdmin);
-      btn.textContent = isAdmin ? "⎋" : "⚙";
+      icon.innerHTML = isAdmin ? ICON_UNLOCK : ICON_LOCK;
       btn.title = isAdmin ? "Cerrar sesión dueño" : "";
       btn.setAttribute("aria-label", isAdmin ? "Cerrar sesión" : "Dueño");
     }
@@ -228,8 +341,7 @@
         p_pin: pin,
       });
       const msg = ((error && error.message) || "").toLowerCase();
-      if (msg.includes("pin")) return false;
-      return true;
+      return !msg.includes("pin");
     }
 
     async function loadRelease() {
@@ -257,16 +369,30 @@
       }
     }
 
-    function renderItem(row) {
-      const li = document.createElement("li");
-      if (row.done) li.classList.add("done");
+    function iconButton(svgPath, title, className, onClick) {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "icon-btn" + (className ? " " + className : "");
+      btn.title = title;
+      btn.setAttribute("aria-label", title);
+      btn.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true">${svgPath}</svg>`;
+      btn.addEventListener("click", onClick);
+      return btn;
+    }
 
-      const left = document.createElement("div");
+    function renderRow(row) {
+      const tr = document.createElement("tr");
+      if (row.done) tr.classList.add("done");
+
+      // Check
+      const tdCheck = document.createElement("td");
+      tdCheck.className = "col-check";
+      const cb = document.createElement("input");
+      cb.type = "checkbox";
+      cb.checked = !!row.done;
+      cb.disabled = !isAdmin;
+      cb.title = isAdmin ? "Marcar listo" : (row.done ? "Completado" : "Pendiente");
       if (isAdmin) {
-        const cb = document.createElement("input");
-        cb.type = "checkbox";
-        cb.checked = !!row.done;
-        cb.title = "Marcar listo";
         cb.addEventListener("change", async () => {
           let ver = row.fixed_in_version || "";
           if (cb.checked) {
@@ -283,79 +409,117 @@
             cb.checked = !cb.checked;
             return;
           }
+          editingId = null;
           await loadFeedback();
         });
-        left.appendChild(cb);
-      } else {
-        left.textContent = row.done ? "✓" : "•";
-        left.style.color = row.done ? "var(--ok)" : "var(--muted)";
       }
+      tdCheck.appendChild(cb);
+      tr.appendChild(tdCheck);
 
-      const right = document.createElement("div");
-      const body = document.createElement("div");
-      body.className = "body";
-      body.textContent = row.body;
-      right.appendChild(body);
-
-      const when = document.createElement("span");
-      when.className = "when";
-      when.textContent = fmtDate(row.created_at);
-      right.appendChild(when);
-
-      if (row.done && row.fixed_in_version) {
-        const ver = document.createElement("span");
-        ver.className = "ver";
-        ver.textContent = `en ${row.fixed_in_version}`;
-        right.appendChild(ver);
-      }
-
-      if (!row.done) {
-        const edit = document.createElement("button");
-        edit.type = "button";
-        edit.className = "linkish";
-        edit.textContent = "Editar";
-        edit.addEventListener("click", async () => {
-          const next = prompt("Editar reporte", row.body);
-          if (next == null) return;
-          const text = next.trim();
+      // Descripción
+      const tdDesc = document.createElement("td");
+      tdDesc.className = "col-desc";
+      if (editingId === row.id && !row.done) {
+        const wrap = document.createElement("div");
+        wrap.className = "edit-row";
+        const ta = document.createElement("textarea");
+        ta.maxLength = 500;
+        ta.value = row.body;
+        const save = document.createElement("button");
+        save.type = "button";
+        save.className = "btn small";
+        save.textContent = "Actualizar";
+        const cancel = document.createElement("button");
+        cancel.type = "button";
+        cancel.className = "btn small ghost";
+        cancel.textContent = "Cancelar";
+        cancel.addEventListener("click", async () => {
+          editingId = null;
+          await loadFeedback();
+        });
+        save.addEventListener("click", async () => {
+          const text = (ta.value || "").trim();
           if (text.length < 3) {
             alert("Escribe al menos 3 caracteres.");
             return;
           }
-          if (text === row.body) return;
           const { error } = await sb
             .from("beta_feedback")
             .update({ body: text })
             .eq("id", row.id)
             .eq("done", false);
           if (error) {
-            alert("No se pudo editar. Intenta de nuevo.");
+            alert("No se pudo actualizar. Intenta de nuevo.");
             return;
           }
+          editingId = null;
           await loadFeedback();
         });
-        right.appendChild(edit);
+        wrap.appendChild(ta);
+        wrap.appendChild(save);
+        wrap.appendChild(cancel);
+        tdDesc.appendChild(wrap);
+      } else {
+        tdDesc.textContent = row.body;
       }
+      tr.appendChild(tdDesc);
 
-      li.appendChild(left);
-      li.appendChild(right);
-      return li;
+      // Versión
+      const tdVer = document.createElement("td");
+      tdVer.className = "col-ver";
+      tdVer.textContent = row.done && row.fixed_in_version ? row.fixed_in_version : "—";
+      tr.appendChild(tdVer);
+
+      // Actualizado
+      const tdDate = document.createElement("td");
+      tdDate.className = "col-date";
+      tdDate.textContent = fmtDate(row.updated_at || row.created_at);
+      tr.appendChild(tdDate);
+
+      // Acciones
+      const tdAct = document.createElement("td");
+      tdAct.className = "col-actions";
+      if (!row.done && editingId !== row.id) {
+        tdAct.appendChild(
+          iconButton(ICON_EDIT, "Editar", "", () => {
+            editingId = row.id;
+            loadFeedback();
+          }),
+        );
+        tdAct.appendChild(
+          iconButton(ICON_TRASH, "Eliminar", "danger", async () => {
+            if (!confirm("¿Eliminar este reporte?")) return;
+            const { error } = await sb
+              .from("beta_feedback")
+              .delete()
+              .eq("id", row.id)
+              .eq("done", false);
+            if (error) {
+              alert("No se pudo eliminar. Intenta de nuevo.");
+              return;
+            }
+            if (editingId === row.id) editingId = null;
+            await loadFeedback();
+          }),
+        );
+      }
+      tr.appendChild(tdAct);
+
+      return tr;
     }
 
     async function loadFeedback() {
       const { data, error } = await sb
         .from("beta_feedback")
-        .select("id, body, done, fixed_in_version, created_at")
+        .select("id, body, done, fixed_in_version, created_at, updated_at")
         .order("created_at", { ascending: false });
       if (error) throw error;
-      const ul = document.getElementById("list");
-      ul.innerHTML = "";
-      (data || []).forEach((row) => ul.appendChild(renderItem(row)));
-      if (!(data || []).length) {
-        const empty = document.createElement("li");
-        empty.innerHTML = '<div></div><div class="hint">Nada aún. Sé el primero.</div>';
-        ul.appendChild(empty);
-      }
+      const tbody = document.getElementById("list");
+      const empty = document.getElementById("empty");
+      tbody.innerHTML = "";
+      const rows = data || [];
+      rows.forEach((row) => tbody.appendChild(renderRow(row)));
+      empty.hidden = rows.length > 0;
     }
 
     document.getElementById("add").addEventListener("click", async () => {
