@@ -1,6 +1,7 @@
 # Deploy del portal de pruebas (GitHub Pages)
 #
 # Solo corre si cambió `beta-portal/**` (o este workflow).
+# Runner: self-hosted (WSL/Ubuntu en tu PC) — debe estar online.
 # Credenciales: GitHub → Settings → Secrets and variables → Actions
 #   - BETA_SUPABASE_URL
 #   - BETA_SUPABASE_ANON_KEY
@@ -30,7 +31,7 @@ concurrency:
 jobs:
   deploy:
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}

@@ -36,6 +36,4 @@ Publicar un APK **no** requiere redeploy de Pages: el portal ya lee la URL desde
 1. Repo → **Settings** → **Pages**
 2. Source: **GitHub Actions**
 3. Añade los 2 secrets de arriba
-4. Push a `main` que toque `beta-portal/` (o **Actions** → *beta-portal-pages* → Run workflow)
-
-#
+4. Push a `main` que toque `beta-portal/` (o **Actions** → *beta-portal-pages* → Run workflow). El job usa `runs-on: self-hosted` (tu runner en WSL debe estar encendido).
