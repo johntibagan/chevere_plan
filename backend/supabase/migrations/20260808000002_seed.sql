@@ -1,5 +1,5 @@
--- Seed categorías simplificadas + tipos de transporte.
--- + keywords para autocomplete. Idempotente.
+-- Seed categorías simplificadas + tipos de transporte + unidades de distancia
+-- + fila inicial del portal beta. + keywords para autocomplete. Idempotente.
 
 insert into public.categories (slug, name_i18n, sort_order, icon_key, color_hex, age_restricted, keywords)
 select v.slug, v.name_i18n, v.sort_order, v.icon_key, v.color_hex, false, v.keywords
@@ -91,3 +91,35 @@ from (
 where not exists (
   select 1 from public.transport_types t where t.slug = v.slug
 );
+
+-- Unidades de distancia: km es la de por defecto (profiles.preferred_distance_unit).
+-- is_default se fija aparte: el trigger de “una sola por defecto” no puede correr
+-- dentro del on conflict, y así no se pisa la unidad que elija el admin.
+insert into public.distance_units (slug, name_i18n, symbol, meters_per_unit, is_active, sort_order)
+values
+  ('m', '{"es":"Metros"}'::jsonb, 'm', 1, true, 10),
+  ('km', '{"es":"Kilómetros"}'::jsonb, 'km', 1000, true, 20),
+  ('mi', '{"es":"Millas"}'::jsonb, 'mi', 1609.344, true, 30)
+on conflict (slug) do update
+set
+  name_i18n = excluded.name_i18n,
+  symbol = excluded.symbol,
+  meters_per_unit = excluded.meters_per_unit,
+  is_active = excluded.is_active,
+  sort_order = excluded.sort_order;
+
+update public.distance_units
+set is_default = true
+where slug = 'km'
+  and not exists (
+    select 1 from public.distance_units d where d.is_default
+  );
+
+-- Portal beta: PIN del dueño y fila única de la APK publicada.
+insert into private.beta_admin (id, pin)
+values (1, 'chevere')
+on conflict (id) do nothing;
+
+insert into public.beta_release (id, version)
+values (1, '—')
+on conflict (id) do nothing;

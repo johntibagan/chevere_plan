@@ -12,6 +12,25 @@ do $$ begin create type public.plan_status as enum ('draft', 'active', 'done'); 
 do $$ begin create type public.site_status as enum ('draft', 'pending_location', 'complete'); exception when duplicate_object then null; end $$;
 do $$ begin create type public.transport_group as enum ('particular', 'publico', 'otro'); exception when duplicate_object then null; end $$;
 
+-- Unidades de distancia (admin). Canon interno: metros y km; la UI convierte.
+-- Va antes de profiles: preferred_distance_unit referencia distance_units.slug.
+create table if not exists public.distance_units (
+  id uuid default gen_random_uuid() not null,
+  slug text not null,
+  name_i18n jsonb default '{}'::jsonb not null,
+  symbol text not null,
+  meters_per_unit numeric(16,6) not null,
+  is_active boolean default true not null,
+  is_default boolean default false not null,
+  sort_order integer default 0 not null,
+  created_at timestamp with time zone default now() not null,
+  updated_at timestamp with time zone default now() not null,
+  constraint distance_units_pkey PRIMARY KEY (id),
+  constraint distance_units_slug_key UNIQUE (slug),
+  constraint distance_units_meters_per_unit_check CHECK ((meters_per_unit > 0)),
+  constraint distance_units_symbol_check CHECK ((char_length(trim(symbol)) > 0))
+);
+
 create table if not exists public.profiles (
   id uuid not null,
   display_name text,
@@ -20,6 +39,7 @@ create table if not exists public.profiles (
   birth_date date,
   preferred_locale text default 'es'::text not null,
   preferred_currency character(3) default 'COP'::bpchar not null,
+  preferred_distance_unit text default 'km'::text not null,
   created_at timestamp with time zone default now() not null,
   updated_at timestamp with time zone default now() not null,
   proximity_radius_m integer default 200 not null,
@@ -27,6 +47,7 @@ create table if not exists public.profiles (
   transport_max_km jsonb default '{}'::jsonb not null,
   constraint profiles_proximity_radius_m_check CHECK (((proximity_radius_m >= 100) AND (proximity_radius_m <= 2000))),
   constraint profiles_id_fkey FOREIGN KEY (id) REFERENCES auth.users(id) ON DELETE CASCADE,
+  constraint profiles_preferred_distance_unit_fkey FOREIGN KEY (preferred_distance_unit) REFERENCES distance_units(slug) ON UPDATE CASCADE ON DELETE RESTRICT,
   constraint profiles_pkey PRIMARY KEY (id)
 );
 
@@ -121,6 +142,8 @@ create table if not exists public.sites (
   city_id uuid,
   external_id text,
   google_place_id text,
+  use_exact_pin boolean default false not null,
+  cover_photo_id uuid,
   constraint sites_city_id_fkey FOREIGN KEY (city_id) REFERENCES cities(id) ON DELETE SET NULL,
   constraint sites_created_by_fkey FOREIGN KEY (created_by) REFERENCES profiles(id) ON DELETE SET NULL,
   constraint sites_department_id_fkey FOREIGN KEY (department_id) REFERENCES departments(id) ON DELETE SET NULL,
@@ -161,6 +184,20 @@ create table if not exists public.site_photos (
   constraint site_photos_pkey PRIMARY KEY (id)
 );
 
+-- Portada del sitio: la FK va aquí porque sites se crea antes que site_photos.
+alter table public.sites
+  drop constraint if exists sites_cover_photo_id_fkey;
+
+alter table public.sites
+  add constraint sites_cover_photo_id_fkey
+  foreign key (cover_photo_id) references public.site_photos(id)
+  on delete set null;
+
+comment on column public.sites.use_exact_pin is
+  'true: Maps con coords; false: Maps con nombre/place_id. No borra location.';
+comment on column public.sites.cover_photo_id is
+  'Foto de portada (encabezado y miniaturas). Null = primera del sitio.';
+
 create table if not exists public.site_social_links (
   id uuid default gen_random_uuid() not null,
   site_id uuid not null,
@@ -198,6 +235,16 @@ create table if not exists public.user_saves (
   constraint user_saves_user_id_fkey FOREIGN KEY (user_id) REFERENCES profiles(id) ON DELETE CASCADE,
   constraint user_saves_pkey PRIMARY KEY (id),
   constraint user_saves_user_id_site_id_key UNIQUE (user_id, site_id)
+);
+
+-- Favoritos de sitio (corazón). Independiente de user_saves.
+create table if not exists public.site_favorites (
+  user_id uuid not null,
+  site_id uuid not null,
+  created_at timestamp with time zone default now() not null,
+  constraint site_favorites_user_id_fkey FOREIGN KEY (user_id) REFERENCES profiles(id) ON DELETE CASCADE,
+  constraint site_favorites_site_id_fkey FOREIGN KEY (site_id) REFERENCES sites(id) ON DELETE CASCADE,
+  constraint site_favorites_pkey PRIMARY KEY (user_id, site_id)
 );
 
 create table if not exists public.site_reviews (
@@ -269,11 +316,89 @@ create table if not exists public.content_reports (
   status text default 'open'::text not null,
   created_at timestamp with time zone default now() not null,
   constraint content_reports_status_check CHECK ((status = ANY (ARRAY['open'::text, 'reviewed'::text, 'dismissed'::text, 'actioned'::text]))),
-  constraint content_reports_target_type_check CHECK ((target_type = ANY (ARRAY['photo'::text, 'site'::text, 'profile'::text, 'event'::text]))),
+  constraint content_reports_target_type_check CHECK ((target_type = ANY (ARRAY['photo'::text, 'site'::text, 'profile'::text, 'event'::text, 'review'::text]))),
   constraint content_reports_reporter_id_fkey FOREIGN KEY (reporter_id) REFERENCES profiles(id) ON DELETE CASCADE,
   constraint content_reports_pkey PRIMARY KEY (id),
   constraint content_reports_reporter_id_target_type_target_id_key UNIQUE (reporter_id, target_type, target_id)
 );
+
+-- Logs de cliente solo para etapa de pruebas (beta). Nunca se muestran en UI de producto.
+create table if not exists public.client_debug_logs (
+  id uuid default gen_random_uuid() not null,
+  user_id uuid,
+  context text not null,
+  message text not null,
+  error_type text,
+  detail text,
+  status text default 'pending'::text not null,
+  resolved_at timestamp with time zone,
+  created_at timestamp with time zone default now() not null,
+  constraint client_debug_logs_status_check CHECK ((status = ANY (ARRAY['pending'::text, 'resolved'::text]))),
+  constraint client_debug_logs_context_len CHECK ((char_length(context) between 1 and 120)),
+  constraint client_debug_logs_message_len CHECK ((char_length(message) between 1 and 2000)),
+  constraint client_debug_logs_detail_len CHECK (((detail is null) or (char_length(detail) <= 4000))),
+  constraint client_debug_logs_user_id_fkey FOREIGN KEY (user_id) REFERENCES profiles(id) ON DELETE SET NULL,
+  constraint client_debug_logs_pkey PRIMARY KEY (id)
+);
+
+-- Portal de pruebas cerradas: APK publicada, reportes anónimos y flujos de prueba.
+create schema if not exists private;
+
+create table if not exists private.beta_admin (
+  id int primary key default 1 check (id = 1),
+  pin text not null
+);
+
+revoke all on schema private from public, anon, authenticated;
+grant usage on schema private to postgres, service_role;
+
+create table if not exists public.beta_release (
+  id int primary key default 1 check (id = 1),
+  version text not null default '—',
+  build int,
+  apk_url text,
+  updated_at timestamp with time zone default now() not null
+);
+
+create table if not exists public.beta_feedback (
+  id uuid default gen_random_uuid() not null,
+  ticket_no smallint generated always as identity,
+  body text not null,
+  done boolean default false not null,
+  in_review boolean default false not null,
+  fixed_in_version text,
+  created_at timestamp with time zone default now() not null,
+  updated_at timestamp with time zone default now() not null,
+  constraint beta_feedback_body_len CHECK ((char_length(trim(body)) between 3 and 1000)),
+  constraint beta_feedback_pkey PRIMARY KEY (id),
+  constraint beta_feedback_ticket_no_key UNIQUE (ticket_no)
+);
+
+create table if not exists public.beta_qa_flows (
+  id uuid default gen_random_uuid() not null,
+  version text not null,
+  ticket_no smallint not null,
+  title text not null,
+  steps text not null,
+  created_at timestamp with time zone default now() not null,
+  constraint beta_qa_flows_version_len CHECK ((char_length(trim(version)) between 1 and 32)),
+  constraint beta_qa_flows_title_len CHECK ((char_length(trim(title)) between 3 and 200)),
+  constraint beta_qa_flows_steps_len CHECK ((char_length(trim(steps)) between 10 and 4000)),
+  constraint beta_qa_flows_ticket_fk FOREIGN KEY (ticket_no) REFERENCES public.beta_feedback(ticket_no),
+  constraint beta_qa_flows_pkey PRIMARY KEY (id),
+  constraint beta_qa_flows_version_ticket UNIQUE (version, ticket_no)
+);
+
+comment on table public.beta_release is
+  'Última APK de prueba cerrada; la actualiza el publish script / agente.';
+comment on table public.beta_feedback is
+  'Reportes anónimos del portal beta; marcar hecho solo con PIN.';
+comment on table public.beta_qa_flows is
+  'Flujos de prueba por versión/ticket para testers del portal beta.';
+comment on column public.beta_feedback.ticket_no is
+  'Consecutivo corto para commits (#1, #2). Identity, inmutable.';
+comment on column public.beta_feedback.in_review is
+  'Dueño (PIN): en revisión; el público no edita ni borra.';
 
 -- indexes (sin duplicar PK/UNIQUE de la tabla)
 create index if not exists categories_keywords_gin ON public.categories USING gin (keywords);
@@ -294,8 +419,30 @@ create index if not exists sites_city_idx ON public.sites USING btree (city);
 create index if not exists sites_department_id_idx ON public.sites USING btree (department_id);
 create index if not exists sites_google_place_id_idx ON public.sites USING btree (google_place_id) WHERE (google_place_id IS NOT NULL);
 create index if not exists sites_location_gix ON public.sites USING gist (location);
+create index if not exists sites_cover_photo_id_idx ON public.sites USING btree (cover_photo_id);
+create index if not exists site_favorites_site_id_idx ON public.site_favorites USING btree (site_id);
+create unique index if not exists distance_units_one_default_idx ON public.distance_units USING btree ((is_default)) WHERE is_default;
+create index if not exists client_debug_logs_created_at_idx ON public.client_debug_logs USING btree (created_at DESC);
+create index if not exists client_debug_logs_context_idx ON public.client_debug_logs USING btree (context, created_at DESC);
+create index if not exists client_debug_logs_status_created_idx ON public.client_debug_logs USING btree (status, created_at DESC);
+create index if not exists beta_feedback_created_at_idx ON public.beta_feedback USING btree (created_at DESC);
+create index if not exists beta_qa_flows_version_idx ON public.beta_qa_flows USING btree (version, ticket_no);
 
 -- functions
+-- is_staff va primero: las funciones `language sql` que la llaman se validan
+-- al crearse (get_site_coords, list_open_content_reports, …).
+CREATE OR REPLACE FUNCTION public.is_staff()
+ RETURNS boolean
+ LANGUAGE sql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+  select exists (
+    select 1 from public.profiles p
+    where p.id = auth.uid() and p.role in ('admin', 'root')
+  );
+$function$;
+
 CREATE OR REPLACE FUNCTION public.attach_save_to_existing_site(p_existing_site_id uuid, p_source_url text DEFAULT NULL::text, p_source_network text DEFAULT NULL::text, p_notes text DEFAULT NULL::text)
  RETURNS uuid
  LANGUAGE plpgsql
@@ -364,6 +511,137 @@ begin
 end;
 $function$;
 
+CREATE OR REPLACE FUNCTION public.beta_delete_qa_flow(p_version text, p_ticket_no smallint, p_pin text)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+declare
+  expected text;
+begin
+  select pin into expected from private.beta_admin where id = 1;
+  if expected is null or p_pin is distinct from expected then
+    raise exception 'PIN incorrecto';
+  end if;
+
+  delete from public.beta_qa_flows
+  where version = trim(p_version)
+    and ticket_no = p_ticket_no;
+end;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.beta_feedback_touch_updated_at()
+ RETURNS trigger
+ LANGUAGE plpgsql
+AS $function$
+begin
+  if new.ticket_no is distinct from old.ticket_no then
+    raise exception 'ticket_no inmutable';
+  end if;
+  new.updated_at := now();
+  return new;
+end;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.beta_mark_feedback(p_id uuid, p_done boolean, p_fixed_in_version text, p_pin text)
+ RETURNS public.beta_feedback
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+declare
+  expected text;
+  row public.beta_feedback;
+begin
+  select pin into expected from private.beta_admin where id = 1;
+  if expected is null or p_pin is distinct from expected then
+    raise exception 'PIN incorrecto';
+  end if;
+
+  update public.beta_feedback
+  set
+    done = p_done,
+    fixed_in_version = case
+      when p_done then nullif(trim(coalesce(p_fixed_in_version, '')), '')
+      else null
+    end
+  where id = p_id
+  returning * into row;
+
+  if row.id is null then
+    raise exception 'No encontrado';
+  end if;
+  return row;
+end;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.beta_set_feedback_review(p_id uuid, p_in_review boolean, p_pin text)
+ RETURNS public.beta_feedback
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+declare
+  expected text;
+  row public.beta_feedback;
+begin
+  select pin into expected from private.beta_admin where id = 1;
+  if expected is null or p_pin is distinct from expected then
+    raise exception 'PIN incorrecto';
+  end if;
+
+  update public.beta_feedback
+  set in_review = p_in_review
+  where id = p_id
+    and done = false
+  returning * into row;
+
+  if row.id is null then
+    raise exception 'No encontrado';
+  end if;
+  return row;
+end;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.beta_upsert_qa_flow(p_version text, p_ticket_no smallint, p_title text, p_steps text, p_pin text)
+ RETURNS public.beta_qa_flows
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+declare
+  expected text;
+  row public.beta_qa_flows;
+  v text := trim(coalesce(p_version, ''));
+  t text := trim(coalesce(p_title, ''));
+  s text := trim(coalesce(p_steps, ''));
+begin
+  select pin into expected from private.beta_admin where id = 1;
+  if expected is null or p_pin is distinct from expected then
+    raise exception 'PIN incorrecto';
+  end if;
+
+  if char_length(v) < 1 then
+    raise exception 'Versión requerida';
+  end if;
+  if not exists (
+    select 1 from public.beta_feedback f where f.ticket_no = p_ticket_no
+  ) then
+    raise exception 'Ticket no encontrado';
+  end if;
+
+  insert into public.beta_qa_flows (version, ticket_no, title, steps)
+  values (v, p_ticket_no, t, s)
+  on conflict (version, ticket_no) do update
+    set title = excluded.title,
+        steps = excluded.steps
+  returning * into row;
+
+  return row;
+end;
+$function$;
+
 CREATE OR REPLACE FUNCTION public.clear_site_location(p_site_id uuid)
  RETURNS void
  LANGUAGE plpgsql
@@ -386,6 +664,66 @@ begin
 end;
 $function$;
 
+CREATE OR REPLACE FUNCTION public.distance_units_clear_other_defaults()
+ RETURNS trigger
+ LANGUAGE plpgsql
+AS $function$
+begin
+  if new.is_default then
+    update public.distance_units
+    set is_default = false
+    where id is distinct from new.id
+      and is_default;
+  end if;
+  return new;
+end;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.enforce_site_cover_photo()
+ RETURNS trigger
+ LANGUAGE plpgsql
+AS $function$
+begin
+  if new.cover_photo_id is null then
+    return new;
+  end if;
+  if not exists (
+    select 1
+    from public.site_photos p
+    where p.id = new.cover_photo_id
+      and p.site_id = new.id
+  ) then
+    raise exception 'cover photo must belong to the site';
+  end if;
+  return new;
+end;
+$function$;
+
+-- Portada resuelta (cover_photo_id o primera foto). Debe existir antes de
+-- list_proximity_sites y search_sites, que la llaman.
+CREATE OR REPLACE FUNCTION public.site_cover_storage_path(p_site_id uuid)
+ RETURNS text
+ LANGUAGE sql
+ STABLE
+ SET search_path TO 'public'
+AS $function$
+  select coalesce(
+    (
+      select ph.storage_path
+      from public.site_photos ph
+      join public.sites s on s.cover_photo_id = ph.id
+      where s.id = p_site_id
+    ),
+    (
+      select ph.storage_path
+      from public.site_photos ph
+      where ph.site_id = p_site_id
+      order by ph.sort_order, ph.created_at
+      limit 1
+    )
+  );
+$function$;
+
 CREATE OR REPLACE FUNCTION public.enforce_site_review_photo_limit()
  RETURNS trigger
  LANGUAGE plpgsql
@@ -401,82 +739,91 @@ begin
 end;
 $function$;
 
-CREATE OR REPLACE FUNCTION public.find_possible_duplicate_sites(p_name text, p_lat double precision DEFAULT NULL::double precision, p_lng double precision DEFAULT NULL::double precision, p_city text DEFAULT NULL::text, p_radius_m double precision DEFAULT 100, p_exclude_site_id uuid DEFAULT NULL::uuid)
+-- Anti-dupe: mismo Place ID, mismo pin (~250 m), nombre parecido hasta 2.5 km,
+-- o misma ciudad + nombre parecido. Incluye los privados de quien busca.
+drop function if exists public.find_possible_duplicate_sites(
+  text, double precision, double precision, text, double precision, uuid
+);
+
+CREATE OR REPLACE FUNCTION public.find_possible_duplicate_sites(p_name text, p_lat double precision DEFAULT NULL::double precision, p_lng double precision DEFAULT NULL::double precision, p_city text DEFAULT NULL::text, p_radius_m double precision DEFAULT 250, p_exclude_site_id uuid DEFAULT NULL::uuid, p_google_place_id text DEFAULT NULL::text)
  RETURNS TABLE(site_id uuid, site_name text, city text, distance_m double precision, name_score real, contributor_count bigint)
  LANGUAGE sql
  STABLE
  SET search_path TO 'public'
 AS $function$
-  with candidates as (
-    select
-      s.id,
-      s.name,
-      s.city,
-      case
-        when p_lat is not null and p_lng is not null and s.location is not null then
-          st_distance(
-            s.location,
-            st_setsrid(st_makepoint(p_lng, p_lat), 4326)::geography
-          )
-        else null
-      end as dist_m,
-      greatest(
-        similarity(lower(s.name), lower(p_name)),
-        word_similarity(lower(p_name), lower(s.name))
-      ) as score
-    from public.sites s
-    where s.is_public = true
-      and s.is_physical_place = true
-      and s.status = 'complete'
-      and (p_exclude_site_id is null or s.id <> p_exclude_site_id)
-      and (
-        (
-          p_lat is not null and p_lng is not null and s.location is not null
-          and (
-            (
-              st_dwithin(
-                s.location,
-                st_setsrid(st_makepoint(p_lng, p_lat), 4326)::geography,
-                p_radius_m
-              )
-              and similarity(lower(s.name), lower(p_name)) >= 0.35
-            )
-            or (
-              -- Parques / nombres largos: radio mayor si el nombre es claramente similar
-              st_dwithin(
-                s.location,
-                st_setsrid(st_makepoint(p_lng, p_lat), 4326)::geography,
-                greatest(p_radius_m, 800)
-              )
-              and (
-                similarity(lower(s.name), lower(p_name)) >= 0.45
-                or word_similarity(lower(p_name), lower(s.name)) >= 0.5
-              )
-            )
-          )
+  select
+    s.id,
+    s.name,
+    s.city,
+    case
+      when p_lat is not null and p_lng is not null and s.location is not null then
+        st_distance(
+          s.location,
+          st_setsrid(st_makepoint(p_lng, p_lat), 4326)::geography
         )
-        or (
-          (p_lat is null or p_lng is null or s.location is null)
-          and p_city is not null and length(trim(p_city)) > 0
-          and s.city ilike trim(p_city)
-          and (
-            similarity(lower(s.name), lower(p_name)) >= 0.45
-            or word_similarity(lower(p_name), lower(s.name)) >= 0.5
-          )
+      else null
+    end as dist_m,
+    case
+      when nullif(trim(p_name), '') is null then 0::real
+      else greatest(
+        similarity(lower(s.name), lower(trim(p_name))),
+        word_similarity(lower(trim(p_name)), lower(s.name))
+      )
+    end as score,
+    (
+      select count(*) from public.site_contributors sc where sc.site_id = s.id
+    ) + 1
+  from public.sites s
+  where s.is_physical_place = true
+    and (p_exclude_site_id is null or s.id <> p_exclude_site_id)
+    and (
+      (s.is_public = true and s.status = 'complete')
+      or s.created_by = auth.uid()
+    )
+    and (
+      -- Mismo Place ID de Google.
+      (
+        nullif(trim(coalesce(p_google_place_id, '')), '') is not null
+        and s.google_place_id is not null
+        and s.google_place_id = trim(p_google_place_id)
+      )
+      -- Mismo pin (~250 m): el nombre puede ser distinto.
+      or (
+        p_lat is not null and p_lng is not null and s.location is not null
+        and st_dwithin(
+          s.location,
+          st_setsrid(st_makepoint(p_lng, p_lat), 4326)::geography,
+          greatest(coalesce(p_radius_m, 250), 80)
         )
       )
-  )
-  select
-    c.id,
-    c.name,
-    c.city,
-    c.dist_m,
-    c.score,
-    (
-      select count(*) from public.site_contributors sc where sc.site_id = c.id
-    ) + 1
-  from candidates c
-  order by c.score desc nulls last, c.dist_m asc nulls last
+      -- Hasta 2.5 km si el nombre se parece (catálogo vs ficha de Maps).
+      or (
+        p_lat is not null and p_lng is not null and s.location is not null
+        and nullif(trim(p_name), '') is not null
+        and st_dwithin(
+          s.location,
+          st_setsrid(st_makepoint(p_lng, p_lat), 4326)::geography,
+          2500
+        )
+        and greatest(
+          similarity(lower(s.name), lower(trim(p_name))),
+          word_similarity(lower(trim(p_name)), lower(s.name))
+        ) >= 0.28
+      )
+      -- Misma ciudad + nombre parecido (aunque ya tengas coords).
+      or (
+        nullif(trim(coalesce(p_city, '')), '') is not null
+        and s.city ilike trim(p_city)
+        and nullif(trim(p_name), '') is not null
+        and greatest(
+          similarity(lower(s.name), lower(trim(p_name))),
+          word_similarity(lower(trim(p_name)), lower(s.name))
+        ) >= 0.32
+      )
+    )
+  order by
+    score desc nulls last,
+    dist_m asc nulls last
   limit 10;
 $function$;
 
@@ -519,18 +866,6 @@ begin
   on conflict (id) do nothing;
   return new;
 end;
-$function$;
-
-CREATE OR REPLACE FUNCTION public.is_staff()
- RETURNS boolean
- LANGUAGE sql
- STABLE SECURITY DEFINER
- SET search_path TO 'public'
-AS $function$
-  select exists (
-    select 1 from public.profiles p
-    where p.id = auth.uid() and p.role in ('admin', 'root')
-  );
 $function$;
 
 CREATE OR REPLACE FUNCTION public.link_save_to_existing_site(p_save_id uuid, p_existing_site_id uuid)
@@ -645,8 +980,10 @@ AS $function$
   limit 200;
 $function$;
 
+drop function if exists public.list_open_content_reports();
+
 CREATE OR REPLACE FUNCTION public.list_open_content_reports()
- RETURNS TABLE(report_id uuid, target_type text, target_id uuid, reason text, status text, created_at timestamp with time zone, reporter_id uuid, reporter_name text, photo_path text, site_name text)
+ RETURNS TABLE(report_id uuid, target_type text, target_id uuid, reason text, status text, created_at timestamp with time zone, reporter_id uuid, reporter_name text, photo_path text, site_name text, snippet text)
  LANGUAGE sql
  STABLE SECURITY DEFINER
  SET search_path TO 'public'
@@ -660,13 +997,20 @@ AS $function$
     r.created_at,
     r.reporter_id,
     coalesce(pr.display_name, 'Usuario') as reporter_name,
-    ph.storage_path as photo_path,
-    s.name as site_name
+    coalesce(ph.storage_path, null) as photo_path,
+    coalesce(s_photo.name, s_review.name) as site_name,
+    case
+      when r.target_type = 'review' then left(trim(coalesce(rev.body, '')), 160)
+      else null
+    end as snippet
   from public.content_reports r
   join public.profiles pr on pr.id = r.reporter_id
   left join public.site_photos ph
     on r.target_type = 'photo' and ph.id = r.target_id
-  left join public.sites s on s.id = ph.site_id
+  left join public.sites s_photo on s_photo.id = ph.site_id
+  left join public.site_reviews rev
+    on r.target_type = 'review' and rev.id = r.target_id
+  left join public.sites s_review on s_review.id = rev.site_id
   where public.is_staff()
     and r.status = 'open'
   order by r.created_at desc
@@ -813,8 +1157,19 @@ begin
 end;
 $function$;
 
-CREATE OR REPLACE FUNCTION public.search_sites(p_query text DEFAULT NULL::text, p_category_id uuid DEFAULT NULL::uuid, p_location_query text DEFAULT NULL::text, p_lat double precision DEFAULT NULL::double precision, p_lng double precision DEFAULT NULL::double precision, p_radius_km double precision DEFAULT NULL::double precision, p_transport_group text DEFAULT NULL::text, p_budget_min numeric DEFAULT NULL::numeric, p_budget_max numeric DEFAULT NULL::numeric, p_include_public boolean DEFAULT false)
- RETURNS TABLE(site_id uuid, name text, city text, department text, lat double precision, lng double precision, estimated_price_amount numeric, currency_code text, is_own boolean, is_public boolean, is_catalog boolean, is_linked boolean, updated_at timestamp with time zone, distance_km double precision)
+-- Explorar: multi-categoría (p_category_ids) + “solo mis favoritos”.
+-- Overloads viejos fuera: PostgREST elegiría el equivocado.
+drop function if exists public.search_sites(
+  text, uuid, text, double precision, double precision, double precision,
+  text, numeric, numeric, boolean
+);
+drop function if exists public.search_sites(
+  text, uuid, text, double precision, double precision, double precision,
+  text, numeric, numeric, boolean, uuid[]
+);
+
+CREATE OR REPLACE FUNCTION public.search_sites(p_query text DEFAULT NULL::text, p_category_id uuid DEFAULT NULL::uuid, p_location_query text DEFAULT NULL::text, p_lat double precision DEFAULT NULL::double precision, p_lng double precision DEFAULT NULL::double precision, p_radius_km double precision DEFAULT NULL::double precision, p_transport_group text DEFAULT NULL::text, p_budget_min numeric DEFAULT NULL::numeric, p_budget_max numeric DEFAULT NULL::numeric, p_include_public boolean DEFAULT false, p_category_ids uuid[] DEFAULT NULL::uuid[], p_favorites_only boolean DEFAULT false)
+ RETURNS TABLE(site_id uuid, name text, city text, department text, address_line text, lat double precision, lng double precision, estimated_price_amount numeric, currency_code text, is_own boolean, is_public boolean, is_catalog boolean, is_linked boolean, updated_at timestamp with time zone, distance_km double precision, category_names text[], cover_storage_path text)
  LANGUAGE plpgsql
  STABLE SECURITY DEFINER
  SET search_path TO 'public'
@@ -823,6 +1178,7 @@ declare
   v_is_minor boolean := false;
   v_max_km numeric;
   v_group public.transport_group;
+  v_category_ids uuid[];
 begin
   select exists (
     select 1 from public.profiles p
@@ -830,6 +1186,14 @@ begin
       and p.birth_date is not null
       and p.birth_date > (current_date - interval '18 years')
   ) into v_is_minor;
+
+  if p_category_ids is not null and cardinality(p_category_ids) > 0 then
+    v_category_ids := p_category_ids;
+  elsif p_category_id is not null then
+    v_category_ids := array[p_category_id];
+  else
+    v_category_ids := null;
+  end if;
 
   if p_transport_group is not null and trim(p_transport_group) <> '' then
     begin
@@ -857,6 +1221,7 @@ begin
       s.name as sname,
       s.city as scity,
       s.department as sdepartment,
+      s.address_line as saddress,
       st_y(s.location::geometry) as slat,
       st_x(s.location::geometry) as slng,
       s.estimated_price_amount as sprice,
@@ -883,7 +1248,14 @@ begin
             st_setsrid(st_makepoint(p_lng, p_lat), 4326)::geography
           ) / 1000.0
         else null::double precision
-      end as sdistance_km
+      end as sdistance_km,
+      (
+        select array_agg(c.name_i18n->>'es' order by c.sort_order, c.name_i18n->>'es')
+        from public.site_categories sc
+        join public.categories c on c.id = sc.category_id
+        where sc.site_id = s.id
+      ) as scats,
+      public.site_cover_storage_path(s.id) as scover
     from public.sites s
     where s.location is not null
       and s.status = 'complete'
@@ -895,6 +1267,14 @@ begin
             and us.status = 'complete'
         )
         or (p_include_public and s.is_public)
+      )
+      and (
+        not coalesce(p_favorites_only, false)
+        or exists (
+          select 1 from public.site_favorites sf
+          where sf.site_id = s.id
+            and sf.user_id = auth.uid()
+        )
       )
       and (
         p_query is null or trim(p_query) = ''
@@ -918,15 +1298,15 @@ begin
         or s.estimated_price_amount <= p_budget_max
       )
       and (
-        p_category_id is null
+        v_category_ids is null
         or exists (
           select 1
           from public.site_categories sc
           join public.categories c on c.id = sc.category_id
           where sc.site_id = s.id
             and (
-              c.id = p_category_id
-              or c.parent_id = p_category_id
+              c.id = any (v_category_ids)
+              or c.parent_id = any (v_category_ids)
             )
         )
       )
@@ -964,6 +1344,7 @@ begin
     b.sname,
     b.scity,
     b.sdepartment,
+    b.saddress,
     b.slat,
     b.slng,
     b.sprice,
@@ -973,7 +1354,9 @@ begin
     b.scatalog,
     b.slinked,
     b.supdated,
-    b.sdistance_km
+    b.sdistance_km,
+    b.scats,
+    b.scover
   from base b
   order by
     case when b.sdistance_km is null then 1 else 0 end,
@@ -1092,6 +1475,10 @@ AS $function$
 $function$;
 
 -- triggers
+drop trigger if exists beta_feedback_set_updated_at on public.beta_feedback;
+create trigger beta_feedback_set_updated_at before update on public.beta_feedback
+for each row EXECUTE FUNCTION beta_feedback_touch_updated_at();
+
 drop trigger if exists categories_set_updated_at on public.categories;
 create trigger categories_set_updated_at before update on public.categories
 for each row EXECUTE FUNCTION set_updated_at();
@@ -1107,6 +1494,15 @@ for each row EXECUTE FUNCTION set_updated_at();
 drop trigger if exists departments_set_updated_at on public.departments;
 create trigger departments_set_updated_at before update on public.departments
 for each row EXECUTE FUNCTION set_updated_at();
+
+drop trigger if exists distance_units_set_updated_at on public.distance_units;
+create trigger distance_units_set_updated_at before update on public.distance_units
+for each row EXECUTE FUNCTION set_updated_at();
+
+drop trigger if exists distance_units_one_default_trg on public.distance_units;
+create trigger distance_units_one_default_trg
+before insert or update of is_default on public.distance_units
+for each row when (new.is_default) EXECUTE FUNCTION distance_units_clear_other_defaults();
 
 drop trigger if exists plans_set_updated_at on public.plans;
 create trigger plans_set_updated_at before update on public.plans
@@ -1132,6 +1528,11 @@ drop trigger if exists sites_set_updated_at on public.sites;
 create trigger sites_set_updated_at before update on public.sites
 for each row EXECUTE FUNCTION set_updated_at();
 
+drop trigger if exists sites_cover_photo_trg on public.sites;
+create trigger sites_cover_photo_trg
+before insert or update of cover_photo_id on public.sites
+for each row EXECUTE FUNCTION enforce_site_cover_photo();
+
 drop trigger if exists transport_types_set_updated_at on public.transport_types;
 create trigger transport_types_set_updated_at before update on public.transport_types
 for each row EXECUTE FUNCTION set_updated_at();
@@ -1141,16 +1542,22 @@ create trigger user_saves_set_updated_at before update on public.user_saves
 for each row EXECUTE FUNCTION set_updated_at();
 
 -- rls
+alter table public.beta_feedback enable row level security;
+alter table public.beta_qa_flows enable row level security;
+alter table public.beta_release enable row level security;
 alter table public.categories enable row level security;
 alter table public.cities enable row level security;
+alter table public.client_debug_logs enable row level security;
 alter table public.content_reports enable row level security;
 alter table public.countries enable row level security;
 alter table public.departments enable row level security;
+alter table public.distance_units enable row level security;
 alter table public.plan_stops enable row level security;
 alter table public.plans enable row level security;
 alter table public.profiles enable row level security;
 alter table public.site_categories enable row level security;
 alter table public.site_contributors enable row level security;
+alter table public.site_favorites enable row level security;
 alter table public.site_photos enable row level security;
 alter table public.site_review_photos enable row level security;
 alter table public.site_reviews enable row level security;
@@ -1160,6 +1567,40 @@ alter table public.transport_types enable row level security;
 alter table public.user_saves enable row level security;
 
 -- policies
+-- Portal beta: público anónimo lee todo; edita/borra solo lo pendiente.
+-- Marcar hecho / en revisión pasa por RPC con PIN.
+drop policy if exists beta_release_select on public.beta_release;
+create policy beta_release_select on public.beta_release
+  for select
+  to anon, authenticated using (true);
+
+drop policy if exists beta_feedback_select on public.beta_feedback;
+create policy beta_feedback_select on public.beta_feedback
+  for select
+  to anon, authenticated using (true);
+
+drop policy if exists beta_feedback_insert on public.beta_feedback;
+create policy beta_feedback_insert on public.beta_feedback
+  for insert
+  to anon, authenticated with check ((done = false) and (in_review = false) and (fixed_in_version is null));
+
+drop policy if exists beta_feedback_update_pending on public.beta_feedback;
+create policy beta_feedback_update_pending on public.beta_feedback
+  for update
+  to anon, authenticated
+  using ((done = false) and (in_review = false))
+  with check ((done = false) and (in_review = false) and (fixed_in_version is null));
+
+drop policy if exists beta_feedback_delete_pending on public.beta_feedback;
+create policy beta_feedback_delete_pending on public.beta_feedback
+  for delete
+  to anon, authenticated using ((done = false) and (in_review = false));
+
+drop policy if exists beta_qa_flows_select on public.beta_qa_flows;
+create policy beta_qa_flows_select on public.beta_qa_flows
+  for select
+  to anon, authenticated using (true);
+
 drop policy if exists categories_select_active_or_staff on public.categories;
 create policy categories_select_active_or_staff on public.categories
   for select
@@ -1178,6 +1619,21 @@ create policy cities_select_active_or_staff on public.cities
 drop policy if exists cities_staff_write on public.cities;
 create policy cities_staff_write on public.cities
   for all
+  to authenticated using (is_staff()) with check (is_staff());
+
+drop policy if exists client_debug_logs_insert_own on public.client_debug_logs;
+create policy client_debug_logs_insert_own on public.client_debug_logs
+  for insert
+  to authenticated with check (((user_id is null) or (user_id = auth.uid())) and (status = 'pending') and (resolved_at is null));
+
+drop policy if exists client_debug_logs_select_staff on public.client_debug_logs;
+create policy client_debug_logs_select_staff on public.client_debug_logs
+  for select
+  to authenticated using ((is_staff() or (user_id = auth.uid())));
+
+drop policy if exists client_debug_logs_update_staff on public.client_debug_logs;
+create policy client_debug_logs_update_staff on public.client_debug_logs
+  for update
   to authenticated using (is_staff()) with check (is_staff());
 
 drop policy if exists content_reports_insert_own on public.content_reports;
@@ -1212,6 +1668,16 @@ create policy departments_select_active_or_staff on public.departments
 
 drop policy if exists departments_staff_write on public.departments;
 create policy departments_staff_write on public.departments
+  for all
+  to authenticated using (is_staff()) with check (is_staff());
+
+drop policy if exists distance_units_select_active_or_staff on public.distance_units;
+create policy distance_units_select_active_or_staff on public.distance_units
+  for select
+  to authenticated using (((is_active = true) OR is_staff()));
+
+drop policy if exists distance_units_staff_write on public.distance_units;
+create policy distance_units_staff_write on public.distance_units
   for all
   to authenticated using (is_staff()) with check (is_staff());
 
@@ -1306,6 +1772,11 @@ create policy site_contributors_select on public.site_contributors
   to authenticated using ((EXISTS ( SELECT 1
    FROM sites s
   WHERE ((s.id = site_contributors.site_id) AND (s.is_public OR (s.created_by = auth.uid()) OR is_staff())))));
+
+drop policy if exists site_favorites_own on public.site_favorites;
+create policy site_favorites_own on public.site_favorites
+  for all
+  to authenticated using ((user_id = auth.uid())) with check ((user_id = auth.uid()));
 
 drop policy if exists site_photos_select on public.site_photos;
 create policy site_photos_select on public.site_photos
@@ -1419,8 +1890,10 @@ create policy user_saves_own on public.user_saves
 -- grants
 grant execute on function public.attach_save_to_existing_site(p_existing_site_id uuid, p_source_url text, p_source_network text, p_notes text) to anon, authenticated, service_role;
 grant execute on function public.clear_site_location(p_site_id uuid) to anon, authenticated, service_role;
+grant execute on function public.distance_units_clear_other_defaults() to anon, authenticated, service_role;
+grant execute on function public.enforce_site_cover_photo() to anon, authenticated, service_role;
 grant execute on function public.enforce_site_review_photo_limit() to anon, authenticated, service_role;
-grant execute on function public.find_possible_duplicate_sites(p_name text, p_lat double precision, p_lng double precision, p_city text, p_radius_m double precision, p_exclude_site_id uuid) to anon, authenticated, service_role;
+grant execute on function public.find_possible_duplicate_sites(p_name text, p_lat double precision, p_lng double precision, p_city text, p_radius_m double precision, p_exclude_site_id uuid, p_google_place_id text) to anon, authenticated, service_role;
 grant execute on function public.get_site_coords(p_site_id uuid) to anon, authenticated, service_role;
 grant execute on function public.handle_new_user() to anon, authenticated, service_role;
 grant execute on function public.is_staff() to anon, authenticated, service_role;
@@ -1430,17 +1903,43 @@ grant execute on function public.list_open_content_reports() to anon, authentica
 grant execute on function public.list_plan_candidates(p_location_query text, p_include_public boolean, p_max_budget numeric) to anon, authenticated, service_role;
 grant execute on function public.list_proximity_sites(p_include_public boolean) to anon, authenticated, service_role;
 grant execute on function public.prevent_role_escalation() to anon, authenticated, service_role;
-grant execute on function public.search_sites(p_query text, p_category_id uuid, p_location_query text, p_lat double precision, p_lng double precision, p_radius_km double precision, p_transport_group text, p_budget_min numeric, p_budget_max numeric, p_include_public boolean) to anon, authenticated, service_role;
+grant execute on function public.search_sites(p_query text, p_category_id uuid, p_location_query text, p_lat double precision, p_lng double precision, p_radius_km double precision, p_transport_group text, p_budget_min numeric, p_budget_max numeric, p_include_public boolean, p_category_ids uuid[], p_favorites_only boolean) to anon, authenticated, service_role;
 grant execute on function public.set_site_location(p_site_id uuid, p_lng double precision, p_lat double precision) to anon, authenticated, service_role;
 grant execute on function public.set_updated_at() to anon, authenticated, service_role;
+grant execute on function public.site_cover_storage_path(p_site_id uuid) to anon, authenticated, service_role;
 grant execute on function public.site_privacy_blockers(p_site_id uuid) to anon, authenticated, service_role;
 grant execute on function public.site_rating_summary(p_site_id uuid) to anon, authenticated, service_role;
+
+-- Portal beta: solo por RPC con PIN (nunca desde el cliente sin el PIN).
+revoke all on function public.beta_mark_feedback(uuid, boolean, text, text) from public;
+grant execute on function public.beta_mark_feedback(uuid, boolean, text, text) to anon, authenticated;
+revoke all on function public.beta_set_feedback_review(uuid, boolean, text) from public;
+grant execute on function public.beta_set_feedback_review(uuid, boolean, text) to anon, authenticated;
+revoke all on function public.beta_upsert_qa_flow(text, smallint, text, text, text) from public;
+grant execute on function public.beta_upsert_qa_flow(text, smallint, text, text, text) to anon, authenticated, service_role;
+revoke all on function public.beta_delete_qa_flow(text, smallint, text) from public;
+grant execute on function public.beta_delete_qa_flow(text, smallint, text) to anon, authenticated, service_role;
 
 grant usage on schema public to anon, authenticated, service_role;
 grant all on all tables in schema public to postgres, service_role;
 grant select, insert, update, delete on all tables in schema public to authenticated;
 grant select on all tables in schema public to anon;
 grant usage, select on all sequences in schema public to anon, authenticated, service_role;
+
+-- Ajustes por tabla (después de los grants masivos de arriba).
+grant select on public.distance_units to authenticated;
+grant all on public.distance_units to service_role;
+
+revoke all on table public.site_favorites from anon;
+grant select, insert, delete on table public.site_favorites to authenticated;
+
+grant select, insert, update on public.client_debug_logs to authenticated;
+grant all on public.client_debug_logs to service_role;
+
+grant select on public.beta_release to anon, authenticated;
+grant select, insert, update, delete on public.beta_feedback to anon, authenticated;
+grant select on public.beta_qa_flows to anon, authenticated;
+grant all on public.beta_release, public.beta_feedback, public.beta_qa_flows to service_role;
 
 drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created

@@ -20,11 +20,15 @@ Owner catálogo / root: `johnftm.proyectos@gmail.com`.
 
 ## Checklist al tocar SQL o catálogo
 
-1. Baseline actual (como si el proyecto naciera hoy), en este orden:
+1. Baseline actual (como si el proyecto naciera hoy), **solo** estos tres en orden:
    `20260808000001_schema.sql` → `…02_seed.sql` → `…03_storage.sql`.
-   Cambios nuevos: otra migración con timestamp **posterior** a esas tres.
-   El `--full` aplica **todas** en orden. No reintroducir parches ya incluidos
-   en el schema (search, reviews, anti-dupe, `clear_site_location`, etc.).
+   El `--full` aplica **todas** las `*.sql` de `migrations/` en orden. Tras unificar,
+   no deben quedar parches sueltos: lo que hoy está en producción va **dentro** del
+   baseline (schema/seed/storage). Un `.sql` con timestamp posterior solo si hace
+   falta aplicar YA a la DB viva; en el mismo trabajo (o al cerrar el ciclo) se
+   **pliega** al baseline y se elimina el archivo suelto.
+   No reintroducir parches ya incluidos en el schema (search, reviews, anti-dupe,
+   favoritos, distance_units, beta portal, `clear_site_location`, etc.).
    Un merge de datos one-shot (p. ej. unir dos sitios del catálogo) **no** va
    en migraciones: el import masivo recrea el catálogo.
 2. SQL **idempotente** donde importe (`if not exists`, `on conflict`, etc.):

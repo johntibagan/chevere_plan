@@ -1,4 +1,4 @@
--- Storage: bucket privado site-photos.
+-- Storage: bucket privado site-photos + bucket público beta-apks.
 -- Sitio: {user_id}/{site_id}/{filename}. Reseña: {user_id}/reviews/{review_id}/…
 -- Lectura: dueño del path, staff, foto de sitio público/propio, o foto de
 -- reseña pública (en sitio visible).
@@ -6,6 +6,15 @@
 insert into storage.buckets (id, name, public)
 values ('site-photos', 'site-photos', false)
 on conflict (id) do nothing;
+
+-- APKs de prueba cerrada: público (solo quien tenga el link), 200 MiB.
+-- Subida solo con service_role: sin policies de insert para anon/authenticated.
+insert into storage.buckets (id, name, public, file_size_limit)
+values ('beta-apks', 'beta-apks', true, 209715200)
+on conflict (id) do update
+set
+  public = excluded.public,
+  file_size_limit = excluded.file_size_limit;
 
 drop policy if exists site_photos_storage_select on storage.objects;
 drop policy if exists site_photos_storage_insert on storage.objects;
