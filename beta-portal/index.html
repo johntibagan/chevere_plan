@@ -185,7 +185,7 @@
       white-space: nowrap;
     }
     table.reports-table td.col-date {
-      width: 110px;
+      width: 140px;
       color: var(--muted);
       font-size: 0.85rem;
       white-space: nowrap;
@@ -316,6 +316,23 @@
       return d.toLocaleDateString("es-CO", {
         day: "2-digit", month: "2-digit", year: "numeric",
       });
+    }
+
+    /** dd/mmm/aa HH:mm (ej. 25/ago/26 22:15) */
+    function fmtDateTime(iso) {
+      if (!iso) return "—";
+      const d = new Date(iso);
+      if (Number.isNaN(d.getTime())) return "—";
+      const months = [
+        "ene", "feb", "mar", "abr", "may", "jun",
+        "jul", "ago", "sep", "oct", "nov", "dic",
+      ];
+      const dd = String(d.getDate()).padStart(2, "0");
+      const mmm = months[d.getMonth()];
+      const aa = String(d.getFullYear()).slice(-2);
+      const hh = String(d.getHours()).padStart(2, "0");
+      const mm = String(d.getMinutes()).padStart(2, "0");
+      return `${dd}/${mmm}/${aa} ${hh}:${mm}`;
     }
 
     function setMsg(el, text, ok) {
@@ -473,7 +490,7 @@
       // Actualizado
       const tdDate = document.createElement("td");
       tdDate.className = "col-date";
-      tdDate.textContent = fmtDate(row.updated_at || row.created_at);
+      tdDate.textContent = fmtDateTime(row.updated_at || row.created_at);
       tr.appendChild(tdDate);
 
       // Acciones
