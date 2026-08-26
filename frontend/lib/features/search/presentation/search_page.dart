@@ -188,7 +188,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
     unawaited(_runSearch());
   }
 
-  Future<void> _runSearch() async {
+  Future<void> _runSearch({bool forceNetwork = false}) async {
     final epoch = ++_searchEpoch;
     setState(() {
       _loading = true;
@@ -202,12 +202,12 @@ class _SearchPageState extends ConsumerState<SearchPage> {
       final loc = await _maybeLocation();
       if (!mounted || epoch != _searchEpoch) return;
       final filters = _buildFilters(lat: loc.$1, lng: loc.$2);
+      // Mis guardados / favoritos cambian seguido: no servir SWR stale.
+      final mustFresh = forceNetwork || _mySavesOnly || _favoritesOnly;
       final hits = await ref.read(swrLoaderProvider).load<List<SearchHit>>(
             key: CacheKeys.search(filters.cacheKey),
             ttl: CacheTtl.search,
-            // Misma clave = mismos filtros → puede reusar caché fresca.
-            // Clave distinta = filtros distintos → no hay hit de caché.
-            forceNetwork: false,
+            forceNetwork: mustFresh,
             decode: (payload) {
               final list = payload as List? ?? const [];
               return list
@@ -236,6 +236,13 @@ class _SearchPageState extends ConsumerState<SearchPage> {
       });
       AppToast.error(context, e, stackTrace: st, logContext: 'search');
     }
+  }
+
+  void _onOwnedListsChanged() {
+    if (!_searched) return;
+    if (!_mySavesOnly && !_favoritesOnly) return;
+    if (_loading) return;
+    unawaited(_runSearch(forceNetwork: true));
   }
 
   Future<void> _loadMore() async {
@@ -396,6 +403,14 @@ class _SearchPageState extends ConsumerState<SearchPage> {
       if (next == null) return;
       if (!_radiusReady) return;
       unawaited(_applyIntent(next));
+    });
+    ref.listen(favoriteSiteIdsProvider, (prev, next) {
+      if (prev?.valueOrNull == next.valueOrNull) return;
+      _onOwnedListsChanged();
+    });
+    ref.listen(mySavesProvider, (prev, next) {
+      if (prev?.valueOrNull == next.valueOrNull) return;
+      _onOwnedListsChanged();
     });
 
     final categories = ref.watch(

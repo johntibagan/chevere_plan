@@ -96,7 +96,7 @@ Esta es la sección más crítica del documento. Ninguna funcionalidad nueva se 
 - Listas largas: `ListView.builder` / `SliverList`. JSON/geo pesado: `compute`/isolates (el catálogo DIVIPOLA ya llega async; el fuzzy es barato en UI).
 - Medir frames de Inicio / Explorar / PlanBuilder con DevTools en dispositivo; no sustituye la regla de caché.
 - Antes de agregar caché alrededor de una consulta pesada, evaluar primero si la consulta en sí puede aligerarse (traer solo las columnas que la vista necesita, no el objeto completo con joins).
-- **Invalidación explícita** al guardar/editar/descartar, más refresco en segundo plano cuando el TTL fresco venció.
+- **Invalidación explícita** al guardar/editar/descartar/favoritar (incluye prefijo `search:` de Explorar), más refresco en segundo plano cuando el TTL fresco venció.
 
 ## 5. Manejo de errores (regla no negociable)
 

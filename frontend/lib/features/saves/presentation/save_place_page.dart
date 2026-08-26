@@ -10,6 +10,7 @@ import 'package:path/path.dart' as p;
 import 'package:uuid/uuid.dart';
 
 import '../../../core/cache/cache_ttl.dart';
+import '../../../core/cache/search_cache.dart';
 import '../../../core/config/env.dart';
 import '../../../core/di/providers.dart';
 import '../../../core/logging/client_debug_log.dart';
@@ -949,6 +950,9 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
         );
       }
       unawaited(
+        invalidateSearchResultCaches(ref.read(entityCacheStoreProvider)),
+      );
+      unawaited(
         ref
             .read(entityCacheStoreProvider)
             .invalidate(CacheKeys.siteFicha(saved.siteId)),
@@ -1418,6 +1422,9 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
           );
         }
       }
+      unawaited(
+        invalidateSearchResultCaches(ref.read(entityCacheStoreProvider)),
+      );
       // Populares cerca no debe quedar con portada vieja / sitio propio duplicado.
       ref.invalidate(homeNearbyProvider);
       final uidNearby = ref.read(supabaseClientProvider).auth.currentUser?.id;

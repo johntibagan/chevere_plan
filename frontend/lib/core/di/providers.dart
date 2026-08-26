@@ -39,6 +39,7 @@ import '../../features/search/data/search_repository.dart';
 import '../cache/cache_ttl.dart';
 import '../cache/entity_cache_store.dart';
 import '../cache/paged_items.dart';
+import '../cache/search_cache.dart';
 import '../cache/swr_loader.dart';
 import '../distance/distance_unit.dart';
 import '../prefs/feed_layout.dart';
@@ -390,6 +391,10 @@ class FavoriteSiteIdsNotifier extends AsyncNotifier<Set<String>> {
               next.toList(),
             );
       }
+      // Explorar “Mis favoritos” / resultados previos no deben quedar stale.
+      unawaited(
+        invalidateSearchResultCaches(ref.read(entityCacheStoreProvider)),
+      );
     } catch (e) {
       state = AsyncData(current);
       rethrow;

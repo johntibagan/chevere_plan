@@ -156,7 +156,7 @@ Filtros (AND): texto (opcional; solo busca con lupa/Enter; **X** limpia el campo
 
 Paginación cliente: **15** por “Cargar más” (`SearchPolicies.pageSize`). Resultados: tuyos, públicos, catálogo o vinculados. Vista lista / 2 / 3 / 4 (misma que Inicio).
 
-Atajos de Inicio → Explorar: primero **cancelan** la búsqueda en curso y **resetean** filtros, luego aplican solo el atajo (**Cerca de mí**, **Mis guardados**, **Mis favoritos**, **Por categoría**). GPS usa last-known y luego low/3s. Caché SWR solo si la clave de filtros coincide.
+Atajos de Inicio → Explorar: primero **cancelan** la búsqueda en curso y **resetean** filtros, luego aplican solo el atajo (**Cerca de mí**, **Mis guardados**, **Mis favoritos**, **Por categoría**). GPS usa last-known y luego low/3s. Caché SWR solo si la clave de filtros coincide; **Mis guardados** / **Mis favoritos** siempre van a red. Al guardar, descartar o marcar favorito se invalidan las claves `search:*` para que Explorar no quede con resultados viejos.
 
 El filtro de “horario” en la UI **no recorta** resultados reales todavía (los sitios no tienen horarios de apertura cargados).
 

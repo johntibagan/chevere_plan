@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -6,6 +7,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../../core/cache/cache_ttl.dart';
+import '../../../core/cache/search_cache.dart';
 import '../../../core/cache/signed_url_cache.dart';
 import '../../../core/di/providers.dart';
 import '../../../core/testing/widget_keys.dart';
@@ -377,6 +380,24 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
       await ref.read(draftReminderServiceProvider).cancelForSave(save.id);
       await ref.read(savesRepositoryProvider).discardSave(save.id);
       if (!mounted) return;
+      ref.invalidate(mySavesProvider);
+      ref.invalidate(homeNearbyProvider);
+      final uid = ref.read(supabaseClientProvider).auth.currentUser?.id;
+      if (uid != null) {
+        unawaited(
+          ref
+              .read(entityCacheStoreProvider)
+              .invalidate(CacheKeys.mySavesSummary(uid)),
+        );
+        unawaited(
+          ref
+              .read(entityCacheStoreProvider)
+              .invalidate(CacheKeys.homeNearby(uid)),
+        );
+      }
+      unawaited(
+        invalidateSearchResultCaches(ref.read(entityCacheStoreProvider)),
+      );
       Navigator.of(context).pop(SiteDetailOutcome.deleted);
     } catch (e) {
       if (!mounted) return;
@@ -605,6 +626,9 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
       ref.invalidate(homeNearbyProvider);
       ref.invalidate(plansProvider);
       ref.invalidate(siteFichaProvider(widget.siteId));
+      unawaited(
+        invalidateSearchResultCaches(ref.read(entityCacheStoreProvider)),
+      );
       AppToast.show(context, context.l10n.photoCoverSet);
     } catch (e) {
       if (!mounted) return;
