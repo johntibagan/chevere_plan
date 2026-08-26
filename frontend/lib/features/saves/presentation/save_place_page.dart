@@ -934,12 +934,18 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
 
       if (!mounted) return false;
       ref.invalidate(mySavesProvider);
+      ref.invalidate(homeNearbyProvider);
       final uid = ref.read(supabaseClientProvider).auth.currentUser?.id;
       if (uid != null) {
         unawaited(
           ref
               .read(entityCacheStoreProvider)
               .invalidate(CacheKeys.mySavesSummary(uid)),
+        );
+        unawaited(
+          ref
+              .read(entityCacheStoreProvider)
+              .invalidate(CacheKeys.homeNearby(uid)),
         );
       }
       unawaited(
@@ -1411,6 +1417,16 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
                 .invalidate(CacheKeys.mySavesSummary(uid)),
           );
         }
+      }
+      // Populares cerca no debe quedar con portada vieja / sitio propio duplicado.
+      ref.invalidate(homeNearbyProvider);
+      final uidNearby = ref.read(supabaseClientProvider).auth.currentUser?.id;
+      if (uidNearby != null) {
+        unawaited(
+          ref
+              .read(entityCacheStoreProvider)
+              .invalidate(CacheKeys.homeNearby(uidNearby)),
+        );
       }
       if (resultSiteId.isNotEmpty) {
         unawaited(

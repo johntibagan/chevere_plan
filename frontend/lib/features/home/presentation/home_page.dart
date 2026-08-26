@@ -338,7 +338,10 @@ class _HomePageState extends ConsumerState<HomePage> {
 
     final nearbyAsync = ref.watch(homeNearbyProvider);
     final nearbySnap = nearbyAsync.valueOrNull;
-    final nearbyHits = nearbySnap?.hits ?? const <SearchHit>[];
+    final ownSiteIds = {for (final s in _saves) s.siteId};
+    final nearbyHits = (nearbySnap?.hits ?? const <SearchHit>[])
+        .where((h) => !ownSiteIds.contains(h.siteId))
+        .toList();
     final nearbyLoading =
         nearbyAsync.isLoading && (nearbySnap == null || nearbySnap.hits.isEmpty);
     final nearbyNeedGps = nearbySnap?.needGps ?? false;

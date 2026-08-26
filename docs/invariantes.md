@@ -81,7 +81,7 @@ Alto riesgo: `save_place_page.dart`, `google_maps_link_importer.dart`, `save_pol
 ## Datos
 
 - Categorías, transporte, depto/ciudad: **base + caché**, nunca hardcode en Dart.
-- Populares cerca (Inicio): pintar caché; no GPS fino ni `search_sites` si seguís a menos de ~2 km del ancla y la lista tiene menos de 24 h.
+- Populares cerca (Inicio): pintar caché; no GPS fino ni `search_sites` si seguís a menos de ~2 km del ancla y la lista tiene menos de 24 h. Solo públicos de **otros** (los tuyos van en Guardados recientes).
 - Reset: default conserva DIVIPOLA + catálogo (`external_id`); `-Full` = migraciones en orden (baseline 3 + posteriores, p. ej. favoritos) + DIVIPOLA + JSON.
 
 ## Código

@@ -833,8 +833,9 @@ class HomeNearbyNotifier extends AsyncNotifier<HomeNearbySnapshot> {
             ),
           );
       final snap = HomeNearbySnapshot(
+        // Populares = públicos de otros; los tuyos van solo en Guardados recientes.
         hits: hits
-            .where((h) => h.isPublic)
+            .where((h) => h.isPublic && !h.isOwn)
             .take(HomeNearbyPolicies.take)
             .toList(),
         originLat: pos.lat,
