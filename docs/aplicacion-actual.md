@@ -306,7 +306,7 @@ flowchart TB
 
 ## Pruebas cerradas (APK)
 
-- Portal público (GitHub Pages): `https://johntibagan.github.io/chevere_plan/` — versión + descarga + reportes anónimos. Deploy solo si cambia `beta-portal/`.
+- Portal público (GitHub Pages): `https://johntibagan.github.io/chevere_plan/` — versión + descarga + reportes anónimos. Cada reporte tiene un consecutivo corto (`#1`, `#2`…) para commits (tocar copia). El dueño (PIN) puede marcar **en revisión**: el público ya no edita ni borra ese ítem. Deploy solo si cambia `beta-portal/`.
 - Secrets en GitHub Actions: `BETA_SUPABASE_URL`, `BETA_SUPABASE_ANON_KEY` (nunca la service_role).
 - APK en Supabase Storage (`beta-apks`). Al publicar: `backend/scripts/publish_beta_apk.py` actualiza Storage + fila `beta_release` (el portal la lee; no hace falta redeploy de Pages).
 - Versionado desde `0.0.1+1` en `frontend/pubspec.yaml`. PIN de dueño para marcar reportes: tabla `private.beta_admin` (default `chevere`).

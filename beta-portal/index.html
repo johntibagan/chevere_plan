@@ -16,6 +16,7 @@
       --line: #2a3542;
       --ok: #3dba7a;
       --danger: #e57373;
+      --review: #e6b84d;
     }
     * { box-sizing: border-box; }
     body {
@@ -149,7 +150,7 @@
     .reports-head,
     .report-row {
       display: grid;
-      grid-template-columns: 40px minmax(0, 1fr) 88px 138px 84px;
+      grid-template-columns: 40px 40px minmax(0, 1fr) 88px 138px 108px;
       gap: 10px;
       align-items: center;
       padding: 12px 4px;
@@ -170,6 +171,24 @@
       text-decoration: line-through;
       color: var(--muted);
     }
+    .report-row.review:not(.done) {
+      box-shadow: inset 3px 0 0 var(--review), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    }
+    .col-num {
+      font-variant-numeric: tabular-nums;
+      font-weight: 700;
+      font-size: 0.82rem;
+      color: var(--accent);
+      cursor: pointer;
+      user-select: none;
+      text-align: center;
+      border: 0;
+      background: transparent;
+      font-family: inherit;
+      padding: 0;
+      line-height: 1.2;
+    }
+    .col-num:hover { text-decoration: underline; }
     .col-check {
       display: flex;
       justify-content: center;
@@ -193,16 +212,24 @@
       justify-content: flex-end;
       gap: 2px;
       white-space: nowrap;
+      align-items: center;
+    }
+    .locked-hint {
+      color: var(--review);
+      font-size: 0.72rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
     }
 
     /* Edición: casi todo el ancho del bloque */
     .report-row.editing {
-      grid-template-columns: 40px minmax(0, 1fr);
+      grid-template-columns: 40px 40px minmax(0, 1fr);
       align-items: start;
       gap: 10px 12px;
     }
     .report-row.editing .edit-panel {
-      grid-column: 2;
+      grid-column: 3;
       display: flex;
       flex-direction: column;
       gap: 10px;
@@ -236,13 +263,14 @@
     @media (max-width: 720px) {
       .reports-head { display: none; }
       .report-row:not(.editing) {
-        grid-template-columns: 40px minmax(0, 1fr) auto;
+        grid-template-columns: 36px 32px minmax(0, 1fr) auto;
         grid-template-areas:
-          "check desc actions"
-          "check meta actions";
+          "num check desc actions"
+          "num check meta actions";
         gap: 6px 10px;
         padding: 14px 2px;
       }
+      .report-row:not(.editing) .col-num { grid-area: num; align-self: start; }
       .report-row:not(.editing) .col-check { grid-area: check; align-self: start; }
       .report-row:not(.editing) .col-desc { grid-area: desc; }
       .report-row:not(.editing) .col-actions { grid-area: actions; align-self: start; }
@@ -254,7 +282,7 @@
         align-items: center;
       }
       .report-row.editing {
-        grid-template-columns: 40px minmax(0, 1fr);
+        grid-template-columns: 36px 32px minmax(0, 1fr);
       }
     }
 
@@ -277,6 +305,8 @@
       padding: 0;
     }
     .icon-btn:hover { color: var(--accent); background: rgba(43, 176, 166, 0.12); }
+    .icon-btn.on { color: var(--review); }
+    .icon-btn.on:hover { color: var(--review); background: rgba(230, 184, 77, 0.14); }
     .icon-btn.danger:hover { color: var(--danger); background: rgba(229, 115, 115, 0.12); }
     .icon-btn svg {
       width: 18px;
@@ -322,12 +352,13 @@
 
     <section class="reports">
       <h2>Mejoras y reportes</h2>
-      <p class="hint">Agrega o edita pendientes. El dueño marca “listo”.</p>
+      <p class="hint">Agrega pendientes. El dueño marca revisión (ya no se edita ni borra) o listo. El número corto va en el commit.</p>
       <textarea class="add" id="body" maxlength="500" placeholder="¿Qué falló o qué mejorar?"></textarea>
       <button class="btn" id="add" type="button">Agregar</button>
       <div id="msg"></div>
       <div class="reports-list" aria-label="Mejoras y reportes">
         <div class="reports-head" aria-hidden="true">
+          <div>#</div>
           <div></div>
           <div>Descripción</div>
           <div>Versión</div>
@@ -349,6 +380,7 @@
     const ICON_UNLOCK = '<path d="M17 8h-1V6a4 4 0 0 0-8 0h2a2 2 0 1 1 4 0v2H7a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2zm0 12H7V10h10v10zm-5-3a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/>';
     const ICON_EDIT = '<path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>';
     const ICON_TRASH = '<path d="M6 19a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>';
+    const ICON_FLAG = '<path d="M14.4 6 14 4H5v17h2v-7h5.6l.4 2h7V6z"/>';
 
     let adminPin = sessionStorage.getItem("beta_pin") || "";
     let isAdmin = !!adminPin;
@@ -442,11 +474,46 @@
       return btn;
     }
 
+    function ticketLabel(row) {
+      return row.ticket_no != null ? `#${row.ticket_no}` : "—";
+    }
+
+    function isLocked(row) {
+      return !!row.done || !!row.in_review;
+    }
+
+    async function copyTicket(label) {
+      try {
+        await navigator.clipboard.writeText(label);
+      } catch (_) {
+        /* ignore */
+      }
+    }
+
     function renderRow(row) {
+      const locked = isLocked(row);
+      const canEdit = !locked;
       const el = document.createElement("div");
       el.className = "report-row" + (row.done ? " done" : "") +
-        (editingId === row.id && !row.done ? " editing" : "");
+        (row.in_review && !row.done ? " review" : "") +
+        (editingId === row.id && canEdit ? " editing" : "");
       el.dataset.id = row.id;
+
+      const num = document.createElement("button");
+      num.type = "button";
+      num.className = "col-num";
+      num.textContent = ticketLabel(row);
+      num.title = "Copiar para el commit";
+      num.setAttribute("aria-label", `Copiar ${ticketLabel(row)}`);
+      num.addEventListener("click", async () => {
+        const label = ticketLabel(row);
+        if (label === "—") return;
+        await copyTicket(label);
+        const prev = num.textContent;
+        num.textContent = "ok";
+        setTimeout(() => { num.textContent = prev; }, 800);
+      });
+      el.appendChild(num);
 
       const checkWrap = document.createElement("div");
       checkWrap.className = "col-check";
@@ -479,7 +546,7 @@
       checkWrap.appendChild(cb);
       el.appendChild(checkWrap);
 
-      if (editingId === row.id && !row.done) {
+      if (editingId === row.id && canEdit) {
         const panel = document.createElement("div");
         panel.className = "edit-panel";
 
@@ -519,7 +586,8 @@
             .from("beta_feedback")
             .update({ body: text })
             .eq("id", row.id)
-            .eq("done", false);
+            .eq("done", false)
+            .eq("in_review", false);
           if (error) {
             alert("No se pudo actualizar. Intenta de nuevo.");
             return;
@@ -557,7 +625,29 @@
 
       const act = document.createElement("div");
       act.className = "col-actions";
-      if (!row.done) {
+      if (isAdmin && !row.done) {
+        act.appendChild(
+          iconButton(
+            ICON_FLAG,
+            row.in_review ? "Quitar revisión" : "Marcar revisión",
+            row.in_review ? "on" : "",
+            async () => {
+              const { error } = await sb.rpc("beta_set_feedback_review", {
+                p_id: row.id,
+                p_in_review: !row.in_review,
+                p_pin: adminPin,
+              });
+              if (error) {
+                alert(error.message || "No se pudo marcar");
+                return;
+              }
+              if (row.in_review === false) editingId = null;
+              await loadFeedback();
+            },
+          ),
+        );
+      }
+      if (canEdit) {
         act.appendChild(
           iconButton(ICON_EDIT, "Editar", "", () => {
             editingId = row.id;
@@ -571,7 +661,8 @@
               .from("beta_feedback")
               .delete()
               .eq("id", row.id)
-              .eq("done", false);
+              .eq("done", false)
+              .eq("in_review", false);
             if (error) {
               alert("No se pudo eliminar. Intenta de nuevo.");
               return;
@@ -580,6 +671,11 @@
             await loadFeedback();
           }),
         );
+      } else if (!isAdmin && row.in_review && !row.done) {
+        const hint = document.createElement("span");
+        hint.className = "locked-hint";
+        hint.textContent = "Revisión";
+        act.appendChild(hint);
       }
       el.appendChild(act);
 
@@ -589,7 +685,7 @@
     async function loadFeedback() {
       const { data, error } = await sb
         .from("beta_feedback")
-        .select("id, body, done, fixed_in_version, created_at, updated_at")
+        .select("id, ticket_no, body, done, in_review, fixed_in_version, created_at, updated_at")
         .order("created_at", { ascending: false });
       if (error) throw error;
       const list = document.getElementById("list");
