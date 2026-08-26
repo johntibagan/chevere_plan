@@ -25,13 +25,15 @@ permissions:
   id-token: write
 
 concurrency:
-  group: beta-portal-pages
+  # Un solo deploy a la vez: cancela pending + in-progress al lanzar otro.
+  group: pages-beta-portal
   cancel-in-progress: true
 
 jobs:
   deploy:
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
     runs-on: self-hosted
+    timeout-minutes: 15
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
