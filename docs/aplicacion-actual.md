@@ -73,11 +73,11 @@ Siempre visibles (crear vacío):
 
 1. **Ubicación** — campo para pegar enlace de Maps (icono pegar) y preview tappable del mapa, más interruptor de punto exacto (todo en la misma card)
 2. **Nombre** — obligatorio; el autocompletado de Maps lo rellena igual
-3. **Público** — apagado por defecto; sin pin (lugar físico) el interruptor se ve pero no se puede encender
+3. **Visibilidad** — una sola fila: **Lugar físico** (encendido por defecto) y **Público** (apagado; sin pin el interruptor se ve pero no se puede encender). Cada uno con icono **i**.
 
-El resto va detrás de **Añadir sección**: chips `+` por extra (**Detalles**, **Enlaces**, **Categorías**, **Fotos**, **Visibilidad del lugar físico**). Si ya están todas, los chips desaparecen. **Guardar** es un botón ancho **abajo** (un solo CTA; no está en el AppBar).
+El resto va detrás de **Añadir sección**: chips `+` por extra (**Detalles**, **Enlaces**, **Categorías**, **Fotos**). Si ya están todas, los chips desaparecen. **Guardar** es un botón ancho **abajo** (un solo CTA; no está en el AppBar).
 
-- Al **crear**, se asume lugar físico y privado. El interruptor de “es lugar físico” solo aparece si abrís esa sección extra o si **editás**.
+- Al **crear**, se asume lugar físico y privado; ambos interruptores ya están en la fila de Visibilidad.
 - Al **editar** o completar un borrador: se muestran **todas** las secciones.
 - Al **compartir** desde otra app: además de ubicación y nombre, se abre **Enlaces**.
 - Ayuda: icono **i** (tooltip al toque), no párrafos bajo cada campo.

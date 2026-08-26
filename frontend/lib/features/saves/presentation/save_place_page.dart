@@ -43,7 +43,7 @@ import 'site_review_editor_page.dart';
 import 'site_status_l10n.dart';
 import 'social_link_preview_card.dart';
 
-enum _SaveExtra { details, links, categories, photo, physical }
+enum _SaveExtra { details, links, categories, photo }
 
 class SavePlacePage extends ConsumerStatefulWidget {
   const SavePlacePage({
@@ -1467,7 +1467,6 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
       _SaveExtra.links => l10n.saveLinksSection,
       _SaveExtra.categories => l10n.saveCategoriesSection,
       _SaveExtra.photo => l10n.saveExtraPhoto,
-      _SaveExtra.physical => l10n.saveExtraPhysical,
     };
   }
 
@@ -1493,7 +1492,6 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
                     _SaveExtra.links => WidgetKeys.saveExtraLinks,
                     _SaveExtra.categories => WidgetKeys.saveExtraCategories,
                     _SaveExtra.photo => WidgetKeys.saveExtraPhoto,
-                    _SaveExtra.physical => WidgetKeys.saveExtraPhysical,
                   },
                   label: _extraTitle(l10n, extra),
                   selected: false,
@@ -1633,37 +1631,106 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
     );
   }
 
-  Widget _publicSection(AppLocalizations l10n) {
+  Widget _visibilitySection(AppLocalizations l10n) {
     final canPublish = _isPhysical && _hasFormLocation;
-    final isOn = _isPublic && canPublish;
-    final iconColor = isOn ? AppColors.success : AppColors.purple;
-    return _sectionCard(
-      title: l10n.savePublicSection,
-      info: l10n.saveInfoPublic,
-      children: [
-        Row(
+    final isPublicOn = _isPublic && canPublish;
+    final publicColor =
+        isPublicOn ? AppColors.success : AppColors.purple;
+    final publicSwitchTip = !canPublish
+        ? (!_isPhysical
+            ? l10n.savePublicNonPhysical
+            : l10n.savePublicNeedLocation)
+        : (isPublicOn ? l10n.savePublicVisible : l10n.saveMakePublic);
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: AppFormCard(
+        padding: const EdgeInsets.fromLTRB(10, 6, 6, 6),
+        child: Row(
           children: [
-            Tooltip(
-              message: !canPublish
-                  ? (!_isPhysical
-                      ? l10n.savePublicNonPhysical
-                      : l10n.savePublicNeedLocation)
-                  : (isOn ? l10n.savePublicVisible : l10n.saveMakePublic),
-              child: Icon(
-                isOn ? Icons.public : Icons.lock_outline,
-                color: iconColor,
-                size: 22,
+            Expanded(
+              child: _visibilityToggle(
+                icon: Icons.place_outlined,
+                iconColor: AppColors.muted,
+                label: l10n.savePhysicalLabel,
+                info: l10n.saveInfoPhysical,
+                switchKey: WidgetKeys.savePhysicalSwitch,
+                value: _isPhysical,
+                onChanged: (v) => setState(() {
+                  _isPhysical = v;
+                  if (!v) _isPublic = false;
+                }),
               ),
             ),
-            Spacer(),
-            Switch(
-              key: WidgetKeys.savePublicSwitch,
-              value: isOn,
-              onChanged: canPublish
-                  ? (v) => setState(() => _isPublic = v)
-                  : null,
+            Container(
+              width: 1,
+              height: 32,
+              margin: const EdgeInsets.symmetric(horizontal: 12),
+              color: AppColors.border,
+            ),
+            Expanded(
+              child: Tooltip(
+                message: publicSwitchTip,
+                child: _visibilityToggle(
+                  icon: isPublicOn ? Icons.public : Icons.lock_outline,
+                  iconColor: publicColor,
+                  label: l10n.savePublicSection,
+                  info: l10n.saveInfoPublic,
+                  switchKey: WidgetKeys.savePublicSwitch,
+                  value: isPublicOn,
+                  onChanged: canPublish
+                      ? (v) => setState(() => _isPublic = v)
+                      : null,
+                ),
+              ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _visibilityToggle({
+    required IconData icon,
+    required Color iconColor,
+    required String label,
+    required String info,
+    required Key switchKey,
+    required bool value,
+    required ValueChanged<bool>? onChanged,
+  }) {
+    return Row(
+      children: [
+        Icon(icon, size: 18, color: iconColor),
+        SizedBox(width: 4),
+        Flexible(
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Flexible(
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.foreground,
+                    ),
+                  ),
+                ),
+                _infoTip(info),
+              ],
+            ),
+          ),
+        ),
+        Switch(
+          key: switchKey,
+          value: value,
+          onChanged: onChanged,
+          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
         ),
       ],
     );
@@ -1869,31 +1936,12 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
     );
   }
 
-  Widget _physicalSection(AppLocalizations l10n) {
-    return _sectionCard(
-      title: l10n.saveExtraPhysical,
-      info: l10n.saveInfoPhysical,
-      children: [
-        SwitchListTile(
-          contentPadding: EdgeInsets.zero,
-          title: Text(l10n.saveIsPhysical),
-          value: _isPhysical,
-          onChanged: (v) => setState(() {
-            _isPhysical = v;
-            if (!v) _isPublic = false;
-          }),
-        ),
-      ],
-    );
-  }
-
   Widget _extraSection(AppLocalizations l10n, _SaveExtra extra) {
     return switch (extra) {
       _SaveExtra.details => _detailsSection(l10n),
       _SaveExtra.links => _linksSection(l10n),
       _SaveExtra.categories => _categoriesSection(l10n),
       _SaveExtra.photo => _photoSection(l10n),
-      _SaveExtra.physical => _physicalSection(l10n),
     };
   }
 
@@ -1915,7 +1963,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
               children: [
                 _locationSection(l10n),
                 _nameSection(l10n),
-                _publicSection(l10n),
+                _visibilitySection(l10n),
                 for (final extra in _SaveExtra.values)
                   if (_openExtras.contains(extra)) _extraSection(l10n, extra),
                 _addExtraChips(l10n),

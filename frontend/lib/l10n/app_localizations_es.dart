@@ -816,6 +816,9 @@ class AppLocalizationsEs extends AppLocalizations {
       'Si no lo es (receta, tip…), quedará siempre privado';
 
   @override
+  String get savePhysicalLabel => 'Lugar físico';
+
+  @override
   String get saveMakePublic => 'Hacer público';
 
   @override
@@ -856,9 +859,6 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get saveExtraPhoto => 'Fotos';
-
-  @override
-  String get saveExtraPhysical => 'Visibilidad del lugar físico';
 
   @override
   String get saveInfoLocation =>

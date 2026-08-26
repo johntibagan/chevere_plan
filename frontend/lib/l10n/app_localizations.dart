@@ -1576,6 +1576,12 @@ abstract class AppLocalizations {
   /// **'Si no lo es (receta, tip…), quedará siempre privado'**
   String get saveIsPhysicalSubtitle;
 
+  /// No description provided for @savePhysicalLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Lugar físico'**
+  String get savePhysicalLabel;
+
   /// No description provided for @saveMakePublic.
   ///
   /// In es, this message translates to:
@@ -1653,12 +1659,6 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Fotos'**
   String get saveExtraPhoto;
-
-  /// No description provided for @saveExtraPhysical.
-  ///
-  /// In es, this message translates to:
-  /// **'Visibilidad del lugar físico'**
-  String get saveExtraPhysical;
 
   /// No description provided for @saveInfoLocation.
   ///

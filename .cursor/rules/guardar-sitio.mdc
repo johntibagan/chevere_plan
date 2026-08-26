@@ -20,7 +20,7 @@ Antes de cambiar captura de lugares, leer [`docs/invariantes.md`](docs/invariant
 - El interruptor **Punto exacto** va **apagado** por defecto. No borra coords: elige si Maps abre el pin (`lat,lng`) o la ficha del lugar. Encenderlo sin pin abre el mapa.
 - Crear y editar = misma pantalla. DIVIPOLA por id. Pegar dentro del campo.
 - Nombre obligatorio (sección propia debajo de ubicación). No guardar como “Sin nombre”.
-- Crear vacío: solo Ubicación, Nombre y Público. El resto (detalles, enlaces, categorías, fotos, “es lugar físico”) detrás de **Añadir sección**. Editar: todas. Share: también enlaces.
+- Crear vacío: solo Ubicación, Nombre y **Visibilidad** (lugar físico + Público en una fila). El resto (detalles, enlaces, categorías, fotos) detrás de **Añadir sección**. Editar: todas. Share: también enlaces.
 - Público siempre visible; deshabilitado sin pin en lugar físico. Ayuda con tooltip, no párrafos.
 - **Guardar** = un CTA ancho **abajo** (no en el AppBar; no duplicar).
 

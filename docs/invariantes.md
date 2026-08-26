@@ -52,9 +52,9 @@ Público es **sección siempre visible**. Sin pin, el interruptor se muestra **d
 
 ### Layout del formulario
 
-- Siempre: Ubicación → Nombre (obligatorio; Maps lo rellena) → Público.
-- Extra detrás de **+**: Detalles, Enlaces, Categorías, Fotos, Visibilidad del lugar físico.
-- Crear: lugar físico por defecto (el switch no está en la pantalla mínima). Editar: todas las secciones. Share: también Enlaces.
+- Siempre: Ubicación → Nombre (obligatorio; Maps lo rellena) → **Visibilidad** (lugar físico + Público en **una** fila, cada uno con icono i).
+- Extra detrás de **+**: Detalles, Enlaces, Categorías, Fotos.
+- Crear: lugar físico **encendido** y privado por defecto (ambos interruptores visibles). Editar: mismas secciones fijas + extras abiertos.
 - Nombre vacío: no guardar (nada de “Sin nombre”).
 - Ayuda en tooltip (tap), no textos largos bajo los campos.
 

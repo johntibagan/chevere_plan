@@ -21,6 +21,7 @@ abstract final class WidgetKeys {
   static const saveMapsField = Key('save_maps_field');
   static const saveSubmit = Key('save_submit');
   static const savePublicSwitch = Key('save_public_switch');
+  static const savePhysicalSwitch = Key('save_physical_switch');
   static const saveExactPinSwitch = Key('save_exact_pin_switch');
   static const saveOpenMap = Key('save_open_map');
   static const saveLinksSection = Key('save_links_section');
@@ -30,7 +31,6 @@ abstract final class WidgetKeys {
   static const saveExtraLinks = Key('save_extra_links');
   static const saveExtraCategories = Key('save_extra_categories');
   static const saveExtraPhoto = Key('save_extra_photo');
-  static const saveExtraPhysical = Key('save_extra_physical');
 
   static const dupeKeepEditing = Key('dupe_keep_editing');
   static const dupeSaveAnyway = Key('dupe_save_anyway');
