@@ -348,6 +348,15 @@
   "savePublicVisible": "Visible para otros en la capa pública",
   "saveAddPhoto": "Añadir foto (máx. 15)",
   "savePhotoReady": "Foto lista para subir",
+  "savePhotoUploadPartialFail": "El sitio se guardó, pero una o más fotos no se subieron. Podés añadirlas después desde la ficha.",
+  "savePhotoMaxReached": "Máximo {max} fotos por sitio.",
+  "@savePhotoMaxReached": {
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
   "saveDraftFooter": "Puedes guardar ya: sin ubicación queda en borrador y te recordaremos completarlo.",
   "saveNameSection": "Nombre",
   "savePublicSection": "Público",
@@ -522,6 +531,7 @@
   "errorGeneric": "Error en la app. Intenta de nuevo.",
   "errorGenericLead": "Error en la app.",
   "errorRetryAction": "Intenta de nuevo",
+  "errorProblemToast": "Se ha presentado un problema.",
   "errorLoadRetry": "No se pudo cargar. Intenta de nuevo.",
   "siteDetailOpenMapsFail": "No se pudo abrir Google Maps.",
   "photoTermsBody": "Al subir una foto confirmas que cumple los Términos de Uso de Chevere Plan (turismo, gastronomía y planes de ocio; sin contenido sexual, ilegal o de acoso).",

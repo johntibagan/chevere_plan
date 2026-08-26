@@ -839,6 +839,15 @@ class AppLocalizationsEs extends AppLocalizations {
   String get savePhotoReady => 'Foto lista para subir';
 
   @override
+  String get savePhotoUploadPartialFail =>
+      'El sitio se guardó, pero una o más fotos no se subieron. Podés añadirlas después desde la ficha.';
+
+  @override
+  String savePhotoMaxReached(int max) {
+    return 'Máximo $max fotos por sitio.';
+  }
+
+  @override
   String get saveDraftFooter =>
       'Puedes guardar ya: sin ubicación queda en borrador y te recordaremos completarlo.';
 
@@ -1289,6 +1298,9 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get errorRetryAction => 'Intenta de nuevo';
+
+  @override
+  String get errorProblemToast => 'Se ha presentado un problema.';
 
   @override
   String get errorLoadRetry => 'No se pudo cargar. Intenta de nuevo.';

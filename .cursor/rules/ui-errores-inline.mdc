@@ -1,5 +1,5 @@
 ---
-description: Errores en UI — sin toast, sin “failed”, reintentar en el lugar
+description: Errores en UI — callout en secciones; toast corto si ya hay CTA
 alwaysApply: true
 ---
 
@@ -7,10 +7,10 @@ alwaysApply: true
 
 ## Qué ve el usuario
 
-- Un fallo de **carga o de una acción** se muestra **en el mismo bloque** que falló.
-- **"Error en la app."** (`errorGenericLead`) y botón/enlace **"Intenta de nuevo"** (`errorRetryAction`). Tocar **reintenta** esa llamada (lista, sección, ficha, búsqueda…).
+- Un fallo de **carga o de una sección sin botón de acción propio** se muestra **en el mismo bloque** que falló: **"Error en la app."** (`errorGenericLead`) + **"Intenta de nuevo"** (`errorRetryAction`). Tocar reintenta esa llamada.
+- Si la pantalla **ya tiene un CTA claro** (p. ej. **Guardar** abajo), **no** poner el callout encima del botón. Por ahora: toast corto (`errorProblemToast`: «Se ha presentado un problema.»). El usuario puede volver a tocar Guardar.
 - El string completo `errorGeneric` queda para mensajes genéricos fuera de ese callout.
-- Toasts/snackbars **no** son para errores técnicos ni de red. Sí para confirmaciones (foto añadida, “pulsa atrás otra vez para salir”) y validaciones de formulario (nombre vacío, etc.).
+- Toasts/snackbars **no** son para errores técnicos de **listas/secciones** (ahí va el callout). Sí para confirmaciones, validaciones de formulario y el caso del CTA de Guardar arriba.
 
 ## Prohibido
 
@@ -20,4 +20,4 @@ alwaysApply: true
 
 ## Detalle técnico
 
-Va a `developer.log` / `AppLog`, nunca a la UI.
+Va a `developer.log` / `AppLog` / `client_debug_logs` (pruebas), nunca a la UI.

@@ -29,7 +29,7 @@ Catálogos fríos (categorías, depto/ciudad) **solo** desde memoria/disco tras 
 
 ## Errores (no negociable)
 
-UI: en el bloque que falló, **"Error en la app."** + botón **"Intenta de nuevo"** (tocar = reintentar esa sección). Nunca PostgREST, SQL, stacks, keys, `failed`. Sin toast de error técnico. Detalle en `developer.log`.
+UI: en secciones sin CTA propio, **"Error en la app."** + **"Intenta de nuevo"**. Si ya hay CTA (p. ej. Guardar): toast «Se ha presentado un problema.» — sin callout encima del botón. Nunca PostgREST, SQL, stacks, keys, `failed`. Detalle en `AppLog` / logs de prueba.
 
 ## Formularios / UX
 

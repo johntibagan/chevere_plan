@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:path/path.dart' as p;
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -306,10 +307,7 @@ class SavesRepository {
     }
 
     if (isPublic) {
-      await _client.from('site_contributors').upsert({
-        'site_id': siteId,
-        'user_id': uid,
-      });
+      await _ensureSiteContributor(siteId: siteId, uid: uid);
     }
 
     final draftRemindAt = status != SiteStatus.complete
@@ -426,8 +424,51 @@ class SavesRepository {
     required File file,
     int? knownCount,
   }) async {
+    late final Uint8List bytes;
+    try {
+      if (!await file.exists()) {
+        throw const AppUserError(
+          'No se encontró el archivo de la foto. Volvé a elegirla.',
+        );
+      }
+      bytes = await file.readAsBytes();
+      if (bytes.isEmpty) {
+        throw const AppUserError(
+          'La foto está vacía. Volvé a elegirla.',
+        );
+      }
+    } on AppUserError {
+      rethrow;
+    } catch (_) {
+      throw const AppUserError(
+        'No se pudo leer la foto. Volvé a elegirla.',
+      );
+    }
+
+    final rawExt = p.extension(file.path).replaceFirst('.', '').toLowerCase();
+    await uploadPhotoBytes(
+      siteId: siteId,
+      bytes: bytes,
+      fileExtension: rawExt,
+      knownCount: knownCount,
+    );
+  }
+
+  /// Sube bytes ya en memoria (evita depender de archivos temp del picker).
+  Future<void> uploadPhotoBytes({
+    required String siteId,
+    required Uint8List bytes,
+    String fileExtension = 'jpg',
+    int? knownCount,
+  }) async {
     final uid = _uid;
     if (uid == null) throw const AppUserError('Sin sesión');
+
+    if (bytes.isEmpty) {
+      throw const AppUserError(
+        'La foto está vacía. Volvé a elegirla.',
+      );
+    }
 
     final current = knownCount ?? await countPhotos(siteId);
     if (current >= SavePolicies.maxPhotosPerSite) {
@@ -436,13 +477,13 @@ class SavesRepository {
       );
     }
 
-    final rawExt = p.extension(file.path).replaceFirst('.', '').toLowerCase();
+    final rawExt = fileExtension.replaceFirst('.', '').toLowerCase();
     final ext = (rawExt == 'jpg' ||
             rawExt == 'jpeg' ||
             rawExt == 'png' ||
             rawExt == 'webp' ||
             rawExt == 'heic')
-        ? rawExt
+        ? (rawExt == 'jpeg' ? 'jpg' : rawExt)
         : 'jpg';
     final objectPath = '$uid/$siteId/${_uuid.v4()}.$ext';
     final contentType = switch (ext) {
@@ -453,9 +494,9 @@ class SavesRepository {
     };
 
     try {
-      await _client.storage.from('site-photos').upload(
+      await _client.storage.from('site-photos').uploadBinary(
             objectPath,
-            file,
+            bytes,
             fileOptions: FileOptions(
               upsert: false,
               contentType: contentType,
@@ -466,6 +507,16 @@ class SavesRepository {
         e.message.isNotEmpty
             ? e.message
             : 'No se pudo subir la foto. Intenta de nuevo.',
+      );
+    } catch (e, st) {
+      AppLog.error(
+        'uploadPhotoBytes storage',
+        name: 'saves',
+        error: e,
+        stackTrace: st,
+      );
+      throw const AppUserError(
+        'No se pudo subir la foto. Intenta de nuevo.',
       );
     }
 
@@ -701,10 +752,7 @@ class SavesRepository {
     }
 
     if (isPublic) {
-      await _client.from('site_contributors').upsert({
-        'site_id': siteId,
-        'user_id': uid,
-      });
+      await _ensureSiteContributor(siteId: siteId, uid: uid);
     }
   }
 
@@ -774,10 +822,7 @@ class SavesRepository {
     }
 
     if (isPublic) {
-      await _client.from('site_contributors').upsert({
-        'site_id': siteId,
-        'user_id': uid,
-      });
+      await _ensureSiteContributor(siteId: siteId, uid: uid);
     }
 
     final draftRemindAt = status != SiteStatus.complete
@@ -797,7 +842,35 @@ class SavesRepository {
         .eq('id', saveId)
         .eq('user_id', uid);
 
-    return _readUserSave(saveId);
+    try {
+      return await _readUserSave(saveId);
+    } catch (e, st) {
+      AppLog.error(
+        'updateSave read after update',
+        name: 'saves',
+        error: e,
+        stackTrace: st,
+      );
+      return UserSave(
+        id: saveId,
+        userId: uid,
+        siteId: siteId,
+        status: status,
+        isPublic: isPublic,
+        siteName: name,
+        sourceUrl: input.sourceUrl,
+        sourceNetwork: input.sourceNetwork,
+        notes: input.notes,
+        city: input.city,
+        cityId: input.cityId,
+        department: input.department,
+        departmentId: input.departmentId,
+        addressLine: input.addressLine,
+        isPhysicalPlace: input.isPhysicalPlace,
+        googlePlaceId: input.googlePlaceId,
+        useExactPin: input.useExactPin,
+      );
+    }
   }
 
   /// Guardado propio ligado a un sitio, si existe.
@@ -987,6 +1060,31 @@ class SavesRepository {
         );
   }
 
+  /// Asegura fila en site_contributors sin tumbar el guardado.
+  /// Upsert “normal” hace UPDATE si ya existe; sin política UPDATE fallaba RLS.
+  Future<void> _ensureSiteContributor({
+    required String siteId,
+    required String uid,
+  }) async {
+    try {
+      await _client.from('site_contributors').upsert(
+        {
+          'site_id': siteId,
+          'user_id': uid,
+        },
+        onConflict: 'site_id,user_id',
+        ignoreDuplicates: true,
+      );
+    } catch (e, st) {
+      AppLog.error(
+        'ensureSiteContributor',
+        name: 'saves',
+        error: e,
+        stackTrace: st,
+      );
+    }
+  }
+
   Future<void> _syncSiteLocation({
     required String siteId,
     required SaveDraftInput input,
@@ -1000,10 +1098,20 @@ class SavesRepository {
           'p_lat': input.latitude,
         },
       );
-      await _client.from('plan_stops').update({
-        'lat': input.latitude,
-        'lng': input.longitude,
-      }).eq('site_id', siteId);
+      // Puede haber paradas en planes de otros; RLS no debe tumbar el guardado.
+      try {
+        await _client.from('plan_stops').update({
+          'lat': input.latitude,
+          'lng': input.longitude,
+        }).eq('site_id', siteId);
+      } catch (e, st) {
+        AppLog.error(
+          'syncSiteLocation plan_stops',
+          name: 'saves',
+          error: e,
+          stackTrace: st,
+        );
+      }
       return;
     }
     if (input.clearLocation) {

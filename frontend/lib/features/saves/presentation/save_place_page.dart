@@ -6,14 +6,18 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
+import 'package:path/path.dart' as p;
+import 'package:uuid/uuid.dart';
 
 import '../../../core/cache/cache_ttl.dart';
 import '../../../core/config/env.dart';
 import '../../../core/di/providers.dart';
+import '../../../core/logging/client_debug_log.dart';
 import '../../../core/testing/widget_keys.dart';
 import '../../../core/l10n/context_l10n.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_form_card.dart';
+import '../../../core/widgets/app_network_image.dart';
 import '../../../core/widgets/app_retry_callout.dart';
 import '../../../core/widgets/app_section_label.dart';
 import '../../../core/widgets/app_select_chip.dart';
@@ -24,6 +28,7 @@ import '../../admin/data/admin_models.dart';
 import '../../geo/domain/geo_models.dart';
 import '../../geo/domain/geo_fuzzy.dart';
 import '../../geo/presentation/geo_typeahead_field.dart';
+import '../../moderation/data/moderation_models.dart';
 import '../data/geo_place.dart';
 import '../data/google_maps_link_importer.dart';
 import '../data/google_places_client.dart';
@@ -44,6 +49,15 @@ import 'site_status_l10n.dart';
 import 'social_link_preview_card.dart';
 
 enum _SaveExtra { details, links, categories, photo }
+
+/// Foto pendiente en memoria (no archivo temp: Android puede borrarlo y la
+/// miniatura seguiría viéndose por ImageCache).
+class _PendingPhoto {
+  const _PendingPhoto({required this.bytes, required this.ext});
+
+  final Uint8List bytes;
+  final String ext;
+}
 
 class SavePlacePage extends ConsumerStatefulWidget {
   const SavePlacePage({
@@ -96,12 +110,16 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
   bool _isPhysical = true;
   bool _loadingCats = true;
   bool _saving = false;
-  bool _submitFailed = false;
   bool _importingMaps = false;
   bool _addingSocial = false;
   /// true = pegar enlace Google Maps; false = mapa interactivo.
   final Set<_SaveExtra> _openExtras = {};
-  File? _pendingPhoto;
+  final List<_PendingPhoto> _pendingPhotos = [];
+  final List<SitePhoto> _existingPhotos = [];
+  final Map<String, String> _existingPhotoUrls = {};
+  bool _loadingExistingPhotos = false;
+  bool _existingPhotosLoaded = false;
+  final _photoUuid = const Uuid();
   String? _pendingMapImageUrl;
   String? _editSaveId;
   String? _editSiteId;
@@ -932,9 +950,16 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
       ref.invalidate(siteFichaProvider(saved.siteId));
 
       setState(() => _saving = false);
-      final seed = <File>[
-        ?_pendingPhoto,
-      ];
+      final seed = <File>[];
+      for (final ph in _pendingPhotos) {
+        try {
+          final tmp = File(
+            '${Directory.systemTemp.path}/chevere_seed_${_photoUuid.v4()}.${ph.ext}',
+          );
+          await tmp.writeAsBytes(ph.bytes, flush: true);
+          seed.add(tmp);
+        } catch (_) {}
+      }
       await Navigator.of(context).push<bool>(
         MaterialPageRoute(
           builder: (_) => SiteReviewEditorPage(
@@ -957,6 +982,55 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
     }
   }
 
+  Future<_PendingPhoto> _persistPickedImage(XFile picked) async {
+    final bytes = await picked.readAsBytes();
+    if (bytes.isEmpty) {
+      throw Exception('empty image');
+    }
+    final rawExt = p.extension(picked.path).replaceFirst('.', '').toLowerCase();
+    final ext = (rawExt == 'png' ||
+            rawExt == 'webp' ||
+            rawExt == 'heic' ||
+            rawExt == 'jpg' ||
+            rawExt == 'jpeg')
+        ? (rawExt == 'jpeg' ? 'jpg' : rawExt)
+        : 'jpg';
+    return _PendingPhoto(bytes: bytes, ext: ext);
+  }
+
+  Future<void> _ensureExistingPhotosLoaded() async {
+    final siteId = _editSiteId;
+    if (siteId == null || _existingPhotosLoaded || _loadingExistingPhotos) {
+      return;
+    }
+    setState(() => _loadingExistingPhotos = true);
+    try {
+      final moderation = ref.read(moderationRepositoryProvider);
+      final photos = await moderation.listSitePhotos(siteId);
+      final urls = await moderation.signedPhotoUrlsParallel(
+        photos.map((ph) => (id: ph.id, storagePath: ph.storagePath)),
+      );
+      if (!mounted) return;
+      setState(() {
+        _existingPhotos
+          ..clear()
+          ..addAll(photos);
+        _existingPhotoUrls
+          ..clear()
+          ..addAll(urls);
+        _existingPhotosLoaded = true;
+        _loadingExistingPhotos = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _loadingExistingPhotos = false;
+        _existingPhotosLoaded = true;
+      });
+      AppToast.error(context, e, logContext: 'save_existing_photos');
+    }
+  }
+
   Future<void> _pickPhoto() async {
     final accepted = await showDialog<bool>(
       context: context,
@@ -975,16 +1049,42 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
         ],
       ),
     );
-    if (accepted != true) return;
+    if (accepted != true || !mounted) return;
+
+    final slotsLeft =
+        SavePolicies.maxPhotosPerSite -
+        _existingPhotos.length -
+        _pendingPhotos.length;
+    if (slotsLeft <= 0) {
+      AppToast.show(
+        context,
+        context.l10n.savePhotoMaxReached(SavePolicies.maxPhotosPerSite),
+        error: true,
+      );
+      return;
+    }
 
     final picker = ImagePicker();
     final file = await picker.pickImage(
       source: ImageSource.gallery,
       imageQuality: 92,
-      maxWidth: 2560,
+      maxWidth: 1920,
     );
-    if (file == null) return;
-    setState(() => _pendingPhoto = File(file.path));
+    if (file == null || !mounted) return;
+    try {
+      final persisted = await _persistPickedImage(file);
+      if (!mounted) return;
+      setState(() => _pendingPhotos.add(persisted));
+    } catch (e, st) {
+      ClientDebugLog.reportAsync(
+        context: 'save_pick_photo',
+        error: e,
+        stackTrace: st,
+        client: ref.read(supabaseClientProvider),
+      );
+      if (!mounted) return;
+      AppToast.show(context, context.l10n.savePhotoUploadPartialFail, error: true);
+    }
   }
 
   Future<void> _submit() async {
@@ -1121,7 +1221,6 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
 
     setState(() {
       _saving = true;
-      _submitFailed = false;
     });
     try {
       String resultSiteId;
@@ -1206,32 +1305,49 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
         status = saved.status;
       }
 
-      if (_pendingPhoto == null &&
+      if (_pendingPhotos.isEmpty &&
           _pendingMapImageUrl != null &&
           _pendingMapImageUrl!.isNotEmpty) {
         try {
           final res = await http.get(Uri.parse(_pendingMapImageUrl!));
-          if (res.statusCode >= 200 && res.statusCode < 300) {
-            final tmp = File(
-              '${Directory.systemTemp.path}/chevere_map_${DateTime.now().millisecondsSinceEpoch}.jpg',
+          if (res.statusCode >= 200 &&
+              res.statusCode < 300 &&
+              res.bodyBytes.isNotEmpty) {
+            _pendingPhotos.add(
+              _PendingPhoto(bytes: res.bodyBytes, ext: 'jpg'),
             );
-            await tmp.writeAsBytes(res.bodyBytes);
-            _pendingPhoto = tmp;
           }
         } catch (_) {}
       }
 
-      if (_pendingPhoto != null && !linkedToExisting) {
-        try {
-          await widget.savesRepository.uploadPhoto(
-            siteId: resultSiteId,
-            file: _pendingPhoto!,
-          );
-        } catch (e) {
-          if (!mounted) return;
+      if (_pendingPhotos.isNotEmpty && !linkedToExisting) {
+        var photoFail = false;
+        var knownCount = _existingPhotos.isNotEmpty
+            ? _existingPhotos.length
+            : await widget.savesRepository.countPhotos(resultSiteId);
+        for (final photo in List<_PendingPhoto>.from(_pendingPhotos)) {
+          try {
+            await widget.savesRepository.uploadPhotoBytes(
+              siteId: resultSiteId,
+              bytes: photo.bytes,
+              fileExtension: photo.ext,
+              knownCount: knownCount,
+            );
+            knownCount += 1;
+          } catch (e, st) {
+            photoFail = true;
+            ClientDebugLog.reportAsync(
+              context: 'save_photo_upload',
+              error: e,
+              stackTrace: st,
+              client: ref.read(supabaseClientProvider),
+            );
+          }
+        }
+        if (photoFail && mounted) {
           AppToast.show(
             context,
-            'Lugar guardado, pero la foto no se subió. Puedes añadirla después.',
+            context.l10n.savePhotoUploadPartialFail,
             error: true,
           );
         }
@@ -1251,18 +1367,32 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
             siteId: resultSiteId,
             links: linksToSave,
           );
-        } catch (_) {
-          // Tabla puede no existir aún si no aplicaron migración 12.
+        } catch (e, st) {
+          ClientDebugLog.reportAsync(
+            context: 'save_social_links',
+            error: e,
+            stackTrace: st,
+            client: ref.read(supabaseClientProvider),
+          );
         }
       }
 
       if (saved != null && !linkedToExisting) {
-        if (saved.status == SiteStatus.complete) {
-          await ref.read(draftReminderServiceProvider).cancelForSave(saved.id);
-        } else {
-          await ref.read(draftReminderServiceProvider).scheduleForSave(
-            saveId: saved.id,
-            title: saved.siteName,
+        try {
+          if (saved.status == SiteStatus.complete) {
+            await ref.read(draftReminderServiceProvider).cancelForSave(saved.id);
+          } else {
+            await ref.read(draftReminderServiceProvider).scheduleForSave(
+              saveId: saved.id,
+              title: saved.siteName,
+            );
+          }
+        } catch (e, st) {
+          ClientDebugLog.reportAsync(
+            context: 'save_draft_reminder',
+            error: e,
+            stackTrace: st,
+            client: ref.read(supabaseClientProvider),
           );
         }
       }
@@ -1292,9 +1422,16 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
           (input.isPhysicalPlace && input.isPublic && _hasFormLocation);
       if (linkedToExisting) {
         setState(() => _saving = false);
-        final seed = <File>[
-          ?_pendingPhoto,
-        ];
+        final seed = <File>[];
+        for (final ph in _pendingPhotos) {
+          try {
+            final tmp = File(
+              '${Directory.systemTemp.path}/chevere_seed_${_photoUuid.v4()}.${ph.ext}',
+            );
+            await tmp.writeAsBytes(ph.bytes, flush: true);
+            seed.add(tmp);
+          } catch (_) {}
+        }
         await Navigator.of(context).push<bool>(
           MaterialPageRoute(
             builder: (_) => SiteReviewEditorPage(
@@ -1343,13 +1480,16 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
       }
       if (!mounted) return;
       Navigator.pop(context, saved ?? resultSiteId);
-    } catch (e) {
+    } catch (e, st) {
       if (!mounted) return;
-      setState(() {
-        _saving = false;
-        _submitFailed = true;
-      });
-      AppToast.error(context, e, logContext: 'save_place_submit');
+      ClientDebugLog.reportAsync(
+        context: 'save_place_submit',
+        error: e,
+        stackTrace: st,
+        client: ref.read(supabaseClientProvider),
+      );
+      setState(() => _saving = false);
+      AppToast.show(context, context.l10n.errorProblemToast, error: true);
     }
   }
 
@@ -1499,6 +1639,9 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
                   onTap: () {
                     if (_saving) return;
                     setState(() => _openExtras.add(extra));
+                    if (extra == _SaveExtra.photo) {
+                      unawaited(_ensureExistingPhotosLoaded());
+                    }
                   },
                 ),
             ],
@@ -1920,17 +2063,110 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
     );
   }
 
+  Widget _photoThumb({
+    required Widget child,
+    required VoidCallback onRemove,
+  }) {
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: SizedBox(width: 72, height: 72, child: child),
+        ),
+        Positioned(
+          top: -6,
+          right: -6,
+          child: Material(
+            color: AppColors.surfaceElevated,
+            shape: const CircleBorder(),
+            child: InkWell(
+              customBorder: const CircleBorder(),
+              onTap: _saving ? null : onRemove,
+              child: Padding(
+                padding: const EdgeInsets.all(4),
+                child: Icon(Icons.close, size: 16, color: AppColors.foreground),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _photoSection(AppLocalizations l10n) {
+    if (_editSiteId != null && !_existingPhotosLoaded && !_loadingExistingPhotos) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        unawaited(_ensureExistingPhotosLoaded());
+      });
+    }
+    final slotsLeft = SavePolicies.maxPhotosPerSite -
+        _existingPhotos.length -
+        _pendingPhotos.length;
     return _sectionCard(
       title: l10n.saveExtraPhoto,
       info: l10n.saveInfoPhoto,
       children: [
-        OutlinedButton.icon(
-          onPressed: _saving ? null : _pickPhoto,
-          icon: Icon(Icons.photo_outlined),
-          label: Text(
-            _pendingPhoto == null ? l10n.saveAddPhoto : l10n.savePhotoReady,
+        if (_loadingExistingPhotos)
+          const Padding(
+            padding: EdgeInsets.only(bottom: 8),
+            child: SizedBox(
+              width: 22,
+              height: 22,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
           ),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            for (final ph in _existingPhotos)
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: SizedBox(
+                  width: 72,
+                  height: 72,
+                  child: _existingPhotoUrls[ph.id] != null
+                      ? AppNetworkImage(
+                          url: _existingPhotoUrls[ph.id]!,
+                          width: 72,
+                          height: 72,
+                          cacheKey: ph.id,
+                        )
+                      : ColoredBox(
+                          color: AppColors.surfaceElevated,
+                          child: Icon(
+                            Icons.image_outlined,
+                            color: AppColors.muted,
+                          ),
+                        ),
+                ),
+              ),
+            for (var i = 0; i < _pendingPhotos.length; i++)
+              _photoThumb(
+                onRemove: () {
+                  final idx = i;
+                  setState(() => _pendingPhotos.removeAt(idx));
+                },
+                child: Image.memory(
+                  _pendingPhotos[i].bytes,
+                  fit: BoxFit.cover,
+                  width: 72,
+                  height: 72,
+                  errorBuilder: (_, _, _) => ColoredBox(
+                    color: AppColors.surfaceElevated,
+                    child: Icon(Icons.broken_image_outlined, color: AppColors.muted),
+                  ),
+                ),
+              ),
+            if (slotsLeft > 0)
+              OutlinedButton.icon(
+                onPressed: _saving ? null : _pickPhoto,
+                icon: Icon(Icons.add_photo_alternate_outlined),
+                label: Text(l10n.saveAddPhoto),
+              ),
+          ],
         ),
       ],
     );
@@ -1981,11 +2217,6 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage> {
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      if (_submitFailed)
-                        AppRetryCallout(
-                          onRetry: _submit,
-                          padding: const EdgeInsets.only(bottom: 8),
-                        ),
                       FilledButton(
                         key: WidgetKeys.saveSubmit,
                         onPressed: (_saving || !nameOk) ? null : _submit,

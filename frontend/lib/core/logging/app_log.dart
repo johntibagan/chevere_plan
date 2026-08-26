@@ -39,25 +39,18 @@ abstract final class AppLog {
     );
   }
 
-  /// Errores: en release solo tipo; en debug mensaje sanitizado.
+  /// Errores: mensaje sanitizado (también en release, para beta/logcat).
   static void error(
     String message, {
     String name = 'app',
     Object? error,
     StackTrace? stackTrace,
   }) {
-    if (kReleaseMode) {
-      developer.log(
-        '${redact(message)} type=${error?.runtimeType ?? 'unknown'}',
-        name: name,
-      );
-      return;
-    }
     developer.log(
       redact(message),
       name: name,
       error: error == null ? null : redact('$error'),
-      stackTrace: stackTrace,
+      stackTrace: kReleaseMode ? null : stackTrace,
     );
   }
 }

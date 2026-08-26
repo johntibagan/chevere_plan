@@ -1278,6 +1278,13 @@ create policy site_contributors_insert on public.site_contributors
   for insert
   to authenticated with check (((user_id = auth.uid()) OR is_staff()));
 
+drop policy if exists site_contributors_update on public.site_contributors;
+create policy site_contributors_update on public.site_contributors
+  for update
+  to authenticated
+  using (((user_id = auth.uid()) OR is_staff()))
+  with check (((user_id = auth.uid()) OR is_staff()));
+
 drop policy if exists site_contributors_select on public.site_contributors;
 create policy site_contributors_select on public.site_contributors
   for select

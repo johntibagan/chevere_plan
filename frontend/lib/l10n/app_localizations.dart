@@ -1618,6 +1618,18 @@ abstract class AppLocalizations {
   /// **'Foto lista para subir'**
   String get savePhotoReady;
 
+  /// No description provided for @savePhotoUploadPartialFail.
+  ///
+  /// In es, this message translates to:
+  /// **'El sitio se guardó, pero una o más fotos no se subieron. Podés añadirlas después desde la ficha.'**
+  String get savePhotoUploadPartialFail;
+
+  /// No description provided for @savePhotoMaxReached.
+  ///
+  /// In es, this message translates to:
+  /// **'Máximo {max} fotos por sitio.'**
+  String savePhotoMaxReached(int max);
+
   /// No description provided for @saveDraftFooter.
   ///
   /// In es, this message translates to:
@@ -2439,6 +2451,12 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Intenta de nuevo'**
   String get errorRetryAction;
+
+  /// No description provided for @errorProblemToast.
+  ///
+  /// In es, this message translates to:
+  /// **'Se ha presentado un problema.'**
+  String get errorProblemToast;
 
   /// No description provided for @errorLoadRetry.
   ///
