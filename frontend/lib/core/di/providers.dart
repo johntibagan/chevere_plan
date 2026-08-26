@@ -13,6 +13,7 @@ import '../../features/admin/data/admin_repository.dart';
 import '../../features/geo/domain/geo_models.dart';
 import '../../features/geo/data/geo_repository.dart';
 import '../../features/auth/data/auth_repository.dart';
+import '../../features/auth/data/profile.dart';
 import '../../features/auth/data/profile_repository.dart';
 import '../../features/moderation/data/moderation_repository.dart';
 import '../../features/plans/data/plan_models.dart';
@@ -39,6 +40,7 @@ import '../cache/cache_ttl.dart';
 import '../cache/entity_cache_store.dart';
 import '../cache/paged_items.dart';
 import '../cache/swr_loader.dart';
+import '../distance/distance_unit.dart';
 import '../prefs/feed_layout.dart';
 
 /// Cliente Supabase compartido (inyectable en tests).
@@ -211,6 +213,17 @@ List<TransportType> _decodeTransport(Object? payload) {
 }
 
 Object? _encodeTransport(List<TransportType> value) =>
+    value.map((e) => e.toCacheJson()).toList();
+
+List<DistanceUnit> _decodeDistanceUnits(Object? payload) {
+  final list = payload as List? ?? const [];
+  return list
+      .whereType<Map>()
+      .map((e) => DistanceUnit.fromJson(Map<String, dynamic>.from(e)))
+      .toList();
+}
+
+Object? _encodeDistanceUnits(List<DistanceUnit> value) =>
     value.map((e) => e.toCacheJson()).toList();
 
 SiteFicha _decodeFicha(Object? payload) {
@@ -564,6 +577,99 @@ final transportTypesProvider =
     AsyncNotifierProvider<TransportTypesNotifier, List<TransportType>>(
   TransportTypesNotifier.new,
 );
+
+class DistanceUnitsNotifier extends AsyncNotifier<List<DistanceUnit>> {
+  var _refreshing = false;
+
+  @override
+  Future<List<DistanceUnit>> build() => _load(forceNetwork: false);
+
+  Future<void> refresh({bool force = true}) async {
+    state = await AsyncValue.guard(() => _load(forceNetwork: force));
+  }
+
+  Future<List<DistanceUnit>> _load({required bool forceNetwork}) {
+    final swr = ref.read(swrLoaderProvider);
+    return swr.load<List<DistanceUnit>>(
+      key: CacheKeys.distanceUnits(),
+      ttl: CacheTtl.distanceUnits,
+      decode: _decodeDistanceUnits,
+      encode: _encodeDistanceUnits,
+      forceNetwork: forceNetwork,
+      network: () => ref.read(adminRepositoryProvider).fetchDistanceUnits(),
+      onBackgroundRefresh: (pending) {
+        if (_refreshing) return;
+        _refreshing = true;
+        unawaited(
+          pending.then((fresh) {
+            state = AsyncData(fresh);
+          }).catchError((_) {}).whenComplete(() {
+            _refreshing = false;
+          }),
+        );
+      },
+    );
+  }
+}
+
+final distanceUnitsProvider =
+    AsyncNotifierProvider<DistanceUnitsNotifier, List<DistanceUnit>>(
+  DistanceUnitsNotifier.new,
+);
+
+/// Slug de unidad preferida (local + perfil). Default `km`.
+class PreferredDistanceUnitSlugNotifier extends Notifier<String> {
+  static const _prefsKey = 'preferred_distance_unit';
+
+  @override
+  String build() {
+    Future.microtask(_hydrateLocal);
+    return 'km';
+  }
+
+  Future<void> _hydrateLocal() async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(_prefsKey)?.trim();
+    if (raw != null && raw.isNotEmpty && raw != state) {
+      state = raw;
+    }
+  }
+
+  /// Alinea con el perfil tras login / carga de Inicio.
+  Future<void> syncFromProfile(Profile? profile) async {
+    final slug = profile?.preferredDistanceUnit.trim();
+    if (slug == null || slug.isEmpty) return;
+    if (slug == state) return;
+    state = slug;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_prefsKey, slug);
+  }
+
+  Future<void> setSlug(String slug) async {
+    final next = slug.trim();
+    if (next.isEmpty) return;
+    state = next;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_prefsKey, next);
+    try {
+      await ref.read(profileRepositoryProvider).updatePreferredDistanceUnit(next);
+    } catch (_) {
+      // Preferencia local ya aplicada; perfil se reintenta en próxima sesión.
+    }
+  }
+}
+
+final preferredDistanceUnitSlugProvider =
+    NotifierProvider<PreferredDistanceUnitSlugNotifier, String>(
+  PreferredDistanceUnitSlugNotifier.new,
+);
+
+/// Unidad resuelta (catálogo admin + slug del usuario).
+final preferredDistanceUnitProvider = Provider<DistanceUnit>((ref) {
+  final slug = ref.watch(preferredDistanceUnitSlugProvider);
+  final units = ref.watch(distanceUnitsProvider).valueOrNull ?? const [];
+  return DistanceUnit.resolve(units, preferredSlug: slug);
+});
 
 class SiteFichaNotifier extends FamilyAsyncNotifier<SiteFicha, String> {
   var _refreshing = false;

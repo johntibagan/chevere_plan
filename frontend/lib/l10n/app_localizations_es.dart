@@ -40,6 +40,20 @@ class AppLocalizationsEs extends AppLocalizations {
   String get moreMenuProximitySubtitle => 'Radio y sitios públicos';
 
   @override
+  String get moreMenuDistanceUnit => 'Unidad de distancia';
+
+  @override
+  String get moreMenuDistanceUnitSubtitle =>
+      'Cómo se muestran metros, km, millas…';
+
+  @override
+  String get distanceUnitSheetTitle => 'Unidad de distancia';
+
+  @override
+  String get distanceUnitSheetHint =>
+      'Se aplica en recuerdos cercanos, Explorar y etiquetas de distancia.';
+
+  @override
   String get moreMenuReports => 'Reportes';
 
   @override
@@ -199,6 +213,12 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get homeActionNearMe => 'Cerca de mí';
+
+  @override
+  String get homeActionMySaves => 'Mis guardados';
+
+  @override
+  String get homeActionMyFavorites => 'Mis favoritos';
 
   @override
   String get homeActionMostSaved => 'Más guardados';
@@ -452,8 +472,8 @@ class AppLocalizationsEs extends AppLocalizations {
       'También recordarme lugares públicos de otros usuarios';
 
   @override
-  String proximityRadiusLabel(int meters) {
-    return 'Radio: $meters m';
+  String proximityRadiusLabel(String value, String symbol) {
+    return 'Radio: $value $symbol';
   }
 
   @override
@@ -485,6 +505,37 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get adminTabVehicles => 'Vehículos';
+
+  @override
+  String get adminTabDistanceUnits => 'Distancias';
+
+  @override
+  String get adminStatDistanceUnits => 'Unidades';
+
+  @override
+  String get adminEditDistanceUnit => 'Editar unidad de distancia';
+
+  @override
+  String get adminNewDistanceUnit => 'Nueva unidad';
+
+  @override
+  String get adminDistanceSymbol => 'Símbolo (m, km, mi…)';
+
+  @override
+  String get adminDistanceMetersPerUnit => 'Metros por unidad';
+
+  @override
+  String get adminDistanceDefault => 'Por defecto (usuarios nuevos)';
+
+  @override
+  String get adminDistanceSlug => 'Slug (único)';
+
+  @override
+  String get adminDistanceInvalidMeters => 'Metros por unidad inválido.';
+
+  @override
+  String get adminDistanceInvalidSlug =>
+      'Slug inválido (solo letras, números y _).';
 
   @override
   String get actionLoadMore => 'Cargar más';
@@ -565,6 +616,16 @@ class AppLocalizationsEs extends AppLocalizations {
   String get searchRadiusKm => 'Radio (km)';
 
   @override
+  String searchRadiusLabel(String symbol) {
+    return 'Radio ($symbol)';
+  }
+
+  @override
+  String searchRadiusInvalid(String min, String max, String symbol) {
+    return 'Radio inválido. Usá entre $min y $max $symbol.';
+  }
+
+  @override
   String get searchHoursPlaceholder =>
       'Horario: cuando los sitios tengan horario oficial.';
 
@@ -577,12 +638,25 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
-  String get searchEmptyHint => 'Escribe y pulsa la lupa o Enter.';
+  String get searchEmptyHint =>
+      'Escribí y tocá la lupa (o Enter). El texto no es obligatorio.';
 
   @override
   String searchResultsCount(int count) {
     return '$count resultados';
   }
+
+  @override
+  String get searchMySavesOnly => 'Mis guardados';
+
+  @override
+  String get searchMyFavoritesOnly => 'Mis favoritos';
+
+  @override
+  String get searchResetFilters => 'Borrar filtros';
+
+  @override
+  String get searchCategoryMulti => 'Varias categorías';
 
   @override
   String get searchChipAll => 'Todos';
@@ -1392,6 +1466,11 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String formatDistanceKm(String km) {
     return '$km km';
+  }
+
+  @override
+  String formatDistanceValue(String value, String symbol) {
+    return '$value $symbol';
   }
 
   @override

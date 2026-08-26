@@ -46,7 +46,7 @@ class _PlanBuilderPageState extends ConsumerState<PlanBuilderPage> {
 
   final _queryCtrl = TextEditingController();
   final _locationCtrl = TextEditingController();
-  final _radiusCtrl = TextEditingController(text: '10');
+  final _radiusCtrl = TextEditingController();
   final _budgetMinCtrl = TextEditingController();
   final _budgetMaxCtrl = TextEditingController();
 
@@ -64,6 +64,11 @@ class _PlanBuilderPageState extends ConsumerState<PlanBuilderPage> {
   @override
   void initState() {
     super.initState();
+    Future.microtask(() {
+      final unit = ref.read(preferredDistanceUnitProvider);
+      final display = unit.kmToUnit(10);
+      _radiusCtrl.text = display.toStringAsFixed(unit.displayFractionDigits);
+    });
     _loadPlan();
   }
 
@@ -140,8 +145,13 @@ class _PlanBuilderPageState extends ConsumerState<PlanBuilderPage> {
             : null,
         lat: _advanced ? loc.$1 : null,
         lng: _advanced ? loc.$2 : null,
-        radiusKm:
-            _advanced && _useMyLocation ? _parseNum(_radiusCtrl.text) : null,
+        radiusKm: _advanced && _useMyLocation
+            ? () {
+                final v = _parseNum(_radiusCtrl.text);
+                if (v == null) return null;
+                return ref.read(preferredDistanceUnitProvider).unitToKm(v);
+              }()
+            : null,
         transportGroup: _advanced ? _transportGroup : null,
         budgetMin: _advanced ? _parseNum(_budgetMinCtrl.text) : null,
         budgetMax: _advanced ? _parseNum(_budgetMaxCtrl.text) : null,
@@ -460,7 +470,9 @@ class _PlanBuilderPageState extends ConsumerState<PlanBuilderPage> {
               controller: _radiusCtrl,
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
               decoration: InputDecoration(
-                labelText: l10n.searchRadiusKm,
+                labelText: l10n.searchRadiusLabel(
+                  ref.watch(preferredDistanceUnitProvider).symbol,
+                ),
                 border: OutlineInputBorder(),
               ),
             ),

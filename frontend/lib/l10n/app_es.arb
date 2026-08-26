@@ -10,6 +10,10 @@
   "moreMenuOpenTooltip": "Más opciones",
   "moreMenuManageAccount": "Ver perfil",
   "moreMenuProximitySubtitle": "Radio y sitios públicos",
+  "moreMenuDistanceUnit": "Unidad de distancia",
+  "moreMenuDistanceUnitSubtitle": "Cómo se muestran metros, km, millas…",
+  "distanceUnitSheetTitle": "Unidad de distancia",
+  "distanceUnitSheetHint": "Se aplica en recuerdos cercanos, Explorar y etiquetas de distancia.",
   "moreMenuReports": "Reportes",
   "moreMenuSignOut": "Cerrar sesión",
   "moreMenuAppVersion": "Versión {version}",
@@ -78,6 +82,8 @@
   "homeExploreLink": "Explorar",
   "homeQuickActions": "Acciones rápidas",
   "homeActionNearMe": "Cerca de mí",
+  "homeActionMySaves": "Mis guardados",
+  "homeActionMyFavorites": "Mis favoritos",
   "homeActionMostSaved": "Más guardados",
   "homeActionByCategory": "Por categoría",
   "homeNearbyEmpty": "No hay lugares públicos cerca por ahora.",
@@ -203,10 +209,11 @@
   "proximitySubtitle": "Te avisamos al acercarte a un lugar guardado.",
   "proximityIncludePublic": "Incluir sitios públicos",
   "proximityIncludePublicSubtitle": "También recordarme lugares públicos de otros usuarios",
-  "proximityRadiusLabel": "Radio: {meters} m",
+  "proximityRadiusLabel": "Radio: {value} {symbol}",
   "@proximityRadiusLabel": {
     "placeholders": {
-      "meters": {"type": "int"}
+      "value": {"type": "String"},
+      "symbol": {"type": "String"}
     }
   },
   "proximityNeedsLocation": "Activa la ubicación (siempre) para recibir recuerdos cercanos.",
@@ -223,6 +230,16 @@
   "adminTitle": "Panel administrador",
   "adminTabCategories": "Categorías",
   "adminTabVehicles": "Vehículos",
+  "adminTabDistanceUnits": "Distancias",
+  "adminStatDistanceUnits": "Unidades",
+  "adminEditDistanceUnit": "Editar unidad de distancia",
+  "adminNewDistanceUnit": "Nueva unidad",
+  "adminDistanceSymbol": "Símbolo (m, km, mi…)",
+  "adminDistanceMetersPerUnit": "Metros por unidad",
+  "adminDistanceDefault": "Por defecto (usuarios nuevos)",
+  "adminDistanceSlug": "Slug (único)",
+  "adminDistanceInvalidMeters": "Metros por unidad inválido.",
+  "adminDistanceInvalidSlug": "Slug inválido (solo letras, números y _).",
   "actionLoadMore": "Cargar más",
   "actionClear": "Limpiar",
   "actionDone": "Listo",
@@ -249,6 +266,20 @@
   "searchBudgetMax": "Presupuesto max",
   "searchUseMyLocation": "Usar mi ubicación + radio",
   "searchRadiusKm": "Radio (km)",
+  "searchRadiusLabel": "Radio ({symbol})",
+  "@searchRadiusLabel": {
+    "placeholders": {
+      "symbol": {"type": "String"}
+    }
+  },
+  "searchRadiusInvalid": "Radio inválido. Usá entre {min} y {max} {symbol}.",
+  "@searchRadiusInvalid": {
+    "placeholders": {
+      "min": { "type": "String" },
+      "max": { "type": "String" },
+      "symbol": { "type": "String" }
+    }
+  },
   "searchHoursPlaceholder": "Horario: cuando los sitios tengan horario oficial.",
   "searchIncludePublic": "Incluir sitios públicos",
   "searchLoadMoreRemaining": "Cargar más ({count} restantes)",
@@ -257,8 +288,12 @@
       "count": {"type": "int"}
     }
   },
-  "searchEmptyHint": "Escribe y pulsa la lupa o Enter.",
+  "searchEmptyHint": "Escribí y tocá la lupa (o Enter). El texto no es obligatorio.",
   "searchResultsCount": "{count} resultados",
+  "searchMySavesOnly": "Mis guardados",
+  "searchMyFavoritesOnly": "Mis favoritos",
+  "searchResetFilters": "Borrar filtros",
+  "searchCategoryMulti": "Varias categorías",
   "@searchResultsCount": {
     "placeholders": {
       "count": {"type": "int"}
@@ -563,6 +598,13 @@
   "@formatDistanceKm": {
     "placeholders": {
       "km": {"type": "String"}
+    }
+  },
+  "formatDistanceValue": "{value} {symbol}",
+  "@formatDistanceValue": {
+    "placeholders": {
+      "value": {"type": "String"},
+      "symbol": {"type": "String"}
     }
   },
   "defaultUserDisplayName": "Usuario",

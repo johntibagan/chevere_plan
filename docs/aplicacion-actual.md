@@ -40,7 +40,7 @@ sequenceDiagram
 | Sitio | Qué ves |
 |---|---|
 | **Inicio** | Saludo + título, menú **☰**, **Vista** (lista / 2 / 3 / 4), borradores si hay, **Eventos** (próximamente, se pliega), **Guardados recientes** y **Populares cerca** (misma vista; se pliegan), **acciones rápidas** (se pliegan). **Ver más** abre Explorar. Portada: foto o ilustración de categoría padre; borde verde/morado. |
-| **Explorar** | Búsqueda de sitios (cabecera Figma, chips de categoría, lista o cuadrícula 2/3/4). Misma lógica: texto obligatorio en modo simple, filtros avanzados, incluir públicos |
+| **Explorar** | Búsqueda de sitios (cabecera Figma, chips de **categoría padre multi-select**, lista o cuadrícula 2/3/4). Texto opcional; filtros avanzados (lugar, GPS+radio km, mis guardados). Transporte/presupuesto ocultos en UI. |
 | **+ (centro)** | Guardar o completar un lugar (crear y editar son la **misma pantalla**) |
 | **Planes** | Tus itinerarios (tarjeta de crear + lista; **un solo** CTA, sin FAB duplicado) |
 | **Rutas** | Historial de paradas visitadas (stats del listado + timeline Make). Admin no vive acá |
@@ -152,9 +152,11 @@ Reportar foto o reseña pública inadecuada: el primer reporte avisa a staff (li
 
 ## 5. Explorar (búsqueda)
 
-Filtros: texto, categoría, lugar (texto), radio desde GPS, grupo de transporte, rango de presupuesto, incluir o no **públicos de otros**.
+Filtros (AND): texto (opcional; solo busca con lupa/Enter; **X** limpia el campo), panel **avanzado** en tarjeta (lugar, mis guardados, GPS + radio en la **unidad de distancia** del usuario), luego categorías. Multi-categoría **opcional** (checkbox “Varias categorías”, off = una sola). Reset (`filter_alt_off`) borra filtros/resultados y descarta búsquedas en curso. Transporte/presupuesto ocultos. Radio de Explorar en SharedPreferences (canon km); reset vuelve a recuerdos cercanos (m→km). La etiqueta del radio usa la unidad preferida (default **km**).
 
-Resultados: tuyos, públicos, de catálogo, o **vinculados** (tu save apunta a un público existente). Se ordenan por relevancia/recencia. Vista: lista o cuadrícula 2/3/4 (la misma que en Inicio).
+Paginación cliente: **15** por “Cargar más” (`SearchPolicies.pageSize`). Resultados: tuyos, públicos, catálogo o vinculados. Vista lista / 2 / 3 / 4 (misma que Inicio).
+
+Atajos de Inicio → Explorar: primero **cancelan** la búsqueda en curso y **resetean** filtros, luego aplican solo el atajo (**Cerca de mí**, **Mis guardados**, **Mis favoritos**, **Por categoría**). GPS usa last-known y luego low/3s. Caché SWR solo si la clave de filtros coincide.
 
 El filtro de “horario” en la UI **no recorta** resultados reales todavía (los sitios no tienen horarios de apertura cargados).
 
@@ -200,7 +202,9 @@ Lista de paradas que marcaste hechas (sitio, plan, fecha). Sirve como “ya pas�
 
 ## 8. Cercanía (“recuerdos”)
 
-En **Más opciones (☰)** → **Recuerdos cercanos** abrís la hoja de radio (100–2000 m) y si querés que cuenten **sitios públicos** además de los tuyos. Ya no hay banner de recuerdo en el feed de Inicio.
+En **Más opciones (☰)** → **Recuerdos cercanos** abrís la hoja de radio (límites internos 100–2000 m) y si querés que cuenten **sitios públicos** además de los tuyos. El slider y las etiquetas usan la **unidad de distancia** del usuario (default **km**; también m, mi u otras del catálogo admin). Ya no hay banner de recuerdo en el feed de Inicio.
+
+En **Más opciones** → **Unidad de distancia** elegís cómo se muestran metros/km/millas en toda la app (recuerdos, Explorar, fichas). El administrador define las unidades activas y cuál es la default (panel Admin → Distancias). Interno: proximidad en metros, búsqueda en km.
 
 El teléfono registra geocercas (tope práctico ~100, priorizando los tuyos). Si entrás al radio, notificación tipo **tarjeta recuerdo** (foto de portada si hay, nombre, departamento–municipio, «Lugar cerca de ti»). Mismo formato que borradores / futuros eventos y resúmenes. Pedir ubicación “siempre” y el gasto de batería aún se pueden pulir.
 

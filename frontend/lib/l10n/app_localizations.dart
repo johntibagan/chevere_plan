@@ -154,6 +154,30 @@ abstract class AppLocalizations {
   /// **'Radio y sitios públicos'**
   String get moreMenuProximitySubtitle;
 
+  /// No description provided for @moreMenuDistanceUnit.
+  ///
+  /// In es, this message translates to:
+  /// **'Unidad de distancia'**
+  String get moreMenuDistanceUnit;
+
+  /// No description provided for @moreMenuDistanceUnitSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Cómo se muestran metros, km, millas…'**
+  String get moreMenuDistanceUnitSubtitle;
+
+  /// No description provided for @distanceUnitSheetTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Unidad de distancia'**
+  String get distanceUnitSheetTitle;
+
+  /// No description provided for @distanceUnitSheetHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Se aplica en recuerdos cercanos, Explorar y etiquetas de distancia.'**
+  String get distanceUnitSheetHint;
+
   /// No description provided for @moreMenuReports.
   ///
   /// In es, this message translates to:
@@ -459,6 +483,18 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Cerca de mí'**
   String get homeActionNearMe;
+
+  /// No description provided for @homeActionMySaves.
+  ///
+  /// In es, this message translates to:
+  /// **'Mis guardados'**
+  String get homeActionMySaves;
+
+  /// No description provided for @homeActionMyFavorites.
+  ///
+  /// In es, this message translates to:
+  /// **'Mis favoritos'**
+  String get homeActionMyFavorites;
 
   /// No description provided for @homeActionMostSaved.
   ///
@@ -907,8 +943,8 @@ abstract class AppLocalizations {
   /// No description provided for @proximityRadiusLabel.
   ///
   /// In es, this message translates to:
-  /// **'Radio: {meters} m'**
-  String proximityRadiusLabel(int meters);
+  /// **'Radio: {value} {symbol}'**
+  String proximityRadiusLabel(String value, String symbol);
 
   /// No description provided for @proximityNeedsLocation.
   ///
@@ -963,6 +999,66 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Vehículos'**
   String get adminTabVehicles;
+
+  /// No description provided for @adminTabDistanceUnits.
+  ///
+  /// In es, this message translates to:
+  /// **'Distancias'**
+  String get adminTabDistanceUnits;
+
+  /// No description provided for @adminStatDistanceUnits.
+  ///
+  /// In es, this message translates to:
+  /// **'Unidades'**
+  String get adminStatDistanceUnits;
+
+  /// No description provided for @adminEditDistanceUnit.
+  ///
+  /// In es, this message translates to:
+  /// **'Editar unidad de distancia'**
+  String get adminEditDistanceUnit;
+
+  /// No description provided for @adminNewDistanceUnit.
+  ///
+  /// In es, this message translates to:
+  /// **'Nueva unidad'**
+  String get adminNewDistanceUnit;
+
+  /// No description provided for @adminDistanceSymbol.
+  ///
+  /// In es, this message translates to:
+  /// **'Símbolo (m, km, mi…)'**
+  String get adminDistanceSymbol;
+
+  /// No description provided for @adminDistanceMetersPerUnit.
+  ///
+  /// In es, this message translates to:
+  /// **'Metros por unidad'**
+  String get adminDistanceMetersPerUnit;
+
+  /// No description provided for @adminDistanceDefault.
+  ///
+  /// In es, this message translates to:
+  /// **'Por defecto (usuarios nuevos)'**
+  String get adminDistanceDefault;
+
+  /// No description provided for @adminDistanceSlug.
+  ///
+  /// In es, this message translates to:
+  /// **'Slug (único)'**
+  String get adminDistanceSlug;
+
+  /// No description provided for @adminDistanceInvalidMeters.
+  ///
+  /// In es, this message translates to:
+  /// **'Metros por unidad inválido.'**
+  String get adminDistanceInvalidMeters;
+
+  /// No description provided for @adminDistanceInvalidSlug.
+  ///
+  /// In es, this message translates to:
+  /// **'Slug inválido (solo letras, números y _).'**
+  String get adminDistanceInvalidSlug;
 
   /// No description provided for @actionLoadMore.
   ///
@@ -1120,6 +1216,18 @@ abstract class AppLocalizations {
   /// **'Radio (km)'**
   String get searchRadiusKm;
 
+  /// No description provided for @searchRadiusLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Radio ({symbol})'**
+  String searchRadiusLabel(String symbol);
+
+  /// No description provided for @searchRadiusInvalid.
+  ///
+  /// In es, this message translates to:
+  /// **'Radio inválido. Usá entre {min} y {max} {symbol}.'**
+  String searchRadiusInvalid(String min, String max, String symbol);
+
   /// No description provided for @searchHoursPlaceholder.
   ///
   /// In es, this message translates to:
@@ -1141,7 +1249,7 @@ abstract class AppLocalizations {
   /// No description provided for @searchEmptyHint.
   ///
   /// In es, this message translates to:
-  /// **'Escribe y pulsa la lupa o Enter.'**
+  /// **'Escribí y tocá la lupa (o Enter). El texto no es obligatorio.'**
   String get searchEmptyHint;
 
   /// No description provided for @searchResultsCount.
@@ -1149,6 +1257,30 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'{count} resultados'**
   String searchResultsCount(int count);
+
+  /// No description provided for @searchMySavesOnly.
+  ///
+  /// In es, this message translates to:
+  /// **'Mis guardados'**
+  String get searchMySavesOnly;
+
+  /// No description provided for @searchMyFavoritesOnly.
+  ///
+  /// In es, this message translates to:
+  /// **'Mis favoritos'**
+  String get searchMyFavoritesOnly;
+
+  /// No description provided for @searchResetFilters.
+  ///
+  /// In es, this message translates to:
+  /// **'Borrar filtros'**
+  String get searchResetFilters;
+
+  /// No description provided for @searchCategoryMulti.
+  ///
+  /// In es, this message translates to:
+  /// **'Varias categorías'**
+  String get searchCategoryMulti;
 
   /// No description provided for @searchChipAll.
   ///
@@ -2625,6 +2757,12 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'{km} km'**
   String formatDistanceKm(String km);
+
+  /// No description provided for @formatDistanceValue.
+  ///
+  /// In es, this message translates to:
+  /// **'{value} {symbol}'**
+  String formatDistanceValue(String value, String symbol);
 
   /// No description provided for @defaultUserDisplayName.
   ///

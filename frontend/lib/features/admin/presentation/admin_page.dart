@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/cache/cache_ttl.dart';
 import '../../../core/di/providers.dart';
+import '../../../core/distance/distance_unit.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_form_card.dart';
 import '../../../core/widgets/app_retry_callout.dart';
@@ -16,7 +17,7 @@ import '../../moderation/presentation/admin_reports_page.dart';
 import '../data/admin_models.dart';
 import '../data/admin_repository.dart';
 
-/// Panel admin mínimo Ciclo 1: categorías + vehículos (especificación §12 / Figma admin).
+/// Panel admin mínimo Ciclo 1: categorías + vehículos + unidades de distancia.
 class AdminPage extends ConsumerStatefulWidget {
   const AdminPage({super.key, required this.repository});
 
@@ -31,14 +32,14 @@ class _AdminPageState extends ConsumerState<AdminPage>
   late final TabController _tabs;
   List<Category> _categories = [];
   List<TransportType> _transports = [];
-  int _openReports = 0;
+  List<DistanceUnit> _distanceUnits = [];
   bool _loading = true;
   String? _error;
 
   @override
   void initState() {
     super.initState();
-    _tabs = TabController(length: 2, vsync: this);
+    _tabs = TabController(length: 3, vsync: this);
     _load();
   }
 
@@ -56,13 +57,12 @@ class _AdminPageState extends ConsumerState<AdminPage>
     try {
       final cats = await widget.repository.fetchCategories();
       final txs = await widget.repository.fetchTransportTypes();
-      final reports =
-          await ref.read(moderationRepositoryProvider).listOpenReports();
+      final dus = await widget.repository.fetchDistanceUnits();
       if (!mounted) return;
       setState(() {
         _categories = cats;
         _transports = txs;
-        _openReports = reports.length;
+        _distanceUnits = dus;
         _loading = false;
       });
     } catch (e) {
@@ -256,6 +256,153 @@ class _AdminPageState extends ConsumerState<AdminPage>
     }
   }
 
+  Future<void> _editDistanceUnit(DistanceUnit? existing) async {
+    final isNew = existing == null;
+    final nameCtrl = TextEditingController(text: existing?.nameEs ?? '');
+    final symbolCtrl = TextEditingController(text: existing?.symbol ?? '');
+    final metersCtrl = TextEditingController(
+      text: existing?.metersPerUnit.toString() ?? '',
+    );
+    final slugCtrl = TextEditingController(text: existing?.slug ?? '');
+    var active = existing?.isActive ?? true;
+    var isDefault = existing?.isDefault ?? false;
+
+    final saved = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setLocal) {
+            return AlertDialog(
+              title: Text(
+                isNew
+                    ? context.l10n.adminNewDistanceUnit
+                    : context.l10n.adminEditDistanceUnit,
+              ),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (isNew)
+                      TextField(
+                        controller: slugCtrl,
+                        decoration: InputDecoration(
+                          labelText: context.l10n.adminDistanceSlug,
+                        ),
+                      ),
+                    TextField(
+                      controller: nameCtrl,
+                      decoration: InputDecoration(
+                        labelText: context.l10n.adminNameEs,
+                      ),
+                    ),
+                    TextField(
+                      controller: symbolCtrl,
+                      decoration: InputDecoration(
+                        labelText: context.l10n.adminDistanceSymbol,
+                      ),
+                    ),
+                    TextField(
+                      controller: metersCtrl,
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      decoration: InputDecoration(
+                        labelText: context.l10n.adminDistanceMetersPerUnit,
+                      ),
+                    ),
+                    SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: Text(context.l10n.adminActive),
+                      value: active,
+                      onChanged: (v) => setLocal(() => active = v),
+                    ),
+                    SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: Text(context.l10n.adminDistanceDefault),
+                      value: isDefault,
+                      onChanged: (v) => setLocal(() => isDefault = v),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: Text(context.l10n.actionCancel),
+                ),
+                FilledButton(
+                  onPressed: () => Navigator.pop(context, true),
+                  child: Text(context.l10n.actionSave),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    if (saved != true) return;
+    final meters =
+        double.tryParse(metersCtrl.text.trim().replaceAll(',', '.'));
+    if (meters == null || meters <= 0) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.l10n.adminDistanceInvalidMeters)),
+      );
+      return;
+    }
+    final symbol = symbolCtrl.text.trim();
+    if (symbol.isEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.l10n.adminDistanceInvalidMeters)),
+      );
+      return;
+    }
+    if (isNew) {
+      final slug = slugCtrl.text.trim().toLowerCase();
+      if (!RegExp(r'^[a-z][a-z0-9_]*$').hasMatch(slug)) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.l10n.adminDistanceInvalidSlug)),
+        );
+        return;
+      }
+    }
+
+    try {
+      if (isNew) {
+        await widget.repository.createDistanceUnit(
+          slug: slugCtrl.text.trim().toLowerCase(),
+          nameEs: nameCtrl.text.trim(),
+          symbol: symbol,
+          metersPerUnit: meters,
+          isActive: active,
+          isDefault: isDefault,
+        );
+      } else {
+        await widget.repository.updateDistanceUnit(
+          existing.id,
+          nameEs: nameCtrl.text.trim(),
+          symbol: symbol,
+          metersPerUnit: meters,
+          isActive: active,
+          isDefault: isDefault,
+        );
+      }
+      ref.invalidate(distanceUnitsProvider);
+      unawaited(
+        ref
+            .read(entityCacheStoreProvider)
+            .invalidate(CacheKeys.distanceUnits()),
+      );
+      await _load();
+    } catch (e) {
+      if (!mounted) return;
+      AppToast.error(context, e);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
@@ -280,9 +427,11 @@ class _AdminPageState extends ConsumerState<AdminPage>
         ],
         bottom: TabBar(
           controller: _tabs,
+          isScrollable: true,
           tabs: [
             Tab(text: l10n.adminTabCategories),
             Tab(text: l10n.adminTabVehicles),
+            Tab(text: l10n.adminTabDistanceUnits),
           ],
         ),
       ),
@@ -316,10 +465,10 @@ class _AdminPageState extends ConsumerState<AdminPage>
                           SizedBox(width: 8),
                           Expanded(
                             child: AppStatCard(
-                              value: '$_openReports',
-                              label: l10n.adminStatReports,
+                              value: '${_distanceUnits.length}',
+                              label: l10n.adminStatDistanceUnits,
                               valueColor: AppColors.accent,
-                              icon: Icons.flag_outlined,
+                              icon: Icons.straighten_rounded,
                             ),
                           ),
                         ],
@@ -336,6 +485,10 @@ class _AdminPageState extends ConsumerState<AdminPage>
                     _TransportsTab(
                       transports: _transports,
                       onEdit: _editTransport,
+                    ),
+                    _DistanceUnitsTab(
+                      units: _distanceUnits,
+                      onEdit: _editDistanceUnit,
                     ),
                   ],
                       ),
@@ -479,6 +632,52 @@ class _TransportsTab extends StatelessWidget {
             ),
           ),
         ],
+      ],
+    );
+  }
+}
+
+class _DistanceUnitsTab extends StatelessWidget {
+  const _DistanceUnitsTab({
+    required this.units,
+    required this.onEdit,
+  });
+
+  final List<DistanceUnit> units;
+  final void Function(DistanceUnit? unit) onEdit;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final sorted = [...units]..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(8, 8, 8, 24),
+      children: [
+        Align(
+          alignment: Alignment.centerRight,
+          child: TextButton.icon(
+            onPressed: () => onEdit(null),
+            icon: const Icon(Icons.add_rounded),
+            label: Text(l10n.adminNewDistanceUnit),
+          ),
+        ),
+        for (final u in sorted)
+          ListTile(
+            title: Text('${u.nameEs} (${u.symbol})'),
+            subtitle: Text(
+              [
+                u.isActive
+                    ? l10n.adminTransportActive
+                    : l10n.adminTransportInactive,
+                if (u.isDefault) l10n.adminDistanceDefault,
+                '${u.metersPerUnit} m',
+              ].join(' · '),
+            ),
+            trailing: IconButton(
+              icon: const Icon(Icons.edit_outlined),
+              onPressed: () => onEdit(u),
+            ),
+          ),
       ],
     );
   }

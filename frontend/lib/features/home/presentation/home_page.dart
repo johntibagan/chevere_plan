@@ -24,8 +24,10 @@ import '../../auth/data/profile.dart';
 import '../../moderation/presentation/admin_reports_page.dart';
 import '../../plans/presentation/plans_list_page.dart';
 import '../../proximity/presentation/proximity_prefs_sheet.dart';
+import '../../settings/presentation/distance_unit_prefs_sheet.dart';
 import '../../routes/presentation/my_routes_page.dart';
 import '../../search/data/search_models.dart';
+import '../../search/presentation/explore_intent.dart';
 import '../../search/presentation/search_page.dart';
 import '../../saves/data/save_models.dart';
 import 'home_cards.dart';
@@ -199,6 +201,9 @@ class _HomePageState extends ConsumerState<HomePage> {
       final profile = await ref.read(profileRepositoryProvider).fetchCurrent();
       if (!mounted) return;
       setState(() => _profile = profile);
+      await ref
+          .read(preferredDistanceUnitSlugProvider.notifier)
+          .syncFromProfile(profile);
       if (profile != null) {
         await ref.read(geofenceSyncServiceProvider).syncFromProfile(
               profile: profile,
@@ -215,10 +220,15 @@ class _HomePageState extends ConsumerState<HomePage> {
       profile: profile,
       profileRepository: ref.read(profileRepositoryProvider),
       geofenceSync: ref.read(geofenceSyncServiceProvider),
+      distanceUnit: ref.read(preferredDistanceUnitProvider),
     );
     if (updated != null && mounted) {
       setState(() => _profile = updated);
     }
+  }
+
+  Future<void> _openDistanceUnitPrefs() async {
+    await showDistanceUnitPrefsSheet(context: context);
   }
 
   void _openAdmin() {
@@ -364,6 +374,9 @@ class _HomePageState extends ConsumerState<HomePage> {
           isStaff: isStaff,
           onProfile: _openProfileSoon,
           onProximity: _openProximityPrefs,
+          onDistanceUnit: () {
+            unawaited(_openDistanceUnitPrefs());
+          },
           onAdmin: _openAdmin,
           onReports: _openReports,
           onSignOut: () {
@@ -394,7 +407,14 @@ class _HomePageState extends ConsumerState<HomePage> {
                 onOpenSite: _openSite,
                 onOpenHit: _openHit,
                 onOpenMenu: () => _scaffoldKey.currentState?.openEndDrawer(),
-                onExplore: () => _selectTab(1),
+                onExplore: (shortcut) {
+                  if (shortcut != null) {
+                    ref
+                        .read(exploreIntentProvider.notifier)
+                        .launch(shortcut);
+                  }
+                  _selectTab(1);
+                },
               ),
               _tabSlot(slot: 1, page: _exploreTab),
               _tabSlot(slot: 2, page: _plansTab),
@@ -550,7 +570,7 @@ class _InicioTab extends ConsumerWidget {
   final Future<void> Function({UserSave? existing}) onOpenSite;
   final Future<void> Function(SearchHit hit) onOpenHit;
   final VoidCallback onOpenMenu;
-  final VoidCallback onExplore;
+  final void Function(ExploreShortcut? shortcut) onExplore;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -721,7 +741,7 @@ class _InicioTab extends ConsumerWidget {
                   .read(homeSectionsOpenProvider.notifier)
                   .setOpen(sections.copyWith(recent: !sections.recent)),
               actionLabel: l10n.homeSeeAll,
-              onAction: onExplore,
+              onAction: () => onExplore(null),
             ),
           ),
           if (sections.recent) ...[
@@ -777,7 +797,7 @@ class _InicioTab extends ConsumerWidget {
                   .read(homeSectionsOpenProvider.notifier)
                   .setOpen(sections.copyWith(popular: !sections.popular)),
               actionLabel: l10n.homeSeeAll,
-              onAction: onExplore,
+              onAction: () => onExplore(null),
             ),
           ),
           if (sections.popular)
@@ -819,33 +839,52 @@ class _InicioTab extends ConsumerWidget {
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                child: Row(
+                child: Column(
                   children: [
-                    Expanded(
-                      child: HomeQuickAction(
-                        icon: Icons.near_me_rounded,
-                        color: AppColors.accent,
-                        label: l10n.homeActionNearMe,
-                        onTap: onExplore,
-                      ),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: HomeQuickAction(
+                            icon: Icons.near_me_rounded,
+                            color: AppColors.accent,
+                            label: l10n.homeActionNearMe,
+                            onTap: () => onExplore(ExploreShortcut.nearMe),
+                          ),
+                        ),
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: HomeQuickAction(
+                            icon: Icons.bookmark_rounded,
+                            color: AppColors.primary,
+                            label: l10n.homeActionMySaves,
+                            onTap: () => onExplore(ExploreShortcut.mySaves),
+                          ),
+                        ),
+                      ],
                     ),
-                    SizedBox(width: 8),
-                    Expanded(
-                      child: HomeQuickAction(
-                        icon: Icons.trending_up_rounded,
-                        color: AppColors.primary,
-                        label: l10n.homeActionMostSaved,
-                        onTap: onExplore,
-                      ),
-                    ),
-                    SizedBox(width: 8),
-                    Expanded(
-                      child: HomeQuickAction(
-                        icon: Icons.sell_outlined,
-                        color: AppColors.purple,
-                        label: l10n.homeActionByCategory,
-                        onTap: onExplore,
-                      ),
+                    SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: HomeQuickAction(
+                            icon: Icons.favorite_rounded,
+                            color: AppColors.accent,
+                            label: l10n.homeActionMyFavorites,
+                            onTap: () =>
+                                onExplore(ExploreShortcut.myFavorites),
+                          ),
+                        ),
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: HomeQuickAction(
+                            icon: Icons.sell_outlined,
+                            color: AppColors.purple,
+                            label: l10n.homeActionByCategory,
+                            onTap: () =>
+                                onExplore(ExploreShortcut.byCategory),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),

@@ -23,6 +23,7 @@ class AppMoreMenuDrawer extends ConsumerWidget {
     required this.isStaff,
     required this.onProfile,
     required this.onProximity,
+    required this.onDistanceUnit,
     required this.onAdmin,
     required this.onReports,
     required this.onSignOut,
@@ -35,6 +36,7 @@ class AppMoreMenuDrawer extends ConsumerWidget {
   final bool isStaff;
   final VoidCallback onProfile;
   final VoidCallback onProximity;
+  final VoidCallback onDistanceUnit;
   final VoidCallback onAdmin;
   final VoidCallback onReports;
   final VoidCallback onSignOut;
@@ -162,6 +164,15 @@ class AppMoreMenuDrawer extends ConsumerWidget {
                     onTap: () {
                       Navigator.of(context).pop();
                       onProximity();
+                    },
+                  ),
+                  _MenuTile(
+                    icon: Icons.straighten_rounded,
+                    label: l10n.moreMenuDistanceUnit,
+                    subtitle: l10n.moreMenuDistanceUnitSubtitle,
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      onDistanceUnit();
                     },
                   ),
                   if (isStaff) ...[

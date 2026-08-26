@@ -145,6 +145,7 @@ class SearchFilters {
   const SearchFilters({
     this.query,
     this.categoryId,
+    this.categoryIds,
     this.locationQuery,
     this.lat,
     this.lng,
@@ -153,22 +154,70 @@ class SearchFilters {
     this.budgetMin,
     this.budgetMax,
     this.includePublic = false,
+    this.favoritesOnly = false,
   });
 
   final String? query;
+  /// Compat (Planes): una sola categoría. Preferir [categoryIds].
   final String? categoryId;
+  /// Padres (o hijos) seleccionados; vacío/null = sin filtro de categoría.
+  final List<String>? categoryIds;
   final String? locationQuery;
   final double? lat;
   final double? lng;
   final double? radiusKm;
-  final String? transportGroup; // particular | publico | otro
+  final String? transportGroup; // particular | publico | otro (oculto en UI Explorar)
   final double? budgetMin;
   final double? budgetMax;
   final bool includePublic;
+  /// Solo sitios en `site_favorites` del usuario.
+  final bool favoritesOnly;
+
+  /// IDs efectivos para el RPC (multi + legacy).
+  List<String> get effectiveCategoryIds {
+    final multi = categoryIds
+            ?.map((e) => e.trim())
+            .where((e) => e.isNotEmpty)
+            .toList() ??
+        const <String>[];
+    if (multi.isNotEmpty) return multi;
+    final one = categoryId?.trim();
+    if (one != null && one.isNotEmpty) return [one];
+    return const [];
+  }
+
+  /// Params PostgREST; extensible: sumar claves aquí al agregar filtros.
+  Map<String, dynamic> toRpcParams() {
+    final params = <String, dynamic>{
+      'p_include_public': includePublic,
+      'p_favorites_only': favoritesOnly,
+    };
+    final q = query?.trim();
+    if (q != null && q.isNotEmpty) params['p_query'] = q;
+
+    final cats = effectiveCategoryIds;
+    if (cats.length == 1) {
+      params['p_category_id'] = cats.first;
+    } else if (cats.length > 1) {
+      params['p_category_ids'] = cats;
+    }
+
+    final loc = locationQuery?.trim();
+    if (loc != null && loc.isNotEmpty) params['p_location_query'] = loc;
+    if (lat != null) params['p_lat'] = lat;
+    if (lng != null) params['p_lng'] = lng;
+    if (radiusKm != null) params['p_radius_km'] = radiusKm;
+    if (transportGroup != null && transportGroup!.isNotEmpty) {
+      params['p_transport_group'] = transportGroup;
+    }
+    if (budgetMin != null) params['p_budget_min'] = budgetMin;
+    if (budgetMax != null) params['p_budget_max'] = budgetMax;
+    return params;
+  }
 
   String get cacheKey => [
         query ?? '',
-        categoryId ?? '',
+        effectiveCategoryIds.join(','),
         locationQuery ?? '',
         lat?.toStringAsFixed(4) ?? '',
         lng?.toStringAsFixed(4) ?? '',
@@ -177,6 +226,8 @@ class SearchFilters {
         budgetMin?.toString() ?? '',
         budgetMax?.toString() ?? '',
         includePublic ? '1' : '0',
-        'v6', // portada cover_photo_id
+        favoritesOnly ? 'fav1' : 'fav0',
+        'v8', // favoritos
       ].join('|');
 }
+

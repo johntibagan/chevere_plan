@@ -46,4 +46,18 @@ class ProfileRepository {
 
     return Profile.fromJson(row);
   }
+
+  Future<Profile> updatePreferredDistanceUnit(String slug) async {
+    final userId = _client.auth.currentUser?.id;
+    if (userId == null) {
+      throw const AppUserError('Debes iniciar sesión.');
+    }
+    final row = await _client
+        .from('profiles')
+        .update({'preferred_distance_unit': slug})
+        .eq('id', userId)
+        .select()
+        .single();
+    return Profile.fromJson(row);
+  }
 }

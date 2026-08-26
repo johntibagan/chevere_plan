@@ -28,7 +28,7 @@ La prioridad número uno de este proyecto es **la agilidad percibida por el usua
   | Strings UI | `lib/l10n/app_es.arb` | `context.l10n` — **prohibido** copy en presentation |
   | Fechas | `core/formatters/date_format.dart` | `formatDateDmY`, etc. |
   | Moneda | `core/formatters/money_format.dart` | `formatMoney`, `currencyInputPrefix/Suffix`; código desde modelo |
-  | Distancia | `core/formatters/distance_format.dart` | `formatDistanceKmLabel(l10n, km)` |
+  | Distancia | `core/formatters/distance_format.dart` + `core/distance/distance_unit.dart` | `formatDistanceFromKm(l10n, unit, km)`; unidad del usuario vía `preferredDistanceUnitProvider` |
   | Lugar dept/ciudad | `core/formatters/place_format.dart` | `formatDeptCity` |
   | Google logo (marca) | `core/theme/google_brand_colors.dart` | Solo botón login |
 - **Código legible antes que ingenioso**: nombres explícitos, funciones cortas y de una sola responsabilidad, comentarios solo donde el código no se explica solo. Preferir claridad sobre abstracciones prematuras.
@@ -78,7 +78,7 @@ Esta es la sección más crítica del documento. Ninguna funcionalidad nueva se 
 - **TTL explícito por tipo de dato**, ejemplo de referencia:
   | Dato | TTL fresco | Stale usable |
   |---|---|---|
-  | Categorías / transporte | 24 h | 7 días |
+  | Categorías / transporte / unidades de distancia | 24 h | 7 días |
   | Departamentos / ciudades (DIVIPOLA) | 30 días | 90 días |
   | Mis guardados (lista) | 2–5 min | 24 h |
   | Favoritos (ids) | 5 min | 24 h |

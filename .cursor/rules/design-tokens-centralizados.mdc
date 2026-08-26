@@ -20,7 +20,7 @@ alwaysApply: true
 | Copy de UI | `lib/l10n/app_es.arb` | `context.l10n`; **prohibido** español en presentation/widgets |
 | Fechas UI | `core/formatters/date_format.dart` | `formatDateDmY` / `formatDateTimeShort` |
 | Moneda UI | `core/formatters/money_format.dart` | `formatMoney`, `currencyInputPrefix/Suffix`; código desde **modelo** |
-| Distancia UI | `core/formatters/distance_format.dart` | `formatDistanceKmLabel(l10n, km)` |
+| Distancia UI | `core/formatters/distance_format.dart` | `formatDistanceFromKm(l10n, unit, km)` + `preferredDistanceUnitProvider` |
 | Dept/ciudad | `core/formatters/place_format.dart` | `formatDeptCity` |
 | Fallback sin nombre (data) | `core/l10n/display_defaults.dart` | Debe coincidir con `.arb` |
 | Logo Google (marca externa) | `core/theme/google_brand_colors.dart` | Solo login |

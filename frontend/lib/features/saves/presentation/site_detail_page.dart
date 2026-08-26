@@ -824,7 +824,7 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
   }
 }
 
-class _InfoTab extends StatelessWidget {
+class _InfoTab extends ConsumerWidget {
   const _InfoTab({
     required this.ficha,
     required this.photos,
@@ -862,8 +862,9 @@ class _InfoTab extends StatelessWidget {
   final String? coverStoragePath;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
+    final distanceUnit = ref.watch(preferredDistanceUnitProvider);
     final location = ficha.locationLine;
     final legacySource = ficha.sourceUrl?.trim();
     final showLegacySource = (legacySource != null &&
@@ -1030,7 +1031,11 @@ class _InfoTab extends StatelessWidget {
             icon: Icons.near_me_outlined,
             title: l10n.siteDetailDistance,
             child: Text(
-              formatDistanceKmLabel(l10n, ficha.distanceKm!),
+              formatDistanceFromKm(
+                l10n,
+                distanceUnit,
+                ficha.distanceKm!,
+              ),
               style: TextStyle(color: AppColors.muted),
             ),
           ),

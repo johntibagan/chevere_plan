@@ -12,6 +12,7 @@ class AppSelectChip extends StatelessWidget {
     this.accent,
     this.filledPrimary = false,
     this.icon,
+    this.showCheckWhenSelected = false,
   });
 
   final String label;
@@ -22,6 +23,8 @@ class AppSelectChip extends StatelessWidget {
   /// “Todos”: fondo primary y texto oscuro.
   final bool filledPrimary;
   final IconData? icon;
+  /// Check a la izquierda cuando [selected] (multi-select).
+  final bool showCheckWhenSelected;
 
   @override
   Widget build(BuildContext context) {
@@ -43,6 +46,10 @@ class AppSelectChip extends StatelessWidget {
       border = AppColors.border;
     }
 
+    final leading = selected && showCheckWhenSelected
+        ? Icons.check_rounded
+        : icon;
+
     return Material(
       color: bg,
       shape: StadiumBorder(side: BorderSide(color: border)),
@@ -54,9 +61,9 @@ class AppSelectChip extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              if (icon != null) ...[
-                Icon(icon, size: 12, color: fg),
-                SizedBox(width: 6),
+              if (leading != null) ...[
+                Icon(leading, size: 14, color: fg),
+                SizedBox(width: 5),
               ],
               Text(
                 label,

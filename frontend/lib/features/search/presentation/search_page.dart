@@ -1,27 +1,34 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:geolocator/geolocator.dart';
 
 import '../../../core/cache/cache_ttl.dart';
-import '../../../core/cache/paged_items.dart';
 import '../../../core/di/providers.dart';
-import '../../../core/testing/widget_keys.dart';
-import '../../../core/widgets/app_toast.dart';
 import '../../../core/l10n/context_l10n.dart';
 import '../../../core/prefetch/site_prefetch.dart';
+import '../../../core/prefs/feed_layout.dart';
+import '../../../core/testing/widget_keys.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/theme_rebuild.dart';
+import '../../../core/widgets/app_feed_layout_toggle.dart';
 import '../../../core/widgets/app_retry_callout.dart';
 import '../../../core/widgets/app_search_field.dart';
 import '../../../core/widgets/app_select_chip.dart';
-import '../../../core/prefs/feed_layout.dart';
-import '../../../core/widgets/app_feed_layout_toggle.dart';
+import '../../../core/widgets/app_toast.dart';
+import '../../../core/widgets/field_action_icon.dart';
 import '../../../core/widgets/tab_screen_header.dart';
 import '../../admin/data/admin_models.dart';
 import '../../home/presentation/home_cards.dart';
+import '../../proximity/domain/proximity_policies.dart';
 import '../../saves/data/site_ficha.dart';
 import '../../saves/presentation/open_site_detail.dart';
+import '../data/explore_radius_store.dart';
 import '../data/search_models.dart';
 import '../data/search_repository.dart';
+import '../domain/search_policies.dart';
+import 'explore_intent.dart';
 
 class SearchPage extends ConsumerStatefulWidget {
   const SearchPage({super.key, required this.repository});
@@ -35,92 +42,172 @@ class SearchPage extends ConsumerStatefulWidget {
 class _SearchPageState extends ConsumerState<SearchPage> {
   final _queryCtrl = TextEditingController();
   final _locationCtrl = TextEditingController();
-  final _radiusCtrl = TextEditingController(text: '10');
-  final _budgetMinCtrl = TextEditingController();
-  final _budgetMaxCtrl = TextEditingController();
+  final _radiusCtrl = TextEditingController();
 
   bool _advanced = false;
-  String? _categoryId;
-  String? _transportGroup;
-  bool _includePublic = true;
+  bool _categoryMulti = false;
+  final Set<String> _categoryIds = {};
+  bool _mySavesOnly = false;
+  bool _favoritesOnly = false;
   bool _useMyLocation = false;
+  double _radiusKm = SearchPolicies.minRadiusKm;
+  bool _radiusReady = false;
   bool _loading = false;
+  bool _loadingMore = false;
   bool _searchFailed = false;
   List<SearchHit> _hits = const [];
   bool _searched = false;
-  int _visibleCount = PagedItems.defaultPageSize;
+  int _visibleCount = SearchPolicies.pageSize;
+  /// Invalida respuestas de búsquedas anteriores (reset / nueva búsqueda).
+  int _searchEpoch = 0;
+  /// Invalida un `_applyIntent` viejo si llega otro atajo / reset.
+  int _applyGen = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_bootstrapRadius());
+  }
 
   @override
   void dispose() {
     _queryCtrl.dispose();
     _locationCtrl.dispose();
     _radiusCtrl.dispose();
-    _budgetMinCtrl.dispose();
-    _budgetMaxCtrl.dispose();
     super.dispose();
+  }
+
+  void _syncRadiusField(double km) {
+    final clamped = SearchPolicies.clampRadiusKm(km);
+    _radiusKm = clamped;
+    final unit = ref.read(preferredDistanceUnitProvider);
+    final display = unit.kmToUnit(clamped);
+    final digits = unit.displayFractionDigits;
+    final text = digits == 0
+        ? display.round().toString()
+        : (display == display.roundToDouble()
+            ? display.toStringAsFixed(0)
+            : display.toStringAsFixed(digits));
+    if (_radiusCtrl.text != text) {
+      _radiusCtrl.text = text;
+    }
+  }
+
+  Future<int> _proximityMeters() async {
+    try {
+      final profile = await ref.read(profileRepositoryProvider).fetchCurrent();
+      final meters = profile?.proximityRadiusM;
+      if (meters == null) return ProximityPolicies.defaultRadiusM;
+      return ProximityPolicies.clampRadiusM(meters);
+    } catch (_) {
+      return ProximityPolicies.defaultRadiusM;
+    }
+  }
+
+  Future<void> _bootstrapRadius() async {
+    final m = await _proximityMeters();
+    final km = await ExploreRadiusStore.resolveInitialKm(proximityRadiusM: m);
+    if (!mounted) return;
+    setState(() {
+      _syncRadiusField(km);
+      _radiusReady = true;
+    });
+    final pending = ref.read(exploreIntentProvider);
+    if (pending != null) unawaited(_applyIntent(pending));
   }
 
   Future<(double?, double?)> _maybeLocation() async {
     if (!_useMyLocation) return (null, null);
-    final fix = await ref.read(deviceLocationProvider).tryCurrent();
+    final loc = ref.read(deviceLocationProvider);
+    // Last-known primero (rápido); si no hay, GPS low con timeout corto.
+    final known = await loc.lastKnown();
+    if (known != null) return (known.lat, known.lng);
+    final fix = await loc.tryCurrent(
+      accuracy: LocationAccuracy.low,
+      timeLimit: const Duration(seconds: 3),
+    );
     if (fix == null) return (null, null);
     return (fix.lat, fix.lng);
   }
 
-  double? _parseNum(String raw) {
-    final t = raw.trim();
-    if (t.isEmpty) return null;
-    return double.tryParse(t.replaceAll(',', '.'));
+  void _invalidateVisible() {
+    _visibleCount = SearchPolicies.pageSize;
   }
 
-  void _invalidateResults() {
-    _hits = const [];
-    _searched = false;
-    _visibleCount = PagedItems.defaultPageSize;
+  /// null = inválido (toast); true = ok y actualizó [_radiusKm].
+  bool _applyRadiusFromField({required bool showError}) {
+    if (!_useMyLocation) return true;
+    final unit = ref.read(preferredDistanceUnitProvider);
+    final raw = _radiusCtrl.text.trim().replaceAll(',', '.');
+    final parsed = double.tryParse(raw);
+    final minDisplay = unit.kmToUnit(SearchPolicies.minRadiusKm);
+    final maxDisplay = unit.kmToUnit(SearchPolicies.maxRadiusKm);
+    if (parsed == null || parsed < minDisplay || parsed > maxDisplay) {
+      if (showError && mounted) {
+        final l10n = context.l10n;
+        AppToast.show(
+          context,
+          l10n.searchRadiusInvalid(
+            minDisplay.toStringAsFixed(unit.displayFractionDigits),
+            maxDisplay.toStringAsFixed(unit.displayFractionDigits),
+            unit.symbol,
+          ),
+          error: true,
+        );
+      }
+      return false;
+    }
+    final clamped = SearchPolicies.clampRadiusKm(unit.unitToKm(parsed));
+    _syncRadiusField(clamped);
+    unawaited(ExploreRadiusStore.saveKm(clamped));
+    return true;
+  }
+
+  SearchFilters _buildFilters({
+    required double? lat,
+    required double? lng,
+  }) {
+    final text = _queryCtrl.text.trim();
+    final locationExtra = _locationCtrl.text.trim();
+    return SearchFilters(
+      query: text.isEmpty ? null : text,
+      categoryIds: _categoryIds.isEmpty ? null : _categoryIds.toList(),
+      locationQuery:
+          _advanced && locationExtra.isNotEmpty ? locationExtra : null,
+      lat: _useMyLocation ? lat : null,
+      lng: _useMyLocation ? lng : null,
+      radiusKm: _useMyLocation ? _radiusKm : null,
+      // Transporte / presupuesto: ocultos en UI Explorar (no funcionales aún).
+      includePublic: !_mySavesOnly,
+      favoritesOnly: _favoritesOnly,
+    );
+  }
+
+  void _searchNow() {
+    if (!_applyRadiusFromField(showError: true)) return;
+    unawaited(_runSearch());
   }
 
   Future<void> _runSearch() async {
-    final text = _queryCtrl.text.trim();
-    if (!_advanced && text.isEmpty) {
-      AppToast.show(context, context.l10n.searchQueryRequired, error: true);
-      setState(() {
-        _hits = const [];
-        _searched = true;
-      });
-      return;
-    }
-
+    final epoch = ++_searchEpoch;
     setState(() {
       _loading = true;
       _searched = true;
       _searchFailed = false;
       _hits = const [];
-      _visibleCount = PagedItems.defaultPageSize;
+      _invalidateVisible();
     });
 
     try {
       final loc = await _maybeLocation();
-      final locationExtra = _locationCtrl.text.trim();
-      final filters = SearchFilters(
-        query: text.isEmpty ? null : text,
-        categoryId: _categoryId,
-        locationQuery: _advanced && locationExtra.isNotEmpty
-            ? locationExtra
-            : null,
-        lat: _advanced ? loc.$1 : null,
-        lng: _advanced ? loc.$2 : null,
-        radiusKm: _advanced && _useMyLocation
-            ? _parseNum(_radiusCtrl.text)
-            : null,
-        transportGroup: _advanced ? _transportGroup : null,
-        budgetMin: _advanced ? _parseNum(_budgetMinCtrl.text) : null,
-        budgetMax: _advanced ? _parseNum(_budgetMaxCtrl.text) : null,
-        includePublic: _includePublic,
-      );
+      if (!mounted || epoch != _searchEpoch) return;
+      final filters = _buildFilters(lat: loc.$1, lng: loc.$2);
       final hits = await ref.read(swrLoaderProvider).load<List<SearchHit>>(
             key: CacheKeys.search(filters.cacheKey),
             ttl: CacheTtl.search,
-            forceNetwork: true,
+            // Misma clave = mismos filtros → puede reusar caché fresca.
+            // Clave distinta = filtros distintos → no hay hit de caché.
+            forceNetwork: false,
             decode: (payload) {
               final list = payload as List? ?? const [];
               return list
@@ -133,7 +220,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
             encode: (value) => value.map((e) => e.toJson()).toList(),
             network: () => widget.repository.search(filters),
           );
-      if (!mounted) return;
+      if (!mounted || epoch != _searchEpoch) return;
       setState(() {
         _hits = hits;
         _loading = false;
@@ -142,12 +229,116 @@ class _SearchPageState extends ConsumerState<SearchPage> {
             hits.map((h) => h.siteId),
           );
     } catch (e, st) {
-      if (!mounted) return;
+      if (!mounted || epoch != _searchEpoch) return;
       setState(() {
         _loading = false;
         _searchFailed = true;
       });
       AppToast.error(context, e, stackTrace: st, logContext: 'search');
+    }
+  }
+
+  Future<void> _loadMore() async {
+    if (_loading || _loadingMore) return;
+    if (_visibleCount >= _hits.length) return;
+    setState(() => _loadingMore = true);
+    await Future<void>.delayed(const Duration(milliseconds: 120));
+    if (!mounted) return;
+    setState(() {
+      _visibleCount =
+          (_visibleCount + SearchPolicies.pageSize).clamp(0, _hits.length);
+      _loadingMore = false;
+    });
+  }
+
+  Future<void> _wipeActiveFilters({required bool clearPersistedRadius}) async {
+    // Cancela resultados de cualquier búsqueda en curso.
+    _searchEpoch++;
+    _queryCtrl.clear();
+    _locationCtrl.clear();
+    if (clearPersistedRadius) {
+      await ExploreRadiusStore.clearStored();
+    }
+    final m = await _proximityMeters();
+    final km = clearPersistedRadius
+        ? SearchPolicies.kmFromProximityMeters(m)
+        : await ExploreRadiusStore.resolveInitialKm(proximityRadiusM: m);
+    if (!mounted) return;
+    setState(() {
+      _categoryIds.clear();
+      _categoryMulti = false;
+      _mySavesOnly = false;
+      _favoritesOnly = false;
+      _useMyLocation = false;
+      _syncRadiusField(km);
+      _hits = const [];
+      _searched = false;
+      _searchFailed = false;
+      _loading = false;
+      _loadingMore = false;
+      _invalidateVisible();
+    });
+  }
+
+  Future<void> _resetAll() async {
+    // Cancela atajo en curso y búsquedas.
+    _applyGen++;
+    await _wipeActiveFilters(clearPersistedRadius: true);
+  }
+
+  Future<void> _applyIntent(ExploreIntent intent) async {
+    final myGen = ++_applyGen;
+    // Cancela búsqueda actual al instante.
+    _searchEpoch++;
+    setState(() {
+      _loading = false;
+      _hits = const [];
+      _searched = false;
+      _searchFailed = false;
+    });
+
+    try {
+      await _wipeActiveFilters(clearPersistedRadius: false);
+      if (!mounted || myGen != _applyGen) return;
+
+      final m = await _proximityMeters();
+      if (!mounted || myGen != _applyGen) return;
+
+      switch (intent.shortcut) {
+        case ExploreShortcut.nearMe:
+          final km = SearchPolicies.kmFromProximityMeters(m);
+          setState(() {
+            _useMyLocation = true;
+            _syncRadiusField(km);
+            _advanced = true;
+          });
+          break;
+        case ExploreShortcut.mySaves:
+          setState(() {
+            _mySavesOnly = true;
+            _advanced = true;
+          });
+          break;
+        case ExploreShortcut.myFavorites:
+          setState(() {
+            _favoritesOnly = true;
+            _advanced = true;
+          });
+          break;
+        case ExploreShortcut.byCategory:
+          setState(() {
+            _advanced = false;
+          });
+          break;
+      }
+      final stillMine = ref.read(exploreIntentProvider);
+      if (stillMine?.nonce == intent.nonce) {
+        ref.read(exploreIntentProvider.notifier).clear();
+      }
+      if (!mounted || myGen != _applyGen) return;
+      await _runSearch();
+    } finally {
+      // No tocar _applyGen: un atajo más nuevo ya tiene gen mayor.
     }
   }
 
@@ -162,32 +353,55 @@ class _SearchPageState extends ConsumerState<SearchPage> {
     }
   }
 
-  InputDecoration _boxDec({
-    required String label,
-    String? hint,
-    Widget? suffix,
-  }) {
-    return InputDecoration(
-      labelText: label,
-      hintText: hint,
-      filled: true,
-      fillColor: AppColors.surface,
-      suffixIcon: suffix,
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-    );
+  void _toggleCategory(String id) {
+    setState(() {
+      if (_categoryMulti) {
+        if (_categoryIds.contains(id)) {
+          _categoryIds.remove(id);
+        } else {
+          _categoryIds.add(id);
+        }
+      } else {
+        // Selección única: re-tocar limpia; otra categoría reemplaza.
+        if (_categoryIds.length == 1 && _categoryIds.contains(id)) {
+          _categoryIds.clear();
+        } else {
+          _categoryIds
+            ..clear()
+            ..add(id);
+        }
+      }
+    });
+    _searchNow();
+  }
+
+  void _setCategoryMulti(bool enabled) {
+    setState(() {
+      _categoryMulti = enabled;
+      if (!enabled && _categoryIds.length > 1) {
+        final first = _categoryIds.first;
+        _categoryIds
+          ..clear()
+          ..add(first);
+      }
+    });
+    if (!enabled) _searchNow();
   }
 
   @override
   Widget build(BuildContext context) {
     ref.watchAppThemeMode();
     final l10n = context.l10n;
+    ref.listen<ExploreIntent?>(exploreIntentProvider, (prev, next) {
+      if (next == null) return;
+      if (!_radiusReady) return;
+      unawaited(_applyIntent(next));
+    });
+
     final categories = ref.watch(
       categoriesProvider.select((a) => a.valueOrNull ?? const <Category>[]),
     );
     final roots = categories.where((c) => c.isRoot).toList();
-    final children = categories.where((c) => !c.isRoot).toList();
 
     final visible = _hits.take(_visibleCount).toList();
     final hasMore = _visibleCount < _hits.length;
@@ -209,9 +423,16 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                       controller: _queryCtrl,
                       hint: l10n.searchHintPlace,
                       searchTooltip: l10n.actionSearch,
-                      onSearch: _runSearch,
+                      clearTooltip: l10n.actionClear,
+                      onSearch: _searchNow,
                       loading: _loading,
                     ),
+                  ),
+                  SizedBox(width: 8),
+                  AppSquareIconButton(
+                    icon: Icons.filter_alt_off_rounded,
+                    tooltip: l10n.searchResetFilters,
+                    onTap: () => unawaited(_resetAll()),
                   ),
                   SizedBox(width: 8),
                   AppSquareIconButton(
@@ -221,12 +442,222 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                         ? l10n.searchSimple
                         : l10n.searchAdvanced,
                     onTap: () {
-                      setState(() {
-                        _advanced = !_advanced;
-                        _hits = const [];
-                        _searched = false;
-                      });
+                      setState(() => _advanced = !_advanced);
                     },
+                  ),
+                ],
+              ),
+            ),
+            if (_advanced)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                child: Material(
+                  color: AppColors.surface,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    side: BorderSide(color: AppColors.border),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Text(
+                          l10n.searchAdvanced,
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.mutedDark,
+                            letterSpacing: 0.3,
+                          ),
+                        ),
+                        SizedBox(height: 8),
+                        AppSearchField(
+                          controller: _locationCtrl,
+                          hint: l10n.searchLabelLocationExtra,
+                          searchTooltip: l10n.actionSearch,
+                          clearTooltip: l10n.actionClear,
+                          onSearch: _searchNow,
+                          loading: _loading,
+                        ),
+                        SizedBox(height: 8),
+                        // Transporte y presupuesto: no funcionales aún —
+                        // ocultos; SearchFilters los conserva.
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Expanded(
+                              flex: 3,
+                              child: _CompactFilterToggle(
+                                label: l10n.searchUseMyLocation,
+                                value: _useMyLocation,
+                                onChanged: (v) {
+                                  setState(() {
+                                    _useMyLocation = v;
+                                    if (v) _syncRadiusField(_radiusKm);
+                                  });
+                                  _searchNow();
+                                },
+                              ),
+                            ),
+                            if (_useMyLocation) ...[
+                              SizedBox(width: 8),
+                              Expanded(
+                                flex: 2,
+                                child: ValueListenableBuilder<TextEditingValue>(
+                                  valueListenable: _radiusCtrl,
+                                  builder: (context, value, _) {
+                                    final hasText = value.text.isNotEmpty;
+                                    return TextField(
+                                      controller: _radiusCtrl,
+                                      keyboardType: const TextInputType
+                                          .numberWithOptions(decimal: true),
+                                      textInputAction: TextInputAction.search,
+                                      onSubmitted: (_) => _searchNow(),
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        color: AppColors.foreground,
+                                      ),
+                                      decoration: InputDecoration(
+                                        labelText: l10n.searchRadiusLabel(
+                                          ref
+                                              .watch(
+                                                preferredDistanceUnitProvider,
+                                              )
+                                              .symbol,
+                                        ),
+                                        isDense: true,
+                                        filled: true,
+                                        fillColor: AppColors.background,
+                                        contentPadding:
+                                            const EdgeInsets.symmetric(
+                                          horizontal: 10,
+                                          vertical: 10,
+                                        ),
+                                        prefixIconConstraints:
+                                            const BoxConstraints(
+                                          minWidth: 40,
+                                          minHeight: 40,
+                                        ),
+                                        suffixIconConstraints:
+                                            const BoxConstraints(
+                                          minWidth: 40,
+                                          minHeight: 40,
+                                        ),
+                                        prefixIcon: FieldActionIcon(
+                                          icon: Icons.search_rounded,
+                                          tooltip: l10n.actionSearch,
+                                          loading: _loading,
+                                          onPressed:
+                                              _loading ? null : _searchNow,
+                                        ),
+                                        suffixIcon: hasText
+                                            ? IconButton(
+                                                tooltip: l10n.actionClear,
+                                                padding: EdgeInsets.zero,
+                                                constraints:
+                                                    const BoxConstraints(
+                                                  minWidth: 40,
+                                                  minHeight: 40,
+                                                ),
+                                                icon: Icon(
+                                                  Icons.cancel_rounded,
+                                                  size: 18,
+                                                  color: AppColors.muted,
+                                                ),
+                                                onPressed: () {
+                                                  _radiusCtrl.clear();
+                                                },
+                                              )
+                                            : null,
+                                        border: OutlineInputBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(12),
+                                          borderSide: BorderSide(
+                                            color: AppColors.border,
+                                          ),
+                                        ),
+                                        enabledBorder: OutlineInputBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(12),
+                                          borderSide: BorderSide(
+                                            color: AppColors.border,
+                                          ),
+                                        ),
+                                        focusedBorder: OutlineInputBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(12),
+                                          borderSide: BorderSide(
+                                            color: AppColors.primary,
+                                          ),
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                        SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _CompactFilterToggle(
+                                label: l10n.searchMySavesOnly,
+                                value: _mySavesOnly,
+                                onChanged: (v) {
+                                  setState(() => _mySavesOnly = v);
+                                  _searchNow();
+                                },
+                              ),
+                            ),
+                            SizedBox(width: 8),
+                            Expanded(
+                              child: _CompactFilterToggle(
+                                label: l10n.searchMyFavoritesOnly,
+                                value: _favoritesOnly,
+                                onChanged: (v) {
+                                  setState(() => _favoritesOnly = v);
+                                  _searchNow();
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 8, 4),
+              child: Row(
+                children: [
+                  SizedBox(
+                    height: 24,
+                    width: 24,
+                    child: Checkbox(
+                      value: _categoryMulti,
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      visualDensity: VisualDensity.compact,
+                      onChanged: (v) => _setCategoryMulti(v ?? false),
+                    ),
+                  ),
+                  SizedBox(width: 4),
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () => _setCategoryMulti(!_categoryMulti),
+                      child: Text(
+                        l10n.searchCategoryMulti,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.mutedDark,
+                        ),
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -235,29 +666,28 @@ class _SearchPageState extends ConsumerState<SearchPage> {
               height: 40,
               child: ListView(
                 scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
                 children: [
                   AppSelectChip(
                     label: l10n.searchChipAll,
-                    selected: _categoryId == null,
+                    selected: _categoryIds.isEmpty,
                     filledPrimary: true,
-                    onTap: () => setState(() {
-                      _categoryId = null;
-                      _invalidateResults();
-                    }),
+                    showCheckWhenSelected: true,
+                    onTap: () {
+                      if (_categoryIds.isEmpty) return;
+                      setState(() => _categoryIds.clear());
+                      _searchNow();
+                    },
                   ),
                   ...roots.map(
                     (r) => Padding(
                       padding: const EdgeInsets.only(left: 6),
                       child: AppSelectChip(
                         label: r.nameEs,
-                        selected: _categoryId == r.id,
+                        selected: _categoryIds.contains(r.id),
+                        showCheckWhenSelected: true,
                         accent: homeCategoryTint(r.nameEs),
-                        onTap: () => setState(() {
-                          _categoryId =
-                              _categoryId == r.id ? null : r.id;
-                          _invalidateResults();
-                        }),
+                        onTap: () => _toggleCategory(r.id),
                       ),
                     ),
                   ),
@@ -267,186 +697,12 @@ class _SearchPageState extends ConsumerState<SearchPage> {
             Expanded(
               child: CustomScrollView(
                 slivers: [
-                  if (_advanced)
-                    SliverToBoxAdapter(
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            TextField(
-                              controller: _locationCtrl,
-                              decoration: _boxDec(
-                                label: l10n.searchLabelLocationExtra,
-                              ),
-                            ),
-                            SizedBox(height: 12),
-                            InputDecorator(
-                              decoration: _boxDec(
-                                label: l10n.searchLabelCategory,
-                              ),
-                              child: DropdownButtonHideUnderline(
-                                child: DropdownButton<String?>(
-                                  isExpanded: true,
-                                  value: _categoryId,
-                                  hint: Text(l10n.searchAny),
-                                  items: [
-                                    DropdownMenuItem<String?>(
-                                      value: null,
-                                      child: Text(l10n.searchAny),
-                                    ),
-                                    ...roots.map(
-                                      (r) => DropdownMenuItem<String?>(
-                                        value: r.id,
-                                        child: Text(r.nameEs),
-                                      ),
-                                    ),
-                                    ...children.map(
-                                      (c) => DropdownMenuItem<String?>(
-                                        value: c.id,
-                                        child: Text('  ${c.nameEs}'),
-                                      ),
-                                    ),
-                                  ],
-                                  onChanged: (v) => setState(() {
-                                    _categoryId = v;
-                                    _invalidateResults();
-                                  }),
-                                ),
-                              ),
-                            ),
-                            SizedBox(height: 12),
-                            InputDecorator(
-                              decoration: _boxDec(
-                                label: l10n.searchLabelTransport,
-                              ),
-                              child: DropdownButtonHideUnderline(
-                                child: DropdownButton<String?>(
-                                  isExpanded: true,
-                                  value: _transportGroup,
-                                  hint: Text(l10n.searchAny),
-                                  items: [
-                                    DropdownMenuItem(
-                                      value: null,
-                                      child: Text(l10n.searchAny),
-                                    ),
-                                    DropdownMenuItem(
-                                      value: 'particular',
-                                      child: Text(l10n.searchTransportPrivate),
-                                    ),
-                                    DropdownMenuItem(
-                                      value: 'publico',
-                                      child: Text(l10n.searchTransportPublic),
-                                    ),
-                                    DropdownMenuItem(
-                                      value: 'otro',
-                                      child: Text(l10n.searchTransportOther),
-                                    ),
-                                  ],
-                                  onChanged: (v) => setState(() {
-                                    _transportGroup = v;
-                                    _invalidateResults();
-                                  }),
-                                ),
-                              ),
-                            ),
-                            SizedBox(height: 12),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: TextField(
-                                    controller: _budgetMinCtrl,
-                                    keyboardType:
-                                        const TextInputType.numberWithOptions(
-                                      decimal: true,
-                                    ),
-                                    decoration: _boxDec(
-                                      label: l10n.searchBudgetMin,
-                                    ),
-                                  ),
-                                ),
-                                SizedBox(width: 8),
-                                Expanded(
-                                  child: TextField(
-                                    controller: _budgetMaxCtrl,
-                                    keyboardType:
-                                        const TextInputType.numberWithOptions(
-                                      decimal: true,
-                                    ),
-                                    decoration: _boxDec(
-                                      label: l10n.searchBudgetMax,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            SwitchListTile(
-                              contentPadding: EdgeInsets.zero,
-                              title: Text(l10n.searchUseMyLocation),
-                              value: _useMyLocation,
-                              onChanged: (v) => setState(() {
-                                _useMyLocation = v;
-                                _invalidateResults();
-                              }),
-                            ),
-                            if (_useMyLocation)
-                              TextField(
-                                controller: _radiusCtrl,
-                                keyboardType:
-                                    const TextInputType.numberWithOptions(
-                                  decimal: true,
-                                ),
-                                decoration: _boxDec(
-                                  label: l10n.searchRadiusKm,
-                                ),
-                              ),
-                            Text(
-                              l10n.searchHoursPlaceholder,
-                              style: Theme.of(context).textTheme.bodySmall,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
                   SliverToBoxAdapter(
                     child: Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          SwitchListTile(
-                            key: WidgetKeys.searchIncludePublic,
-                            contentPadding: EdgeInsets.zero,
-                            title: Text(l10n.searchIncludePublic),
-                            value: _includePublic,
-                            onChanged: (v) => setState(() {
-                              _includePublic = v;
-                              _invalidateResults();
-                            }),
-                          ),
-                          Align(
-                            alignment: Alignment.centerLeft,
-                            child: TextButton(
-                              onPressed: _loading
-                                  ? null
-                                  : () {
-                                      _queryCtrl.clear();
-                                      _locationCtrl.clear();
-                                      _budgetMinCtrl.clear();
-                                      _budgetMaxCtrl.clear();
-                                      _radiusCtrl.text = '10';
-                                      setState(() {
-                                        _categoryId = null;
-                                        _transportGroup = null;
-                                        _useMyLocation = false;
-                                        _includePublic = true;
-                                        _hits = const [];
-                                        _searched = false;
-                                      });
-                                    },
-                              child: Text(l10n.actionClear),
-                            ),
-                          ),
                           if (_searched)
                             Padding(
                               padding: const EdgeInsets.only(bottom: 8),
@@ -488,6 +744,13 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                   else if (_searchFailed)
                     SliverToBoxAdapter(
                       child: AppRetryCallout(onRetry: _runSearch),
+                    )
+                  else if (_loading && _hits.isEmpty)
+                    const SliverToBoxAdapter(
+                      child: Padding(
+                        padding: EdgeInsets.all(24),
+                        child: Center(child: CircularProgressIndicator()),
+                      ),
                     )
                   else if (_hits.isEmpty)
                     SliverToBoxAdapter(
@@ -546,16 +809,22 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                       child: Padding(
                         padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
                         child: TextButton(
-                          onPressed: () {
-                            setState(() {
-                              _visibleCount += PagedItems.defaultPageSize;
-                            });
-                          },
-                          child: Text(
-                            l10n.searchLoadMoreRemaining(
-                              _hits.length - _visibleCount,
-                            ),
-                          ),
+                          onPressed: (_loading || _loadingMore)
+                              ? null
+                              : () => unawaited(_loadMore()),
+                          child: _loadingMore
+                              ? const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : Text(
+                                  l10n.searchLoadMoreRemaining(
+                                    _hits.length - _visibleCount,
+                                  ),
+                                ),
                         ),
                       ),
                     )
@@ -565,6 +834,62 @@ class _SearchPageState extends ConsumerState<SearchPage> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Switch denso en fila (panel avanzado compacto).
+class _CompactFilterToggle extends StatelessWidget {
+  const _CompactFilterToggle({
+    required this.label,
+    required this.value,
+    required this.onChanged,
+  });
+
+  final String label;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: AppColors.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: AppColors.border),
+      ),
+      child: InkWell(
+        onTap: () => onChanged(!value),
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(10, 4, 4, 4),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  label,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.foreground,
+                    height: 1.2,
+                  ),
+                ),
+              ),
+              Transform.scale(
+                scale: 0.85,
+                child: Switch.adaptive(
+                  value: value,
+                  onChanged: onChanged,
+                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

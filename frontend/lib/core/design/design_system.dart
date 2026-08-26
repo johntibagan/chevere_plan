@@ -1,6 +1,7 @@
 /// Punto de entrada único para tokens y formatters de UI.
 library;
 
+export '../distance/distance_unit.dart';
 export '../formatters/date_format.dart';
 export '../formatters/distance_format.dart';
 export '../formatters/money_format.dart';

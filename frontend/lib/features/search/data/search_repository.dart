@@ -5,7 +5,7 @@ import '../../../core/logging/app_log.dart';
 import '../../plans/data/plan_hours_policy.dart';
 import 'search_models.dart';
 
-/// Tope del fallback local (sin RPC). La UI pagina en cliente de 20 en 20.
+/// Tope del fallback local (sin RPC). La UI pagina en cliente (`SearchPolicies.pageSize`).
 const _kFallbackPublicCap = 100;
 
 class SearchRepository {
@@ -29,31 +29,10 @@ class SearchRepository {
   }
 
   Future<List<SearchHit>> _searchRpc(SearchFilters filters) async {
-    final params = <String, dynamic>{
-      'p_include_public': filters.includePublic,
-    };
-    final q = filters.query?.trim();
-    if (q != null && q.isNotEmpty) params['p_query'] = q;
-    if (filters.categoryId != null) {
-      params['p_category_id'] = filters.categoryId;
-    }
-    final loc = filters.locationQuery?.trim();
-    if (loc != null && loc.isNotEmpty) params['p_location_query'] = loc;
-    if (filters.lat != null) params['p_lat'] = filters.lat;
-    if (filters.lng != null) params['p_lng'] = filters.lng;
-    if (filters.radiusKm != null) params['p_radius_km'] = filters.radiusKm;
-    if (filters.transportGroup != null &&
-        filters.transportGroup!.isNotEmpty) {
-      params['p_transport_group'] = filters.transportGroup;
-    }
-    if (filters.budgetMin != null) {
-      params['p_budget_min'] = filters.budgetMin;
-    }
-    if (filters.budgetMax != null) {
-      params['p_budget_max'] = filters.budgetMax;
-    }
-
-    final rows = await _client.rpc('search_sites', params: params);
+    final rows = await _client.rpc(
+      'search_sites',
+      params: filters.toRpcParams(),
+    );
     final hits = (rows as List<dynamic>)
         .map((e) => SearchHit.fromJson(Map<String, dynamic>.from(e as Map)))
         .where((h) => PlanHoursPolicy.isOpenInWindow(siteId: h.siteId))

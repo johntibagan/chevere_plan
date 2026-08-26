@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../../../core/di/providers.dart';
 import '../../../core/formatters/distance_format.dart';
 import '../../../core/formatters/money_format.dart';
 import '../../../core/formatters/place_format.dart';
 import '../../../core/l10n/context_l10n.dart';
 import '../../../core/prefs/feed_layout.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/theme/theme_rebuild.dart';
 import '../../../core/testing/widget_keys.dart';
 import '../../../core/widgets/site_cover.dart';
 import '../../../core/widgets/site_origin_tags.dart';
@@ -399,7 +402,7 @@ class SiteCardPlaceTexts extends StatelessWidget {
 }
 
 /// Grilla: franja + borde de visibilidad, foto o ilustración padre.
-class HomePopularCard extends StatelessWidget {
+class HomePopularCard extends ConsumerWidget {
   const HomePopularCard({
     super.key,
     required this.hit,
@@ -417,8 +420,10 @@ class HomePopularCard extends StatelessWidget {
   final bool showPlaceOnCover;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    ref.watchAppThemeMode();
     final l10n = context.l10n;
+    final unit = ref.watch(preferredDistanceUnitProvider);
     final price = hit.estimatedPriceAmount;
     final origin = SiteOriginTags(
       isOwn: hit.isOwn,
@@ -534,7 +539,11 @@ class HomePopularCard extends StatelessWidget {
                       children: [
                         if (hit.distanceKm != null)
                           Text(
-                            formatDistanceKmLabel(context.l10n, hit.distanceKm!),
+                            formatDistanceFromKm(
+                              context.l10n,
+                              unit,
+                              hit.distanceKm!,
+                            ),
                             style: TextStyle(
                               fontSize: 10,
                               color: AppColors.mutedDark,
@@ -564,7 +573,7 @@ class HomePopularCard extends StatelessWidget {
 }
 
 /// Fila de Explorar: misma ficha que la grilla, en formato lista.
-class HomeSearchListCard extends StatelessWidget {
+class HomeSearchListCard extends ConsumerWidget {
   const HomeSearchListCard({
     super.key,
     required this.hit,
@@ -575,7 +584,9 @@ class HomeSearchListCard extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    ref.watchAppThemeMode();
+    final unit = ref.watch(preferredDistanceUnitProvider);
     final origin = SiteOriginTags(
       isOwn: hit.isOwn,
       isLinked: hit.isLinked,
@@ -656,7 +667,11 @@ class HomeSearchListCard extends StatelessWidget {
                           children: [
                             if (hit.distanceKm != null)
                               Text(
-                                formatDistanceKmLabel(context.l10n, hit.distanceKm!),
+                                formatDistanceFromKm(
+                                  context.l10n,
+                                  unit,
+                                  hit.distanceKm!,
+                                ),
                                 style: TextStyle(
                                   fontSize: 10,
                                   color: AppColors.mutedDark,

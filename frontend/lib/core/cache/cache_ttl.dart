@@ -18,6 +18,11 @@ class CacheTtl {
     stale: Duration(days: 7),
   );
 
+  static const distanceUnits = CacheTtl(
+    fresh: Duration(hours: 24),
+    stale: Duration(days: 7),
+  );
+
   /// DIVIPOLA: el dato más frío. Tras la 1ª sync, selector 100% local.
   static const geoCatalog = CacheTtl(
     fresh: Duration(days: 30),
@@ -60,6 +65,7 @@ abstract final class CacheKeys {
   static String favoriteSiteIds(String uid) => 'favorite_site_ids:$uid';
   static String categories() => 'categories:v1';
   static String transportTypes() => 'transport_types:v1';
+  static String distanceUnits() => 'distance_units:v1';
   static String geoCatalog() => 'geo_catalog:v1';
   static String siteFicha(String siteId) => 'site_ficha_v2:$siteId';
   static String plansPage0(String uid) => 'plans_p0:$uid';

@@ -27,6 +27,7 @@ class Profile {
     this.avatarUrl,
     this.preferredLocale = 'es',
     this.preferredCurrency = 'COP',
+    this.preferredDistanceUnit = 'km',
     this.proximityRadiusM = 200,
     this.remindPublicSites = false,
   });
@@ -37,6 +38,7 @@ class Profile {
   final String? avatarUrl;
   final String preferredLocale;
   final String preferredCurrency;
+  final String preferredDistanceUnit;
   final int proximityRadiusM;
   final bool remindPublicSites;
 
@@ -49,6 +51,8 @@ class Profile {
       avatarUrl: json['avatar_url'] as String?,
       preferredLocale: (json['preferred_locale'] as String?) ?? 'es',
       preferredCurrency: (json['preferred_currency'] as String?) ?? 'COP',
+      preferredDistanceUnit:
+          (json['preferred_distance_unit'] as String?) ?? 'km',
       proximityRadiusM: radius is int
           ? radius
           : (radius is num ? radius.toInt() : 200),
@@ -57,6 +61,7 @@ class Profile {
   }
 
   Profile copyWith({
+    String? preferredDistanceUnit,
     int? proximityRadiusM,
     bool? remindPublicSites,
   }) {
@@ -67,6 +72,8 @@ class Profile {
       avatarUrl: avatarUrl,
       preferredLocale: preferredLocale,
       preferredCurrency: preferredCurrency,
+      preferredDistanceUnit:
+          preferredDistanceUnit ?? this.preferredDistanceUnit,
       proximityRadiusM: proximityRadiusM ?? this.proximityRadiusM,
       remindPublicSites: remindPublicSites ?? this.remindPublicSites,
     );
