@@ -1,9 +1,15 @@
 #!/usr/bin/env python3
 """Publica APK de prueba cerrada a Supabase Storage (bucket beta-apks).
 
-Uso (desde la raíz del repo, tras `flutter build apk --release`):
-  python backend/scripts/publish_beta_apk.py --version 0.0.1 --build 1 \\
+Preferido (APK más liviano: release + R8 + arm64):
+  frontend\\tool\\publish_beta.ps1
+
+Manual:
+  flutter build apk --release --dart-define-from-file=.env --target-platform android-arm64
+  python backend/scripts/publish_beta_apk.py --version 1.0.0 --build 3 \\
     --apk frontend/build/app/outputs/flutter-apk/app-release.apk
+
+Plan Free ≤ 50 MB: arm64 obligatorio. Universal suele pasar el tope.
 
 Requiere backend/.env con SUPABASE_URL y SUPABASE_SERVICE_ROLE_KEY.
 Imprime la URL pública de descarga (latest + versionada).
@@ -12,6 +18,7 @@ Imprime la URL pública de descarga (latest + versionada).
 from __future__ import annotations
 
 import argparse
+import base64
 import json
 import os
 import sys
@@ -19,6 +26,9 @@ import urllib.error
 import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
+
+# TUS chunk size exigido por Storage de Supabase.
+_TUS_CHUNK = 6 * 1024 * 1024
 
 
 def load_env(path: Path) -> dict[str, str]:
@@ -34,27 +44,97 @@ def load_env(path: Path) -> dict[str, str]:
     return out
 
 
-def upload(url: str, key: str, object_path: str, data: bytes, content_type: str) -> None:
-    endpoint = f"{url.rstrip('/')}/storage/v1/object/{object_path}"
-    req = urllib.request.Request(
+def storage_api_base(supabase_url: str) -> str:
+    """Base para Storage. Prefiere *.storage.supabase.co; si no resuelve DNS, el API normal."""
+    base = supabase_url.rstrip("/")
+    preferred = base
+    if "://" in base and ".supabase.co" in base and ".storage.supabase.co" not in base:
+        scheme, rest = base.split("://", 1)
+        host = rest.split("/", 1)[0]
+        if host.endswith(".supabase.co") and not host.endswith(".storage.supabase.co"):
+            project = host[: -len(".supabase.co")]
+            preferred = f"{scheme}://{project}.storage.supabase.co"
+    try:
+        import socket
+
+        host = preferred.split("://", 1)[1].split("/", 1)[0]
+        socket.getaddrinfo(host, 443)
+        return preferred
+    except OSError:
+        return base
+
+
+def _b64(s: str) -> str:
+    return base64.b64encode(s.encode("utf-8")).decode("ascii")
+
+
+def upload(
+    url: str,
+    key: str,
+    bucket: str,
+    object_name: str,
+    data: bytes,
+    content_type: str,
+) -> None:
+    """Subida TUS (resumable). La POST simple falla >~50 MB (413 EntityTooLarge)."""
+    endpoint = f"{storage_api_base(url)}/storage/v1/upload/resumable"
+    meta = ",".join(
+        [
+            f"bucketName {_b64(bucket)}",
+            f"objectName {_b64(object_name)}",
+            f"contentType {_b64(content_type)}",
+            f"cacheControl {_b64('3600')}",
+        ]
+    )
+    create = urllib.request.Request(
         endpoint,
-        data=data,
+        data=b"",
         method="POST",
         headers={
             "Authorization": f"Bearer {key}",
             "apikey": key,
-            "Content-Type": content_type,
+            "Tus-Resumable": "1.0.0",
+            "Upload-Length": str(len(data)),
+            "Upload-Metadata": meta,
             "x-upsert": "true",
+            "Content-Type": "application/offset+octet-stream",
         },
     )
     try:
-        with urllib.request.urlopen(req, timeout=600) as resp:
-            body = resp.read().decode("utf-8", errors="replace")
-            if resp.status not in (200, 201):
-                raise SystemExit(f"Upload failed {resp.status}: {body}")
+        with urllib.request.urlopen(create, timeout=120) as resp:
+            location = resp.headers.get("Location") or resp.headers.get("location")
+            if not location:
+                raise SystemExit("TUS create: sin Location")
     except urllib.error.HTTPError as e:
         detail = e.read().decode("utf-8", errors="replace")
-        raise SystemExit(f"Upload HTTP {e.code}: {detail}") from e
+        raise SystemExit(f"TUS create HTTP {e.code}: {detail}") from e
+
+    offset = 0
+    total = len(data)
+    while offset < total:
+        chunk = data[offset : offset + _TUS_CHUNK]
+        patch = urllib.request.Request(
+            location,
+            data=chunk,
+            method="PATCH",
+            headers={
+                "Authorization": f"Bearer {key}",
+                "apikey": key,
+                "Tus-Resumable": "1.0.0",
+                "Upload-Offset": str(offset),
+                "Content-Type": "application/offset+octet-stream",
+                "Content-Length": str(len(chunk)),
+            },
+        )
+        try:
+            with urllib.request.urlopen(patch, timeout=600) as resp:
+                new_off = resp.headers.get("Upload-Offset")
+                offset = int(new_off) if new_off else offset + len(chunk)
+                pct = (offset / total) * 100
+                print(f"  {object_name}: {offset}/{total} ({pct:.0f}%)")
+        except urllib.error.HTTPError as e:
+            detail = e.read().decode("utf-8", errors="replace")
+            raise SystemExit(f"TUS patch HTTP {e.code}: {detail}") from e
 
 
 def main() -> int:
@@ -83,12 +163,13 @@ def main() -> int:
         return 1
 
     data = args.apk.read_bytes()
-    versioned = f"beta-apks/releases/chevere-plan-{args.version}+{args.build}.apk"
-    latest = "beta-apks/latest/chevere-plan.apk"
+    versioned_name = f"releases/chevere-plan-{args.version}+{args.build}.apk"
+    latest_name = "latest/chevere-plan.apk"
+    content_type = "application/vnd.android.package-archive"
 
-    print(f"Subiendo {len(data)} bytes…")
-    upload(base, key, versioned, data, "application/vnd.android.package-archive")
-    upload(base, key, latest, data, "application/vnd.android.package-archive")
+    print(f"Subiendo {len(data)} bytes (TUS)…")
+    upload(base, key, "beta-apks", versioned_name, data, content_type)
+    upload(base, key, "beta-apks", latest_name, data, content_type)
 
     public_base = f"{base.rstrip('/')}/storage/v1/object/public"
     public_latest = f"{public_base}/beta-apks/latest/chevere-plan.apk"

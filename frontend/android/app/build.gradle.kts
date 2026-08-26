@@ -51,7 +51,9 @@ android {
 
     buildTypes {
         release {
+            // Firma debug: solo pruebas cerradas (no Play Store).
             signingConfig = signingConfigs.getByName("debug")
+            // Mínimo peso: R8 + shrink. Publicar solo arm64 (ver tool/publish_beta.ps1).
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(

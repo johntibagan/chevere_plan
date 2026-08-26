@@ -25,7 +25,7 @@ Carpeta **única** que despliega Pages. Si no hay cambios aquí, el workflow **n
 | Marcar “en revisión” | Portal + PIN de dueño (bloquea editar/borrar) |
 | Marcar “listo” | Portal + PIN de dueño (en DB, no en Git) |
 | Número de ticket | Columna `#n` automática (tocar copia `#n` para el commit) |
-| Subir APK nuevo | Local: `publish_beta_apk.py` (actualiza Storage + `beta_release`) |
+| Subir APK nuevo | `frontend\tool\publish_beta.ps1` → APK **más liviano** (release + R8 + arm64, ~20–25 MB). |
 
 Publicar un APK **no** requiere redeploy de Pages: el portal ya lee la URL desde Supabase.
 
