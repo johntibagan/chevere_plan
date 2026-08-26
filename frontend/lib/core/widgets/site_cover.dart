@@ -152,6 +152,7 @@ class SiteCover extends StatelessWidget {
     final url = imageUrl?.trim();
     return Stack(
       fit: StackFit.expand,
+      clipBehavior: Clip.antiAlias,
       children: [
         DefaultSiteCover(categoryHint: categoryHint),
         if (url != null && url.isNotEmpty)
@@ -204,6 +205,7 @@ class DefaultSiteCover extends StatelessWidget {
         final dense = side > 0 && side < 52;
         return Stack(
           fit: StackFit.expand,
+          clipBehavior: Clip.antiAlias,
           children: [
             ColoredBox(color: AppColors.surface),
             CustomPaint(
@@ -234,6 +236,11 @@ class _EditorialCoverPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
+    // Los blobs se centran fuera del rectángulo; sin clip pintan encima del
+    // AppBar (corazón) y del TabBar (Info) en la ficha.
+    canvas.save();
+    canvas.clipRect(Offset.zero & size);
+
     final accent = family.accent;
     final g = Paint()
       ..shader = LinearGradient(
@@ -248,44 +255,48 @@ class _EditorialCoverPainter extends CustomPainter {
       ).createShader(Offset.zero & size);
     canvas.drawRect(Offset.zero & size, g);
 
+    // Motivo de categoría primero; círculos decorativos encima (bajo el icono).
+    if (!dense) {
+      switch (family) {
+        case SiteCoverFamily.gastronomy:
+          _rings(canvas, size, accent);
+        case SiteCoverFamily.lodging:
+          _blinds(canvas, size, accent);
+        case SiteCoverFamily.nature:
+          _hills(canvas, size, accent);
+        case SiteCoverFamily.sport:
+          _stripes(canvas, size, accent);
+        case SiteCoverFamily.culture:
+          _diamonds(canvas, size, accent);
+        case SiteCoverFamily.entertainment:
+          _dots(canvas, size, accent);
+        case SiteCoverFamily.shopping:
+          _chevrons(canvas, size, accent);
+        case SiteCoverFamily.other:
+          _grid(canvas, size, accent);
+      }
+    }
+
     if (dense) {
       canvas.drawCircle(
         Offset(size.width * 0.72, size.height * 0.28),
         size.shortestSide * 0.35,
         Paint()..color = accent.withValues(alpha: 0.12),
       );
-      return;
+    } else {
+      canvas.drawCircle(
+        Offset(size.width * 0.88, size.height * -0.05),
+        size.shortestSide * 0.55,
+        Paint()..color = accent.withValues(alpha: 0.10),
+      );
+      canvas.drawCircle(
+        Offset(size.width * 0.08, size.height * 1.05),
+        size.shortestSide * 0.42,
+        Paint()..color = accent.withValues(alpha: 0.08),
+      );
     }
 
-    canvas.drawCircle(
-      Offset(size.width * 0.88, size.height * -0.05),
-      size.shortestSide * 0.55,
-      Paint()..color = accent.withValues(alpha: 0.10),
-    );
-    canvas.drawCircle(
-      Offset(size.width * 0.08, size.height * 1.05),
-      size.shortestSide * 0.42,
-      Paint()..color = accent.withValues(alpha: 0.08),
-    );
-
-    switch (family) {
-      case SiteCoverFamily.gastronomy:
-        _rings(canvas, size, accent);
-      case SiteCoverFamily.lodging:
-        _blinds(canvas, size, accent);
-      case SiteCoverFamily.nature:
-        _hills(canvas, size, accent);
-      case SiteCoverFamily.sport:
-        _stripes(canvas, size, accent);
-      case SiteCoverFamily.culture:
-        _diamonds(canvas, size, accent);
-      case SiteCoverFamily.entertainment:
-        _dots(canvas, size, accent);
-      case SiteCoverFamily.shopping:
-        _chevrons(canvas, size, accent);
-      case SiteCoverFamily.other:
-        _grid(canvas, size, accent);
-    }
+    canvas.restore();
   }
 
   void _rings(Canvas canvas, Size size, Color accent) {

@@ -700,6 +700,7 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
                 width: double.infinity,
                 child: Stack(
                   fit: StackFit.expand,
+                  clipBehavior: Clip.antiAlias,
                   children: [
                     SiteLookCover(
                       siteId: widget.siteId,
