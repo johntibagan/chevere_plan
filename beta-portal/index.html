@@ -478,15 +478,6 @@
     let isAdmin = !!adminPin;
     let editingId = null;
 
-    function fmtDate(iso) {
-      if (!iso) return "—";
-      const d = new Date(iso);
-      if (Number.isNaN(d.getTime())) return "—";
-      return d.toLocaleDateString("es-CO", {
-        day: "2-digit", month: "2-digit", year: "numeric",
-      });
-    }
-
     /** dd/mmm/aa HH:mm (ej. 25/ago/26 22:15) */
     function fmtDateTime(iso) {
       if (!iso) return "—";
@@ -543,7 +534,7 @@
         v === "—" ? "Aún no hay APK" : `Versión ${v}${build}`;
       document.getElementById("updated").textContent =
         data?.apk_url
-          ? `Actualizada el ${fmtDate(data.updated_at)}`
+          ? `Actualizada el ${fmtDateTime(data.updated_at)}`
           : "Cuando haya build, aparece el link aquí.";
       const a = document.getElementById("download");
       if (data?.apk_url) {
