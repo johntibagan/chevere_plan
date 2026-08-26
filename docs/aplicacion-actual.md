@@ -301,3 +301,13 @@ flowchart TB
 - Sitios, saves, planes, reseñas: servidor; la app muestra caché y confirma después
 - **Populares cerca:** Hive + ancla GPS; nueva red solo si te salís ~2 km, pasaron 24 h, o tirás a refrescar Inicio
 - Fotos: Storage privado; se pueden ver si el sitio es público o es tuyo
+
+---
+
+## Pruebas cerradas (APK)
+
+- Portal público (GitHub Pages): `https://johntibagan.github.io/chevere_plan/` — versión + descarga + reportes anónimos. Deploy solo si cambia `beta-portal/`.
+- Secrets en GitHub Actions: `BETA_SUPABASE_URL`, `BETA_SUPABASE_ANON_KEY` (nunca la service_role).
+- APK en Supabase Storage (`beta-apks`). Al publicar: `backend/scripts/publish_beta_apk.py` actualiza Storage + fila `beta_release` (el portal la lee; no hace falta redeploy de Pages).
+- Versionado desde `0.0.1+1` en `frontend/pubspec.yaml`. PIN de dueño para marcar reportes: tabla `private.beta_admin` (default `chevere`).
+

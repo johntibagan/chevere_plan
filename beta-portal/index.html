@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex,nofollow" />
+  <title>Chevere Plan — pruebas</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root {
+      --bg: #0f1419;
+      --card: #1a222c;
+      --text: #f2f5f8;
+      --muted: #9aa7b5;
+      --accent: #2bb0a6;
+      --line: #2a3542;
+      --ok: #3dba7a;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.45;
+    }
+    main {
+      max-width: 420px;
+      margin: 0 auto;
+      padding: 28px 18px 48px;
+    }
+    h1 {
+      font-size: 1.35rem;
+      font-weight: 700;
+      margin: 0 0 4px;
+      letter-spacing: -0.02em;
+    }
+    .sub { color: var(--muted); font-size: 0.9rem; margin: 0 0 22px; }
+    section {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 14px;
+    }
+    h2 {
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      margin: 0 0 10px;
+      font-weight: 600;
+    }
+    .version {
+      font-size: 1.15rem;
+      font-weight: 700;
+      margin: 0 0 4px;
+    }
+    .meta { color: var(--muted); font-size: 0.85rem; margin: 0 0 14px; }
+    a.btn, button.btn {
+      display: block;
+      width: 100%;
+      text-align: center;
+      text-decoration: none;
+      border: 0;
+      border-radius: 10px;
+      padding: 12px 14px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      background: var(--accent);
+      color: #062a28;
+    }
+    a.btn[aria-disabled="true"], button.btn:disabled {
+      opacity: 0.45;
+      pointer-events: none;
+    }
+    button.ghost {
+      background: transparent;
+      color: var(--muted);
+      border: 1px solid var(--line);
+      margin-top: 8px;
+    }
+    textarea, input[type="text"], input[type="password"] {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      color: var(--text);
+      padding: 10px 12px;
+      font: inherit;
+      margin-bottom: 8px;
+    }
+    textarea { min-height: 72px; resize: vertical; }
+    ul { list-style: none; padding: 0; margin: 12px 0 0; }
+    li {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 10px;
+      align-items: start;
+      padding: 10px 0;
+      border-top: 1px solid var(--line);
+      font-size: 0.95rem;
+    }
+    li.done .body { text-decoration: line-through; color: var(--muted); }
+    .ver {
+      display: inline-block;
+      margin-top: 4px;
+      font-size: 0.78rem;
+      color: var(--ok);
+    }
+    .admin {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px dashed var(--line);
+      display: none;
+    }
+    .admin.on { display: block; }
+    .err { color: #ff8f8f; font-size: 0.85rem; margin-top: 8px; }
+    .okmsg { color: var(--ok); font-size: 0.85rem; margin-top: 8px; }
+    .hint { color: var(--muted); font-size: 0.8rem; margin: 0 0 8px; }
+    label.chk {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Chevere Plan</h1>
+    <p class="sub">Pruebas cerradas · sin cuenta</p>
+
+    <section>
+      <h2>Última versión</h2>
+      <p class="version" id="version">…</p>
+      <p class="meta" id="updated">—</p>
+      <a class="btn" id="download" href="#" aria-disabled="true">Descargar APK</a>
+    </section>
+
+    <section>
+      <h2>Mejoras y reportes</h2>
+      <p class="hint">Cualquiera puede agregar. Solo el dueño marca “listo”.</p>
+      <textarea id="body" maxlength="500" placeholder="¿Qué falló o qué mejorar?"></textarea>
+      <button class="btn" id="add" type="button">Agregar</button>
+      <div id="msg"></div>
+      <ul id="list"></ul>
+    </section>
+
+    <section>
+      <h2>Dueño</h2>
+      <p class="hint">Para marcar ítems como listos.</p>
+      <input type="password" id="pin" placeholder="PIN" autocomplete="current-password" />
+      <button class="btn ghost" id="unlock" type="button">Entrar</button>
+      <div id="adminMsg"></div>
+    </section>
+  </main>
+
+  <script>
+    const SUPABASE_URL = "__BETA_SUPABASE_URL__";
+    const SUPABASE_ANON_KEY = "__BETA_SUPABASE_ANON_KEY__";
+    const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    let adminPin = sessionStorage.getItem("beta_pin") || "";
+    let isAdmin = !!adminPin;
+
+    function fmtDate(iso) {
+      if (!iso) return "—";
+      const d = new Date(iso);
+      if (Number.isNaN(d.getTime())) return "—";
+      return d.toLocaleDateString("es-CO", {
+        day: "2-digit", month: "2-digit", year: "numeric",
+      });
+    }
+
+    function setMsg(el, text, ok) {
+      el.className = ok ? "okmsg" : "err";
+      el.textContent = text || "";
+    }
+
+    async function loadRelease() {
+      const { data, error } = await sb
+        .from("beta_release")
+        .select("version, build, apk_url, updated_at")
+        .eq("id", 1)
+        .maybeSingle();
+      if (error) throw error;
+      const v = data?.version || "—";
+      const build = data?.build != null ? `+${data.build}` : "";
+      document.getElementById("version").textContent =
+        v === "—" ? "Aún no hay APK" : `Versión ${v}${build}`;
+      document.getElementById("updated").textContent =
+        data?.apk_url
+          ? `Actualizada el ${fmtDate(data.updated_at)}`
+          : "Cuando haya build, aparece el link aquí.";
+      const a = document.getElementById("download");
+      if (data?.apk_url) {
+        a.href = data.apk_url;
+        a.removeAttribute("aria-disabled");
+      } else {
+        a.href = "#";
+        a.setAttribute("aria-disabled", "true");
+      }
+    }
+
+    function renderItem(row) {
+      const li = document.createElement("li");
+      if (row.done) li.classList.add("done");
+
+      const left = document.createElement("div");
+      if (isAdmin) {
+        const cb = document.createElement("input");
+        cb.type = "checkbox";
+        cb.checked = !!row.done;
+        cb.title = "Marcar listo";
+        cb.addEventListener("change", async () => {
+          let ver = row.fixed_in_version || "";
+          if (cb.checked) {
+            ver = prompt("¿En qué versión quedó? (ej. 0.0.1)", ver || "") || "";
+          }
+          const { error } = await sb.rpc("beta_mark_feedback", {
+            p_id: row.id,
+            p_done: cb.checked,
+            p_fixed_in_version: ver,
+            p_pin: adminPin,
+          });
+          if (error) {
+            alert(error.message || "No se pudo marcar");
+            cb.checked = !cb.checked;
+            return;
+          }
+          await loadFeedback();
+        });
+        left.appendChild(cb);
+      } else {
+        left.textContent = row.done ? "✓" : "•";
+        left.style.color = row.done ? "var(--ok)" : "var(--muted)";
+      }
+
+      const right = document.createElement("div");
+      const body = document.createElement("div");
+      body.className = "body";
+      body.textContent = row.body;
+      right.appendChild(body);
+      if (row.done && row.fixed_in_version) {
+        const ver = document.createElement("span");
+        ver.className = "ver";
+        ver.textContent = `en ${row.fixed_in_version}`;
+        right.appendChild(ver);
+      }
+
+      li.appendChild(left);
+      li.appendChild(right);
+      return li;
+    }
+
+    async function loadFeedback() {
+      const { data, error } = await sb
+        .from("beta_feedback")
+        .select("id, body, done, fixed_in_version, created_at")
+        .order("done", { ascending: true })
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      const ul = document.getElementById("list");
+      ul.innerHTML = "";
+      (data || []).forEach((row) => ul.appendChild(renderItem(row)));
+      if (!(data || []).length) {
+        const empty = document.createElement("li");
+        empty.innerHTML = '<div></div><div class="hint">Nada aún. Sé el primero.</div>';
+        ul.appendChild(empty);
+      }
+    }
+
+    document.getElementById("add").addEventListener("click", async () => {
+      const ta = document.getElementById("body");
+      const text = (ta.value || "").trim();
+      const msg = document.getElementById("msg");
+      if (text.length < 3) {
+        setMsg(msg, "Escribe al menos 3 caracteres.", false);
+        return;
+      }
+      const { error } = await sb.from("beta_feedback").insert({ body: text });
+      if (error) {
+        setMsg(msg, "No se pudo agregar. Intenta de nuevo.", false);
+        return;
+      }
+      ta.value = "";
+      setMsg(msg, "Agregado.", true);
+      await loadFeedback();
+    });
+
+    document.getElementById("unlock").addEventListener("click", async () => {
+      const pin = document.getElementById("pin").value || "";
+      const adminMsg = document.getElementById("adminMsg");
+      // Prueba el PIN con un no-op sobre un id inexistente / o inserta probe
+      // Mejor: intenta marcar un id fake — fallará "No encontrado" si PIN ok
+      const fake = "00000000-0000-0000-0000-000000000000";
+      const { error } = await sb.rpc("beta_mark_feedback", {
+        p_id: fake,
+        p_done: true,
+        p_fixed_in_version: null,
+        p_pin: pin,
+      });
+      const msg = (error && error.message) || "";
+      if (msg.toLowerCase().includes("pin")) {
+        setMsg(adminMsg, "PIN incorrecto.", false);
+        adminPin = "";
+        isAdmin = false;
+        sessionStorage.removeItem("beta_pin");
+        await loadFeedback();
+        return;
+      }
+      // "No encontrado" u otro = PIN válido
+      adminPin = pin;
+      isAdmin = true;
+      sessionStorage.setItem("beta_pin", pin);
+      setMsg(adminMsg, "Listo. Ya puedes marcar ítems.", true);
+      await loadFeedback();
+    });
+
+    if (isAdmin) {
+      setMsg(document.getElementById("adminMsg"), "Sesión de dueño activa.", true);
+    }
+
+    Promise.all([loadRelease(), loadFeedback()]).catch(() => {
+      document.getElementById("version").textContent = "Error al cargar";
+    });
+  </script>
+</body>
+</html>

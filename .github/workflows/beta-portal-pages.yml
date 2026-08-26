@@ -1,0 +1,77 @@
+# Deploy del portal de pruebas (GitHub Pages)
+#
+# Solo corre si cambió `beta-portal/**` (o este workflow).
+# Credenciales: GitHub → Settings → Secrets and variables → Actions
+#   - BETA_SUPABASE_URL
+#   - BETA_SUPABASE_ANON_KEY
+#
+# Nunca uses la service_role aquí. El APK y beta_release se actualizan
+# en local con backend/.env (publish_beta_apk.py), no en este deploy.
+
+name: beta-portal-pages
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - "beta-portal/**"
+      - ".github/workflows/beta-portal-pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: beta-portal-pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build site (solo carpeta beta-portal)
+        env:
+          BETA_SUPABASE_URL: ${{ secrets.BETA_SUPABASE_URL }}
+          BETA_SUPABASE_ANON_KEY: ${{ secrets.BETA_SUPABASE_ANON_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -z "${BETA_SUPABASE_URL}" ] || [ -z "${BETA_SUPABASE_ANON_KEY}" ]; then
+            echo "Faltan secrets BETA_SUPABASE_URL / BETA_SUPABASE_ANON_KEY"
+            exit 1
+          fi
+          mkdir -p _site
+          # Solo el HTML público; no scripts Python ni fuentes de build.
+          python3 - <<'PY'
+          from pathlib import Path
+          import os
+          src = Path("beta-portal/index.html").read_text(encoding="utf-8")
+          out = (
+              src.replace("__BETA_SUPABASE_URL__", os.environ["BETA_SUPABASE_URL"])
+              .replace("__BETA_SUPABASE_ANON_KEY__", os.environ["BETA_SUPABASE_ANON_KEY"])
+          )
+          if "__BETA_SUPABASE_" in out:
+              raise SystemExit("Quedaron placeholders sin reemplazar")
+          Path("_site/index.html").write_text(out, encoding="utf-8")
+          print("ok: _site/index.html")
+          PY
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
