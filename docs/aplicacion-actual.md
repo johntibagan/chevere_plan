@@ -143,7 +143,7 @@ Pasar de público a privado se bloquea si otros lo usan (otros guardados, aporte
 
 En un sitio **público**:
 
-- **Reseña pública**: texto, estrellas, hasta 3 fotos. Varias por persona a lo largo del tiempo. El promedio usa solo las públicas. Tocar una foto abre el **mismo visor** que las del sitio (autor, fecha `dd/mmm/aaaa`, ⋮ eliminar/reportar; sin “usar como portada”). Si hay varias en la reseña, se navega entre ellas. En la tarjeta, ⋮ **Reportar** (reseñas ajenas públicas; un reporte por usuario).
+- **Reseña pública**: texto, estrellas, hasta 3 fotos (cualquier usuario logueado las ve en sitio público). Varias por persona a lo largo del tiempo. El promedio usa solo las públicas. Tocar una foto abre el **mismo visor** que las del sitio (autor, fecha `dd/mmm/aaaa`, ⋮ eliminar/reportar; sin “usar como portada”). Si hay varias en la reseña, se navega entre ellas. En la tarjeta, ⋮ **Reportar** (reseñas ajenas públicas; un reporte por usuario).
 - **Bitácora privada**: mismo formulario, solo el autor la lee. Admin **no**. Misma UI de fotos al ampliar. No se reportan (solo las ve el autor).
 
 Reportar foto o reseña pública inadecuada: el primer reporte avisa a staff (lista de reportes abiertos, con vista previa del texto en reseñas). Staff puede quitar la foto o la reseña; borrar el archivo en Storage al cerrar el reporte aún es deuda.
@@ -301,7 +301,7 @@ flowchart TB
 - Geografía: **DIVIPOLA** + caché 30/90 días
 - Sitios, saves, planes, reseñas: servidor; la app muestra caché y confirma después
 - **Populares cerca:** Hive + ancla GPS; nueva red solo si te salís ~2 km, pasaron 24 h, o tirás a refrescar Inicio
-- Fotos: Storage privado; se pueden ver si el sitio es público o es tuyo
+- Fotos: Storage privado; sitio público/propio, o **reseña pública** en sitio visible (además del dueño del path / staff)
 
 ---
 

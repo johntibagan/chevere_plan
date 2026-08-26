@@ -1,5 +1,7 @@
--- Storage: bucket privado site-photos. Path {user_id}/{site_id}/{filename}.
--- Lectura: dueño del path, staff, o foto de un sitio público/propio.
+-- Storage: bucket privado site-photos.
+-- Sitio: {user_id}/{site_id}/{filename}. Reseña: {user_id}/reviews/{review_id}/…
+-- Lectura: dueño del path, staff, foto de sitio público/propio, o foto de
+-- reseña pública (en sitio visible).
 
 insert into storage.buckets (id, name, public)
 values ('site-photos', 'site-photos', false)
@@ -26,6 +28,24 @@ create policy site_photos_storage_select on storage.objects
             s.is_public
             or s.created_by = auth.uid()
             or public.is_staff()
+          )
+      )
+      or exists (
+        select 1
+        from public.site_review_photos rp
+        join public.site_reviews r on r.id = rp.review_id
+        join public.sites s on s.id = r.site_id
+        where rp.storage_path = objects.name
+          and (
+            r.user_id = auth.uid()
+            or (
+              r.is_public
+              and (
+                s.is_public
+                or s.created_by = auth.uid()
+                or public.is_staff()
+              )
+            )
           )
       )
     )
