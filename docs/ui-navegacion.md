@@ -193,6 +193,7 @@ Todo el texto de producto está en `app_es.arb` (i18n).
 | `AppToast` | `app_toast.dart` | Snackbar; error de negocio o “Error en la app…”. |
 | `AppBusyOverlay` | `app_busy_overlay.dart` | Bloqueo breve (p. ej. abrir Maps). |
 | `AppMoreMenuDrawer` | `app_more_menu_drawer.dart` | `endDrawer` derecha: cuenta, **tema** (segmentado Claro/Oscuro/Sistema), recuerdos, admin, cerrar sesión. |
+| `AppMenuAvatarButton` | `app_menu_avatar_button.dart` | Foto/inicial en cabeceras del shell → abre el menú. |
 | `AppSegmentedControl` | `app_segmented_control.dart` | Selección única en grupo redondeado (tema, etc.). |
 
 **Iconografía:** Material Icons. Redes en cards son **texto** (IG/TK/FB/GM), no SVG de marca.
@@ -225,7 +226,7 @@ Tab activo: icono + label `primary`. Inactivo: `mutedDark`, label 10 px.
 
 **Inicio (`_InicioTab`)** — sin AppBar:
 
-1. Saludo 11 mutedDark + título app 22 ExtraBold. Botón **☰** (derecha) abre `endDrawer` Más opciones: **Tu perfil**, **Tarjetas** (no físicas → `CardsListPage`), Recuerdos cercanos, Mismo sitio al guardar, Unidad de distancia, Admin/Reportes si staff, **Cerrar sesión** al final.
+1. Saludo 11 mutedDark + título app 22 ExtraBold. **Foto de perfil** (derecha; si no hay, inicial) abre `endDrawer` Más opciones. La misma foto va en cabeceras de Explorar / Planes / Rutas (`AppMenuAvatarButton`). Menú: **Tu perfil**, **Tarjetas**, Recuerdos cercanos, Mismo sitio al guardar, Unidad de distancia, Admin/Reportes si staff, **Cerrar sesión**. Con **navegación por gestos** del sistema no se abre el drawer arrastrando el borde (choca con “atrás”); se abre con la foto. Con 3 botones, el arrastre lateral sí puede abrir.
 2. **Vista** (lista / 2 / 3 / 4); aplica a recientes y populares.
 3. Aviso de **borradores** (card naranja), si hay.
 4. **Eventos**: título plegable; contenido *Próximamente.* (placeholder).

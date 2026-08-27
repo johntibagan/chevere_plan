@@ -9,7 +9,7 @@ import '../l10n/context_l10n.dart';
 import '../theme/app_theme.dart';
 import '../theme/app_typography.dart';
 import '../theme/theme_rebuild.dart';
-import 'app_network_image.dart';
+import 'app_menu_avatar_button.dart';
 import 'app_segmented_control.dart';
 
 /// Menú lateral derecho (estilo Google): cuenta arriba, acciones, salir al final.
@@ -60,17 +60,21 @@ class AppMoreMenuDrawer extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Material(
-              color: Colors.transparent,
+              color: AppColors.surfaceElevated,
               child: InkWell(
                 onTap: () {
                   Navigator.of(context).pop();
                   onProfile();
                 },
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 20, 16, 16),
+                  padding: const EdgeInsets.fromLTRB(20, 22, 16, 18),
                   child: Row(
                     children: [
-                      _Avatar(initial: initial, avatarUrl: avatarUrl),
+                      AppUserAvatar(
+                        initial: initial,
+                        avatarUrl: avatarUrl,
+                        size: 52,
+                      ),
                       SizedBox(width: 14),
                       Expanded(
                         child: Column(
@@ -108,7 +112,7 @@ class AppMoreMenuDrawer extends ConsumerWidget {
                       ),
                       Icon(
                         Icons.chevron_right_rounded,
-                        color: AppColors.mutedDark,
+                        color: AppColors.muted,
                       ),
                     ],
                   ),
@@ -254,35 +258,6 @@ class AppMoreMenuDrawer extends ConsumerWidget {
             SizedBox(height: 8),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _Avatar extends StatelessWidget {
-  const _Avatar({required this.initial, this.avatarUrl});
-
-  final String initial;
-  final String? avatarUrl;
-
-  @override
-  Widget build(BuildContext context) {
-    final url = avatarUrl?.trim();
-    return ClipOval(
-      child: SizedBox(
-        width: 48,
-        height: 48,
-        child: url != null && url.isNotEmpty
-            ? AppNetworkImage(url: url, width: 48, height: 48)
-            : ColoredBox(
-                color: AppColors.primary.withValues(alpha: 0.2),
-                child: Center(
-                  child: Text(
-                    initial,
-                    style: AppTypography.cardTitle(color: AppColors.primary),
-                  ),
-                ),
-              ),
       ),
     );
   }

@@ -39,7 +39,8 @@ sequenceDiagram
 
 | Sitio | Qué ves |
 |---|---|
-| **Inicio** | Saludo + título, menú **☰**, **Vista** (lista / 2 / 3 / 4), borradores si hay, **Eventos** (próximamente, se pliega), **Guardados recientes** (solo lugares físicos; se pliegan), **Populares cerca**, **acciones rápidas** al final (plegable; se puede **fijar** encima del menú). **Tarjetas** (no físicas) se abren desde ☰ → Tarjetas (pantalla propia). **Ver más** abre Explorar. Portada: foto o ilustración de categoría padre; borde verde/morado. Origen: Tuyo / Tarjeta / Catálogo / … |
+| **Inicio** | Saludo + título, **foto de perfil** (abre menú), **Vista** (lista / 2 / 3 / 4), borradores si hay, **Eventos** (próximamente, se pliega), **Guardados recientes** (solo lugares físicos; se pliegan), **Populares cerca**, **acciones rápidas** al final (plegable; se puede **fijar** encima del menú). **Tarjetas** (no físicas) se abren desde el menú → Tarjetas (pantalla propia). **Ver más** abre Explorar. Portada: foto o ilustración de categoría padre; borde verde/morado. Origen: Tuyo / Tarjeta / Catálogo / … |
+| **Explorar / Planes / Rutas** | Misma **foto de perfil** arriba a la derecha (menú). Guardar sitio (FAB) no la muestra. |
 | **Explorar** | Búsqueda de sitios (cabecera Figma, chips de **categoría padre multi-select**, lista o cuadrícula 2/3/4). Texto opcional; filtros avanzados (lugar, GPS+radio km, mis guardados). Transporte/presupuesto ocultos en UI. |
 | **+ (centro)** | Guardar o completar un lugar (crear y editar son la **misma pantalla**) |
 | **Planes** | Tus itinerarios (tarjeta de crear + lista; **un solo** CTA, sin FAB duplicado) |

@@ -2,30 +2,45 @@ import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
 import '../theme/app_typography.dart';
+import 'app_menu_avatar_button.dart';
 
 class TabScreenHeader extends StatelessWidget {
   const TabScreenHeader({
     super.key,
     required this.title,
     this.subtitle,
+    this.showMenuAvatar = true,
   });
 
   final String title;
   final String? subtitle;
+  /// Foto de perfil → menú lateral (todas las pestañas del shell).
+  final bool showMenuAvatar;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-      child: Column(
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: AppTypography.tabTitle()),
-          if (subtitle != null && subtitle!.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.only(top: 2),
-              child: Text(subtitle!, style: AppTypography.bodySecondary()),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: AppTypography.tabTitle()),
+                if (subtitle != null && subtitle!.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 2),
+                    child: Text(
+                      subtitle!,
+                      style: AppTypography.bodySecondary(),
+                    ),
+                  ),
+              ],
             ),
+          ),
+          if (showMenuAvatar) const AppMenuAvatarButton(),
         ],
       ),
     );

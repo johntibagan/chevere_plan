@@ -15,8 +15,10 @@ import '../../../core/prefetch/site_prefetch.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/chevere_theme_scope.dart';
 import '../../../core/theme/theme_rebuild.dart';
+import '../../../core/shell/shell_menu_bridge.dart';
 import '../../../core/testing/widget_keys.dart';
 import '../../../core/widgets/app_feed_layout_toggle.dart';
+import '../../../core/widgets/app_menu_avatar_button.dart';
 import '../../../core/widgets/app_more_menu_drawer.dart';
 import '../../admin/presentation/admin_page.dart';
 import '../../auth/data/profile.dart';
@@ -403,6 +405,23 @@ class _HomePageState extends ConsumerState<HomePage> {
       useGoogleAvatar: _profile?.useGoogleAvatar ?? false,
     );
 
+    final menuBridge = ref.read(shellMenuBridgeProvider);
+    menuBridge.bindOpenMoreMenu(
+      () => _scaffoldKey.currentState?.openEndDrawer(),
+    );
+    final nextUrl = (avatarUrl == null || avatarUrl.trim().isEmpty)
+        ? null
+        : avatarUrl.trim();
+    if (menuBridge.initial != initial || menuBridge.avatarUrl != nextUrl) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        ref.read(shellMenuBridgeProvider).updateAccount(
+              initial: initial,
+              avatarUrl: avatarUrl,
+            );
+      });
+    }
+
     final nearbyAsync = ref.watch(homeNearbyProvider);
     final nearbySnap = nearbyAsync.valueOrNull;
     final ownSiteIds = {for (final s in _saves) s.siteId};
@@ -430,6 +449,12 @@ class _HomePageState extends ConsumerState<HomePage> {
       child: Scaffold(
         key: _scaffoldKey,
         extendBody: true,
+        // Con gestos del sistema (borde der. = atrás), el drag del endDrawer
+        // abre y el mismo gesto lo cierra. Solo permitir drag si no hay
+        // insets de gesto lateral (p. ej. navegación de 3 botones).
+        endDrawerEnableOpenDragGesture:
+            MediaQuery.systemGestureInsetsOf(context).right < 1 &&
+                MediaQuery.systemGestureInsetsOf(context).left < 1,
         endDrawer: AppMoreMenuDrawer(
           displayName: name,
           initial: initial,
@@ -476,7 +501,6 @@ class _HomePageState extends ConsumerState<HomePage> {
                 onOpenSave: _openSave,
                 onOpenSite: _openSite,
                 onOpenHit: _openHit,
-                onOpenMenu: () => _scaffoldKey.currentState?.openEndDrawer(),
                 onExplore: (shortcut) {
                   if (shortcut != null) {
                     ref
@@ -644,7 +668,6 @@ class _InicioTab extends ConsumerWidget {
     required this.onOpenSave,
     required this.onOpenSite,
     required this.onOpenHit,
-    required this.onOpenMenu,
     required this.onExplore,
   });
 
@@ -659,7 +682,6 @@ class _InicioTab extends ConsumerWidget {
   final Future<void> Function({String? shared, UserSave? existing}) onOpenSave;
   final Future<void> Function({UserSave? existing}) onOpenSite;
   final Future<void> Function(SearchHit hit) onOpenHit;
-  final VoidCallback onOpenMenu;
   final void Function(ExploreShortcut? shortcut) onExplore;
 
   @override
@@ -707,14 +729,7 @@ class _InicioTab extends ConsumerWidget {
                       ],
                     ),
                   ),
-                  Tooltip(
-                    message: l10n.moreMenuOpenTooltip,
-                    child: _roundIcon(
-                      key: WidgetKeys.homeMoreMenu,
-                      icon: Icons.menu_rounded,
-                      onTap: onOpenMenu,
-                    ),
-                  ),
+                  const AppMenuAvatarButton(),
                 ],
               ),
             ),
@@ -965,25 +980,5 @@ class _InicioTab extends ConsumerWidget {
       ),
     );
     return scroll;
-  }
-
-  Widget _roundIcon({
-    Key? key,
-    required IconData icon,
-    required VoidCallback onTap,
-  }) {
-    return Material(
-      key: key,
-      color: AppColors.surface,
-      shape: const CircleBorder(),
-      child: InkWell(
-        customBorder: const CircleBorder(),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(10),
-          child: Icon(icon, size: 20, color: AppColors.muted),
-        ),
-      ),
-    );
   }
 }
