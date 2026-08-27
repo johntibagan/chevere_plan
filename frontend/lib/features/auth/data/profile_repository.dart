@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/errors/user_facing_error.dart';
 import '../../proximity/domain/proximity_policies.dart';
+import '../../saves/domain/save_policies.dart';
 import '../domain/username_rules.dart';
 import 'profile.dart';
 
@@ -50,6 +51,21 @@ class ProfileRepository {
         .select()
         .single();
 
+    return Profile.fromJson(row);
+  }
+
+  Future<Profile> updateDuplicateSearchRadius(int meters) async {
+    final userId = _client.auth.currentUser?.id;
+    if (userId == null) {
+      throw const AppUserError('Debes iniciar sesión.');
+    }
+    final clamped = SavePolicies.clampDuplicateSearchRadiusM(meters);
+    final row = await _client
+        .from('profiles')
+        .update({'duplicate_search_radius_m': clamped})
+        .eq('id', userId)
+        .select()
+        .single();
     return Profile.fromJson(row);
   }
 

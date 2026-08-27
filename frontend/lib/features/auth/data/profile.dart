@@ -33,6 +33,7 @@ class Profile {
     this.preferredCurrency = 'COP',
     this.preferredDistanceUnit = 'km',
     this.proximityRadiusM = 200,
+    this.duplicateSearchRadiusM = 100,
     this.remindPublicSites = false,
   });
 
@@ -52,6 +53,8 @@ class Profile {
   final String preferredCurrency;
   final String preferredDistanceUnit;
   final int proximityRadiusM;
+  /// Radio (m) para anti-dupe por pin al guardar. Default 100.
+  final int duplicateSearchRadiusM;
   final bool remindPublicSites;
 
   static const usernameChangeCooldown = Duration(days: 90);
@@ -77,6 +80,7 @@ class Profile {
 
   factory Profile.fromJson(Map<String, dynamic> json) {
     final radius = json['proximity_radius_m'];
+    final dupeRadius = json['duplicate_search_radius_m'];
     final changedRaw = json['username_changed_at'] as String?;
     return Profile(
       id: json['id'] as String,
@@ -95,6 +99,9 @@ class Profile {
       proximityRadiusM: radius is int
           ? radius
           : (radius is num ? radius.toInt() : 200),
+      duplicateSearchRadiusM: dupeRadius is int
+          ? dupeRadius
+          : (dupeRadius is num ? dupeRadius.toInt() : 100),
       remindPublicSites: json['remind_public_sites'] as bool? ?? false,
     );
   }
@@ -107,6 +114,7 @@ class Profile {
     DateTime? usernameChangedAt,
     String? preferredDistanceUnit,
     int? proximityRadiusM,
+    int? duplicateSearchRadiusM,
     bool? remindPublicSites,
   }) {
     return Profile(
@@ -123,6 +131,8 @@ class Profile {
       preferredDistanceUnit:
           preferredDistanceUnit ?? this.preferredDistanceUnit,
       proximityRadiusM: proximityRadiusM ?? this.proximityRadiusM,
+      duplicateSearchRadiusM:
+          duplicateSearchRadiusM ?? this.duplicateSearchRadiusM,
       remindPublicSites: remindPublicSites ?? this.remindPublicSites,
     );
   }

@@ -388,6 +388,24 @@ abstract class AppLocalizations {
   /// **'Todavía no podés cambiar el nombre de usuario.'**
   String get profileUsernameCooldownToast;
 
+  /// No description provided for @profileDuplicateRadiusSection.
+  ///
+  /// In es, this message translates to:
+  /// **'Mismo sitio al guardar'**
+  String get profileDuplicateRadiusSection;
+
+  /// No description provided for @profileDuplicateRadiusHelp.
+  ///
+  /// In es, this message translates to:
+  /// **'Si hay otro sitio dentro de este radio, te avisamos para no duplicarlo. Por defecto 100 m.'**
+  String get profileDuplicateRadiusHelp;
+
+  /// No description provided for @profileDuplicateRadiusLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Radio: {meters} m'**
+  String profileDuplicateRadiusLabel(int meters);
+
   /// No description provided for @actionCancel.
   ///
   /// In es, this message translates to:
@@ -2523,6 +2541,24 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Confirmar'**
   String get locationConfirm;
+
+  /// No description provided for @locationMarkMapFirst.
+  ///
+  /// In es, this message translates to:
+  /// **'Buscá un lugar o tocá el mapa para confirmar.'**
+  String get locationMarkMapFirst;
+
+  /// No description provided for @locationPinOnly.
+  ///
+  /// In es, this message translates to:
+  /// **'Solo este punto'**
+  String get locationPinOnly;
+
+  /// No description provided for @locationNearbyPlace.
+  ///
+  /// In es, this message translates to:
+  /// **'Lugar'**
+  String get locationNearbyPlace;
 
   /// No description provided for @locationNoMatches.
   ///

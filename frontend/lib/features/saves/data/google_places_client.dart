@@ -273,6 +273,75 @@ class GooglePlacesClient {
     return out;
   }
 
+  /// Lugares cercanos al pin (POI: parque, tienda…). Radio corto (~80 m).
+  Future<List<GeoPlace>> searchNearby({
+    required double lat,
+    required double lng,
+    double radiusM = 80,
+    int maxResults = 8,
+  }) async {
+    if (!isConfigured) return const [];
+
+    final cacheKey =
+        'near_${lat.toStringAsFixed(5)}_${lng.toStringAsFixed(5)}_'
+        '${radiusM.round()}';
+    final cachedList = await _cache.readList(cacheKey);
+    if (cachedList != null) return cachedList;
+
+    if (!await _quota.tryConsume()) {
+      throw const AppUserError(
+        'Límite diario de búsquedas de ubicación. Intenta mañana o usa el mapa.',
+      );
+    }
+
+    final res = await _http
+        .post(
+          Uri.https('places.googleapis.com', '/v1/places:searchNearby'),
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Goog-Api-Key': _apiKey,
+            'X-Goog-FieldMask':
+                'places.id,places.displayName,places.formattedAddress,'
+                    'places.location,places.addressComponents',
+            'Accept-Language': 'es',
+          },
+          body: jsonEncode({
+            'languageCode': 'es',
+            'regionCode': 'CO',
+            'maxResultCount': maxResults.clamp(1, 20),
+            'rankPreference': 'DISTANCE',
+            'locationRestriction': {
+              'circle': {
+                'center': {'latitude': lat, 'longitude': lng},
+                'radius': radiusM.clamp(10, 500),
+              },
+            },
+          }),
+        )
+        .timeout(const Duration(seconds: 12));
+
+    if (res.statusCode != 200) {
+      AppLog.debug(
+        'searchNearby status=${res.statusCode} body=${res.body}',
+        name: 'google_places',
+      );
+      return const [];
+    }
+
+    final body = Map<String, dynamic>.from(jsonDecode(res.body) as Map);
+    final places = body['places'];
+    if (places is! List) return const [];
+
+    final out = <GeoPlace>[];
+    for (final raw in places) {
+      if (raw is! Map) continue;
+      final place = _placeFromDetailsJson(Map<String, dynamic>.from(raw));
+      if (place != null) out.add(place);
+    }
+    if (out.isNotEmpty) await _cache.writeList(cacheKey, out);
+    return out;
+  }
+
   /// Reverse geocode (1 llamada por tap en mapa).
   Future<GeoPlace?> reverseGeocode({
     required double lat,
@@ -357,6 +426,7 @@ class GooglePlacesClient {
       addressLine: formatted ?? name,
       city: comps.city,
       department: comps.department,
+      isPlaceFicha: true,
     );
   }
 
@@ -382,6 +452,7 @@ class GooglePlacesClient {
       addressLine: formatted ?? name,
       city: comps.city,
       department: comps.department,
+      isPlaceFicha: true,
     );
   }
 
@@ -401,6 +472,7 @@ class GooglePlacesClient {
       name: comps.city ?? formatted,
       city: comps.city,
       department: comps.department,
+      isPlaceFicha: false,
     );
   }
 

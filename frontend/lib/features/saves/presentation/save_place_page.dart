@@ -186,6 +186,18 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
     });
   }
 
+  Future<int> _duplicateRadiusM() async {
+    try {
+      final p = await ref.read(profileRepositoryProvider).fetchCurrent();
+      return SavePolicies.clampDuplicateSearchRadiusM(
+        p?.duplicateSearchRadiusM ??
+            SavePolicies.defaultDuplicateSearchRadiusM,
+      );
+    } catch (_) {
+      return SavePolicies.defaultDuplicateSearchRadiusM;
+    }
+  }
+
   Future<void> _refreshPossibleDuplicates() async {
     if (!_shouldPrefetchDuplicates()) {
       if (_possibleDupes.isNotEmpty && mounted) {
@@ -201,6 +213,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
       return;
     }
     try {
+      final radiusM = await _duplicateRadiusM();
       final dupes = await widget.savesRepository.findPossibleDuplicates(
         name: name,
         city: _selectedCity?.name,
@@ -208,6 +221,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
         longitude: _lng,
         excludeSiteId: _editSiteId,
         googlePlaceId: _googlePlaceId,
+        radiusM: radiusM,
       );
       if (!mounted) return;
       setState(() => _possibleDupes = dupes);
@@ -888,10 +902,14 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
       address: place.addressLine ?? place.displayName,
       lat: place.lat,
       lng: place.lng,
-      googlePlaceId: place.placeId,
+      googlePlaceId: place.isPlaceFicha ? place.placeId : null,
     );
     if (!mounted) return;
-    setState(() => _useExactPin = true);
+    setState(() {
+      _useExactPin = !place.isPlaceFicha;
+      // Solo ficha de lugar conserva Place ID; el reverse de calle no.
+      if (!place.isPlaceFicha) _googlePlaceId = null;
+    });
     if (!mounted) return;
     // Soft check: diálogo (no Toast). Si sigue editando, al Guardar se reitera.
     final linked = await _softCheckDuplicateAfterLocation();
@@ -912,6 +930,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
     }
     final name = _nameCtrl.text.trim();
     try {
+      final radiusM = await _duplicateRadiusM();
       final dupes = await widget.savesRepository.findPossibleDuplicates(
         name: name,
         city: city,
@@ -919,6 +938,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
         longitude: lng,
         excludeSiteId: _editSiteId,
         googlePlaceId: _googlePlaceId,
+        radiusM: radiusM,
       );
       if (dupes.isEmpty || !mounted) return false;
 
@@ -1373,6 +1393,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
 
     if (shouldCheckDuplicates) {
       try {
+        final radiusM = await _duplicateRadiusM();
         final dupes = await widget.savesRepository.findPossibleDuplicates(
           name: name,
           city: _selectedCity?.name,
@@ -1380,6 +1401,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
           longitude: lng,
           excludeSiteId: editSiteId,
           googlePlaceId: _googlePlaceId,
+          radiusM: radiusM,
         );
         if (dupes.isNotEmpty && mounted) {
           final chosen = await _askDuplicate(

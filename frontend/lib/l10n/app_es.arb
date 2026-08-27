@@ -61,6 +61,14 @@
   },
   "profileUsernameMustSet": "Elegí un @usuario para usar la app. Se muestra en reseñas y fotos; las relaciones internas usan tu id, no el nombre.",
   "profileUsernameCooldownToast": "Todavía no podés cambiar el nombre de usuario.",
+  "profileDuplicateRadiusSection": "Mismo sitio al guardar",
+  "profileDuplicateRadiusHelp": "Si hay otro sitio dentro de este radio, te avisamos para no duplicarlo. Por defecto 100 m.",
+  "profileDuplicateRadiusLabel": "Radio: {meters} m",
+  "@profileDuplicateRadiusLabel": {
+    "placeholders": {
+      "meters": {"type": "int"}
+    }
+  },
   "actionCancel": "Cancelar",
   "actionDiscard": "Descartar",
   "actionSave": "Guardar",
@@ -540,6 +548,9 @@
   "locationPickerSearchHint": "Buscar lugar, dirección, ciudad…",
   "locationMyLocation": "Mi ubicación",
   "locationConfirm": "Confirmar",
+  "locationMarkMapFirst": "Buscá un lugar o tocá el mapa para confirmar.",
+  "locationPinOnly": "Solo este punto",
+  "locationNearbyPlace": "Lugar",
   "locationNoMatches": "Sin coincidencias. Prueba otro nombre o toca el mapa.",
   "locationNeedGps": "Activa la ubicación para centrar el mapa en ti.",
   "photoDeleteTitle": "Eliminar foto",

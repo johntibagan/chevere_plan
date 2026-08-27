@@ -124,6 +124,7 @@ class SavesRepository {
     double? longitude,
     String? excludeSiteId,
     String? googlePlaceId,
+    int? radiusM,
   }) async {
     final n = name.trim();
     final pid = googlePlaceId?.trim();
@@ -132,6 +133,9 @@ class SavesRepository {
         (pid == null || pid.isEmpty)) {
       return [];
     }
+    final radius = SavePolicies.clampDuplicateSearchRadiusM(
+      radiusM ?? SavePolicies.defaultDuplicateSearchRadiusM,
+    );
     final rows = await _client.rpc(
       'find_possible_duplicate_sites',
       params: {
@@ -139,7 +143,7 @@ class SavesRepository {
         'p_lat': latitude,
         'p_lng': longitude,
         'p_city': city?.trim().isEmpty == true ? null : city?.trim(),
-        'p_radius_m': SavePolicies.duplicateSearchRadiusM,
+        'p_radius_m': radius,
         'p_exclude_site_id': excludeSiteId,
         'p_google_place_id': (pid == null || pid.isEmpty) ? null : pid,
       },

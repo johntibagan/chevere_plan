@@ -41,8 +41,11 @@ Al pegar Maps o confirmar el mapa se **guardan las dos**. El interruptor no borr
 | Origen | Coords (pin) | Lugar (nombre / Place ID) |
 |---|---|---|
 | Enlace / share Maps | Se conservan (o se geocodifican) | Se conservan |
-| Mapa interactivo | Se conservan | Place ID si el buscador lo trajo. **Enciende** punto exacto |
+| Mapa interactivo (ficha: búsqueda o chip Nearby) | Se conservan | Place ID de la ficha. **Apaga** punto exacto |
+| Mapa interactivo (solo pin) | Se conservan | Reverse / sin ficha. **Enciende** punto exacto |
 | Interruptor “Punto exacto” | No borra el pin. Solo elige cómo abrir Maps. Default **apagado**. Encenderlo sin pin abre el mapa. |
+
+En el mapa: Confirmar desactivado hasta buscar, tocar, arrastrar o GPS (el centro de Colombia al abrir no habilita guardar).
 
 Público en lugar físico exige **lat y lng guardados**. El interruptor apagado **no** bloquea Público.
 
@@ -63,7 +66,7 @@ Público es **sección siempre visible**. Sin pin, el interruptor se muestra **d
 - Depto → ciudad (DIVIPOLA, ids, no listas en Dart).
 - Crear: categoría default Otros. Editar: no pisar categorías cargadas.
 - Pegar = icono **dentro** del campo, no botón “Buscar” aparte.
-- Anti-dupe: suave al Maps/pin; en Guardar, “de todas formas”. Lista de coincidencias (públicos + los tuyos; Place ID, pin ~250 m, nombre/ciudad). Fila abre la ficha. Vincular + reseña o bitácora. Tras reset full, las coincidencias del catálogo son sitios vivos; abrir/guardar no debe fallar por un select de portada.
+- Anti-dupe: suave al Maps/pin; en Guardar, “de todas formas”. Lista de coincidencias (públicos + los tuyos; Place ID, pin según radio del perfil default **100 m**, nombre/ciudad). Fila abre la ficha. Vincular + reseña o bitácora. Tras reset full, las coincidencias del catálogo son sitios vivos; abrir/guardar no debe fallar por un select de portada.
 
 Alto riesgo: `save_place_page.dart`, `google_maps_link_importer.dart`, `save_policies.dart`, `saves_repository.dart`, `location_picker_page.dart`.
 

@@ -48,8 +48,10 @@ create table if not exists public.profiles (
   updated_at timestamp with time zone default now() not null,
   proximity_radius_m integer default 200 not null,
   remind_public_sites boolean default false not null,
+  duplicate_search_radius_m integer default 100 not null,
   transport_max_km jsonb default '{}'::jsonb not null,
   constraint profiles_proximity_radius_m_check CHECK (((proximity_radius_m >= 100) AND (proximity_radius_m <= 2000))),
+  constraint profiles_duplicate_search_radius_m_check CHECK (((duplicate_search_radius_m >= 50) AND (duplicate_search_radius_m <= 1000))),
   constraint profiles_username_format CHECK ((username IS NULL) OR (username ~ '^[a-z0-9._]{3,20}$'::text)),
   constraint profiles_id_fkey FOREIGN KEY (id) REFERENCES auth.users(id) ON DELETE CASCADE,
   constraint profiles_preferred_distance_unit_fkey FOREIGN KEY (preferred_distance_unit) REFERENCES distance_units(slug) ON UPDATE CASCADE ON DELETE RESTRICT,
@@ -748,8 +750,8 @@ begin
 end;
 $function$;
 
--- Anti-dupe: mismo Place ID, mismo pin (~250 m), nombre parecido hasta 2.5 km,
--- o misma ciudad + nombre parecido. Incluye los privados de quien busca.
+-- Anti-dupe: mismo Place ID, pin (radio perfil, default 100 m), nombre parecido
+-- en radio fuzzy (~5×), o misma ciudad + nombre. Incluye privados de quien busca.
 drop function if exists public.find_possible_duplicate_sites(
   text, double precision, double precision, text, double precision, uuid
 );
@@ -757,7 +759,7 @@ drop function if exists public.find_possible_duplicate_sites(
   text, double precision, double precision, text, double precision, uuid, text
 );
 
-CREATE OR REPLACE FUNCTION public.find_possible_duplicate_sites(p_name text, p_lat double precision DEFAULT NULL::double precision, p_lng double precision DEFAULT NULL::double precision, p_city text DEFAULT NULL::text, p_radius_m double precision DEFAULT 250, p_exclude_site_id uuid DEFAULT NULL::uuid, p_google_place_id text DEFAULT NULL::text)
+CREATE OR REPLACE FUNCTION public.find_possible_duplicate_sites(p_name text, p_lat double precision DEFAULT NULL::double precision, p_lng double precision DEFAULT NULL::double precision, p_city text DEFAULT NULL::text, p_radius_m double precision DEFAULT 100, p_exclude_site_id uuid DEFAULT NULL::uuid, p_google_place_id text DEFAULT NULL::text)
  RETURNS TABLE(
    site_id uuid,
    site_name text,
@@ -776,6 +778,11 @@ CREATE OR REPLACE FUNCTION public.find_possible_duplicate_sites(p_name text, p_l
  STABLE
  SET search_path TO 'public'
 AS $function$
+  with params as (
+    select
+      greatest(coalesce(p_radius_m, 100), 50) as pin_r,
+      least(1500, greatest(coalesce(p_radius_m, 100) * 5, 400)) as fuzzy_r
+  )
   select
     s.id,
     s.name,
@@ -814,7 +821,7 @@ AS $function$
         and us.user_id = auth.uid()
         and us.is_possible_duplicate = true
     )
-  from public.sites s
+  from public.sites s, params
   where s.is_physical_place = true
     and (p_exclude_site_id is null or s.id <> p_exclude_site_id)
     and (
@@ -826,36 +833,32 @@ AS $function$
       )
     )
     and (
-      -- Mismo Place ID de Google.
       (
         nullif(trim(coalesce(p_google_place_id, '')), '') is not null
         and s.google_place_id is not null
         and s.google_place_id = trim(p_google_place_id)
       )
-      -- Mismo pin (~250 m): el nombre puede ser distinto.
       or (
         p_lat is not null and p_lng is not null and s.location is not null
         and st_dwithin(
           s.location,
           st_setsrid(st_makepoint(p_lng, p_lat), 4326)::geography,
-          greatest(coalesce(p_radius_m, 250), 80)
+          params.pin_r
         )
       )
-      -- Hasta 2.5 km si el nombre se parece (catálogo vs ficha de Maps).
       or (
         p_lat is not null and p_lng is not null and s.location is not null
         and nullif(trim(p_name), '') is not null
         and st_dwithin(
           s.location,
           st_setsrid(st_makepoint(p_lng, p_lat), 4326)::geography,
-          2500
+          params.fuzzy_r
         )
         and greatest(
           similarity(lower(s.name), lower(trim(p_name))),
           word_similarity(lower(trim(p_name)), lower(s.name))
         ) >= 0.28
       )
-      -- Misma ciudad + nombre parecido (aunque ya tengas coords).
       or (
         nullif(trim(coalesce(p_city, '')), '') is not null
         and s.city ilike trim(p_city)
@@ -867,8 +870,15 @@ AS $function$
       )
     )
   order by
-    score desc nulls last,
-    dist_m asc nulls last
+    case
+      when s.google_place_id is not null
+        and nullif(trim(coalesce(p_google_place_id, '')), '') is not null
+        and s.google_place_id = trim(p_google_place_id)
+      then 0
+      else 1
+    end,
+    dist_m nulls last,
+    score desc
   limit 10;
 $function$;
 

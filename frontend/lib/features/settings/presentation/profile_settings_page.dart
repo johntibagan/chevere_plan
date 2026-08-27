@@ -17,6 +17,7 @@ import '../../../core/widgets/app_toast.dart';
 import '../../auth/data/profile.dart';
 import '../../auth/domain/profile_public_display.dart';
 import '../../auth/domain/username_rules.dart';
+import '../../saves/domain/save_policies.dart';
 
 /// Configuración de @usuario y foto de perfil.
 ///
@@ -65,6 +66,8 @@ class _ProfileSettingsPageState extends ConsumerState<ProfileSettingsPage> {
   bool _useGoogleAvatar = false;
   UsernameAvailability? _availability;
   List<String> _suggestions = const [];
+  double _duplicateRadiusM =
+      SavePolicies.defaultDuplicateSearchRadiusM.toDouble();
 
   bool get _usernameLocked {
     final p = _profile;
@@ -93,6 +96,10 @@ class _ProfileSettingsPageState extends ConsumerState<ProfileSettingsPage> {
     setState(() {
       _profile = p;
       _useGoogleAvatar = p?.useGoogleAvatar ?? false;
+      _duplicateRadiusM = SavePolicies.clampDuplicateSearchRadiusM(
+        p?.duplicateSearchRadiusM ??
+            SavePolicies.defaultDuplicateSearchRadiusM,
+      ).toDouble();
       _usernameCtrl.text = existing;
       _loading = false;
     });
@@ -330,13 +337,21 @@ class _ProfileSettingsPageState extends ConsumerState<ProfileSettingsPage> {
           norm != null &&
           UsernameRules.isFormatValid(norm) &&
           norm != current;
-      final updated = await ref.read(profileRepositoryProvider).updateMyProfile(
+      final repo = ref.read(profileRepositoryProvider);
+      var updated = await repo.updateMyProfile(
             username: shouldSendUsername ? norm : null,
             useGoogleAvatar: _useGoogleAvatar,
           );
+      final radius = SavePolicies.clampDuplicateSearchRadiusM(
+        _duplicateRadiusM.round(),
+      );
+      if (radius != updated.duplicateSearchRadiusM) {
+        updated = await repo.updateDuplicateSearchRadius(radius);
+      }
       if (!mounted) return;
       setState(() {
         _profile = updated;
+        _duplicateRadiusM = updated.duplicateSearchRadiusM.toDouble();
         _saving = false;
       });
       AppToast.show(context, l10n.profileSaved);
@@ -494,6 +509,54 @@ class _ProfileSettingsPageState extends ConsumerState<ProfileSettingsPage> {
                     ),
                   ),
                   SizedBox(height: 20),
+                  if (!widget.requireUsername) ...[
+                    AppSectionLabel(text: l10n.profileDuplicateRadiusSection),
+                    SizedBox(height: 8),
+                    AppFormCard(
+                      padding: const EdgeInsets.fromLTRB(12, 12, 12, 4),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Text(
+                            l10n.profileDuplicateRadiusHelp,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: AppColors.muted,
+                            ),
+                          ),
+                          SizedBox(height: 8),
+                          Text(
+                            l10n.profileDuplicateRadiusLabel(
+                              _duplicateRadiusM.round(),
+                            ),
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.foreground,
+                            ),
+                          ),
+                          Slider(
+                            min: SavePolicies.minDuplicateSearchRadiusM
+                                .toDouble(),
+                            max: SavePolicies.maxDuplicateSearchRadiusM
+                                .toDouble(),
+                            divisions: ((SavePolicies
+                                        .maxDuplicateSearchRadiusM -
+                                    SavePolicies
+                                        .minDuplicateSearchRadiusM) /
+                                    10)
+                                .round(),
+                            label: '${_duplicateRadiusM.round()} m',
+                            value: _duplicateRadiusM,
+                            onChanged: _saving
+                                ? null
+                                : (v) =>
+                                    setState(() => _duplicateRadiusM = v),
+                          ),
+                        ],
+                      ),
+                    ),
+                    SizedBox(height: 20),
+                  ],
                   AppSectionLabel(text: l10n.profileUsernameLabel),
                   SizedBox(height: 8),
                   AppFormCard(

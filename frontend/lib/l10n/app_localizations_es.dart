@@ -170,6 +170,18 @@ class AppLocalizationsEs extends AppLocalizations {
       'Todavía no podés cambiar el nombre de usuario.';
 
   @override
+  String get profileDuplicateRadiusSection => 'Mismo sitio al guardar';
+
+  @override
+  String get profileDuplicateRadiusHelp =>
+      'Si hay otro sitio dentro de este radio, te avisamos para no duplicarlo. Por defecto 100 m.';
+
+  @override
+  String profileDuplicateRadiusLabel(int meters) {
+    return 'Radio: $meters m';
+  }
+
+  @override
   String get actionCancel => 'Cancelar';
 
   @override
@@ -1349,6 +1361,16 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get locationConfirm => 'Confirmar';
+
+  @override
+  String get locationMarkMapFirst =>
+      'Buscá un lugar o tocá el mapa para confirmar.';
+
+  @override
+  String get locationPinOnly => 'Solo este punto';
+
+  @override
+  String get locationNearbyPlace => 'Lugar';
 
   @override
   String get locationNoMatches =>

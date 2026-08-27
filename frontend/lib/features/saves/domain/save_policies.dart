@@ -4,7 +4,17 @@ import '../data/save_models.dart';
 abstract final class SavePolicies {
   static const int maxPhotosPerSite = 15;
   static const Duration draftRemindAfter = Duration(hours: 24);
-  static const double duplicateSearchRadiusM = 250;
+
+  /// Radio por defecto para detectar el mismo sitio por pin (m).
+  static const int defaultDuplicateSearchRadiusM = 100;
+  static const int minDuplicateSearchRadiusM = 50;
+  static const int maxDuplicateSearchRadiusM = 1000;
+
+  static int clampDuplicateSearchRadiusM(int meters) {
+    if (meters < minDuplicateSearchRadiusM) return minDuplicateSearchRadiusM;
+    if (meters > maxDuplicateSearchRadiusM) return maxDuplicateSearchRadiusM;
+    return meters;
+  }
 
   /// Recordatorios locales espaciados hasta completar o descartar (§3.1).
   static const List<Duration> draftRemindDelays = [

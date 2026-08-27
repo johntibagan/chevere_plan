@@ -67,7 +67,9 @@ Es el corazón de la app.
 
 Podés pegar un link de Maps **dentro del campo** (opción desde enlace / icono pegar): la app rellena nombre, ciudad y **pin**. Eso cuenta como lugar ya elegido: **no** se pregunta “¿punto exacto?” ni se tiran las coordenadas. **Público** queda habilitado si hay pin. El mapa interactivo tampoco pregunta: el usuario ya confirmó el punto.
 
-Se guardan **las dos** ubicaciones: el **lugar** (nombre y Place ID) y el **punto exacto** (lat/lng). El interruptor va apagado si solo pegás un enlace. **Confirmar el pin en el mapa lo enciende.** Encendido: Maps abre con `query=lat,lng` (coords en el buscador), no el nombre ni el Place ID. Apagarlo no borra el pin ni Público. Contrato: [`invariantes.md`](invariantes.md).
+Se guardan **las dos** ubicaciones: el **lugar** (nombre y Place ID) y el **punto exacto** (lat/lng). El interruptor va apagado si solo pegás un enlace o si elegís una **ficha de lugar** en el mapa (parque, tienda…). **Confirmar solo un pin en el mapa** lo enciende. Encendido: Maps abre con `query=lat,lng` (coords en el buscador), no el nombre ni el Place ID. Apagarlo no borra el pin ni Público. Contrato: [`invariantes.md`](invariantes.md).
+
+En el **mapa interactivo**, Confirmar / Usar empieza **desactivado** (centro de Colombia no cuenta). Se activa al buscar, tocar el mapa, arrastrar el pin o usar GPS. Al tocar, además del pin aparecen chips de lugares cercanos (Places Nearby) para guardar la **ficha** del sitio.
 
 ### Qué ves en el formulario
 
@@ -114,7 +116,7 @@ flowchart TD
 
 La app no quiere dos fichas públicas del mismo parque a 80 metros.
 
-- Busca sitios **públicos completos** y **tus privados completos** (con pin): mismo Place ID, pin cercano (~250 m), nombre parecido hasta 2,5 km, o misma ciudad + nombre. **No** entran borradores propios (sin ubicación / incompletos).
+- Busca sitios **públicos completos** y **tus privados completos** (con pin): mismo Place ID, pin cercano (radio configurable, **default 100 m**; ☰ → Tu perfil), nombre parecido en un radio fuzzy (~5×), o misma ciudad + nombre. **No** entran borradores propios (sin ubicación / incompletos).
 - Tras un **reset completo** el catálogo masivo vuelve: si el pin/nombre coincide, **sí hay un sitio real** (no es caché fantasma). Abrir la fila debe mostrar esa ficha; **Guardar de todas formas** crea el tuyo aunque el aviso siga saliendo.
 - **Aviso suave** al pegar Maps o elegir pin: grilla 2×2 (mismo estándar de tarjeta: portada, franja de visibilidad, icono público/privado, Tuyo/Catálogo/Público/Vinculado, nombre, depto–ciudad, dirección). **Ver ficha** como enlace de texto; **Usar como** azul; seleccionado: fondo surface + borde foreground (tema claro/oscuro). Al usarlo: **Reseña pública** (solo si el sitio es público), **Reseña privada** o **Agregar a favoritos**; info con Tooltip; al **Confirmar** se descarta el guardado y navega a la ficha. Abajo **Seguir con el mío**.
 - **Al Guardar**: misma grilla; abajo **Guardar de todas formas** (Tooltip aparte). Botón **Guardar** amarillo si hay coincidencias.

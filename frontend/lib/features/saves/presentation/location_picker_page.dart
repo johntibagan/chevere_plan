@@ -9,6 +9,8 @@ import '../../../core/config/env.dart';
 import '../../../core/di/providers.dart';
 import '../../../core/l10n/context_l10n.dart';
 import '../../../core/testing/widget_keys.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../../core/theme/theme_rebuild.dart';
 import '../../../core/widgets/app_toast.dart';
 import '../../../core/widgets/field_action_icon.dart';
 import '../../home/data/device_location.dart';
@@ -43,29 +45,33 @@ class _LocationPickerPageState extends ConsumerState<LocationPickerPage> {
   late LatLng _pin;
   GeoPlace? _place;
   List<PlacePrediction> _predictions = const [];
+  List<GeoPlace> _nearbyPlaces = const [];
+  GeoPlace? _pinOnlyPlace;
   String? _sessionToken;
   bool _locating = false;
   bool _busy = false;
   String? _hint;
   DateTime? _lastTapAt;
+  late bool _hasUserSelection;
+  int _tapGen = 0;
 
   @override
   void initState() {
     super.initState();
     if (widget.initialLat != null && widget.initialLng != null) {
       _pin = LatLng(widget.initialLat!, widget.initialLng!);
-      WidgetsBinding.instance.addPostFrameCallback((_) => _reverse(_pin));
+      _hasUserSelection = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) => _onMapPoint(_pin));
     } else {
       _pin = _colombiaCenter;
+      _hasUserSelection = false;
     }
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (_hint == null &&
-        !Env.hasGoogleMapsKey &&
-        !Env.hasGeoapifyKey) {
+    if (_hint == null && !Env.hasGoogleMapsKey && !Env.hasGeoapifyKey) {
       _hint = context.l10n.locationMapsUnavailable;
     }
   }
@@ -77,27 +83,56 @@ class _LocationPickerPageState extends ConsumerState<LocationPickerPage> {
     super.dispose();
   }
 
-  Future<void> _reverse(LatLng point) async {
-    setState(() => _busy = true);
+  bool get _canConfirm => _hasUserSelection && !_busy;
+
+  Future<void> _onMapPoint(LatLng point) async {
+    final gen = ++_tapGen;
+    setState(() {
+      _busy = true;
+      _hasUserSelection = true;
+      _predictions = const [];
+      _nearbyPlaces = const [];
+      _hint = null;
+    });
+
+    GeoPlace? reverse;
+    List<GeoPlace> nearby = const [];
     try {
-      final place = await _geocoder.reverse(
+      final reverseFuture = _geocoder.reverse(
         lat: point.latitude,
         lng: point.longitude,
       );
-      if (!mounted) return;
-      setState(() {
-        _place = place ??
-            GeoPlace(lat: point.latitude, lng: point.longitude);
-        _busy = false;
-      });
+      final nearbyFuture = _places.isConfigured
+          ? _places.searchNearby(lat: point.latitude, lng: point.longitude)
+          : Future.value(const <GeoPlace>[]);
+      reverse = await reverseFuture;
+      nearby = await nearbyFuture;
     } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _place = GeoPlace(lat: point.latitude, lng: point.longitude);
-        _busy = false;
-      });
-      AppToast.error(context, e, logContext: 'location_reverse');
+      if (!mounted || gen != _tapGen) return;
+      AppToast.error(context, e, logContext: 'location_map_point');
     }
+
+    if (!mounted || gen != _tapGen) return;
+
+    final pinPlace = (reverse ??
+            GeoPlace(lat: point.latitude, lng: point.longitude))
+        .copyWith(
+      lat: point.latitude,
+      lng: point.longitude,
+      isPlaceFicha: false,
+    );
+
+    setState(() {
+      _pin = point;
+      _pinOnlyPlace = pinPlace;
+      _nearbyPlaces = nearby;
+      // Por defecto el pin tocado; el usuario elige ficha en los chips.
+      _place = pinPlace;
+      _busy = false;
+      if (nearby.isNotEmpty) {
+        _hint = null;
+      }
+    });
   }
 
   /// Solo botón / tecla Enter — no onChanged (cero llamadas por tecla).
@@ -154,10 +189,9 @@ class _LocationPickerPageState extends ConsumerState<LocationPickerPage> {
             .toList();
         _busy = false;
         if (hits.isEmpty) _hint = context.l10n.locationNoMatches;
-        // Guardamos coords en un mapa paralelo vía placeId sintético.
         _fallbackById = {
           for (final h in hits)
-            (h.placeId ?? '${h.lat},${h.lng}'): h,
+            (h.placeId ?? '${h.lat},${h.lng}'): h.copyWith(isPlaceFicha: true),
         };
       });
     } catch (e) {
@@ -199,12 +233,16 @@ class _LocationPickerPageState extends ConsumerState<LocationPickerPage> {
         }
         return;
       }
+      place = place.copyWith(isPlaceFicha: true);
       final point = LatLng(place.lat, place.lng);
       if (!mounted) return;
       setState(() {
         _pin = point;
         _place = place;
+        _pinOnlyPlace = null;
+        _nearbyPlaces = const [];
         _predictions = const [];
+        _hasUserSelection = true;
         _searchCtrl.text = place!.displayName ?? place.name ?? pred.primaryText;
         _hint = null;
         _busy = false;
@@ -219,6 +257,33 @@ class _LocationPickerPageState extends ConsumerState<LocationPickerPage> {
     }
   }
 
+  void _selectNearby(GeoPlace place) {
+    setState(() {
+      _place = place.copyWith(isPlaceFicha: true);
+      _pin = LatLng(place.lat, place.lng);
+      _hasUserSelection = true;
+      _searchCtrl.text = place.name ?? place.displayName ?? '';
+      _hint = null;
+    });
+    unawaited(
+      _mapController?.animateCamera(
+        CameraUpdate.newLatLngZoom(_pin, 17),
+      ),
+    );
+  }
+
+  void _selectPinOnly() {
+    final pin = _pinOnlyPlace;
+    if (pin == null) return;
+    setState(() {
+      _place = pin;
+      _pin = LatLng(pin.lat, pin.lng);
+      _hasUserSelection = true;
+      _searchCtrl.text = pin.displayName ?? pin.addressLine ?? '';
+      _hint = null;
+    });
+  }
+
   Future<void> _setPin(LatLng point) async {
     final now = DateTime.now();
     if (_lastTapAt != null &&
@@ -230,8 +295,9 @@ class _LocationPickerPageState extends ConsumerState<LocationPickerPage> {
       _pin = point;
       _predictions = const [];
       _hint = null;
+      _hasUserSelection = true;
     });
-    await _reverse(point);
+    await _onMapPoint(point);
   }
 
   Future<void> _useMyLocation() async {
@@ -276,36 +342,41 @@ class _LocationPickerPageState extends ConsumerState<LocationPickerPage> {
   }
 
   Future<void> _confirm() async {
+    if (!_canConfirm) return;
     if (_place == null ||
         _place!.city == null ||
         _place!.addressLine == null) {
-      await _reverse(_pin);
+      await _onMapPoint(_pin);
     }
-    if (!mounted) return;
+    if (!mounted || !_hasUserSelection) return;
     final place = _place ??
         GeoPlace(lat: _pin.latitude, lng: _pin.longitude);
     Navigator.of(context).pop<GeoPlace>(
       GeoPlace(
-        lat: _pin.latitude,
-        lng: _pin.longitude,
+        lat: place.isPlaceFicha ? place.lat : _pin.latitude,
+        lng: place.isPlaceFicha ? place.lng : _pin.longitude,
         displayName: place.displayName,
         name: place.name,
         city: place.city,
         department: place.department,
         addressLine: place.addressLine ?? place.displayName,
-        placeId: place.placeId,
+        placeId: place.isPlaceFicha ? place.placeId : null,
+        isPlaceFicha: place.isPlaceFicha,
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    ref.watchAppThemeMode();
     final l10n = context.l10n;
     final providerLabel = Env.hasGoogleMapsKey
         ? l10n.locationProviderGoogle
         : Env.hasGeoapifyKey
             ? l10n.locationProviderFallback
             : l10n.locationProviderNone;
+    final showNearbyStrip =
+        _nearbyPlaces.isNotEmpty || _pinOnlyPlace != null;
 
     return Scaffold(
       key: WidgetKeys.locationPicker,
@@ -314,7 +385,7 @@ class _LocationPickerPageState extends ConsumerState<LocationPickerPage> {
         actions: [
           TextButton(
             key: WidgetKeys.locationUseAppBar,
-            onPressed: _confirm,
+            onPressed: _canConfirm ? _confirm : null,
             child: Text(l10n.actionUse),
           ),
         ],
@@ -340,7 +411,6 @@ class _LocationPickerPageState extends ConsumerState<LocationPickerPage> {
               ),
               textInputAction: TextInputAction.search,
               onSubmitted: _runSearch,
-              // Sin onChanged: no Autocomplete por tecla.
             ),
           ),
           if (_predictions.isNotEmpty)
@@ -374,17 +444,76 @@ class _LocationPickerPageState extends ConsumerState<LocationPickerPage> {
                 ),
               ),
             ),
-          if (_place?.displayName != null || _hint != null)
+          if (_hint != null)
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
               child: Text(
-                _hint ?? _place!.displayName!,
+                _hint!,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: _hint != null
-                          ? Theme.of(context).colorScheme.error
-                          : null,
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+              ),
+            )
+          else if (_place?.displayName != null || _place?.name != null)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+              child: Text(
+                _place!.name ?? _place!.displayName!,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ),
+          if (showNearbyStrip)
+            SizedBox(
+              height: 44,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                children: [
+                  if (_pinOnlyPlace != null)
+                    Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: FilterChip(
+                        selected: _place != null &&
+                            !_place!.isPlaceFicha &&
+                            _place!.lat == _pinOnlyPlace!.lat &&
+                            _place!.lng == _pinOnlyPlace!.lng,
+                        label: Text(l10n.locationPinOnly),
+                        onSelected: (_) => _selectPinOnly(),
+                      ),
+                    ),
+                  for (final p in _nearbyPlaces)
+                    Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: FilterChip(
+                        selected: _place?.placeId != null &&
+                            _place!.placeId == p.placeId,
+                        avatar: Icon(
+                          Icons.storefront_outlined,
+                          size: 16,
+                          color: AppColors.muted,
+                        ),
+                        label: Text(
+                          p.name ?? p.displayName ?? l10n.locationNearbyPlace,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        onSelected: (_) => _selectNearby(p),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          if (!_hasUserSelection)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+              child: Text(
+                l10n.locationMarkMapFirst,
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: AppColors.muted,
                     ),
               ),
             ),
@@ -444,7 +573,7 @@ class _LocationPickerPageState extends ConsumerState<LocationPickerPage> {
                       Expanded(
                         child: FilledButton.icon(
                           key: WidgetKeys.locationConfirm,
-                          onPressed: _confirm,
+                          onPressed: _canConfirm ? _confirm : null,
                           icon: const Icon(Icons.check),
                           label: Text(l10n.locationConfirm),
                         ),
