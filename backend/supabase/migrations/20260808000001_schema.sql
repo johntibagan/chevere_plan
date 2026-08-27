@@ -34,7 +34,11 @@ create table if not exists public.distance_units (
 create table if not exists public.profiles (
   id uuid not null,
   display_name text,
+  username text,
   avatar_url text,
+  google_avatar_url text,
+  use_google_avatar boolean default false not null,
+  username_changed_at timestamp with time zone,
   role app_role default 'user'::app_role not null,
   birth_date date,
   preferred_locale text default 'es'::text not null,
@@ -46,10 +50,15 @@ create table if not exists public.profiles (
   remind_public_sites boolean default false not null,
   transport_max_km jsonb default '{}'::jsonb not null,
   constraint profiles_proximity_radius_m_check CHECK (((proximity_radius_m >= 100) AND (proximity_radius_m <= 2000))),
+  constraint profiles_username_format CHECK ((username IS NULL) OR (username ~ '^[a-z0-9._]{3,20}$'::text)),
   constraint profiles_id_fkey FOREIGN KEY (id) REFERENCES auth.users(id) ON DELETE CASCADE,
   constraint profiles_preferred_distance_unit_fkey FOREIGN KEY (preferred_distance_unit) REFERENCES distance_units(slug) ON UPDATE CASCADE ON DELETE RESTRICT,
   constraint profiles_pkey PRIMARY KEY (id)
 );
+
+create unique index if not exists profiles_username_unique
+  on public.profiles (username)
+  where (username is not null);
 
 create table if not exists public.categories (
   id uuid default gen_random_uuid() not null,
@@ -893,11 +902,13 @@ CREATE OR REPLACE FUNCTION public.handle_new_user()
  SET search_path TO 'public'
 AS $function$
 begin
-  insert into public.profiles (id, display_name, avatar_url)
+  insert into public.profiles (id, display_name, google_avatar_url, avatar_url, use_google_avatar)
   values (
     new.id,
     coalesce(new.raw_user_meta_data->>'full_name', new.raw_user_meta_data->>'name', new.email),
-    new.raw_user_meta_data->>'avatar_url'
+    coalesce(new.raw_user_meta_data->>'avatar_url', new.raw_user_meta_data->>'picture'),
+    null,
+    false
   )
   on conflict (id) do nothing;
   return new;
@@ -1032,7 +1043,11 @@ AS $function$
     r.status,
     r.created_at,
     r.reporter_id,
-    coalesce(pr.display_name, 'Usuario') as reporter_name,
+    case
+      when pr.username is not null and length(pr.username) > 0
+        then '@' || pr.username
+      else 'Usuario'
+    end as reporter_name,
     coalesce(ph.storage_path, null) as photo_path,
     coalesce(s_photo.name, s_review.name) as site_name,
     case

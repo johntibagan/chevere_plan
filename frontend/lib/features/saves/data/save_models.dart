@@ -1,4 +1,5 @@
 import '../../../core/l10n/display_defaults.dart';
+import '../../auth/domain/profile_public_display.dart';
 
 enum SiteStatus {
   draft,
@@ -135,6 +136,7 @@ class SitePerson {
   });
 
   final String userId;
+  /// Público: `@username` (nunca el nombre del correo).
   final String? displayName;
   final String? avatarUrl;
   /// Cuándo se sumó como contribuidor (UTC).
@@ -164,6 +166,11 @@ class SitePerson {
     );
   }
 
+  static ({String? name, String? avatar}) _fromProfileEmbed(Map? profile) {
+    final parsed = ProfilePublicDisplay.fromProfileEmbed(profile);
+    return (name: parsed.handle, avatar: parsed.avatarUrl);
+  }
+
   static List<SitePerson> parseContributorRows(List? raw) {
     final out = <SitePerson>[];
     final seen = <String>{};
@@ -172,20 +179,15 @@ class SitePerson {
       final uid = row['user_id'] as String?;
       if (uid == null || uid.isEmpty || !seen.add(uid)) continue;
       final profile = row['profiles'];
-      String? name;
-      String? avatar;
-      if (profile is Map) {
-        name = profile['display_name'] as String?;
-        avatar = profile['avatar_url'] as String?;
-      }
+      final parsed = _fromProfileEmbed(profile is Map ? profile : null);
       DateTime? joined;
       final rawJoined = row['created_at'];
       if (rawJoined is String) joined = DateTime.tryParse(rawJoined);
       out.add(
         SitePerson(
           userId: uid,
-          displayName: name,
-          avatarUrl: avatar,
+          displayName: parsed.name,
+          avatarUrl: parsed.avatar,
           joinedAt: joined,
         ),
       );
@@ -198,16 +200,11 @@ class SitePerson {
     Map? creatorProfile,
   }) {
     if (createdById == null || createdById.isEmpty) return null;
-    String? name;
-    String? avatar;
-    if (creatorProfile is Map) {
-      name = creatorProfile['display_name'] as String?;
-      avatar = creatorProfile['avatar_url'] as String?;
-    }
+    final parsed = _fromProfileEmbed(creatorProfile);
     return SitePerson(
       userId: createdById,
-      displayName: name,
-      avatarUrl: avatar,
+      displayName: parsed.name,
+      avatarUrl: parsed.avatar,
     );
   }
 

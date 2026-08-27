@@ -60,7 +60,7 @@ flowchart TB
   Menu --> ThemePicker[Tema Claro / Oscuro / Sistema]
   Menu --> Admin[AdminPage / Reportes]
   Menu --> Prox[Bottom sheet proximidad]
-  Menu --> ProfileSoon[ComingSoon perfil]
+  Menu --> Profile[ProfileSettingsPage]
   T0 --> Prox
   Save --> Map[LocationPickerPage]
   Save --> Cats[CategoryPickerPage fullscreen]
@@ -222,7 +222,7 @@ Tab activo: icono + label `primary`. Inactivo: `mutedDark`, label 10 px.
 
 **Inicio (`_InicioTab`)** — sin AppBar:
 
-1. Saludo 11 mutedDark + título app 22 ExtraBold. Botón **☰** (derecha) abre `endDrawer` Más opciones: perfil (próximamente), Recuerdos cercanos, Admin/Reportes si staff, **Cerrar sesión** al final.
+1. Saludo 11 mutedDark + título app 22 ExtraBold. Botón **☰** (derecha) abre `endDrawer` Más opciones: **Tu perfil** (`ProfileSettingsPage`: @usuario + foto), Recuerdos cercanos, Admin/Reportes si staff, **Cerrar sesión** al final.
 2. **Vista** (lista / 2 / 3 / 4) justo debajo del título; aplica a recientes y populares.
 3. Aviso de **borradores** (card naranja), si hay.
 4. **Eventos**: título plegable; contenido *Próximamente.* (placeholder).
@@ -330,7 +330,7 @@ Chips internos: buscar / resultados / añadidos. `AppSearchField` + filtros avan
 | Más opciones → Recuerdos | | Sheet proximidad |
 | Más opciones → Admin (staff) | | `AdminPage` |
 | Más opciones → Reportes (staff) | | `AdminReportsPage` |
-| Más opciones → Perfil | | `ComingSoonPage` |
+| Más opciones → Perfil | | `ProfileSettingsPage` |
 | Banner recuerdo | | *(eliminado; recuerdos en menú ☰)* |
 | Planes CTA crear | | `CreatePlanPage` → builder |
 | Card plan / item ruta | | `PlanDetailPage` |

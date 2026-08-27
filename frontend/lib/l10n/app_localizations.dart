@@ -232,6 +232,162 @@ abstract class AppLocalizations {
   /// **'Pronto vas a poder ver y editar tu cuenta desde aquí.'**
   String get moreMenuProfileComingBody;
 
+  /// No description provided for @profileSettingsTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Tu perfil'**
+  String get profileSettingsTitle;
+
+  /// No description provided for @profileUsernameLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Nombre de usuario'**
+  String get profileUsernameLabel;
+
+  /// No description provided for @profileUsernameHint.
+  ///
+  /// In es, this message translates to:
+  /// **'usuario'**
+  String get profileUsernameHint;
+
+  /// No description provided for @profileUsernameHelp.
+  ///
+  /// In es, this message translates to:
+  /// **'3–20 caracteres: letras, números, punto o guion bajo. Se muestra como @usuario en reseñas y fotos.'**
+  String get profileUsernameHelp;
+
+  /// No description provided for @profileUsernameAvailable.
+  ///
+  /// In es, this message translates to:
+  /// **'Disponible'**
+  String get profileUsernameAvailable;
+
+  /// No description provided for @profileUsernameTaken.
+  ///
+  /// In es, this message translates to:
+  /// **'Ya está en uso'**
+  String get profileUsernameTaken;
+
+  /// No description provided for @profileUsernameInvalid.
+  ///
+  /// In es, this message translates to:
+  /// **'Solo letras minúsculas, números, punto o guion bajo'**
+  String get profileUsernameInvalid;
+
+  /// No description provided for @profileUsernameLength.
+  ///
+  /// In es, this message translates to:
+  /// **'Entre 3 y 20 caracteres'**
+  String get profileUsernameLength;
+
+  /// No description provided for @profileUsernameReserved.
+  ///
+  /// In es, this message translates to:
+  /// **'Ese nombre no está disponible'**
+  String get profileUsernameReserved;
+
+  /// No description provided for @profileUsernameChecking.
+  ///
+  /// In es, this message translates to:
+  /// **'Comprobando…'**
+  String get profileUsernameChecking;
+
+  /// No description provided for @profileUsernameSuggestions.
+  ///
+  /// In es, this message translates to:
+  /// **'Sugerencias'**
+  String get profileUsernameSuggestions;
+
+  /// No description provided for @profileUsernameRequired.
+  ///
+  /// In es, this message translates to:
+  /// **'Elegí un nombre de usuario para continuar'**
+  String get profileUsernameRequired;
+
+  /// No description provided for @profileAvatarSection.
+  ///
+  /// In es, this message translates to:
+  /// **'Foto de perfil'**
+  String get profileAvatarSection;
+
+  /// No description provided for @profileUseGoogleAvatar.
+  ///
+  /// In es, this message translates to:
+  /// **'Usar foto de Google'**
+  String get profileUseGoogleAvatar;
+
+  /// No description provided for @profileUseGoogleAvatarHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Por defecto no se muestra. Podés activarla o subir otra.'**
+  String get profileUseGoogleAvatarHint;
+
+  /// No description provided for @profileAvatarSourceLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Foto activa'**
+  String get profileAvatarSourceLabel;
+
+  /// No description provided for @profileAvatarSourceGoogle.
+  ///
+  /// In es, this message translates to:
+  /// **'Google'**
+  String get profileAvatarSourceGoogle;
+
+  /// No description provided for @profileAvatarSourceCustom.
+  ///
+  /// In es, this message translates to:
+  /// **'Personalizada'**
+  String get profileAvatarSourceCustom;
+
+  /// No description provided for @profileChangePhoto.
+  ///
+  /// In es, this message translates to:
+  /// **'Cambiar foto'**
+  String get profileChangePhoto;
+
+  /// No description provided for @profileRemoveCustomPhoto.
+  ///
+  /// In es, this message translates to:
+  /// **'Quitar foto propia'**
+  String get profileRemoveCustomPhoto;
+
+  /// No description provided for @profileNoPhoto.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin foto (iniciales)'**
+  String get profileNoPhoto;
+
+  /// No description provided for @profileSaved.
+  ///
+  /// In es, this message translates to:
+  /// **'Perfil actualizado'**
+  String get profileSaved;
+
+  /// No description provided for @profileSaveUsernameFirst.
+  ///
+  /// In es, this message translates to:
+  /// **'Guardá un nombre de usuario válido'**
+  String get profileSaveUsernameFirst;
+
+  /// No description provided for @profileUsernameLocked.
+  ///
+  /// In es, this message translates to:
+  /// **'Podés cambiar el @usuario cada 3 meses. Próximo cambio: {date}.'**
+  String profileUsernameLocked(String date);
+
+  /// No description provided for @profileUsernameMustSet.
+  ///
+  /// In es, this message translates to:
+  /// **'Elegí un @usuario para usar la app. Se muestra en reseñas y fotos; las relaciones internas usan tu id, no el nombre.'**
+  String get profileUsernameMustSet;
+
+  /// No description provided for @profileUsernameCooldownToast.
+  ///
+  /// In es, this message translates to:
+  /// **'Todavía no podés cambiar el nombre de usuario.'**
+  String get profileUsernameCooldownToast;
+
   /// No description provided for @actionCancel.
   ///
   /// In es, this message translates to:

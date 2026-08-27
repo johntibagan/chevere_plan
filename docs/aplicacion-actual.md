@@ -18,7 +18,7 @@ Público y privado se distinguen por **color** (verde / morado) e **icono** en c
 ## Quién entra y con qué rol
 
 1. Abrís la app → pantalla de **iniciar sesión con Google**.
-2. El servidor crea un perfil (nombre, foto, rol `usuario`).
+2. El servidor crea un perfil (nombre de Google en privado, foto de Google guardada pero **no visible** por defecto, rol `usuario`). El **@usuario** y la foto pública se configuran en **Tu perfil** (menú ☰).
 3. Un correo concreto queda como **root** al resetear la base (dueño del catálogo masivo). Hay también rol **admin**.
 4. Admin y root entran al **panel** desde el menú **☰** de Inicio (Más opciones). Ahí también elegís el **tema**: Claro, Oscuro o Sistema (selector segmentado; se recuerda en el celular). Antes de **Cerrar sesión** se muestra la **versión** de la app (`x.y.z+build`). Reportes viven ahí. Sobre **contenido público** actúan casi como dueños. Las **bitácoras privadas no las ven**: solo quien las escribió.
 
@@ -50,6 +50,8 @@ Los tabs que ya abriste se quedan en memoria para que cambiar de pestaña se sie
 **Atrás en el shell:** si estás en Explorar, Planes o Rutas, el botón atrás vuelve a **Inicio**. En Inicio, el primer atrás muestra “Pulsa atrás otra vez para salir”; el segundo (en ~2 s) cierra la app. En fichas, guardar, mapas, etc. atrás sigue cerrando esa pantalla.
 
 **Favoritos:** el corazón (cards de Inicio/Explorar y ficha del sitio) marca o quita el sitio en tu lista de favoritos. Relleno = está marcado. Hoy no hay pestaña ni filtro de favoritos; eso va en [`pendientes.md`](pendientes.md). No es lo mismo que “Tuyo” (tu guardado).
+
+**Perfil (☰ → Tu perfil):** **@usuario** único (3–20, `a-z0-9._`; cambio como máximo cada **3 meses**; sin @ al abrir la app se fuerza la pantalla de perfil). Se muestra en reseñas, fotos, “Creado por” y el drawer — **no** el nombre del correo. Las relaciones (reseñas, fotos, sitios, favoritos) van por **id de perfil**, no por el @usuario. Foto: si hay Google y propia, selector Google / Personalizada; si solo Google, interruptor opt-in; se puede subir otra.
 
 ---
 

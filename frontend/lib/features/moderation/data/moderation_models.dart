@@ -1,4 +1,5 @@
 import '../../../core/l10n/display_defaults.dart';
+import '../../auth/domain/profile_public_display.dart';
 
 class SitePhoto {
   const SitePhoto({
@@ -18,13 +19,12 @@ class SitePhoto {
   final DateTime? createdAt;
 
   factory SitePhoto.fromJson(Map<String, dynamic> json) {
-    String? uploaderName;
     final profiles = json['profiles'];
-    if (profiles is Map) {
-      uploaderName = profiles['display_name'] as String?;
-    }
+    final parsed = ProfilePublicDisplay.fromProfileEmbed(
+      profiles is Map ? profiles : null,
+    );
     final createdRaw = json['created_at'] as String?;
-    final name = uploaderName?.trim();
+    final name = parsed.handle?.trim();
     return SitePhoto(
       id: json['id'] as String,
       siteId: json['site_id'] as String,

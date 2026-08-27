@@ -17,7 +17,7 @@ class ModerationRepository {
         .from('site_photos')
         .select(
           'id, site_id, storage_path, uploaded_by, created_at, '
-          'profiles!site_photos_uploaded_by_fkey(display_name)',
+          'profiles!site_photos_uploaded_by_fkey(username)',
         )
         .eq('site_id', siteId)
         .order('sort_order')

@@ -84,6 +84,92 @@ class AppLocalizationsEs extends AppLocalizations {
       'Pronto vas a poder ver y editar tu cuenta desde aquí.';
 
   @override
+  String get profileSettingsTitle => 'Tu perfil';
+
+  @override
+  String get profileUsernameLabel => 'Nombre de usuario';
+
+  @override
+  String get profileUsernameHint => 'usuario';
+
+  @override
+  String get profileUsernameHelp =>
+      '3–20 caracteres: letras, números, punto o guion bajo. Se muestra como @usuario en reseñas y fotos.';
+
+  @override
+  String get profileUsernameAvailable => 'Disponible';
+
+  @override
+  String get profileUsernameTaken => 'Ya está en uso';
+
+  @override
+  String get profileUsernameInvalid =>
+      'Solo letras minúsculas, números, punto o guion bajo';
+
+  @override
+  String get profileUsernameLength => 'Entre 3 y 20 caracteres';
+
+  @override
+  String get profileUsernameReserved => 'Ese nombre no está disponible';
+
+  @override
+  String get profileUsernameChecking => 'Comprobando…';
+
+  @override
+  String get profileUsernameSuggestions => 'Sugerencias';
+
+  @override
+  String get profileUsernameRequired =>
+      'Elegí un nombre de usuario para continuar';
+
+  @override
+  String get profileAvatarSection => 'Foto de perfil';
+
+  @override
+  String get profileUseGoogleAvatar => 'Usar foto de Google';
+
+  @override
+  String get profileUseGoogleAvatarHint =>
+      'Por defecto no se muestra. Podés activarla o subir otra.';
+
+  @override
+  String get profileAvatarSourceLabel => 'Foto activa';
+
+  @override
+  String get profileAvatarSourceGoogle => 'Google';
+
+  @override
+  String get profileAvatarSourceCustom => 'Personalizada';
+
+  @override
+  String get profileChangePhoto => 'Cambiar foto';
+
+  @override
+  String get profileRemoveCustomPhoto => 'Quitar foto propia';
+
+  @override
+  String get profileNoPhoto => 'Sin foto (iniciales)';
+
+  @override
+  String get profileSaved => 'Perfil actualizado';
+
+  @override
+  String get profileSaveUsernameFirst => 'Guardá un nombre de usuario válido';
+
+  @override
+  String profileUsernameLocked(String date) {
+    return 'Podés cambiar el @usuario cada 3 meses. Próximo cambio: $date.';
+  }
+
+  @override
+  String get profileUsernameMustSet =>
+      'Elegí un @usuario para usar la app. Se muestra en reseñas y fotos; las relaciones internas usan tu id, no el nombre.';
+
+  @override
+  String get profileUsernameCooldownToast =>
+      'Todavía no podés cambiar el nombre de usuario.';
+
+  @override
   String get actionCancel => 'Cancelar';
 
   @override

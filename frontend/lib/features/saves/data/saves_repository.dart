@@ -25,10 +25,10 @@ class SavesRepository {
       'sites!user_saves_site_id_fkey(name, city, city_id, department, department_id, address_line, is_public, '
       'is_physical_place, google_place_id, use_exact_pin, created_by, created_at, updated_at, external_id, '
       'cover_photo_id, '
-      'profiles!sites_created_by_fkey(display_name, avatar_url), '
+      'profiles!sites_created_by_fkey(username, avatar_url, google_avatar_url, use_google_avatar), '
       'site_categories(categories(name_i18n)), '
       'site_photos(id, storage_path, sort_order, created_at), '
-      'site_contributors(user_id, created_at, profiles(display_name, avatar_url)))';
+      'site_contributors(user_id, created_at, profiles(username, avatar_url, google_avatar_url, use_google_avatar)))';
 
   /// Select liviano para Inicio (cards): sin contributors, notes, address, etc.
   static const _saveSelectSummary =
@@ -942,16 +942,16 @@ class SavesRepository {
       'id, name, city, department, address_line, is_public, is_physical_place, '
       'google_place_id, use_exact_pin, created_by, created_at, updated_at, external_id, '
       'cover_photo_id, '
-      'profiles!sites_created_by_fkey(display_name, avatar_url), '
+      'profiles!sites_created_by_fkey(username, avatar_url, google_avatar_url, use_google_avatar), '
       'site_categories(categories(name_i18n)), '
-      'site_contributors(user_id, created_at, profiles(display_name, avatar_url))';
+      'site_contributors(user_id, created_at, profiles(username, avatar_url, google_avatar_url, use_google_avatar))';
 
   static const _siteSelectLite =
       'id, name, city, department, address_line, is_public, is_physical_place, '
       'google_place_id, use_exact_pin, created_by, created_at, updated_at, external_id, '
-      'profiles!sites_created_by_fkey(display_name, avatar_url), '
+      'profiles!sites_created_by_fkey(username, avatar_url, google_avatar_url, use_google_avatar), '
       'site_categories(categories(name_i18n)), '
-      'site_contributors(user_id, created_at, profiles(display_name, avatar_url))';
+      'site_contributors(user_id, created_at, profiles(username, avatar_url, google_avatar_url, use_google_avatar))';
 
   /// Ficha de sitio (propia o pública visible por RLS).
   Future<SiteFicha> loadSiteFicha(String siteId) async {

@@ -18,7 +18,7 @@ class SiteReviewsRepository {
 
   static const _reviewSelect =
       'id, site_id, user_id, body, rating, is_public, created_at, updated_at, '
-      'profiles!site_reviews_user_id_fkey(display_name, avatar_url), '
+      'profiles!site_reviews_user_id_fkey(username, avatar_url, google_avatar_url, use_google_avatar), '
       'site_review_photos(id, storage_path, sort_order, created_at)';
 
   String? get _uid => _client.auth.currentUser?.id;

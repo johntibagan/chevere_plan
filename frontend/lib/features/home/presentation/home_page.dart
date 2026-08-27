@@ -18,13 +18,14 @@ import '../../../core/theme/theme_rebuild.dart';
 import '../../../core/testing/widget_keys.dart';
 import '../../../core/widgets/app_feed_layout_toggle.dart';
 import '../../../core/widgets/app_more_menu_drawer.dart';
-import '../../../core/widgets/coming_soon_page.dart';
 import '../../admin/presentation/admin_page.dart';
 import '../../auth/data/profile.dart';
+import '../../auth/domain/profile_public_display.dart';
 import '../../moderation/presentation/admin_reports_page.dart';
 import '../../plans/presentation/plans_list_page.dart';
 import '../../proximity/presentation/proximity_prefs_sheet.dart';
 import '../../settings/presentation/distance_unit_prefs_sheet.dart';
+import '../../settings/presentation/profile_settings_page.dart';
 import '../../routes/presentation/my_routes_page.dart';
 import '../../search/data/search_models.dart';
 import '../../search/presentation/explore_intent.dart';
@@ -209,7 +210,32 @@ class _HomePageState extends ConsumerState<HomePage> {
               profile: profile,
             );
       }
+      await _ensureUsernameAssigned();
     } catch (_) {}
+  }
+
+  /// Sin @usuario: obliga a configurarlo antes de usar la app.
+  Future<void> _ensureUsernameAssigned() async {
+    final profile = _profile;
+    if (profile == null || profile.hasUsername) return;
+    if (!mounted) return;
+    final updated = await ProfileSettingsPage.open(
+      context,
+      initial: profile,
+      requireUsername: true,
+    );
+    if (!mounted) return;
+    if (updated != null) {
+      setState(() => _profile = updated);
+      return;
+    }
+    final again = await ref.read(profileRepositoryProvider).fetchCurrent();
+    if (!mounted) return;
+    if (again != null) setState(() => _profile = again);
+    if (again == null || !again.hasUsername) {
+      // Reintento hasta que asigne (no puede cerrar la pantalla).
+      await _ensureUsernameAssigned();
+    }
   }
 
   Future<void> _openProximityPrefs() async {
@@ -259,13 +285,18 @@ class _HomePageState extends ConsumerState<HomePage> {
     await ref.read(authRepositoryProvider).signOut();
   }
 
-  void _openProfileSoon() {
-    final l10n = context.l10n;
-    ComingSoonPage.open(
+  Future<void> _openProfile() async {
+    final updated = await ProfileSettingsPage.open(
       context,
-      title: l10n.moreMenuProfileComingTitle,
-      body: l10n.moreMenuProfileComingBody,
+      initial: _profile,
     );
+    if (!mounted) return;
+    if (updated != null) {
+      setState(() => _profile = updated);
+    } else {
+      final again = await ref.read(profileRepositoryProvider).fetchCurrent();
+      if (mounted && again != null) setState(() => _profile = again);
+    }
   }
 
   Future<void> _openSite({UserSave? existing}) async {
@@ -335,16 +366,20 @@ class _HomePageState extends ConsumerState<HomePage> {
 
     final l10n = context.l10n;
     final user = widget.session.user;
-    final name = _profile?.displayName ??
-        user.userMetadata?['full_name'] as String? ??
-        user.userMetadata?['name'] as String? ??
-        l10n.defaultUserDisplayName;
+    final name = ProfilePublicDisplay.handle(
+      username: _profile?.username,
+      fallbackLabel: l10n.defaultUserDisplayName,
+    );
     final isStaff = _profile?.role.isStaff ?? false;
-    final initial = name.trim().isNotEmpty ? name.trim()[0].toUpperCase() : 'U';
+    final bare = (_profile?.username ?? '').trim();
+    final initial =
+        bare.isNotEmpty ? bare[0].toUpperCase() : 'U';
     final email = user.email;
-    final avatarUrl = _profile?.avatarUrl ??
-        user.userMetadata?['avatar_url'] as String? ??
-        user.userMetadata?['picture'] as String?;
+    final avatarUrl = ProfilePublicDisplay.effectiveAvatarUrl(
+      customAvatarUrl: _profile?.avatarUrl,
+      googleAvatarUrl: _profile?.googleAvatarUrl,
+      useGoogleAvatar: _profile?.useGoogleAvatar ?? false,
+    );
 
     final nearbyAsync = ref.watch(homeNearbyProvider);
     final nearbySnap = nearbyAsync.valueOrNull;
@@ -372,7 +407,7 @@ class _HomePageState extends ConsumerState<HomePage> {
           email: email,
           avatarUrl: avatarUrl,
           isStaff: isStaff,
-          onProfile: _openProfileSoon,
+          onProfile: _openProfile,
           onProximity: _openProximityPrefs,
           onDistanceUnit: () {
             unawaited(_openDistanceUnitPrefs());

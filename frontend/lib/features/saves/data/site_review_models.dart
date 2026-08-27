@@ -1,3 +1,5 @@
+import '../../auth/domain/profile_public_display.dart';
+
 class SiteRatingSummary {
   const SiteRatingSummary({
     required this.avgRating,
@@ -69,12 +71,9 @@ class SiteReview {
 
   factory SiteReview.fromJson(Map<String, dynamic> json) {
     final profile = json['profiles'];
-    String? name;
-    String? avatar;
-    if (profile is Map) {
-      name = profile['display_name'] as String?;
-      avatar = profile['avatar_url'] as String?;
-    }
+    final parsed = ProfilePublicDisplay.fromProfileEmbed(
+      profile is Map ? profile : null,
+    );
     final photosRaw = json['site_review_photos'] as List? ?? const [];
     final photos = photosRaw
         .whereType<Map>()
@@ -90,8 +89,8 @@ class SiteReview {
       isPublic: json['is_public'] as bool? ?? false,
       createdAt: DateTime.parse(json['created_at'] as String),
       updatedAt: DateTime.parse(json['updated_at'] as String),
-      authorName: name,
-      authorAvatarUrl: avatar,
+      authorName: parsed.handle,
+      authorAvatarUrl: parsed.avatarUrl,
       photos: photos,
     );
   }
