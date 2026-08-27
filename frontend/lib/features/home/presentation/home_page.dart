@@ -33,6 +33,7 @@ import '../../search/presentation/explore_intent.dart';
 import '../../search/presentation/search_page.dart';
 import '../../saves/data/save_models.dart';
 import 'home_cards.dart';
+import 'cards_list_page.dart';
 import '../../saves/data/site_ficha.dart';
 import '../../saves/domain/save_policies.dart';
 import '../../saves/presentation/open_site_detail.dart';
@@ -313,6 +314,13 @@ class _HomePageState extends ConsumerState<HomePage> {
     }
   }
 
+  Future<void> _openCards() async {
+    await CardsListPage.open(context);
+    if (mounted) {
+      await _bootstrap(forceRefresh: true);
+    }
+  }
+
   Future<void> _openSite({UserSave? existing}) async {
     if (existing == null) return;
     final outcome = await openSiteDetail(context, save: existing);
@@ -429,6 +437,9 @@ class _HomePageState extends ConsumerState<HomePage> {
           avatarUrl: avatarUrl,
           isStaff: isStaff,
           onProfile: _openProfile,
+          onCards: () {
+            unawaited(_openCards());
+          },
           onProximity: _openProximityPrefs,
           onDuplicateRadius: () {
             unawaited(_openDuplicateRadiusPrefs());
@@ -656,6 +667,8 @@ class _InicioTab extends ConsumerWidget {
     ref.watchAppThemeMode();
     final l10n = context.l10n;
     final drafts = saves.where((s) => s.isIncomplete).toList();
+    final physicalSaves =
+        saves.where((s) => s.isPhysicalPlace).toList(growable: false);
     final sections = ref.watch(homeSectionsOpenProvider);
     final layout = ref.watch(feedLayoutProvider);
     final quickPinned = ref.watch(homeQuickActionsPinnedProvider);
@@ -840,7 +853,7 @@ class _InicioTab extends ConsumerWidget {
                   },
                 ),
               )
-            else if (saves.isEmpty)
+            else if (physicalSaves.isEmpty)
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
@@ -856,11 +869,11 @@ class _InicioTab extends ConsumerWidget {
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
                   child: HomeFeedHits(
                     hits: [
-                      for (final s in saves.take(5)) hitFromSave(s),
+                      for (final s in physicalSaves.take(5)) hitFromSave(s),
                     ],
                     layout: layout,
                     onTap: (hit) {
-                      final save = saves.firstWhere(
+                      final save = physicalSaves.firstWhere(
                         (s) => s.siteId == hit.siteId,
                       );
                       onOpenSite(existing: save);

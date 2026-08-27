@@ -568,6 +568,12 @@ abstract class AppLocalizations {
   /// **'Público'**
   String get labelPublic;
 
+  /// No description provided for @labelCard.
+  ///
+  /// In es, this message translates to:
+  /// **'Tarjeta'**
+  String get labelCard;
+
   /// No description provided for @homePendingBadge.
   ///
   /// In es, this message translates to:
@@ -615,6 +621,30 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Este sitio está en borrador: no se tendrá en cuenta en Explorar, planes, rutas ni recuerdos cercanos hasta que asignes un punto en el mapa.'**
   String get draftNeedsMapPointWarning;
+
+  /// No description provided for @nonPhysicalCardWarning.
+  ///
+  /// In es, this message translates to:
+  /// **'Esta tarjeta no es un lugar físico: no se tendrá en cuenta en Explorar, planes, rutas ni recuerdos cercanos.'**
+  String get nonPhysicalCardWarning;
+
+  /// No description provided for @homeCardsSection.
+  ///
+  /// In es, this message translates to:
+  /// **'Tarjetas'**
+  String get homeCardsSection;
+
+  /// No description provided for @homeCardsEmpty.
+  ///
+  /// In es, this message translates to:
+  /// **'Aún no tienes tarjetas (contenido que no es un lugar).'**
+  String get homeCardsEmpty;
+
+  /// No description provided for @moreMenuCardsSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Contenido que no es un lugar físico'**
+  String get moreMenuCardsSubtitle;
 
   /// No description provided for @homeOpenReports.
   ///

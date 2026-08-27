@@ -39,7 +39,7 @@ sequenceDiagram
 
 | Sitio | Qué ves |
 |---|---|
-| **Inicio** | Saludo + título, menú **☰**, **Vista** (lista / 2 / 3 / 4), borradores si hay, **Eventos** (próximamente, se pliega), **Guardados recientes** y **Populares cerca** (misma vista; se pliegan), **acciones rápidas** al final (sección plegable; abierta la 1.ª vez; fila de 4 iconos; se puede **fijar** y flota arriba del menú inferior). **Ver más** abre Explorar. Portada: foto o ilustración de categoría padre; borde verde/morado. |
+| **Inicio** | Saludo + título, menú **☰**, **Vista** (lista / 2 / 3 / 4), borradores si hay, **Eventos** (próximamente, se pliega), **Guardados recientes** (solo lugares físicos; se pliegan), **Populares cerca**, **acciones rápidas** al final (plegable; se puede **fijar** encima del menú). **Tarjetas** (no físicas) se abren desde ☰ → Tarjetas (pantalla propia). **Ver más** abre Explorar. Portada: foto o ilustración de categoría padre; borde verde/morado. Origen: Tuyo / Tarjeta / Catálogo / … |
 | **Explorar** | Búsqueda de sitios (cabecera Figma, chips de **categoría padre multi-select**, lista o cuadrícula 2/3/4). Texto opcional; filtros avanzados (lugar, GPS+radio km, mis guardados). Transporte/presupuesto ocultos en UI. |
 | **+ (centro)** | Guardar o completar un lugar (crear y editar son la **misma pantalla**) |
 | **Planes** | Tus itinerarios (tarjeta de crear + lista; **un solo** CTA, sin FAB duplicado) |
@@ -73,7 +73,7 @@ En el **mapa interactivo**, Confirmar / Usar empieza **desactivado** (centro de 
 
 ### Qué ves en el formulario
 
-Siempre visible al **crear** (vacío): **Ubicación** (tres pestañas: Mapa, Enlace, Cámara; debajo el interruptor de punto exacto). **Nombre** (con lugar físico + público en la misma card) va en **Añadir sección** como chip `+ Nombre - Visibilidad`; se abre sola cuando el autocompletado de ubicación rellena el nombre, o al tocar el chip. Al **compartir** desde una red social (no enlace Maps), **Nombre** y **Enlaces** se abren de inmediato, haya o no autocompletado. Al **editar** o completar borrador: todas las secciones visibles; en **Ubicación** solo mapa + punto exacto (**sin** pegar enlace Maps).
+Siempre visible al **crear** (vacío): si es **lugar físico**, **Ubicación** (tres pestañas: Mapa, Enlace, Cámara; debajo el interruptor de punto exacto). Si **no** es físico, no hay mapa/ubicación: banner de **tarjeta** (no entra en Explorar/planes/rutas). **Nombre** (con lugar físico + público en la misma card) va en **Añadir sección** como chip `+ Nombre - Visibilidad`; se abre sola cuando el autocompletado de ubicación rellena el nombre, o al tocar el chip. Al **compartir** desde una red social (no enlace Maps), **Nombre** y **Enlaces** se abren de inmediato, haya o no autocompletado. Al **editar** o completar borrador: todas las secciones visibles; en **Ubicación** solo mapa + punto exacto (**sin** pegar enlace Maps) **solo si sigue siendo físico**; se conserva el interruptor de lugar físico.
 
 El resto va detrás de **Añadir sección**: chips `+` (**Nombre - Visibilidad**, **Detalles**, **Enlaces**, **Categorías**, **Fotos**). Los que ya están abiertos dejan de mostrarse como chip. **Guardar** es un botón ancho **abajo** (un solo CTA; no está en el AppBar).
 
@@ -92,6 +92,8 @@ El resto va detrás de **Añadir sección**: chips `+` (**Nombre - Visibilidad**
 - **Completo**: categoría + (si es físico) coordenadas
 
 Si el lugar físico **no tiene punto en el mapa**, en la ficha y en Guardar sitio se muestra una **advertencia**: no entra en Explorar, planes, rutas ni recuerdos cercanos hasta asignar el pin. Tras guardar sin pin, el diálogo lo repite. En Inicio, el aviso de borradores usa la misma idea.
+
+Si **no es lugar físico** (**tarjeta**): mismo tipo de aviso (no entra en Explorar/planes/rutas); en cards el origen muestra **Tarjeta** junto a Tuyo; se listan en **☰ → Tarjetas** (no en Inicio).
 
 Los borradores viejos avisan en Inicio. Hay recordatorios locales espaciados (24 h / 3 días / 7 días) con **tarjeta estándar** (nombre, depto–municipio, foto de portada si hay) hasta que completes o descartes. Tocar abre el formulario de edición.
 

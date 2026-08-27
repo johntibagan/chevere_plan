@@ -66,6 +66,7 @@ abstract final class WidgetKeys {
   static const siteOriginLinked = Key('site_origin_linked');
   static const siteOriginCatalog = Key('site_origin_catalog');
   static const siteOriginPublic = Key('site_origin_public');
+  static const siteOriginCard = Key('site_origin_card');
 
   static const reviewEditor = Key('review_editor');
   static const reviewBody = Key('review_body');

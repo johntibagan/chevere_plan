@@ -33,7 +33,8 @@ class SavesRepository {
   /// Select liviano para Inicio (cards): sin contributors, notes, address, etc.
   static const _saveSelectSummary =
       'id, user_id, site_id, status, is_public, created_at, '
-      'sites!user_saves_site_id_fkey(name, city, department, address_line, use_exact_pin, '
+      'sites!user_saves_site_id_fkey(name, city, department, address_line, '
+      'is_physical_place, use_exact_pin, '
       'google_place_id, cover_photo_id, '
       'site_categories(categories(name_i18n)), '
       'site_photos(id, storage_path, sort_order, created_at))';
@@ -41,14 +42,16 @@ class SavesRepository {
   /// Fotos sí (misma portada en cards); sin `cover_photo_id` si PostgREST no la ve.
   static const _saveSelectSummaryNoCover =
       'id, user_id, site_id, status, is_public, created_at, '
-      'sites!user_saves_site_id_fkey(name, city, department, address_line, use_exact_pin, '
+      'sites!user_saves_site_id_fkey(name, city, department, address_line, '
+      'is_physical_place, use_exact_pin, '
       'google_place_id, '
       'site_categories(categories(name_i18n)), '
       'site_photos(id, storage_path, sort_order, created_at))';
 
   static const _saveSelectSummaryLite =
       'id, user_id, site_id, status, is_public, created_at, '
-      'sites!user_saves_site_id_fkey(name, city, department, address_line, use_exact_pin, '
+      'sites!user_saves_site_id_fkey(name, city, department, address_line, '
+      'is_physical_place, use_exact_pin, '
       'google_place_id, '
       'site_categories(categories(name_i18n)))';
 
@@ -703,7 +706,7 @@ class SavesRepository {
       departmentId: m['department_id'] as String?,
       addressLine: m['address_line'] as String?,
       isPublic: m['is_public'] as bool? ?? true,
-      isPhysicalPlace: m['is_physical_place'] as bool? ?? true,
+      isPhysicalPlace: parsePgBool(m['is_physical_place'], orElse: true),
       googlePlaceId: m['google_place_id'] as String?,
       useExactPin: parsePgBool(m['use_exact_pin']),
       categoryIds: categoryIds,

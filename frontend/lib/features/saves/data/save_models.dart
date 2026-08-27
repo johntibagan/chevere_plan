@@ -401,7 +401,7 @@ class UserSave {
           ? DateTime.tryParse(json['site_updated_at'] as String)
           : null,
       isCatalogSite: json['is_catalog_site'] as bool? ?? false,
-      isPhysicalPlace: json['is_physical_place'] as bool? ?? true,
+      isPhysicalPlace: parsePgBool(json['is_physical_place'], orElse: true),
       googlePlaceId: json['google_place_id'] as String?,
       useExactPin: parsePgBool(json['use_exact_pin']),
       coverStoragePath: json['cover_storage_path'] as String?,
@@ -468,7 +468,7 @@ class UserSave {
           ? DateTime.tryParse(site['updated_at'] as String)
           : null,
       isCatalogSite: ext != null && ext.trim().isNotEmpty,
-      isPhysicalPlace: site['is_physical_place'] as bool? ?? true,
+      isPhysicalPlace: parsePgBool(site['is_physical_place'], orElse: true),
       googlePlaceId: site['google_place_id'] as String?,
       useExactPin: parsePgBool(site['use_exact_pin']),
       coverStoragePath: siteCoverStoragePath(

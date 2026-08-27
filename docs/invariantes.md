@@ -55,9 +55,10 @@ Público es **sección siempre visible**. Sin pin, el interruptor se muestra **d
 
 ### Layout del formulario
 
-- Siempre: Ubicación → Nombre (obligatorio; Maps lo rellena) → **Visibilidad** (lugar físico + Público en **una** fila, cada uno con icono i).
+- Si es **lugar físico**: Ubicación → Nombre (obligatorio; Maps lo rellena) → **Visibilidad** (lugar físico + Público en **una** fila, cada uno con icono i).
+- Si **no** es físico: **sin** sección de mapa/ubicación; banner de tarjeta; Nombre + visibilidad (Público desactivado).
 - Extra detrás de **+**: Detalles, Enlaces, Categorías, Fotos.
-- Al **editar**: misma pantalla, pero **Ubicación** sin pegar enlace Maps (solo mapa + punto exacto).
+- Al **editar**: misma pantalla; **Ubicación** sin pegar enlace Maps (solo mapa + punto exacto) **solo si es físico**. Conservar `is_physical_place` cargado.
 - Crear: lugar físico **encendido** y privado por defecto (ambos interruptores visibles). Editar: mismas secciones fijas + extras abiertos.
 - Nombre vacío: no guardar (nada de “Sin nombre”).
 - Ayuda en tooltip (tap), no textos largos bajo los campos.

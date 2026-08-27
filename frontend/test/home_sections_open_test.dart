@@ -8,8 +8,12 @@ void main() {
       popular: true,
       quick: false,
     );
-    expect(HomeSectionsOpen.decode(closed.encode()).recent, isFalse);
-    expect(HomeSectionsOpen.decode(closed.encode()).popular, isTrue);
+    final decoded = HomeSectionsOpen.decode(closed.encode());
+    expect(decoded.recent, isFalse);
+    expect(decoded.popular, isTrue);
+    expect(decoded.quick, isFalse);
     expect(HomeSectionsOpen.decode(null).recent, isTrue);
+    // Prefs con 5.º bit (tarjetas viejo): se ignora.
+    expect(HomeSectionsOpen.decode('11110').events, isTrue);
   });
 }

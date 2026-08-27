@@ -19,6 +19,7 @@ class SearchHit {
     this.isIncomplete = false,
     this.sourceNetwork,
     this.addressLine,
+    this.isPhysicalPlace = true,
   });
 
   final String siteId;
@@ -41,6 +42,7 @@ class SearchHit {
   final bool isIncomplete;
   final String? sourceNetwork;
   final String? addressLine;
+  final bool isPhysicalPlace;
 
   factory SearchHit.fromJson(Map<String, dynamic> json) {
     final price = json['estimated_price_amount'];
@@ -71,6 +73,7 @@ class SearchHit {
       isIncomplete: json['is_incomplete'] as bool? ?? false,
       sourceNetwork: json['source_network'] as String?,
       addressLine: json['address_line'] as String?,
+      isPhysicalPlace: json['is_physical_place'] as bool? ?? true,
     );
   }
 
@@ -94,6 +97,7 @@ class SearchHit {
         'is_incomplete': isIncomplete,
         'source_network': sourceNetwork,
         'address_line': addressLine,
+        'is_physical_place': isPhysicalPlace,
       };
 
   SearchHit copyWith({
@@ -116,6 +120,7 @@ class SearchHit {
     bool? isIncomplete,
     String? sourceNetwork,
     String? addressLine,
+    bool? isPhysicalPlace,
   }) {
     return SearchHit(
       siteId: siteId ?? this.siteId,
@@ -137,6 +142,7 @@ class SearchHit {
       isIncomplete: isIncomplete ?? this.isIncomplete,
       sourceNetwork: sourceNetwork ?? this.sourceNetwork,
       addressLine: addressLine ?? this.addressLine,
+      isPhysicalPlace: isPhysicalPlace ?? this.isPhysicalPlace,
     );
   }
 }

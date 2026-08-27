@@ -21,6 +21,7 @@ import '../../../core/l10n/context_l10n.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_network_image.dart';
 import '../../../core/widgets/draft_needs_map_banner.dart';
+import '../../../core/widgets/non_physical_card_banner.dart';
 import '../../../core/widgets/site_cover.dart';
 import '../../../core/widgets/site_photo_viewer_page.dart';
 import '../../../core/widgets/site_origin_tags.dart';
@@ -964,7 +965,7 @@ class _InfoTab extends ConsumerWidget {
               _Chip(label: ficha.ownSave!.status.label(l10n)),
             if (ficha.isOwn) _Chip(label: l10n.labelOwn),
             if (!ficha.isPhysicalPlace)
-              _Chip(label: l10n.siteDetailNotPhysical),
+              _Chip(label: l10n.labelCard),
           ],
         ),
         if (ficha.isOwn &&
@@ -973,6 +974,10 @@ class _InfoTab extends ConsumerWidget {
             ficha.lat == null) ...[
           SizedBox(height: 12),
           const DraftNeedsMapBanner(),
+        ],
+        if (!ficha.isPhysicalPlace) ...[
+          SizedBox(height: 12),
+          const NonPhysicalCardBanner(),
         ],
         SizedBox(height: 20),
         _GallerySection(

@@ -155,7 +155,7 @@ class SiteFicha {
               .toList() ??
           const [],
       isPublic: json['is_public'] as bool? ?? false,
-      isPhysicalPlace: json['is_physical_place'] as bool? ?? true,
+      isPhysicalPlace: parsePgBool(json['is_physical_place'], orElse: true),
       notes: json['notes'] as String?,
       sourceUrl: json['source_url'] as String?,
       alsoSharedBy: legacy,

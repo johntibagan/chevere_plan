@@ -5,10 +5,11 @@ import '../testing/widget_keys.dart';
 import '../theme/app_theme.dart';
 import 'visibility_badge.dart';
 
-/// Tuyo / Catálogo / Público / Vinculado — etiquetas distintas de la franja de color.
+/// Tuyo / Tarjeta / Catálogo / Público / Vinculado — etiquetas distintas de la franja de color.
 ///
 /// «Público» aquí es **origen** (listado comunitario), no el color de visibilidad:
 /// se muestra si el sitio es público y no es tuyo ni de catálogo.
+/// «Tarjeta» = no es lugar físico.
 class SiteOriginTags extends StatelessWidget {
   const SiteOriginTags({
     super.key,
@@ -16,16 +17,20 @@ class SiteOriginTags extends StatelessWidget {
     required this.isLinked,
     required this.isCatalog,
     this.isPublic = false,
+    this.isPhysicalPlace = true,
   });
 
   final bool isOwn;
   final bool isLinked;
   final bool isCatalog;
   final bool isPublic;
+  final bool isPhysicalPlace;
 
   bool get _showPublicOrigin => isPublic && !isOwn && !isCatalog;
+  bool get _showCard => !isPhysicalPlace;
 
-  bool get hasAny => isOwn || isLinked || isCatalog || _showPublicOrigin;
+  bool get hasAny =>
+      isOwn || isLinked || isCatalog || _showPublicOrigin || _showCard;
 
   @override
   Widget build(BuildContext context) {
@@ -44,6 +49,16 @@ class SiteOriginTags extends StatelessWidget {
               fontSize: 9,
               fontWeight: FontWeight.w800,
               color: AppColors.primary,
+            ),
+          ),
+        if (_showCard)
+          Text(
+            l10n.labelCard,
+            key: WidgetKeys.siteOriginCard,
+            style: TextStyle(
+              fontSize: 9,
+              fontWeight: FontWeight.w800,
+              color: AppColors.muted,
             ),
           ),
         if (isLinked)
@@ -89,6 +104,7 @@ class SiteCardOriginRow extends StatelessWidget {
     required this.isOwn,
     required this.isLinked,
     required this.isCatalog,
+    this.isPhysicalPlace = true,
     this.trailing,
   });
 
@@ -96,6 +112,7 @@ class SiteCardOriginRow extends StatelessWidget {
   final bool isOwn;
   final bool isLinked;
   final bool isCatalog;
+  final bool isPhysicalPlace;
   final Widget? trailing;
 
   @override
@@ -105,6 +122,7 @@ class SiteCardOriginRow extends StatelessWidget {
       isLinked: isLinked,
       isCatalog: isCatalog,
       isPublic: isPublic,
+      isPhysicalPlace: isPhysicalPlace,
     );
     return Row(
       children: [

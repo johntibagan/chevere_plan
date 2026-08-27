@@ -96,6 +96,7 @@
   "labelLinked": "Vinculado",
   "labelCatalog": "Catálogo",
   "labelPublic": "Público",
+  "labelCard": "Tarjeta",
   "homePendingBadge": "PENDIENTE",
   "homeDraftsToComplete": "{count} guardado(s) por completar",
   "@homeDraftsToComplete": {
@@ -114,6 +115,10 @@
   "homeNearbyMemoryTitle": "Te avisamos cuando estés cerca",
   "homeDraftsHint": "Sin punto en el mapa no entra en Explorar, planes ni rutas",
   "draftNeedsMapPointWarning": "Este sitio está en borrador: no se tendrá en cuenta en Explorar, planes, rutas ni recuerdos cercanos hasta que asignes un punto en el mapa.",
+  "nonPhysicalCardWarning": "Esta tarjeta no es un lugar físico: no se tendrá en cuenta en Explorar, planes, rutas ni recuerdos cercanos.",
+  "homeCardsSection": "Tarjetas",
+  "homeCardsEmpty": "Aún no tienes tarjetas (contenido que no es un lugar).",
+  "moreMenuCardsSubtitle": "Contenido que no es un lugar físico",
   "homeOpenReports": "Reportes abiertos",
   "homeMySaves": "Mis guardados",
   "homeRecentSaves": "Guardados recientes",

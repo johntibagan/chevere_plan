@@ -22,6 +22,7 @@ class AppMoreMenuDrawer extends ConsumerWidget {
     this.avatarUrl,
     required this.isStaff,
     required this.onProfile,
+    required this.onCards,
     required this.onProximity,
     required this.onDuplicateRadius,
     required this.onDistanceUnit,
@@ -36,6 +37,7 @@ class AppMoreMenuDrawer extends ConsumerWidget {
   final String? avatarUrl;
   final bool isStaff;
   final VoidCallback onProfile;
+  final VoidCallback onCards;
   final VoidCallback onProximity;
   final VoidCallback onDuplicateRadius;
   final VoidCallback onDistanceUnit;
@@ -158,6 +160,17 @@ class AppMoreMenuDrawer extends ConsumerWidget {
                         ),
                       ],
                     ),
+                  ),
+                  _MenuTile(
+                    icon: Icons.style_outlined,
+                    label: l10n.homeCardsSection,
+                    subtitle: l10n.moreMenuCardsSubtitle,
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        onCards();
+                      });
+                    },
                   ),
                   _MenuTile(
                     icon: Icons.notifications_active_outlined,

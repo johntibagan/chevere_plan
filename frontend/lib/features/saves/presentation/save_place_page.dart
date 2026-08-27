@@ -25,6 +25,7 @@ import '../../../core/widgets/app_select_chip.dart';
 import '../../../core/widgets/app_toast.dart';
 import '../../../core/widgets/draft_needs_map_banner.dart';
 import '../../../core/widgets/field_action_icon.dart';
+import '../../../core/widgets/non_physical_card_banner.dart';
 import 'site_look_cover.dart';
 import '../../admin/data/admin_models.dart';
 import '../../geo/domain/geo_models.dart';
@@ -1295,8 +1296,8 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
   Future<void> _submit() async {
     // Validaciones + anti-dupe ANTES del spinner, para que el diálogo se vea
     // igual de claro que el de «¡Lugar guardado!».
-    final lat = _lat;
-    final lng = _lng;
+    final lat = _isPhysical ? _lat : null;
+    final lng = _isPhysical ? _lng : null;
     final name = _nameCtrl.text.trim();
     if (name.isEmpty) {
       if (!mounted) return;
@@ -1305,7 +1306,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
     }
     final primaryLink =
         _socialLinks.isNotEmpty ? _socialLinks.first : null;
-    final mapsUrl = _mapsCtrl.text.trim();
+    final mapsUrl = _isPhysical ? _mapsCtrl.text.trim() : '';
     final sourceUrl = primaryLink?.url ??
         (GoogleMapsLinkImporter.looksLikeMapsUrl(mapsUrl) ? mapsUrl : null);
     final sourceNetwork = primaryLink?.network ??
@@ -1348,20 +1349,21 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
       name: name,
       sourceUrl: sourceUrl,
       sourceNetwork: sourceNetwork,
-      city: _selectedCity?.name,
-      cityId: _selectedCity?.id,
-      department: _selectedDept?.name,
-      departmentId: _selectedDept?.id,
-      addressLine: _addressCtrl.text,
+      city: _isPhysical ? _selectedCity?.name : null,
+      cityId: _isPhysical ? _selectedCity?.id : null,
+      department: _isPhysical ? _selectedDept?.name : null,
+      departmentId: _isPhysical ? _selectedDept?.id : null,
+      addressLine: _isPhysical ? _addressCtrl.text : null,
       latitude: lat,
       longitude: lng,
       categoryIds: categoryIds,
-      isPublic: _isPublic && _hasFormLocation,
+      isPublic: _isPhysical && _isPublic && _hasFormLocation,
       isPhysicalPlace: _isPhysical,
-      googlePlaceId: _googlePlaceId,
-      useExactPin: _useExactPin,
+      googlePlaceId: _isPhysical ? _googlePlaceId : null,
+      useExactPin: _isPhysical && _useExactPin,
       categoryIsExplicit: categoryIsExplicit,
-      clearLocation: _hadStoredCoords && (lat == null || lng == null),
+      clearLocation:
+          !_isPhysical ? _hadStoredCoords : (_hadStoredCoords && (lat == null || lng == null)),
     );
 
     final editSaveId = _editSaveId;
@@ -2437,11 +2439,15 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
           : ListView(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
               children: [
+                if (!_isPhysical) ...[
+                  const NonPhysicalCardBanner(),
+                  SizedBox(height: 12),
+                ],
                 if (_isPhysical && !_hasFormLocation) ...[
                   const DraftNeedsMapBanner(),
                   SizedBox(height: 12),
                 ],
-                _locationSection(l10n),
+                if (_isPhysical) _locationSection(l10n),
                 for (final extra in _SaveExtra.values)
                   if (_openExtras.contains(extra)) _extraSection(l10n, extra),
                 _addExtraChips(l10n),

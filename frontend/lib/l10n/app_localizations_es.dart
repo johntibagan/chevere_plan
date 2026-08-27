@@ -265,6 +265,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get labelPublic => 'Público';
 
   @override
+  String get labelCard => 'Tarjeta';
+
+  @override
   String get homePendingBadge => 'PENDIENTE';
 
   @override
@@ -293,6 +296,20 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get draftNeedsMapPointWarning =>
       'Este sitio está en borrador: no se tendrá en cuenta en Explorar, planes, rutas ni recuerdos cercanos hasta que asignes un punto en el mapa.';
+
+  @override
+  String get nonPhysicalCardWarning =>
+      'Esta tarjeta no es un lugar físico: no se tendrá en cuenta en Explorar, planes, rutas ni recuerdos cercanos.';
+
+  @override
+  String get homeCardsSection => 'Tarjetas';
+
+  @override
+  String get homeCardsEmpty =>
+      'Aún no tienes tarjetas (contenido que no es un lugar).';
+
+  @override
+  String get moreMenuCardsSubtitle => 'Contenido que no es un lugar físico';
 
   @override
   String get homeOpenReports => 'Reportes abiertos';

@@ -48,6 +48,7 @@ SearchHit hitFromSave(UserSave save) {
     isIncomplete: save.isIncomplete,
     sourceNetwork: save.sourceNetwork,
     updatedAt: save.siteUpdatedAt ?? save.createdAt,
+    isPhysicalPlace: save.isPhysicalPlace,
   );
 }
 
@@ -315,6 +316,7 @@ class HomeRecentRailCard extends StatelessWidget {
                         isOwn: true,
                         isLinked: save.isPossibleDuplicate,
                         isCatalog: save.isCatalogSite,
+                        isPhysicalPlace: save.isPhysicalPlace,
                       ),
                       SizedBox(height: 4),
                       Expanded(
@@ -513,6 +515,7 @@ class HomePopularCard extends ConsumerWidget {
                       isOwn: hit.isOwn,
                       isLinked: hit.isLinked,
                       isCatalog: hit.isCatalog,
+                      isPhysicalPlace: hit.isPhysicalPlace,
                     ),
                     SizedBox(height: 2),
                     Expanded(
@@ -636,6 +639,7 @@ class HomeSearchListCard extends ConsumerWidget {
                           isOwn: hit.isOwn,
                           isLinked: hit.isLinked,
                           isCatalog: hit.isCatalog,
+                          isPhysicalPlace: hit.isPhysicalPlace,
                           trailing: FavoriteHeartButton(
                             siteId: hit.siteId,
                             style: FavoriteHeartStyle.icon,

@@ -27,8 +27,12 @@ class HomeSectionsOpen {
   }
 
   /// Cuatro caracteres `0`/`1`: recientes, populares, acciones, eventos.
+  /// (Un 5.º bit viejo de «tarjetas» se ignora: esas viven en ☰.)
   String encode() =>
-      '${recent ? '1' : '0'}${popular ? '1' : '0'}${quick ? '1' : '0'}${events ? '1' : '0'}';
+      '${recent ? '1' : '0'}'
+      '${popular ? '1' : '0'}'
+      '${quick ? '1' : '0'}'
+      '${events ? '1' : '0'}';
 
   static HomeSectionsOpen decode(String? raw) {
     if (raw == null || raw.isEmpty) return const HomeSectionsOpen();
