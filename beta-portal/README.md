@@ -25,7 +25,9 @@ Carpeta **única** que despliega Pages. Si no hay cambios aquí, el workflow **n
 | Marcar “en revisión” | Portal + PIN de dueño (bloquea editar/borrar) |
 | Marcar “listo” | Portal + PIN de dueño (en DB, no en Git) |
 | Número de ticket | Columna `#n` automática (tocar copia `#n` para el commit) |
-| Cómo probar (por versión) | Sección al final: desplegable por versión → `#n` + pasos. Datos en `beta_qa_flows` |
+| Mejoras y reportes | Activos arriba (pendiente / revisión); resueltos en bloque colapsado (al recargar la página) |
+| Navegación | Menú lateral (escritorio) + chips (móvil) con `#version`, `#reportes`, `#como-probar` |
+| Cómo probar (por versión) | Desplegable por versión → `#n` + pasos. Solo la **versión actual** del APK abierta al cargar |
 | Publicar flujos | En el chat del agente: decir **publica** → te pide los `#` → escribe los flujos en la DB |
 | Subir APK nuevo | `frontend\tool\publish_beta.ps1` → release **arm64 sin R8** (estable; Free ≤ 50 MB). |
 
