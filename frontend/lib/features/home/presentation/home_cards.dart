@@ -8,6 +8,7 @@ import '../../../core/formatters/money_format.dart';
 import '../../../core/formatters/place_format.dart';
 import '../../../core/l10n/context_l10n.dart';
 import '../../../core/prefs/feed_layout.dart';
+import '../../../core/theme/app_radius.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/theme_rebuild.dart';
 import '../../../core/testing/widget_keys.dart';
@@ -706,6 +707,7 @@ class HomeSearchListCard extends ConsumerWidget {
   }
 }
 
+/// Atajo de Inicio: icono + label debajo.
 class HomeQuickAction extends StatelessWidget {
   const HomeQuickAction({
     super.key,
@@ -723,28 +725,25 @@ class HomeQuickAction extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: AppColors.surface,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: AppColors.border),
-      ),
+      color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
           child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.12),
-                  shape: BoxShape.circle,
+              Material(
+                color: color.withValues(alpha: 0.12),
+                shape: const CircleBorder(),
+                child: SizedBox(
+                  width: 44,
+                  height: 44,
+                  child: Icon(icon, size: 20, color: color),
                 ),
-                child: Icon(icon, size: 18, color: color),
               ),
-              SizedBox(height: 8),
+              SizedBox(height: 6),
               Text(
                 label,
                 textAlign: TextAlign.center,
@@ -755,6 +754,116 @@ class HomeQuickAction extends StatelessWidget {
                   fontWeight: FontWeight.w600,
                   color: AppColors.muted,
                   height: 1.2,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Fila de 4 atajos (cerca, guardados, favoritos, categoría).
+class HomeQuickActionsRow extends StatelessWidget {
+  const HomeQuickActionsRow({
+    super.key,
+    required this.onNearMe,
+    required this.onMySaves,
+    required this.onMyFavorites,
+    required this.onByCategory,
+  });
+
+  final VoidCallback onNearMe;
+  final VoidCallback onMySaves;
+  final VoidCallback onMyFavorites;
+  final VoidCallback onByCategory;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: [
+        HomeQuickAction(
+          icon: Icons.near_me_rounded,
+          color: AppColors.accent,
+          label: l10n.homeActionNearMe,
+          onTap: onNearMe,
+        ),
+        HomeQuickAction(
+          icon: Icons.bookmark_rounded,
+          color: AppColors.primary,
+          label: l10n.homeActionMySaves,
+          onTap: onMySaves,
+        ),
+        HomeQuickAction(
+          icon: Icons.favorite_rounded,
+          color: AppColors.accent,
+          label: l10n.homeActionMyFavorites,
+          onTap: onMyFavorites,
+        ),
+        HomeQuickAction(
+          icon: Icons.sell_outlined,
+          color: AppColors.purple,
+          label: l10n.homeActionByCategory,
+          onTap: onByCategory,
+        ),
+      ],
+    );
+  }
+}
+
+/// Barra de acciones rápidas pegada al menú inferior (cuando está fijada).
+class HomeQuickActionsDock extends StatelessWidget {
+  const HomeQuickActionsDock({
+    super.key,
+    required this.onNearMe,
+    required this.onMySaves,
+    required this.onMyFavorites,
+    required this.onByCategory,
+    required this.onUnpin,
+  });
+
+  final VoidCallback onNearMe;
+  final VoidCallback onMySaves;
+  final VoidCallback onMyFavorites;
+  final VoidCallback onByCategory;
+  final VoidCallback onUnpin;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    return Material(
+      color: AppColors.sidebar,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          border: Border(
+            top: BorderSide(color: AppColors.border),
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(8, 8, 4, 6),
+          child: Row(
+            children: [
+              Expanded(
+                child: HomeQuickActionsRow(
+                  onNearMe: onNearMe,
+                  onMySaves: onMySaves,
+                  onMyFavorites: onMyFavorites,
+                  onByCategory: onByCategory,
+                ),
+              ),
+              Tooltip(
+                message: l10n.homeQuickActionsUnpin,
+                child: IconButton(
+                  onPressed: onUnpin,
+                  icon: Icon(
+                    Icons.push_pin,
+                    size: 20,
+                    color: AppColors.primary,
+                  ),
+                  visualDensity: VisualDensity.compact,
                 ),
               ),
             ],

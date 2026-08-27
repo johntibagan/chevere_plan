@@ -1020,6 +1020,33 @@ final homeSectionsOpenProvider =
   HomeSectionsOpenNotifier.new,
 );
 
+class HomeQuickActionsPinnedNotifier extends Notifier<bool> {
+  static const _prefsKey = 'home_quick_actions_pinned';
+
+  @override
+  bool build() {
+    Future.microtask(_hydrate);
+    return false;
+  }
+
+  Future<void> _hydrate() async {
+    final prefs = await SharedPreferences.getInstance();
+    final next = prefs.getBool(_prefsKey) ?? false;
+    if (next != state) state = next;
+  }
+
+  Future<void> setPinned(bool pinned) async {
+    state = pinned;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_prefsKey, pinned);
+  }
+}
+
+final homeQuickActionsPinnedProvider =
+    NotifierProvider<HomeQuickActionsPinnedNotifier, bool>(
+  HomeQuickActionsPinnedNotifier.new,
+);
+
 class AppThemeModeNotifier extends Notifier<ThemeMode> {
   static const _prefsKey = 'theme_mode';
 

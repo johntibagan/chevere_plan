@@ -124,6 +124,8 @@
   "homePopularNearby": "Populares cerca",
   "homeExploreLink": "Explorar",
   "homeQuickActions": "Acciones rápidas",
+  "homeQuickActionsPin": "Fijar abajo",
+  "homeQuickActionsUnpin": "Desfijar",
   "homeActionNearMe": "Cerca de mí",
   "homeActionMySaves": "Mis guardados",
   "homeActionMyFavorites": "Mis favoritos",

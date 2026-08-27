@@ -325,6 +325,12 @@ class AppLocalizationsEs extends AppLocalizations {
   String get homeQuickActions => 'Acciones rápidas';
 
   @override
+  String get homeQuickActionsPin => 'Fijar abajo';
+
+  @override
+  String get homeQuickActionsUnpin => 'Desfijar';
+
+  @override
   String get homeActionNearMe => 'Cerca de mí';
 
   @override

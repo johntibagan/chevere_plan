@@ -404,6 +404,13 @@ class _HomePageState extends ConsumerState<HomePage> {
     final nearbyLoading =
         nearbyAsync.isLoading && (nearbySnap == null || nearbySnap.hits.isEmpty);
     final nearbyNeedGps = nearbySnap?.needGps ?? false;
+    final quickPinned = ref.watch(homeQuickActionsPinnedProvider);
+    final showQuickDock = quickPinned && _tab == 0;
+
+    void explore(ExploreShortcut shortcut) {
+      ref.read(exploreIntentProvider.notifier).launch(shortcut);
+      _selectTab(1);
+    }
 
     return PopScope(
       key: WidgetKeys.homeShell,
@@ -474,10 +481,26 @@ class _HomePageState extends ConsumerState<HomePage> {
             ],
           ),
         ),
-        bottomNavigationBar: _ChevereBottomNav(
-          index: _tab,
-          onChanged: _selectTab,
-          onGuardar: () => _openSave(),
+        bottomNavigationBar: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (showQuickDock)
+              HomeQuickActionsDock(
+                onNearMe: () => explore(ExploreShortcut.nearMe),
+                onMySaves: () => explore(ExploreShortcut.mySaves),
+                onMyFavorites: () => explore(ExploreShortcut.myFavorites),
+                onByCategory: () => explore(ExploreShortcut.byCategory),
+                onUnpin: () => ref
+                    .read(homeQuickActionsPinnedProvider.notifier)
+                    .setPinned(false),
+              ),
+            _ChevereBottomNav(
+              index: _tab,
+              onChanged: _selectTab,
+              onGuardar: () => _openSave(),
+              showTopBorder: !showQuickDock,
+            ),
+          ],
         ),
       ),
     );
@@ -489,11 +512,13 @@ class _ChevereBottomNav extends StatelessWidget {
     required this.index,
     required this.onChanged,
     required this.onGuardar,
+    this.showTopBorder = true,
   });
 
   final int index;
   final ValueChanged<int> onChanged;
   final VoidCallback onGuardar;
+  final bool showTopBorder;
 
   @override
   Widget build(BuildContext context) {
@@ -503,7 +528,9 @@ class _ChevereBottomNav extends StatelessWidget {
       elevation: 0,
       child: DecoratedBox(
         decoration: BoxDecoration(
-          border: Border(top: BorderSide(color: AppColors.border)),
+          border: showTopBorder
+              ? Border(top: BorderSide(color: AppColors.border))
+              : null,
         ),
         child: SafeArea(
           top: false,
@@ -631,8 +658,9 @@ class _InicioTab extends ConsumerWidget {
     final drafts = saves.where((s) => s.isIncomplete).toList();
     final sections = ref.watch(homeSectionsOpenProvider);
     final layout = ref.watch(feedLayoutProvider);
+    final quickPinned = ref.watch(homeQuickActionsPinnedProvider);
 
-    return RefreshIndicator(
+    final scroll = RefreshIndicator(
       color: AppColors.primary,
       onRefresh: onRefresh,
       child: CustomScrollView(
@@ -878,74 +906,52 @@ class _InicioTab extends ConsumerWidget {
                               ),
               ),
             ),
-          SliverToBoxAdapter(
-            child: HomeSectionHeader(
-              title: l10n.homeQuickActions,
-              expanded: sections.quick,
-              onToggleExpanded: () => ref
-                  .read(homeSectionsOpenProvider.notifier)
-                  .setOpen(sections.copyWith(quick: !sections.quick)),
-            ),
-          ),
-          if (sections.quick)
+          if (!quickPinned) ...[
             SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                child: Column(
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: HomeQuickAction(
-                            icon: Icons.near_me_rounded,
-                            color: AppColors.accent,
-                            label: l10n.homeActionNearMe,
-                            onTap: () => onExplore(ExploreShortcut.nearMe),
-                          ),
-                        ),
-                        SizedBox(width: 8),
-                        Expanded(
-                          child: HomeQuickAction(
-                            icon: Icons.bookmark_rounded,
-                            color: AppColors.primary,
-                            label: l10n.homeActionMySaves,
-                            onTap: () => onExplore(ExploreShortcut.mySaves),
-                          ),
-                        ),
-                      ],
+              child: HomeSectionHeader(
+                title: l10n.homeQuickActions,
+                expanded: sections.quick,
+                onToggleExpanded: () => ref
+                    .read(homeSectionsOpenProvider.notifier)
+                    .setOpen(sections.copyWith(quick: !sections.quick)),
+                trailing: Tooltip(
+                  message: l10n.homeQuickActionsPin,
+                  child: IconButton(
+                    onPressed: () => ref
+                        .read(homeQuickActionsPinnedProvider.notifier)
+                        .setPinned(true),
+                    icon: Icon(
+                      Icons.push_pin_outlined,
+                      size: 20,
+                      color: AppColors.muted,
                     ),
-                    SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: HomeQuickAction(
-                            icon: Icons.favorite_rounded,
-                            color: AppColors.accent,
-                            label: l10n.homeActionMyFavorites,
-                            onTap: () =>
-                                onExplore(ExploreShortcut.myFavorites),
-                          ),
-                        ),
-                        SizedBox(width: 8),
-                        Expanded(
-                          child: HomeQuickAction(
-                            icon: Icons.sell_outlined,
-                            color: AppColors.purple,
-                            label: l10n.homeActionByCategory,
-                            onTap: () =>
-                                onExplore(ExploreShortcut.byCategory),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
+                    visualDensity: VisualDensity.compact,
+                  ),
                 ),
               ),
             ),
-          const SliverToBoxAdapter(child: SizedBox(height: 100)),
+            if (sections.quick)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 0, 24, 12),
+                  child: HomeQuickActionsRow(
+                    onNearMe: () => onExplore(ExploreShortcut.nearMe),
+                    onMySaves: () => onExplore(ExploreShortcut.mySaves),
+                    onMyFavorites: () =>
+                        onExplore(ExploreShortcut.myFavorites),
+                    onByCategory: () =>
+                        onExplore(ExploreShortcut.byCategory),
+                  ),
+                ),
+              ),
+          ],
+          SliverToBoxAdapter(
+            child: SizedBox(height: quickPinned ? 176 : 100),
+          ),
         ],
       ),
     );
+    return scroll;
   }
 
   Widget _roundIcon({

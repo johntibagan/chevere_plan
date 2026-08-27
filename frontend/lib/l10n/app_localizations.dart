@@ -676,6 +676,18 @@ abstract class AppLocalizations {
   /// **'Acciones rápidas'**
   String get homeQuickActions;
 
+  /// No description provided for @homeQuickActionsPin.
+  ///
+  /// In es, this message translates to:
+  /// **'Fijar abajo'**
+  String get homeQuickActionsPin;
+
+  /// No description provided for @homeQuickActionsUnpin.
+  ///
+  /// In es, this message translates to:
+  /// **'Desfijar'**
+  String get homeQuickActionsUnpin;
+
   /// No description provided for @homeActionNearMe.
   ///
   /// In es, this message translates to:

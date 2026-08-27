@@ -39,7 +39,7 @@ sequenceDiagram
 
 | Sitio | Qué ves |
 |---|---|
-| **Inicio** | Saludo + título, menú **☰**, **Vista** (lista / 2 / 3 / 4), borradores si hay, **Eventos** (próximamente, se pliega), **Guardados recientes** y **Populares cerca** (misma vista; se pliegan), **acciones rápidas** (se pliegan). **Ver más** abre Explorar. Portada: foto o ilustración de categoría padre; borde verde/morado. |
+| **Inicio** | Saludo + título, menú **☰**, **Vista** (lista / 2 / 3 / 4), borradores si hay, **Eventos** (próximamente, se pliega), **Guardados recientes** y **Populares cerca** (misma vista; se pliegan), **acciones rápidas** al final (sección plegable; abierta la 1.ª vez; fila de 4 iconos; se puede **fijar** y flota arriba del menú inferior). **Ver más** abre Explorar. Portada: foto o ilustración de categoría padre; borde verde/morado. |
 | **Explorar** | Búsqueda de sitios (cabecera Figma, chips de **categoría padre multi-select**, lista o cuadrícula 2/3/4). Texto opcional; filtros avanzados (lugar, GPS+radio km, mis guardados). Transporte/presupuesto ocultos en UI. |
 | **+ (centro)** | Guardar o completar un lugar (crear y editar son la **misma pantalla**) |
 | **Planes** | Tus itinerarios (tarjeta de crear + lista; **un solo** CTA, sin FAB duplicado) |

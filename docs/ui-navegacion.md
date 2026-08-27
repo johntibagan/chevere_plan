@@ -180,7 +180,8 @@ Todo el texto de producto está en `app_es.arb` (i18n).
 | `HomeSectionHeader` | mismo | Título de sección + “ver todo” primary. |
 | `HomeRecentRailCard` | mismo | Carrusel: cover 144×176, badge red, borrador, corazón, ojo/candado, nombre/ciudad, chip categoría. |
 | `HomePopularCard` | mismo | Grid: franja, cover, corazón, nombre, departamento-municipio, dirección (scroll si no cabe), km/precio. |
-| `HomeQuickAction` | mismo | Tile 3 acciones: icono en círculo tintado + label 10 px. |
+| `HomeQuickAction` | mismo | Icono circular tintado + label 10 px debajo. |
+| `HomeQuickActionsRow` / `HomeQuickActionsDock` | mismo | Fila de 4 atajos; dock flotante con desfijar. |
 | `VisibilityBadge` | `visibility_badge.dart` | Icono público/privado. |
 | `AppListCard` | `app_list_card.dart` | `Card` theme, margin bottom 8. |
 | `AppAsyncBody` | `app_async_body.dart` | Pull-to-refresh: loading / `AppRetryCallout` / vacío / lista. |
@@ -223,13 +224,13 @@ Tab activo: icono + label `primary`. Inactivo: `mutedDark`, label 10 px.
 **Inicio (`_InicioTab`)** — sin AppBar:
 
 1. Saludo 11 mutedDark + título app 22 ExtraBold. Botón **☰** (derecha) abre `endDrawer` Más opciones: **Tu perfil**, Recuerdos cercanos, Mismo sitio al guardar, Unidad de distancia, Admin/Reportes si staff, **Cerrar sesión** al final.
-2. **Vista** (lista / 2 / 3 / 4) justo debajo del título; aplica a recientes y populares.
+2. **Vista** (lista / 2 / 3 / 4); aplica a recientes y populares.
 3. Aviso de **borradores** (card naranja), si hay.
 4. **Eventos**: título plegable; contenido *Próximamente.* (placeholder).
 5. **Guardados recientes**: misma vista (hasta 5). El título pliega. **Ver más** abre Explorar.
 6. **Populares cerca**: mismo plegado y misma vista. **Ver más** abre Explorar. Vacío / sin GPS: texto muted.
-7. **Acciones rápidas**: se pliegan igual; los tres atajos también van a Explorar.
-8. Padding bottom grande por `extendBody`.
+7. **Acciones rápidas** (al final): título plegable (abierta por defecto la 1.ª vez); fila de 4 iconos + labels; icono **fijar**. Si se fija, sale del scroll y queda **pegada encima** del menú inferior (mismo color `sidebar`, sin hueco; pin para desfijar). Solo en pestaña Inicio. Persistido en el teléfono.
+8. Padding bottom grande por `extendBody` (más si la barra está fijada).
 
 ### 6.3 Explorar — `SearchPage`
 
