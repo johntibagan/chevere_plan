@@ -9,9 +9,9 @@ Toda la UI de Flutter en Chevere Plan debe **adaptarse al ancho** del dispositiv
 
 ## Tarjetas de sitio (grilla)
 
-- Grilla: portada ≈ **60%** de la altura (`flex: 6`) y textos ≈ **40%** (`flex: 4`).
-- Lista: altura de fila **104** (`SiteCardListMetrics`, presupuesto: origen 32 + textos 1 línea 48 + meta 12 + pads). Miniatura ≈ **98%** (1 px arriba/abajo). El corazón en modo icono es **32×32** (icono 24; no el IconButton de 40+).
-- **CTA / filas extra** (p. ej. Ver ficha + Usar como en anti-dupe): pie **fijo y compacto**. Textos siguen ≈40% de la **celda**; la portada = resto (≈60% menos altura de los CTA). No meter botones dentro del bloque de textos. La altura total de la celda **no** cambia.
+- Grilla: portada ≈ **55%** de la altura (`SiteCardGridMetrics.coverFlex`) y textos ≈ **45%** (`textFlex`).
+- Lista: altura de fila **104** (`SiteCardListMetrics`). Origen compacto (**24** de alto; corazón icono **24×24**). Miniatura ≈ **98%** (1 px arriba/abajo).
+- **CTA / filas extra** (p. ej. Ver ficha + Usar como en anti-dupe): pie **fijo y compacto**. Textos siguen ≈45% de la **celda**; la portada = resto (≈55% menos altura de los CTA). No meter botones dentro del bloque de textos. La altura total de la celda **no** cambia.
 
 ## Obligatorio (resto)
 
@@ -28,3 +28,9 @@ Toda la UI de Flutter en Chevere Plan debe **adaptarse al ancho** del dispositiv
 ## Al dudar
 
 Preguntá al dueño. No inventes un tamaño nuevo de card.
+
+## Overflow (relacionado)
+
+Nunca aceptar la franja amarilla/negra `BOTTOM OVERFLOWED` en cards. Regla:
+`.cursor/rules/ui-sin-overflow.mdc`. Textos largos: `SiteCardScrollablePlaceTexts`
+(scroll interno), no quitarlo.

@@ -57,20 +57,37 @@ enum FeedLayout {
 /// Fila lista (Explorar / Inicio): altura calculada, no un número al azar.
 ///
 /// Presupuesto (1 línea de nombre + depto + dirección + meta distancia/precio):
-/// - padding vertical textos: 8 (4+4)
-/// - origen (badge 16 / corazón icon 32): 32
-/// - gap: 2
-/// - [SiteCardPlaceTexts] 1 línea: 12×1.25 + 4 + 10×1.25 + 4 + 10×1.25 = 48
-/// - meta: 12
-/// Total 102 → **104** (margen). Miniatura = fila − 1 px arriba/abajo.
+/// - padding vertical textos: [textBlockPadV]×2
+/// - origen (badge 16 / corazón icon 24): [originRowHeight]
+/// - gap: [textGap]
+/// - [SiteCardPlaceTexts] 1 línea nombre + depto + dirección ≈ 48
+/// - meta: [metaRowHeight]
+/// Total ~102 → **104** (margen). Miniatura = fila − 1 px arriba/abajo.
+///
+/// **Prohibido** superar este presupuesto sin subir [rowHeight]: en debug Flutter
+/// pinta la franja amarilla/negra «BOTTOM OVERFLOWED». El exceso de texto de
+/// lugar va en scroll interno (`SiteCardScrollablePlaceTexts`), no fuera de la fila.
 abstract final class SiteCardListMetrics {
   static const double rowHeight = 104;
   static const double thumbPad = 1;
   static const double thumbSize = rowHeight - thumbPad * 2;
+  /// Icono visibilidad (~16) + tags; corazón icono encaja en 24.
+  static const double originRowHeight = 24;
+  static const double metaRowHeight = 14;
+  static const double textGap = 1;
+  /// Padding vertical del bloque de textos (lista / grilla).
+  static const double textBlockPadV = 2;
 }
 
-/// Grilla 2 columnas (anti-duplicados): mismo criterio — ratio estable.
+/// Grilla (Inicio / Explorar / anti-dupe): portada vs textos en la celda.
 abstract final class SiteCardGridMetrics {
+  /// Portada / ilustración ≈ **55%** de la altura útil de la card.
+  static const int coverFlex = 11;
+  /// Origen + lugar + meta ≈ **45%**.
+  static const int textFlex = 9;
+  static const double coverHeightFraction = 0.55;
+  static const double textHeightFraction = 0.45;
+
   static double twoColumnAspectRatio(
     double availableWidth, {
     double horizontalPadding = 32,

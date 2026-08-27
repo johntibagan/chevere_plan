@@ -239,7 +239,8 @@ class _SameSitePickerPageState extends State<SameSitePickerPage> {
         builder: (context, constraints) {
           // Textos ≈ 40% de la celda (fijos). CTA compactos restan solo a la portada.
           const actionH = 30.0;
-          final textH = constraints.maxHeight * 0.4;
+          final textH =
+              constraints.maxHeight * SiteCardGridMetrics.textHeightFraction;
           final imageRaw = constraints.maxHeight - textH - actionH;
           final imageH = imageRaw < 0 ? 0.0 : imageRaw;
 
@@ -265,27 +266,32 @@ class _SameSitePickerPageState extends State<SameSitePickerPage> {
               SizedBox(
                 height: textH,
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(8, 4, 8, 2),
+                  padding: const EdgeInsets.fromLTRB(
+                    8,
+                    SiteCardListMetrics.textBlockPadV,
+                    8,
+                    2,
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      SiteCardOriginRow(
-                        isPublic: d.isPublic,
-                        isOwn: d.isOwn,
-                        isLinked: d.isLinked,
-                        isCatalog: d.isCatalog,
+                      SizedBox(
+                        height: SiteCardListMetrics.originRowHeight,
+                        child: SiteCardOriginRow(
+                          isPublic: d.isPublic,
+                          isOwn: d.isOwn,
+                          isLinked: d.isLinked,
+                          isCatalog: d.isCatalog,
+                        ),
                       ),
                       SizedBox(height: 2),
                       Expanded(
-                        child: SingleChildScrollView(
-                          physics: const ClampingScrollPhysics(),
-                          child: SiteCardPlaceTexts(
-                            name: d.siteName,
-                            department: d.department,
-                            city: d.city,
-                            addressLine: d.addressLine,
-                            nameSize: 12,
-                          ),
+                        child: SiteCardScrollablePlaceTexts(
+                          name: d.siteName,
+                          department: d.department,
+                          city: d.city,
+                          addressLine: d.addressLine,
+                          nameSize: 12,
                         ),
                       ),
                       if (d.distanceM != null)

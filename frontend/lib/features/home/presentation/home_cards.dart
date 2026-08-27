@@ -242,7 +242,7 @@ class HomeRecentRailCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Expanded(
-                flex: 6,
+                flex: SiteCardGridMetrics.coverFlex,
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
@@ -305,35 +305,33 @@ class HomeRecentRailCard extends StatelessWidget {
                 ),
               ),
               Expanded(
-                flex: 4,
+                flex: SiteCardGridMetrics.textFlex,
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
+                  padding: const EdgeInsets.fromLTRB(
+                    8,
+                    SiteCardListMetrics.textBlockPadV,
+                    8,
+                    SiteCardListMetrics.textBlockPadV,
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      SiteCardOriginRow(
-                        isPublic: save.isPublic,
-                        isOwn: true,
-                        isLinked: save.isPossibleDuplicate,
-                        isCatalog: save.isCatalogSite,
-                        isPhysicalPlace: save.isPhysicalPlace,
+                      SizedBox(
+                        height: SiteCardListMetrics.originRowHeight,
+                        child: SiteCardOriginRow(
+                          isPublic: save.isPublic,
+                          isOwn: true,
+                          isLinked: save.isPossibleDuplicate,
+                          isCatalog: save.isCatalogSite,
+                          isPhysicalPlace: save.isPhysicalPlace,
+                        ),
                       ),
-                      SizedBox(height: 2),
+                      SizedBox(height: SiteCardListMetrics.textGap),
                       Expanded(
-                        child: LayoutBuilder(
-                          builder: (context, constraints) {
-                            final h = constraints.maxHeight;
-                            return Align(
-                              alignment: Alignment.topLeft,
-                              child: SiteCardPlaceTexts(
-                                name: save.siteName,
-                                department:
-                                    h >= 20 ? save.department : null,
-                                city: h >= 20 ? save.city : null,
-                                maxNameLines: h >= 34 ? 2 : 1,
-                              ),
-                            );
-                          },
+                        child: SiteCardScrollablePlaceTexts(
+                          name: save.siteName,
+                          department: save.department,
+                          city: save.city,
                         ),
                       ),
                     ],
@@ -348,7 +346,7 @@ class HomeRecentRailCard extends StatelessWidget {
   }
 }
 
-/// Nombre, departamento-municipio y dirección (ellipsis si no cabe).
+/// Nombre, departamento-municipio y dirección.
 class SiteCardPlaceTexts extends StatelessWidget {
   const SiteCardPlaceTexts({
     super.key,
@@ -377,7 +375,7 @@ class SiteCardPlaceTexts extends StatelessWidget {
       children: [
         Text(
           name,
-          maxLines: maxNameLines,
+          maxLines: maxNameLines.clamp(1, 4),
           overflow: TextOverflow.ellipsis,
           style: TextStyle(
             fontSize: nameSize,
@@ -403,7 +401,7 @@ class SiteCardPlaceTexts extends StatelessWidget {
           SizedBox(height: 4),
           Text(
             address,
-            maxLines: 1,
+            maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
               fontSize: 10,
@@ -417,8 +415,54 @@ class SiteCardPlaceTexts extends StatelessWidget {
   }
 }
 
+/// Textos de lugar en la zona [Expanded] de una card de altura fija.
+///
+/// Si hay más texto del que cabe, **scroll interno** (como antes): no se corta
+/// a ciegas y no aparece la franja amarilla «BOTTOM OVERFLOWED».
+/// Absorbe overscroll para pelear menos con el scroll del feed.
+class SiteCardScrollablePlaceTexts extends StatelessWidget {
+  const SiteCardScrollablePlaceTexts({
+    super.key,
+    required this.name,
+    this.department,
+    this.city,
+    this.addressLine,
+    this.nameSize = 12,
+    this.maxNameLines = 2,
+  });
+
+  final String name;
+  final String? department;
+  final String? city;
+  final String? addressLine;
+  final double nameSize;
+  final int maxNameLines;
+
+  @override
+  Widget build(BuildContext context) {
+    return NotificationListener<ScrollNotification>(
+      onNotification: (notification) {
+        // El gesto vertical lo consume esta zona si el usuario scrollea aquí.
+        return notification.depth == 0 &&
+            notification is OverscrollNotification;
+      },
+      child: SingleChildScrollView(
+        physics: const ClampingScrollPhysics(),
+        child: SiteCardPlaceTexts(
+          name: name,
+          department: department,
+          city: city,
+          addressLine: addressLine,
+          nameSize: nameSize,
+          maxNameLines: maxNameLines,
+        ),
+      ),
+    );
+  }
+}
+
 /// Grilla: franja + borde de visibilidad, foto o ilustración padre.
-/// Portada [Expanded] con BoxFit.cover (sin forzar proporción); textos compactos.
+/// Portada [Expanded] ≈55% (`SiteCardGridMetrics.coverFlex`); textos ≈45%.
 class HomePopularCard extends ConsumerWidget {
   const HomePopularCard({
     super.key,
@@ -455,7 +499,7 @@ class HomePopularCard extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Expanded(
-              flex: 6,
+              flex: SiteCardGridMetrics.coverFlex,
               child: Stack(
                 fit: StackFit.expand,
                 children: [
@@ -514,75 +558,73 @@ class HomePopularCard extends ConsumerWidget {
               ),
             ),
             Expanded(
-              flex: 4,
+              flex: SiteCardGridMetrics.textFlex,
               child: Padding(
                 // Padding compacto: con origen + meta el bloque de textos
-                // apenas cabe en el 40% de la celda (overflow ~2 px).
-                padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
+                // apenas cabe en el ~45% de la celda.
+                padding: const EdgeInsets.fromLTRB(
+                  8,
+                  SiteCardListMetrics.textBlockPadV,
+                  8,
+                  SiteCardListMetrics.textBlockPadV,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    SiteCardOriginRow(
-                      isPublic: hit.isPublic,
-                      isOwn: hit.isOwn,
-                      isLinked: hit.isLinked,
-                      isCatalog: hit.isCatalog,
-                      isPhysicalPlace: hit.isPhysicalPlace,
+                    SizedBox(
+                      height: SiteCardListMetrics.originRowHeight,
+                      child: SiteCardOriginRow(
+                        isPublic: hit.isPublic,
+                        isOwn: hit.isOwn,
+                        isLinked: hit.isLinked,
+                        isCatalog: hit.isCatalog,
+                        isPhysicalPlace: hit.isPhysicalPlace,
+                      ),
                     ),
-                    SizedBox(height: 2),
+                    SizedBox(height: SiteCardListMetrics.textGap),
                     Expanded(
-                      child: LayoutBuilder(
-                        builder: (context, constraints) {
-                          final h = constraints.maxHeight;
-                          // Presupuesto: nombre ~15, place ~16.5, address ~16.5.
-                          final maxNameLines = h >= 34 ? 2 : 1;
-                          final showPlace = h >= 20;
-                          final showAddress = h >= 50;
-                          return Align(
-                            alignment: Alignment.topLeft,
-                            child: SiteCardPlaceTexts(
-                              name: hit.name,
-                              department:
-                                  showPlace ? hit.department : null,
-                              city: showPlace ? hit.city : null,
-                              addressLine:
-                                  showAddress ? hit.addressLine : null,
-                              maxNameLines: maxNameLines,
-                            ),
-                          );
-                        },
+                      child: SiteCardScrollablePlaceTexts(
+                        name: hit.name,
+                        department: hit.department,
+                        city: hit.city,
+                        addressLine: hit.addressLine,
                       ),
                     ),
                     if (hasMetaRow) ...[
-                      SizedBox(height: 2),
-                      Row(
-                        children: [
-                          if (hit.distanceKm != null)
-                            Text(
-                              formatDistanceFromKm(
-                                context.l10n,
-                                unit,
-                                hit.distanceKm!,
+                      SizedBox(height: SiteCardListMetrics.textGap),
+                      SizedBox(
+                        height: SiteCardListMetrics.metaRowHeight,
+                        child: Row(
+                          children: [
+                            if (hit.distanceKm != null)
+                              Text(
+                                formatDistanceFromKm(
+                                  context.l10n,
+                                  unit,
+                                  hit.distanceKm!,
+                                ),
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  color: AppColors.mutedDark,
+                                  height: 1.1,
+                                ),
                               ),
-                              style: TextStyle(
-                                fontSize: 10,
-                                color: AppColors.mutedDark,
+                            Spacer(),
+                            if (price != null)
+                              Text(
+                                formatMoney(
+                                  price,
+                                  currencyCode: hit.currencyCode,
+                                ),
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w800,
+                                  color: AppColors.primary,
+                                  height: 1.1,
+                                ),
                               ),
-                            ),
-                          Spacer(),
-                          if (price != null)
-                            Text(
-                              formatMoney(
-                                price,
-                                currencyCode: hit.currencyCode,
-                              ),
-                              style: TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w800,
-                                color: AppColors.primary,
-                              ),
-                            ),
-                        ],
+                          ],
+                        ),
                       ),
                     ],
                   ],
@@ -654,63 +696,73 @@ class HomeSearchListCard extends ConsumerWidget {
                 ),
                 Expanded(
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(8, 4, 4, 4),
+                    padding: const EdgeInsets.fromLTRB(
+                      8,
+                      SiteCardListMetrics.textBlockPadV,
+                      4,
+                      SiteCardListMetrics.textBlockPadV,
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        SiteCardOriginRow(
-                          isPublic: hit.isPublic,
-                          isOwn: hit.isOwn,
-                          isLinked: hit.isLinked,
-                          isCatalog: hit.isCatalog,
-                          isPhysicalPlace: hit.isPhysicalPlace,
-                          trailing: FavoriteHeartButton(
-                            siteId: hit.siteId,
-                            style: FavoriteHeartStyle.icon,
-                          ),
-                        ),
-                        SizedBox(height: 2),
-                        Expanded(
-                          child: Align(
-                            alignment: Alignment.topLeft,
-                            child: SiteCardPlaceTexts(
-                              name: hit.name,
-                              department: hit.department,
-                              city: hit.city,
-                              addressLine: hit.addressLine,
-                              nameSize: 12,
+                        SizedBox(
+                          height: SiteCardListMetrics.originRowHeight,
+                          child: SiteCardOriginRow(
+                            isPublic: hit.isPublic,
+                            isOwn: hit.isOwn,
+                            isLinked: hit.isLinked,
+                            isCatalog: hit.isCatalog,
+                            isPhysicalPlace: hit.isPhysicalPlace,
+                            trailing: FavoriteHeartButton(
+                              siteId: hit.siteId,
+                              style: FavoriteHeartStyle.icon,
                             ),
                           ),
                         ),
+                        SizedBox(height: SiteCardListMetrics.textGap),
+                        Expanded(
+                          child: SiteCardScrollablePlaceTexts(
+                            name: hit.name,
+                            department: hit.department,
+                            city: hit.city,
+                            addressLine: hit.addressLine,
+                            nameSize: 12,
+                          ),
+                        ),
                         if (hit.distanceKm != null || price != null)
-                          Row(
-                            children: [
-                              if (hit.distanceKm != null)
-                                Text(
-                                  formatDistanceFromKm(
-                                    context.l10n,
-                                    unit,
-                                    hit.distanceKm!,
+                          SizedBox(
+                            height: SiteCardListMetrics.metaRowHeight,
+                            child: Row(
+                              children: [
+                                if (hit.distanceKm != null)
+                                  Text(
+                                    formatDistanceFromKm(
+                                      context.l10n,
+                                      unit,
+                                      hit.distanceKm!,
+                                    ),
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      color: AppColors.mutedDark,
+                                      height: 1.1,
+                                    ),
                                   ),
-                                  style: TextStyle(
-                                    fontSize: 10,
-                                    color: AppColors.mutedDark,
+                                Spacer(),
+                                if (price != null)
+                                  Text(
+                                    formatMoney(
+                                      price,
+                                      currencyCode: hit.currencyCode,
+                                    ),
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w800,
+                                      color: AppColors.primary,
+                                      height: 1.1,
+                                    ),
                                   ),
-                                ),
-                              Spacer(),
-                              if (price != null)
-                                Text(
-                                  formatMoney(
-                                    price,
-                                    currencyCode: hit.currencyCode,
-                                  ),
-                                  style: TextStyle(
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w800,
-                                    color: AppColors.primary,
-                                  ),
-                                ),
-                            ],
+                              ],
+                            ),
                           ),
                       ],
                     ),

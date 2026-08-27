@@ -1,0 +1,43 @@
+---
+description: Nunca mostrar overflow de Flutter (franja amarilla/negra) en cards ni UI
+globs: frontend/lib/**/*.dart
+alwaysApply: true
+---
+
+# UI — sin overflow (franja amarilla/negra)
+
+## Prohibido en pantalla
+
+Flutter en **debug** pinta una franja **amarilla/negra** con texto tipo
+`BOTTOM OVERFLOWED BY N PIXELS` (o RIGHT/LEFT). Eso **nunca** debe verse en
+Chevere Plan: ni en lista, ni en grilla, ni en Inicio, Explorar, anti-dupe,
+Planes, etc. No es un “warning menor”: es un fallo de layout.
+
+## Causa típica (cards de sitio)
+
+Fila/celda con **altura fija** (`SiteCardListMetrics.rowHeight`, ratio de
+grilla) y un `Column` cuyos hijos piden más alto del disponible:
+
+- Textos de lugar (nombre/depto/dirección) **sin** scroll interno en un
+  `Expanded`.
+- `Wrap` de origen (Tuyo/Catálogo/…) que pasa a **2 renglones**.
+- Meta (distancia/precio) + origen creciendo sin altura acotada.
+
+## Obligatorio al tocar cards
+
+1. Respetar `SiteCardListMetrics` (lista) y el ratio de `FeedLayout` (grilla).
+2. Zona de textos de lugar = `SiteCardScrollablePlaceTexts` (o
+   `SingleChildScrollView` + `SiteCardPlaceTexts`) dentro de un `Expanded`:
+   **si hay más texto, el usuario scrollea dentro de la card**. No cortar a
+   ciegas quitando ese scroll “por fluidez”.
+3. Origen en **una sola fila** (`SiteOriginTags` sin Wrap a 2 líneas).
+4. Filas fijas de origen/meta con altura acotada
+   (`originRowHeight` / `metaRowHeight`).
+5. Tras cambiar layout de card: probar **lista y grillas 2/3/4** con nombre
+   largo y dirección. Si aparece la franja, el cambio **no está listo**.
+
+## Qué no hacer
+
+- Quitar el scroll interno de textos de la card sin dejar otro mecanismo que
+  evite overflow (ese scroll **es** el mecanismo previsto).
+- Dejar el overflow “solo en debug”: el usuario beta lo ve y se ve mal.
