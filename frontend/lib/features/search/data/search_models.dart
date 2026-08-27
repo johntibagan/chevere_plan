@@ -147,6 +147,18 @@ class SearchHit {
   }
 }
 
+/// Página de resultados de `search_sites` (hits + si puede haber más en servidor).
+class SearchPageResult {
+  const SearchPageResult({
+    required this.hits,
+    required this.hasMore,
+  });
+
+  final List<SearchHit> hits;
+  /// `true` si el RPC devolvió una página completa (`rawCount >= limit`).
+  final bool hasMore;
+}
+
 class SearchFilters {
   const SearchFilters({
     this.query,
@@ -161,6 +173,8 @@ class SearchFilters {
     this.budgetMax,
     this.includePublic = false,
     this.favoritesOnly = false,
+    this.limit,
+    this.offset,
   });
 
   final String? query;
@@ -178,6 +192,10 @@ class SearchFilters {
   final bool includePublic;
   /// Solo sitios en `site_favorites` del usuario.
   final bool favoritesOnly;
+  /// `p_limit` del RPC. Null = default del backend (p. ej. Planes / Inicio).
+  final int? limit;
+  /// `p_offset` del RPC. Null = 0 en backend.
+  final int? offset;
 
   /// IDs efectivos para el RPC (multi + legacy).
   List<String> get effectiveCategoryIds {
@@ -218,6 +236,8 @@ class SearchFilters {
     }
     if (budgetMin != null) params['p_budget_min'] = budgetMin;
     if (budgetMax != null) params['p_budget_max'] = budgetMax;
+    if (limit != null) params['p_limit'] = limit;
+    if (offset != null) params['p_offset'] = offset;
     return params;
   }
 
@@ -233,7 +253,9 @@ class SearchFilters {
         budgetMax?.toString() ?? '',
         includePublic ? '1' : '0',
         favoritesOnly ? 'fav1' : 'fav0',
-        'v8', // favoritos
+        'l${limit ?? 'd'}',
+        'o${offset ?? 0}',
+        'v9', // paginación servidor
       ].join('|');
 }
 

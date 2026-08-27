@@ -4,7 +4,7 @@
 /// La UI muestra distancias en la unidad preferida del usuario
 /// (`preferredDistanceUnitProvider` / catálogo `distance_units`).
 abstract final class SearchPolicies {
-  /// Página cliente al tocar «Cargar más».
+  /// Página del RPC `search_sites` (`p_limit` / `p_offset`).
   static const int pageSize = 15;
 
   static const double minRadiusKm = 0.5;

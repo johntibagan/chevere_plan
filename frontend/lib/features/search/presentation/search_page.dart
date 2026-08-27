@@ -57,7 +57,8 @@ class _SearchPageState extends ConsumerState<SearchPage> {
   bool _searchFailed = false;
   List<SearchHit> _hits = const [];
   bool _searched = false;
-  int _visibleCount = SearchPolicies.pageSize;
+  bool _hasMore = false;
+  int _offset = 0;
   /// Invalida respuestas de búsquedas anteriores (reset / nueva búsqueda).
   int _searchEpoch = 0;
   /// Invalida un `_applyIntent` viejo si llega otro atajo / reset.
@@ -130,8 +131,9 @@ class _SearchPageState extends ConsumerState<SearchPage> {
     return (fix.lat, fix.lng);
   }
 
-  void _invalidateVisible() {
-    _visibleCount = SearchPolicies.pageSize;
+  void _resetPaging() {
+    _offset = 0;
+    _hasMore = false;
   }
 
   /// null = inválido (toast); true = ok y actualizó [_radiusKm].
@@ -166,6 +168,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
   SearchFilters _buildFilters({
     required double? lat,
     required double? lng,
+    required int offset,
   }) {
     final text = _queryCtrl.text.trim();
     final locationExtra = _locationCtrl.text.trim();
@@ -180,6 +183,8 @@ class _SearchPageState extends ConsumerState<SearchPage> {
       // Transporte / presupuesto: ocultos en UI Explorar (no funcionales aún).
       includePublic: !_mySavesOnly,
       favoritesOnly: _favoritesOnly,
+      limit: SearchPolicies.pageSize,
+      offset: offset,
     );
   }
 
@@ -195,38 +200,50 @@ class _SearchPageState extends ConsumerState<SearchPage> {
       _searched = true;
       _searchFailed = false;
       _hits = const [];
-      _invalidateVisible();
+      _resetPaging();
     });
 
     try {
       final loc = await _maybeLocation();
       if (!mounted || epoch != _searchEpoch) return;
-      final filters = _buildFilters(lat: loc.$1, lng: loc.$2);
+      final filters = _buildFilters(lat: loc.$1, lng: loc.$2, offset: 0);
       // Mis guardados / favoritos cambian seguido: no servir SWR stale.
       final mustFresh = forceNetwork || _mySavesOnly || _favoritesOnly;
-      final hits = await ref.read(swrLoaderProvider).load<List<SearchHit>>(
+      final page = await ref.read(swrLoaderProvider).load<SearchPageResult>(
             key: CacheKeys.search(filters.cacheKey),
             ttl: CacheTtl.search,
             forceNetwork: mustFresh,
             decode: (payload) {
-              final list = payload as List? ?? const [];
-              return list
+              final map = payload is Map
+                  ? Map<String, dynamic>.from(payload)
+                  : <String, dynamic>{};
+              final list = map['hits'] as List? ?? const [];
+              final hits = list
                   .whereType<Map>()
                   .map(
                     (e) => SearchHit.fromJson(Map<String, dynamic>.from(e)),
                   )
                   .toList();
+              return SearchPageResult(
+                hits: hits,
+                hasMore: map['hasMore'] as bool? ?? false,
+              );
             },
-            encode: (value) => value.map((e) => e.toJson()).toList(),
-            network: () => widget.repository.search(filters),
+            encode: (value) => {
+              'hits': value.hits.map((e) => e.toJson()).toList(),
+              'hasMore': value.hasMore,
+            },
+            network: () => widget.repository.searchPage(filters),
           );
       if (!mounted || epoch != _searchEpoch) return;
       setState(() {
-        _hits = hits;
+        _hits = page.hits;
+        _hasMore = page.hasMore;
+        _offset = SearchPolicies.pageSize;
         _loading = false;
       });
       ref.read(sitePrefetchProvider).scheduleVisibleSites(
-            hits.map((h) => h.siteId),
+            page.hits.map((h) => h.siteId),
           );
     } catch (e, st) {
       if (!mounted || epoch != _searchEpoch) return;
@@ -246,16 +263,38 @@ class _SearchPageState extends ConsumerState<SearchPage> {
   }
 
   Future<void> _loadMore() async {
-    if (_loading || _loadingMore) return;
-    if (_visibleCount >= _hits.length) return;
+    if (_loading || _loadingMore || !_hasMore) return;
+    final epoch = _searchEpoch;
     setState(() => _loadingMore = true);
-    await Future<void>.delayed(const Duration(milliseconds: 120));
-    if (!mounted) return;
-    setState(() {
-      _visibleCount =
-          (_visibleCount + SearchPolicies.pageSize).clamp(0, _hits.length);
-      _loadingMore = false;
-    });
+    try {
+      final loc = await _maybeLocation();
+      if (!mounted || epoch != _searchEpoch) return;
+      final filters = _buildFilters(
+        lat: loc.$1,
+        lng: loc.$2,
+        offset: _offset,
+      );
+      final page = await widget.repository.searchPage(filters);
+      if (!mounted || epoch != _searchEpoch) return;
+      final known = _hits.map((h) => h.siteId).toSet();
+      final appended = <SearchHit>[
+        ..._hits,
+        ...page.hits.where((h) => !known.contains(h.siteId)),
+      ];
+      setState(() {
+        _hits = appended;
+        _hasMore = page.hasMore;
+        _offset += SearchPolicies.pageSize;
+        _loadingMore = false;
+      });
+      ref.read(sitePrefetchProvider).scheduleVisibleSites(
+            page.hits.map((h) => h.siteId),
+          );
+    } catch (e, st) {
+      if (!mounted || epoch != _searchEpoch) return;
+      setState(() => _loadingMore = false);
+      AppToast.error(context, e, stackTrace: st, logContext: 'search_load_more');
+    }
   }
 
   Future<void> _wipeActiveFilters({required bool clearPersistedRadius}) async {
@@ -283,7 +322,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
       _searchFailed = false;
       _loading = false;
       _loadingMore = false;
-      _invalidateVisible();
+      _resetPaging();
     });
   }
 
@@ -418,8 +457,6 @@ class _SearchPageState extends ConsumerState<SearchPage> {
     );
     final roots = categories.where((c) => c.isRoot).toList();
 
-    final visible = _hits.take(_visibleCount).toList();
-    final hasMore = _visibleCount < _hits.length;
     final layout = ref.watch(feedLayoutProvider);
 
     return Scaffold(
@@ -795,7 +832,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                             ),
                             delegate: SliverChildBuilderDelegate(
                               (context, index) {
-                                final h = visible[index];
+                                final h = _hits[index];
                                 return HomePopularCard(
                                   hit: h,
                                   onTap: () => _openHit(h),
@@ -803,7 +840,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                                       layout != FeedLayout.grid4,
                                 );
                               },
-                              childCount: visible.length,
+                              childCount: _hits.length,
                             ),
                           ),
                         );
@@ -815,17 +852,17 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                       sliver: SliverList(
                         delegate: SliverChildBuilderDelegate(
                           (context, index) {
-                            final h = visible[index];
+                            final h = _hits[index];
                             return HomeSearchListCard(
                               hit: h,
                               onTap: () => _openHit(h),
                             );
                           },
-                          childCount: visible.length,
+                          childCount: _hits.length,
                         ),
                       ),
                     ),
-                  if (_searched && hasMore)
+                  if (_searched && _hasMore)
                     SliverToBoxAdapter(
                       child: Padding(
                         padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
@@ -841,11 +878,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                                     strokeWidth: 2,
                                   ),
                                 )
-                              : Text(
-                                  l10n.searchLoadMoreRemaining(
-                                    _hits.length - _visibleCount,
-                                  ),
-                                ),
+                              : Text(l10n.actionLoadMore),
                         ),
                       ),
                     )

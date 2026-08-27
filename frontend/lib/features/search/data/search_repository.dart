@@ -3,9 +3,10 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/logging/app_log.dart';
 import '../../plans/data/plan_hours_policy.dart';
+import '../domain/search_policies.dart';
 import 'search_models.dart';
 
-/// Tope del fallback local (sin RPC). La UI pagina en cliente (`SearchPolicies.pageSize`).
+/// Tope del fallback local (sin RPC) cuando no hay [SearchFilters.limit].
 const _kFallbackPublicCap = 100;
 
 class SearchRepository {
@@ -15,6 +16,10 @@ class SearchRepository {
   final SupabaseClient _client;
 
   Future<List<SearchHit>> search(SearchFilters filters) async {
+    return (await searchPage(filters)).hits;
+  }
+
+  Future<SearchPageResult> searchPage(SearchFilters filters) async {
     try {
       return await _searchRpc(filters);
     } catch (e, st) {
@@ -28,17 +33,23 @@ class SearchRepository {
     }
   }
 
-  Future<List<SearchHit>> _searchRpc(SearchFilters filters) async {
+  Future<SearchPageResult> _searchRpc(SearchFilters filters) async {
     final rows = await _client.rpc(
       'search_sites',
       params: filters.toRpcParams(),
     );
-    final hits = (rows as List<dynamic>)
+    final list = rows as List<dynamic>;
+    final rawCount = list.length;
+    final hits = list
         .map((e) => SearchHit.fromJson(Map<String, dynamic>.from(e as Map)))
         .where((h) => PlanHoursPolicy.isOpenInWindow(siteId: h.siteId))
         .where((h) => h.lat != null && h.lng != null)
         .toList();
-    return _dedupeHits(hits);
+    final pageLimit = filters.limit ?? SearchPolicies.pageSize;
+    return SearchPageResult(
+      hits: _dedupeHits(hits),
+      hasMore: rawCount >= pageLimit,
+    );
   }
 
   /// Un resultado por sitio; si hay copia propia + público cercanos, deja uno.
@@ -168,9 +179,11 @@ class SearchRepository {
   }
 
   /// Fallback sin RPC: mis guardados complete (+ públicos si se pide).
-  Future<List<SearchHit>> _searchLocalFallback(SearchFilters filters) async {
+  Future<SearchPageResult> _searchLocalFallback(SearchFilters filters) async {
     final uid = _client.auth.currentUser?.id;
-    if (uid == null) return const [];
+    if (uid == null) {
+      return const SearchPageResult(hits: [], hasMore: false);
+    }
 
     final q =
         (filters.query ?? filters.locationQuery ?? '').trim().toLowerCase();
@@ -234,7 +247,17 @@ class SearchRepository {
       }
     }
 
-    return _dedupeHits(hits);
+    final all = _dedupeHits(hits);
+    final limit = filters.limit;
+    final offset = filters.offset ?? 0;
+    if (limit == null) {
+      return SearchPageResult(hits: all, hasMore: false);
+    }
+    final page = all.skip(offset).take(limit).toList();
+    return SearchPageResult(
+      hits: page,
+      hasMore: offset + page.length < all.length,
+    );
   }
 
   Future<(double?, double?)> _coordsFor(String siteId) async {

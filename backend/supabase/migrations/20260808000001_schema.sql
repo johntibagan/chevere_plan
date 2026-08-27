@@ -419,19 +419,26 @@ create index if not exists content_reports_status_idx ON public.content_reports 
 create index if not exists content_reports_target_idx ON public.content_reports USING btree (target_type, target_id);
 create index if not exists departments_country_name_idx ON public.departments USING btree (country_code, name);
 create index if not exists plan_stops_plan_id_idx ON public.plan_stops USING btree (plan_id, sort_order);
+create index if not exists plan_stops_site_id_idx ON public.plan_stops USING btree (site_id);
 create index if not exists plans_user_id_idx ON public.plans USING btree (user_id);
+create index if not exists site_photos_site_id_idx ON public.site_photos USING btree (site_id, sort_order);
 create index if not exists site_review_photos_review_id_idx ON public.site_review_photos USING btree (review_id, sort_order);
 create index if not exists site_reviews_site_created_idx ON public.site_reviews USING btree (site_id, created_at DESC);
-create index if not exists site_reviews_site_id_idx ON public.site_reviews USING btree (site_id, updated_at DESC);
 create index if not exists site_reviews_site_rating_idx ON public.site_reviews USING btree (site_id, rating, created_at DESC);
 create index if not exists site_social_links_site_id_idx ON public.site_social_links USING btree (site_id);
 create index if not exists sites_city_id_idx ON public.sites USING btree (city_id);
 create index if not exists sites_city_idx ON public.sites USING btree (city);
+create index if not exists sites_city_trgm_idx ON public.sites USING gin (city gin_trgm_ops);
 create index if not exists sites_department_id_idx ON public.sites USING btree (department_id);
+create index if not exists sites_department_trgm_idx ON public.sites USING gin (department gin_trgm_ops);
 create index if not exists sites_google_place_id_idx ON public.sites USING btree (google_place_id) WHERE (google_place_id IS NOT NULL);
 create index if not exists sites_location_gix ON public.sites USING gist (location);
+create index if not exists sites_name_trgm_idx ON public.sites USING gin (name gin_trgm_ops);
 create index if not exists sites_cover_photo_id_idx ON public.sites USING btree (cover_photo_id);
+create index if not exists sites_status_complete_idx ON public.sites USING btree (status) WHERE (status = 'complete');
+create index if not exists sites_public_complete_idx ON public.sites USING btree (is_public) WHERE ((status = 'complete') AND (is_public = true));
 create index if not exists site_favorites_site_id_idx ON public.site_favorites USING btree (site_id);
+create index if not exists user_saves_site_id_idx ON public.user_saves USING btree (site_id);
 create unique index if not exists distance_units_one_default_idx ON public.distance_units USING btree ((is_default)) WHERE is_default;
 create index if not exists client_debug_logs_created_at_idx ON public.client_debug_logs USING btree (created_at DESC);
 create index if not exists client_debug_logs_context_idx ON public.client_debug_logs USING btree (context, created_at DESC);
@@ -778,7 +785,8 @@ CREATE OR REPLACE FUNCTION public.find_possible_duplicate_sites(p_name text, p_l
  STABLE
  SET search_path TO 'public'
 AS $function$
-  with params as (
+  with me as (select auth.uid() as uid),
+  params as (
     select
       greatest(coalesce(p_radius_m, 100), 50) as pin_r,
       least(1500, greatest(coalesce(p_radius_m, 100) * 5, 400)) as fuzzy_r
@@ -811,14 +819,14 @@ AS $function$
     exists (
       select 1 from public.user_saves us
       where us.site_id = s.id
-        and us.user_id = auth.uid()
+        and us.user_id = (select uid from me)
         and us.status = 'complete'
     ),
     (s.external_id is not null and length(trim(s.external_id)) > 0),
     exists (
       select 1 from public.user_saves us
       where us.site_id = s.id
-        and us.user_id = auth.uid()
+        and us.user_id = (select uid from me)
         and us.is_possible_duplicate = true
     )
   from public.sites s, params
@@ -827,7 +835,7 @@ AS $function$
     and (
       (s.is_public = true and s.status = 'complete')
       or (
-        s.created_by = auth.uid()
+        s.created_by = (select uid from me)
         and s.status = 'complete'
         and s.location is not null
       )
@@ -1440,7 +1448,7 @@ begin
 end;
 $function$;
 
--- Explorar: multi-categoría (p_category_ids) + “solo mis favoritos”.
+-- Explorar: multi-categoría (p_category_ids) + “solo mis favoritos” + p_limit/p_offset.
 -- Overloads viejos fuera: PostgREST elegiría el equivocado.
 drop function if exists public.search_sites(
   text, uuid, text, double precision, double precision, double precision,
@@ -1450,22 +1458,47 @@ drop function if exists public.search_sites(
   text, uuid, text, double precision, double precision, double precision,
   text, numeric, numeric, boolean, uuid[]
 );
+drop function if exists public.search_sites(
+  text, uuid, text, double precision, double precision, double precision,
+  text, numeric, numeric, boolean, uuid[], boolean
+);
 
-CREATE OR REPLACE FUNCTION public.search_sites(p_query text DEFAULT NULL::text, p_category_id uuid DEFAULT NULL::uuid, p_location_query text DEFAULT NULL::text, p_lat double precision DEFAULT NULL::double precision, p_lng double precision DEFAULT NULL::double precision, p_radius_km double precision DEFAULT NULL::double precision, p_transport_group text DEFAULT NULL::text, p_budget_min numeric DEFAULT NULL::numeric, p_budget_max numeric DEFAULT NULL::numeric, p_include_public boolean DEFAULT false, p_category_ids uuid[] DEFAULT NULL::uuid[], p_favorites_only boolean DEFAULT false)
+CREATE OR REPLACE FUNCTION public.search_sites(
+  p_query text DEFAULT NULL::text,
+  p_category_id uuid DEFAULT NULL::uuid,
+  p_location_query text DEFAULT NULL::text,
+  p_lat double precision DEFAULT NULL::double precision,
+  p_lng double precision DEFAULT NULL::double precision,
+  p_radius_km double precision DEFAULT NULL::double precision,
+  p_transport_group text DEFAULT NULL::text,
+  p_budget_min numeric DEFAULT NULL::numeric,
+  p_budget_max numeric DEFAULT NULL::numeric,
+  p_include_public boolean DEFAULT false,
+  p_category_ids uuid[] DEFAULT NULL::uuid[],
+  p_favorites_only boolean DEFAULT false,
+  p_limit integer DEFAULT 100,
+  p_offset integer DEFAULT 0
+)
  RETURNS TABLE(site_id uuid, name text, city text, department text, address_line text, lat double precision, lng double precision, estimated_price_amount numeric, currency_code text, is_own boolean, is_public boolean, is_catalog boolean, is_linked boolean, updated_at timestamp with time zone, distance_km double precision, category_names text[], cover_storage_path text)
  LANGUAGE plpgsql
  STABLE SECURITY DEFINER
  SET search_path TO 'public'
 AS $function$
 declare
+  v_uid uuid := auth.uid();
   v_is_minor boolean := false;
   v_max_km numeric;
   v_group public.transport_group;
   v_category_ids uuid[];
+  v_limit integer;
+  v_offset integer;
 begin
+  v_limit := greatest(1, least(coalesce(p_limit, 100), 100));
+  v_offset := greatest(0, coalesce(p_offset, 0));
+
   select exists (
     select 1 from public.profiles p
-    where p.id = auth.uid()
+    where p.id = v_uid
       and p.birth_date is not null
       and p.birth_date > (current_date - interval '18 years')
   ) into v_is_minor;
@@ -1514,13 +1547,13 @@ begin
       exists (
         select 1 from public.user_saves us
         where us.site_id = s.id
-          and us.user_id = auth.uid()
+          and us.user_id = v_uid
           and us.status = 'complete'
       ) as sown,
       exists (
         select 1 from public.user_saves us
         where us.site_id = s.id
-          and us.user_id = auth.uid()
+          and us.user_id = v_uid
           and us.is_possible_duplicate = true
       ) as slinked,
       s.updated_at as supdated,
@@ -1546,7 +1579,7 @@ begin
         exists (
           select 1 from public.user_saves us
           where us.site_id = s.id
-            and us.user_id = auth.uid()
+            and us.user_id = v_uid
             and us.status = 'complete'
         )
         or (p_include_public and s.is_public)
@@ -1556,7 +1589,7 @@ begin
         or exists (
           select 1 from public.site_favorites sf
           where sf.site_id = s.id
-            and sf.user_id = auth.uid()
+            and sf.user_id = v_uid
         )
       )
       and (
@@ -1644,8 +1677,9 @@ begin
   order by
     case when b.sdistance_km is null then 1 else 0 end,
     b.sdistance_km nulls last,
-    b.sname
-  limit 100;
+    b.sname,
+    b.sid
+  limit v_limit offset v_offset;
 end;
 $function$;
 
@@ -1696,24 +1730,17 @@ begin
   end if;
 
   select
-    public.is_staff()
-    or s.created_by = uid
-    or exists (
+    public.is_staff() or s.created_by = uid or exists (
       select 1 from public.user_saves us
       where us.site_id = s.id and us.user_id = uid
-    )
-  into v_allowed
-  from public.sites s
-  where s.id = p_site_id;
+    ),
+    (s.external_id is not null and length(trim(s.external_id)) > 0)
+  into v_allowed, v_catalog
+  from public.sites s where s.id = p_site_id;
 
   if not coalesce(v_allowed, false) then
     raise exception 'forbidden';
   end if;
-
-  select (s.external_id is not null and length(trim(s.external_id)) > 0)
-  into v_catalog
-  from public.sites s
-  where s.id = p_site_id;
 
   select count(*) into v_other_saves
   from public.user_saves us
@@ -1887,288 +1914,265 @@ create policy beta_qa_flows_select on public.beta_qa_flows
 drop policy if exists categories_select_active_or_staff on public.categories;
 create policy categories_select_active_or_staff on public.categories
   for select
-  to authenticated using (((is_active = true) OR is_staff()));
+  to authenticated using (((is_active = true) OR (select public.is_staff())));
 
 drop policy if exists categories_staff_write on public.categories;
 create policy categories_staff_write on public.categories
   for all
-  to authenticated using (is_staff()) with check (is_staff());
+  to authenticated using ((select public.is_staff())) with check ((select public.is_staff()));
 
 drop policy if exists cities_select_active_or_staff on public.cities;
 create policy cities_select_active_or_staff on public.cities
   for select
-  to authenticated using (((is_active = true) OR is_staff()));
+  to authenticated using (((is_active = true) OR (select public.is_staff())));
 
 drop policy if exists cities_staff_write on public.cities;
 create policy cities_staff_write on public.cities
   for all
-  to authenticated using (is_staff()) with check (is_staff());
+  to authenticated using ((select public.is_staff())) with check ((select public.is_staff()));
 
 drop policy if exists client_debug_logs_insert_own on public.client_debug_logs;
 create policy client_debug_logs_insert_own on public.client_debug_logs
   for insert
-  to authenticated with check (((user_id is null) or (user_id = auth.uid())) and (status = 'pending') and (resolved_at is null));
+  to authenticated with check (((user_id is null) or (user_id = (select auth.uid()))) and (status = 'pending') and (resolved_at is null));
 
 drop policy if exists client_debug_logs_select_staff on public.client_debug_logs;
 create policy client_debug_logs_select_staff on public.client_debug_logs
   for select
-  to authenticated using ((is_staff() or (user_id = auth.uid())));
+  to authenticated using ((((select public.is_staff()) or (user_id = (select auth.uid())))));
 
 drop policy if exists client_debug_logs_update_staff on public.client_debug_logs;
 create policy client_debug_logs_update_staff on public.client_debug_logs
   for update
-  to authenticated using (is_staff()) with check (is_staff());
+  to authenticated using ((select public.is_staff())) with check ((select public.is_staff()));
 
 drop policy if exists content_reports_insert_own on public.content_reports;
 create policy content_reports_insert_own on public.content_reports
   for insert
-  to public with check ((reporter_id = auth.uid()));
+  to authenticated with check ((reporter_id = (select auth.uid())));
 
 drop policy if exists content_reports_select_own_or_staff on public.content_reports;
 create policy content_reports_select_own_or_staff on public.content_reports
   for select
-  to public using (((reporter_id = auth.uid()) OR is_staff()));
+  to authenticated using (((reporter_id = (select auth.uid())) OR (select public.is_staff())));
 
 drop policy if exists content_reports_staff_update on public.content_reports;
 create policy content_reports_staff_update on public.content_reports
   for update
-  to public using (is_staff()) with check (is_staff());
+  to authenticated using ((select public.is_staff())) with check ((select public.is_staff()));
 
 drop policy if exists countries_select_active_or_staff on public.countries;
 create policy countries_select_active_or_staff on public.countries
   for select
-  to authenticated using (((is_active = true) OR is_staff()));
+  to authenticated using (((is_active = true) OR (select public.is_staff())));
 
 drop policy if exists countries_staff_write on public.countries;
 create policy countries_staff_write on public.countries
   for all
-  to authenticated using (is_staff()) with check (is_staff());
+  to authenticated using ((select public.is_staff())) with check ((select public.is_staff()));
 
 drop policy if exists departments_select_active_or_staff on public.departments;
 create policy departments_select_active_or_staff on public.departments
   for select
-  to authenticated using (((is_active = true) OR is_staff()));
+  to authenticated using (((is_active = true) OR (select public.is_staff())));
 
 drop policy if exists departments_staff_write on public.departments;
 create policy departments_staff_write on public.departments
   for all
-  to authenticated using (is_staff()) with check (is_staff());
+  to authenticated using ((select public.is_staff())) with check ((select public.is_staff()));
 
 drop policy if exists distance_units_select_active_or_staff on public.distance_units;
 create policy distance_units_select_active_or_staff on public.distance_units
   for select
-  to authenticated using (((is_active = true) OR is_staff()));
+  to authenticated using (((is_active = true) OR (select public.is_staff())));
 
 drop policy if exists distance_units_staff_write on public.distance_units;
 create policy distance_units_staff_write on public.distance_units
   for all
-  to authenticated using (is_staff()) with check (is_staff());
+  to authenticated using ((select public.is_staff())) with check ((select public.is_staff()));
 
 drop policy if exists plan_stops_owner_all on public.plan_stops;
 create policy plan_stops_owner_all on public.plan_stops
   for all
-  to public using ((EXISTS ( SELECT 1
+  to authenticated using ((EXISTS ( SELECT 1
    FROM plans p
-  WHERE ((p.id = plan_stops.plan_id) AND ((p.user_id = auth.uid()) OR is_staff()))))) with check ((EXISTS ( SELECT 1
+  WHERE ((p.id = plan_stops.plan_id) AND ((p.user_id = (select auth.uid())) OR (select public.is_staff())))))) with check ((EXISTS ( SELECT 1
    FROM plans p
-  WHERE ((p.id = plan_stops.plan_id) AND ((p.user_id = auth.uid()) OR is_staff())))));
+  WHERE ((p.id = plan_stops.plan_id) AND ((p.user_id = (select auth.uid())) OR (select public.is_staff()))))));
 
 drop policy if exists plans_owner_all on public.plans;
 create policy plans_owner_all on public.plans
   for all
-  to public using (((user_id = auth.uid()) OR is_staff())) with check (((user_id = auth.uid()) OR is_staff()));
+  to authenticated using (((user_id = (select auth.uid())) OR (select public.is_staff()))) with check (((user_id = (select auth.uid())) OR (select public.is_staff())));
 
 drop policy if exists profiles_select_own_or_staff on public.profiles;
 create policy profiles_select_own_or_staff on public.profiles
   for select
-  to authenticated using (((id = auth.uid()) OR is_staff()));
-
-drop policy if exists profiles_select_public_contributors on public.profiles;
-create policy profiles_select_public_contributors on public.profiles
-  for select
-  to authenticated using ((EXISTS ( SELECT 1
-   FROM (site_contributors sc
-     JOIN sites s ON ((s.id = sc.site_id)))
-  WHERE ((sc.user_id = profiles.id) AND (s.is_public = true)))));
-
-drop policy if exists profiles_select_public_reviewers on public.profiles;
-create policy profiles_select_public_reviewers on public.profiles
-  for select
-  to authenticated using ((EXISTS ( SELECT 1
-   FROM (site_reviews r
-     JOIN sites s ON ((s.id = r.site_id)))
-  WHERE ((r.user_id = profiles.id) AND (r.is_public = true) AND (s.is_public = true)))));
-
-drop policy if exists profiles_select_public_site_creators on public.profiles;
-create policy profiles_select_public_site_creators on public.profiles
-  for select
-  to authenticated using ((EXISTS ( SELECT 1
-   FROM sites s
-  WHERE ((s.created_by = profiles.id) AND (s.is_public = true)))));
+  to authenticated using (((id = (select auth.uid())) OR (select public.is_staff())));
 
 drop policy if exists profiles_staff_update on public.profiles;
 create policy profiles_staff_update on public.profiles
   for update
-  to authenticated using (is_staff()) with check (is_staff());
+  to authenticated using ((select public.is_staff())) with check ((select public.is_staff()));
 
 drop policy if exists profiles_update_own on public.profiles;
 create policy profiles_update_own on public.profiles
   for update
-  to authenticated using ((id = auth.uid())) with check ((id = auth.uid()));
+  to authenticated using ((id = (select auth.uid()))) with check ((id = (select auth.uid())));
 
 drop policy if exists site_categories_select on public.site_categories;
 create policy site_categories_select on public.site_categories
   for select
   to authenticated using ((EXISTS ( SELECT 1
    FROM sites s
-  WHERE ((s.id = site_categories.site_id) AND (s.is_public OR (s.created_by = auth.uid()) OR is_staff())))));
+  WHERE ((s.id = site_categories.site_id) AND (s.is_public OR (s.created_by = (select auth.uid())) OR (select public.is_staff()))))));
 
 drop policy if exists site_categories_write_own_or_staff on public.site_categories;
 create policy site_categories_write_own_or_staff on public.site_categories
   for all
-  to authenticated using ((is_staff() OR (EXISTS ( SELECT 1
+  to authenticated using (((select public.is_staff()) OR (EXISTS ( SELECT 1
    FROM sites s
-  WHERE ((s.id = site_categories.site_id) AND (s.created_by = auth.uid())))))) with check ((is_staff() OR (EXISTS ( SELECT 1
+  WHERE ((s.id = site_categories.site_id) AND (s.created_by = (select auth.uid()))))))) with check (((select public.is_staff()) OR (EXISTS ( SELECT 1
    FROM sites s
-  WHERE ((s.id = site_categories.site_id) AND (s.created_by = auth.uid()))))));
+  WHERE ((s.id = site_categories.site_id) AND (s.created_by = (select auth.uid())))))));
 
 drop policy if exists site_contributors_delete on public.site_contributors;
 create policy site_contributors_delete on public.site_contributors
   for delete
-  to authenticated using (((user_id = auth.uid()) OR is_staff()));
+  to authenticated using (((user_id = (select auth.uid())) OR (select public.is_staff())));
 
 drop policy if exists site_contributors_insert on public.site_contributors;
 create policy site_contributors_insert on public.site_contributors
   for insert
-  to authenticated with check (((user_id = auth.uid()) OR is_staff()));
+  to authenticated with check (((user_id = (select auth.uid())) OR (select public.is_staff())));
 
 drop policy if exists site_contributors_update on public.site_contributors;
 create policy site_contributors_update on public.site_contributors
   for update
   to authenticated
-  using (((user_id = auth.uid()) OR is_staff()))
-  with check (((user_id = auth.uid()) OR is_staff()));
+  using (((user_id = (select auth.uid())) OR (select public.is_staff())))
+  with check (((user_id = (select auth.uid())) OR (select public.is_staff())));
 
 drop policy if exists site_contributors_select on public.site_contributors;
 create policy site_contributors_select on public.site_contributors
   for select
   to authenticated using ((EXISTS ( SELECT 1
    FROM sites s
-  WHERE ((s.id = site_contributors.site_id) AND (s.is_public OR (s.created_by = auth.uid()) OR is_staff())))));
+  WHERE ((s.id = site_contributors.site_id) AND (s.is_public OR (s.created_by = (select auth.uid())) OR (select public.is_staff()))))));
 
 drop policy if exists site_favorites_own on public.site_favorites;
 create policy site_favorites_own on public.site_favorites
   for all
-  to authenticated using ((user_id = auth.uid())) with check ((user_id = auth.uid()));
+  to authenticated using ((user_id = (select auth.uid()))) with check ((user_id = (select auth.uid())));
 
 drop policy if exists site_photos_select on public.site_photos;
 create policy site_photos_select on public.site_photos
   for select
   to authenticated using ((EXISTS ( SELECT 1
    FROM sites s
-  WHERE ((s.id = site_photos.site_id) AND (s.is_public OR (s.created_by = auth.uid()) OR is_staff())))));
+  WHERE ((s.id = site_photos.site_id) AND (s.is_public OR (s.created_by = (select auth.uid())) OR (select public.is_staff()))))));
 
 drop policy if exists site_photos_write on public.site_photos;
 create policy site_photos_write on public.site_photos
   for all
-  to authenticated using ((is_staff() OR (EXISTS ( SELECT 1
+  to authenticated using (((select public.is_staff()) OR (EXISTS ( SELECT 1
    FROM sites s
-  WHERE ((s.id = site_photos.site_id) AND (s.created_by = auth.uid())))))) with check ((is_staff() OR (EXISTS ( SELECT 1
+  WHERE ((s.id = site_photos.site_id) AND (s.created_by = (select auth.uid()))))))) with check (((select public.is_staff()) OR (EXISTS ( SELECT 1
    FROM sites s
-  WHERE ((s.id = site_photos.site_id) AND (s.created_by = auth.uid()))))));
+  WHERE ((s.id = site_photos.site_id) AND (s.created_by = (select auth.uid())))))));
 
 drop policy if exists site_review_photos_select on public.site_review_photos;
 create policy site_review_photos_select on public.site_review_photos
   for select
   to authenticated using ((EXISTS ( SELECT 1
    FROM site_reviews r
-  WHERE ((r.id = site_review_photos.review_id) AND ((r.user_id = auth.uid()) OR ((r.is_public = true) AND (EXISTS ( SELECT 1
+  WHERE ((r.id = site_review_photos.review_id) AND ((r.user_id = (select auth.uid())) OR ((r.is_public = true) AND (EXISTS ( SELECT 1
            FROM sites s
-          WHERE ((s.id = r.site_id) AND (s.is_public OR (s.created_by = auth.uid()) OR is_staff()))))))))));
+          WHERE ((s.id = r.site_id) AND (s.is_public OR (s.created_by = (select auth.uid())) OR (select public.is_staff())))))))))));
 
 drop policy if exists site_review_photos_write on public.site_review_photos;
 create policy site_review_photos_write on public.site_review_photos
   for all
   to authenticated using ((EXISTS ( SELECT 1
    FROM site_reviews r
-  WHERE ((r.id = site_review_photos.review_id) AND ((r.user_id = auth.uid()) OR (is_staff() AND (r.is_public = true))))))) with check ((EXISTS ( SELECT 1
+  WHERE ((r.id = site_review_photos.review_id) AND ((r.user_id = (select auth.uid())) OR ((select public.is_staff()) AND (r.is_public = true))))))) with check ((EXISTS ( SELECT 1
    FROM site_reviews r
-  WHERE ((r.id = site_review_photos.review_id) AND ((r.user_id = auth.uid()) OR (is_staff() AND (r.is_public = true)))))));
+  WHERE ((r.id = site_review_photos.review_id) AND ((r.user_id = (select auth.uid())) OR ((select public.is_staff()) AND (r.is_public = true)))))));
 
 drop policy if exists site_reviews_delete on public.site_reviews;
 create policy site_reviews_delete on public.site_reviews
   for delete
-  to authenticated using (((user_id = auth.uid()) OR (is_staff() AND (is_public = true))));
+  to authenticated using (((user_id = (select auth.uid())) OR ((select public.is_staff()) AND (is_public = true))));
 
 drop policy if exists site_reviews_insert on public.site_reviews;
 create policy site_reviews_insert on public.site_reviews
   for insert
-  to authenticated with check (((user_id = auth.uid()) AND (EXISTS ( SELECT 1
+  to authenticated with check (((user_id = (select auth.uid())) AND (EXISTS ( SELECT 1
    FROM sites s
-  WHERE ((s.id = site_reviews.site_id) AND (s.is_public OR (s.created_by = auth.uid()) OR is_staff()))))));
+  WHERE ((s.id = site_reviews.site_id) AND (s.is_public OR (s.created_by = (select auth.uid())) OR (select public.is_staff())))))));
 
 drop policy if exists site_reviews_select on public.site_reviews;
 create policy site_reviews_select on public.site_reviews
   for select
-  to authenticated using (((user_id = auth.uid()) OR ((is_public = true) AND (EXISTS ( SELECT 1
+  to authenticated using (((user_id = (select auth.uid())) OR ((is_public = true) AND (EXISTS ( SELECT 1
    FROM sites s
-  WHERE ((s.id = site_reviews.site_id) AND (s.is_public OR (s.created_by = auth.uid()) OR is_staff())))))));
+  WHERE ((s.id = site_reviews.site_id) AND (s.is_public OR (s.created_by = (select auth.uid())) OR (select public.is_staff()))))))));
 
 drop policy if exists site_reviews_update on public.site_reviews;
 create policy site_reviews_update on public.site_reviews
   for update
-  to authenticated using (((user_id = auth.uid()) OR (is_staff() AND (is_public = true)))) with check (((user_id = auth.uid()) OR (is_staff() AND (is_public = true))));
+  to authenticated using (((user_id = (select auth.uid())) OR ((select public.is_staff()) AND (is_public = true)))) with check (((user_id = (select auth.uid())) OR ((select public.is_staff()) AND (is_public = true))));
 
 drop policy if exists site_social_links_select on public.site_social_links;
 create policy site_social_links_select on public.site_social_links
   for select
   to authenticated using ((EXISTS ( SELECT 1
    FROM sites s
-  WHERE ((s.id = site_social_links.site_id) AND (s.is_public OR (s.created_by = auth.uid()) OR is_staff())))));
+  WHERE ((s.id = site_social_links.site_id) AND (s.is_public OR (s.created_by = (select auth.uid())) OR (select public.is_staff()))))));
 
 drop policy if exists site_social_links_write on public.site_social_links;
 create policy site_social_links_write on public.site_social_links
   for all
-  to authenticated using ((is_staff() OR (EXISTS ( SELECT 1
+  to authenticated using (((select public.is_staff()) OR (EXISTS ( SELECT 1
    FROM sites s
-  WHERE ((s.id = site_social_links.site_id) AND (s.created_by = auth.uid())))))) with check ((is_staff() OR (EXISTS ( SELECT 1
+  WHERE ((s.id = site_social_links.site_id) AND (s.created_by = (select auth.uid()))))))) with check (((select public.is_staff()) OR (EXISTS ( SELECT 1
    FROM sites s
-  WHERE ((s.id = site_social_links.site_id) AND (s.created_by = auth.uid()))))));
+  WHERE ((s.id = site_social_links.site_id) AND (s.created_by = (select auth.uid())))))));
 
 drop policy if exists sites_delete_own_unused on public.sites;
 create policy sites_delete_own_unused on public.sites
   for delete
-  to authenticated using (((created_by = auth.uid()) OR is_staff()));
+  to authenticated using (((created_by = (select auth.uid())) OR (select public.is_staff())));
 
 drop policy if exists sites_insert_own on public.sites;
 create policy sites_insert_own on public.sites
   for insert
-  to authenticated with check ((created_by = auth.uid()));
+  to authenticated with check ((created_by = (select auth.uid())));
 
 drop policy if exists sites_select_public_or_owner_or_staff on public.sites;
 create policy sites_select_public_or_owner_or_staff on public.sites
   for select
-  to authenticated using (((is_public = true) OR (created_by = auth.uid()) OR is_staff()));
+  to authenticated using (((is_public = true) OR (created_by = (select auth.uid())) OR (select public.is_staff())));
 
 drop policy if exists sites_update_own_or_staff on public.sites;
 create policy sites_update_own_or_staff on public.sites
   for update
-  to authenticated using (((created_by = auth.uid()) OR is_staff())) with check (((created_by = auth.uid()) OR is_staff()));
+  to authenticated using (((created_by = (select auth.uid())) OR (select public.is_staff()))) with check (((created_by = (select auth.uid())) OR (select public.is_staff())));
 
 drop policy if exists transport_select_active_or_staff on public.transport_types;
 create policy transport_select_active_or_staff on public.transport_types
   for select
-  to authenticated using (((is_active = true) OR is_staff()));
+  to authenticated using (((is_active = true) OR (select public.is_staff())));
 
 drop policy if exists transport_staff_write on public.transport_types;
 create policy transport_staff_write on public.transport_types
   for all
-  to authenticated using (is_staff()) with check (is_staff());
+  to authenticated using ((select public.is_staff())) with check ((select public.is_staff()));
 
 drop policy if exists user_saves_own on public.user_saves;
 create policy user_saves_own on public.user_saves
   for all
-  to authenticated using (((user_id = auth.uid()) OR is_staff())) with check (((user_id = auth.uid()) OR is_staff()));
+  to authenticated using (((user_id = (select auth.uid())) OR (select public.is_staff()))) with check (((user_id = (select auth.uid())) OR (select public.is_staff())));
 
 -- grants
 grant execute on function public.attach_save_to_existing_site(p_existing_site_id uuid, p_source_url text, p_source_network text, p_notes text) to anon, authenticated, service_role;
@@ -2188,7 +2192,7 @@ grant execute on function public.list_plan_candidates(p_location_query text, p_i
 grant execute on function public.list_proximity_sites(p_include_public boolean) to anon, authenticated, service_role;
 grant execute on function public.normalize_username(raw text) to anon, authenticated, service_role;
 grant execute on function public.prevent_role_escalation() to anon, authenticated, service_role;
-grant execute on function public.search_sites(p_query text, p_category_id uuid, p_location_query text, p_lat double precision, p_lng double precision, p_radius_km double precision, p_transport_group text, p_budget_min numeric, p_budget_max numeric, p_include_public boolean, p_category_ids uuid[], p_favorites_only boolean) to anon, authenticated, service_role;
+grant execute on function public.search_sites(p_query text, p_category_id uuid, p_location_query text, p_lat double precision, p_lng double precision, p_radius_km double precision, p_transport_group text, p_budget_min numeric, p_budget_max numeric, p_include_public boolean, p_category_ids uuid[], p_favorites_only boolean, p_limit integer, p_offset integer) to anon, authenticated, service_role;
 grant execute on function public.set_site_location(p_site_id uuid, p_lng double precision, p_lat double precision) to anon, authenticated, service_role;
 grant execute on function public.set_updated_at() to anon, authenticated, service_role;
 grant execute on function public.site_cover_storage_path(p_site_id uuid) to anon, authenticated, service_role;
