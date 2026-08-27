@@ -23,6 +23,7 @@ class AppMoreMenuDrawer extends ConsumerWidget {
     required this.isStaff,
     required this.onProfile,
     required this.onProximity,
+    required this.onDuplicateRadius,
     required this.onDistanceUnit,
     required this.onAdmin,
     required this.onReports,
@@ -36,6 +37,7 @@ class AppMoreMenuDrawer extends ConsumerWidget {
   final bool isStaff;
   final VoidCallback onProfile;
   final VoidCallback onProximity;
+  final VoidCallback onDuplicateRadius;
   final VoidCallback onDistanceUnit;
   final VoidCallback onAdmin;
   final VoidCallback onReports;
@@ -163,7 +165,20 @@ class AppMoreMenuDrawer extends ConsumerWidget {
                     subtitle: l10n.moreMenuProximitySubtitle,
                     onTap: () {
                       Navigator.of(context).pop();
-                      onProximity();
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        onProximity();
+                      });
+                    },
+                  ),
+                  _MenuTile(
+                    icon: Icons.control_point_duplicate_outlined,
+                    label: l10n.duplicateRadiusTitle,
+                    subtitle: l10n.moreMenuDuplicateRadiusSubtitle,
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        onDuplicateRadius();
+                      });
                     },
                   ),
                   _MenuTile(
@@ -172,7 +187,9 @@ class AppMoreMenuDrawer extends ConsumerWidget {
                     subtitle: l10n.moreMenuDistanceUnitSubtitle,
                     onTap: () {
                       Navigator.of(context).pop();
-                      onDistanceUnit();
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        onDistanceUnit();
+                      });
                     },
                   ),
                   if (isStaff) ...[

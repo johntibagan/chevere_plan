@@ -51,7 +51,7 @@ Los tabs que ya abriste se quedan en memoria para que cambiar de pestaña se sie
 
 **Favoritos:** el corazón (cards de Inicio/Explorar y ficha del sitio) marca o quita el sitio en tu lista de favoritos. Relleno = está marcado. Hoy no hay pestaña ni filtro de favoritos; eso va en [`pendientes.md`](pendientes.md). No es lo mismo que “Tuyo” (tu guardado).
 
-**Perfil (☰ → Tu perfil):** **@usuario** único (3–20, `a-z0-9._`; cambio como máximo cada **3 meses**; sin @ al abrir la app se fuerza la pantalla de perfil). Se muestra en reseñas, fotos, “Creado por” y el drawer — **no** el nombre del correo. Las relaciones (reseñas, fotos, sitios, favoritos) van por **id de perfil**, no por el @usuario. Foto: si hay Google y propia, selector Google / Personalizada; si solo Google, interruptor opt-in; se puede subir otra.
+**Perfil (☰ → Tu perfil):** foto (usar Google / personalizada) y luego **@usuario** único (3–20, `a-z0-9._`; cambio como máximo cada **3 meses**; sin @ al abrir la app se fuerza la pantalla de perfil). Se muestra en reseñas, fotos, “Creado por” y el drawer — **no** el nombre del correo. Las relaciones (reseñas, fotos, sitios, favoritos) van por **id de perfil**, no por el @usuario.
 
 ---
 
@@ -116,7 +116,7 @@ flowchart TD
 
 La app no quiere dos fichas públicas del mismo parque a 80 metros.
 
-- Busca sitios **públicos completos** y **tus privados completos** (con pin): mismo Place ID, pin cercano (radio configurable, **default 100 m**; ☰ → Tu perfil), nombre parecido en un radio fuzzy (~5×), o misma ciudad + nombre. **No** entran borradores propios (sin ubicación / incompletos).
+- Busca sitios **públicos completos** y **tus privados completos** (con pin): mismo Place ID, pin cercano (radio configurable, **default 100 m**; ☰ → **Mismo sitio al guardar**, siempre en metros), nombre parecido en un radio fuzzy (~5×), o misma ciudad + nombre. **No** entran borradores propios (sin ubicación / incompletos).
 - Tras un **reset completo** el catálogo masivo vuelve: si el pin/nombre coincide, **sí hay un sitio real** (no es caché fantasma). Abrir la fila debe mostrar esa ficha; **Guardar de todas formas** crea el tuyo aunque el aviso siga saliendo.
 - **Aviso suave** al pegar Maps o elegir pin: grilla 2×2 (mismo estándar de tarjeta: portada, franja de visibilidad, icono público/privado, Tuyo/Catálogo/Público/Vinculado, nombre, depto–ciudad, dirección). **Ver ficha** como enlace de texto; **Usar como** azul; seleccionado: fondo surface + borde foreground (tema claro/oscuro). Al usarlo: **Reseña pública** (solo si el sitio es público), **Reseña privada** o **Agregar a favoritos**; info con Tooltip; al **Confirmar** se descarta el guardado y navega a la ficha. Abajo **Seguir con el mío**.
 - **Al Guardar**: misma grilla; abajo **Guardar de todas formas** (Tooltip aparte). Botón **Guardar** amarillo si hay coincidencias.
@@ -204,7 +204,7 @@ Lista de paradas que marcaste hechas (sitio, plan, fecha). Sirve como “ya pas�
 
 En **Más opciones (☰)** → **Recuerdos cercanos** abrís la hoja de radio (límites internos 100–2000 m) y si querés que cuenten **sitios públicos** además de los tuyos. El slider y las etiquetas usan la **unidad de distancia** del usuario (default **km**; también m, mi u otras del catálogo admin). Ya no hay banner de recuerdo en el feed de Inicio.
 
-En **Más opciones** → **Unidad de distancia** elegís cómo se muestran metros/km/millas en toda la app (recuerdos, Explorar, fichas). El administrador define las unidades activas y cuál es la default (panel Admin → Distancias). Interno: proximidad en metros, búsqueda en km.
+En **Más opciones** → **Unidad de distancia** elegís cómo se muestran km/millas en recuerdos cercanos, Explorar y etiquetas. El radio de **Mismo sitio al guardar** (anti-dupe) es la excepción: siempre en **metros**. El administrador define las unidades activas (panel Admin → Distancias). Interno: proximidad en metros, búsqueda en km.
 
 El teléfono registra geocercas (tope práctico ~100, priorizando los tuyos). Si entrás al radio, notificación tipo **tarjeta recuerdo** (foto de portada si hay, nombre, departamento–municipio, «Lugar cerca de ti»). Mismo formato que borradores / futuros eventos y resúmenes. Pedir ubicación “siempre” y el gasto de batería aún se pueden pulir.
 

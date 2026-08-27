@@ -653,13 +653,16 @@ class PreferredDistanceUnitSlugNotifier extends Notifier<String> {
   Future<void> setSlug(String slug) async {
     final next = slug.trim();
     if (next.isEmpty) return;
+    final previous = state;
     state = next;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_prefsKey, next);
     try {
       await ref.read(profileRepositoryProvider).updatePreferredDistanceUnit(next);
-    } catch (_) {
-      // Preferencia local ya aplicada; perfil se reintenta en próxima sesión.
+    } catch (e) {
+      state = previous;
+      await prefs.setString(_prefsKey, previous);
+      rethrow;
     }
   }
 }

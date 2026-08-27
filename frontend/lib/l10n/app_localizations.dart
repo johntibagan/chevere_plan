@@ -154,6 +154,30 @@ abstract class AppLocalizations {
   /// **'Radio y sitios públicos'**
   String get moreMenuProximitySubtitle;
 
+  /// No description provided for @moreMenuDuplicateRadiusSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Al guardar un sitio (siempre en metros)'**
+  String get moreMenuDuplicateRadiusSubtitle;
+
+  /// No description provided for @duplicateRadiusTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Mismo sitio al guardar'**
+  String get duplicateRadiusTitle;
+
+  /// No description provided for @duplicateRadiusSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Si hay otro sitio dentro de este radio, te avisamos para no duplicarlo. Por defecto 100 m.'**
+  String get duplicateRadiusSubtitle;
+
+  /// No description provided for @duplicateRadiusMetersInfo.
+  ///
+  /// In es, this message translates to:
+  /// **'Este radio va siempre en metros. La unidad de distancia del menú (km, millas…) aplica en recuerdos cercanos, Explorar y etiquetas; no aquí.'**
+  String get duplicateRadiusMetersInfo;
+
   /// No description provided for @moreMenuDistanceUnit.
   ///
   /// In es, this message translates to:
@@ -163,7 +187,7 @@ abstract class AppLocalizations {
   /// No description provided for @moreMenuDistanceUnitSubtitle.
   ///
   /// In es, this message translates to:
-  /// **'Cómo se muestran metros, km, millas…'**
+  /// **'Cómo se muestran km, millas…'**
   String get moreMenuDistanceUnitSubtitle;
 
   /// No description provided for @distanceUnitSheetTitle.
@@ -175,8 +199,14 @@ abstract class AppLocalizations {
   /// No description provided for @distanceUnitSheetHint.
   ///
   /// In es, this message translates to:
-  /// **'Se aplica en recuerdos cercanos, Explorar y etiquetas de distancia.'**
+  /// **'Se aplica en recuerdos cercanos, Explorar y etiquetas de distancia. El radio de sitios duplicados siempre usa metros.'**
   String get distanceUnitSheetHint;
+
+  /// No description provided for @profileDuplicateRadiusLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Radio: {meters} m'**
+  String profileDuplicateRadiusLabel(int meters);
 
   /// No description provided for @moreMenuReports.
   ///
@@ -387,24 +417,6 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Todavía no podés cambiar el nombre de usuario.'**
   String get profileUsernameCooldownToast;
-
-  /// No description provided for @profileDuplicateRadiusSection.
-  ///
-  /// In es, this message translates to:
-  /// **'Mismo sitio al guardar'**
-  String get profileDuplicateRadiusSection;
-
-  /// No description provided for @profileDuplicateRadiusHelp.
-  ///
-  /// In es, this message translates to:
-  /// **'Si hay otro sitio dentro de este radio, te avisamos para no duplicarlo. Por defecto 100 m.'**
-  String get profileDuplicateRadiusHelp;
-
-  /// No description provided for @profileDuplicateRadiusLabel.
-  ///
-  /// In es, this message translates to:
-  /// **'Radio: {meters} m'**
-  String profileDuplicateRadiusLabel(int meters);
 
   /// No description provided for @actionCancel.
   ///

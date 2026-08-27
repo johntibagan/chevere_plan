@@ -40,18 +40,37 @@ class AppLocalizationsEs extends AppLocalizations {
   String get moreMenuProximitySubtitle => 'Radio y sitios públicos';
 
   @override
+  String get moreMenuDuplicateRadiusSubtitle =>
+      'Al guardar un sitio (siempre en metros)';
+
+  @override
+  String get duplicateRadiusTitle => 'Mismo sitio al guardar';
+
+  @override
+  String get duplicateRadiusSubtitle =>
+      'Si hay otro sitio dentro de este radio, te avisamos para no duplicarlo. Por defecto 100 m.';
+
+  @override
+  String get duplicateRadiusMetersInfo =>
+      'Este radio va siempre en metros. La unidad de distancia del menú (km, millas…) aplica en recuerdos cercanos, Explorar y etiquetas; no aquí.';
+
+  @override
   String get moreMenuDistanceUnit => 'Unidad de distancia';
 
   @override
-  String get moreMenuDistanceUnitSubtitle =>
-      'Cómo se muestran metros, km, millas…';
+  String get moreMenuDistanceUnitSubtitle => 'Cómo se muestran km, millas…';
 
   @override
   String get distanceUnitSheetTitle => 'Unidad de distancia';
 
   @override
   String get distanceUnitSheetHint =>
-      'Se aplica en recuerdos cercanos, Explorar y etiquetas de distancia.';
+      'Se aplica en recuerdos cercanos, Explorar y etiquetas de distancia. El radio de sitios duplicados siempre usa metros.';
+
+  @override
+  String profileDuplicateRadiusLabel(int meters) {
+    return 'Radio: $meters m';
+  }
 
   @override
   String get moreMenuReports => 'Reportes';
@@ -168,18 +187,6 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get profileUsernameCooldownToast =>
       'Todavía no podés cambiar el nombre de usuario.';
-
-  @override
-  String get profileDuplicateRadiusSection => 'Mismo sitio al guardar';
-
-  @override
-  String get profileDuplicateRadiusHelp =>
-      'Si hay otro sitio dentro de este radio, te avisamos para no duplicarlo. Por defecto 100 m.';
-
-  @override
-  String profileDuplicateRadiusLabel(int meters) {
-    return 'Radio: $meters m';
-  }
 
   @override
   String get actionCancel => 'Cancelar';

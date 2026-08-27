@@ -222,7 +222,7 @@ Tab activo: icono + label `primary`. Inactivo: `mutedDark`, label 10 px.
 
 **Inicio (`_InicioTab`)** — sin AppBar:
 
-1. Saludo 11 mutedDark + título app 22 ExtraBold. Botón **☰** (derecha) abre `endDrawer` Más opciones: **Tu perfil** (`ProfileSettingsPage`: @usuario + foto), Recuerdos cercanos, Admin/Reportes si staff, **Cerrar sesión** al final.
+1. Saludo 11 mutedDark + título app 22 ExtraBold. Botón **☰** (derecha) abre `endDrawer` Más opciones: **Tu perfil**, Recuerdos cercanos, Mismo sitio al guardar, Unidad de distancia, Admin/Reportes si staff, **Cerrar sesión** al final.
 2. **Vista** (lista / 2 / 3 / 4) justo debajo del título; aplica a recientes y populares.
 3. Aviso de **borradores** (card naranja), si hay.
 4. **Eventos**: título plegable; contenido *Próximamente.* (placeholder).

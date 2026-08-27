@@ -66,7 +66,7 @@ Público es **sección siempre visible**. Sin pin, el interruptor se muestra **d
 - Depto → ciudad (DIVIPOLA, ids, no listas en Dart).
 - Crear: categoría default Otros. Editar: no pisar categorías cargadas.
 - Pegar = icono **dentro** del campo, no botón “Buscar” aparte.
-- Anti-dupe: suave al Maps/pin; en Guardar, “de todas formas”. Lista de coincidencias (públicos + los tuyos; Place ID, pin según radio del perfil default **100 m**, nombre/ciudad). Fila abre la ficha. Vincular + reseña o bitácora. Tras reset full, las coincidencias del catálogo son sitios vivos; abrir/guardar no debe fallar por un select de portada.
+- Anti-dupe: suave al Maps/pin; en Guardar, “de todas formas”. Lista de coincidencias (públicos + los tuyos; Place ID, pin según radio del perfil default **100 m** — ☰ → Mismo sitio al guardar, siempre metros —, nombre/ciudad). Fila abre la ficha. Vincular + reseña o bitácora. Tras reset full, las coincidencias del catálogo son sitios vivos; abrir/guardar no debe fallar por un select de portada.
 
 Alto riesgo: `save_place_page.dart`, `google_maps_link_importer.dart`, `save_policies.dart`, `saves_repository.dart`, `location_picker_page.dart`.
 

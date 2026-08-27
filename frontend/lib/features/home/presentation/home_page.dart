@@ -25,6 +25,7 @@ import '../../moderation/presentation/admin_reports_page.dart';
 import '../../plans/presentation/plans_list_page.dart';
 import '../../proximity/presentation/proximity_prefs_sheet.dart';
 import '../../settings/presentation/distance_unit_prefs_sheet.dart';
+import '../../settings/presentation/duplicate_radius_prefs_sheet.dart';
 import '../../settings/presentation/profile_settings_page.dart';
 import '../../routes/presentation/my_routes_page.dart';
 import '../../search/data/search_models.dart';
@@ -253,6 +254,19 @@ class _HomePageState extends ConsumerState<HomePage> {
     }
   }
 
+  Future<void> _openDuplicateRadiusPrefs() async {
+    final profile = _profile;
+    if (profile == null) return;
+    final updated = await showDuplicateRadiusPrefsSheet(
+      context: context,
+      profile: profile,
+      profileRepository: ref.read(profileRepositoryProvider),
+    );
+    if (updated != null && mounted) {
+      setState(() => _profile = updated);
+    }
+  }
+
   Future<void> _openDistanceUnitPrefs() async {
     await showDistanceUnitPrefsSheet(context: context);
   }
@@ -409,6 +423,9 @@ class _HomePageState extends ConsumerState<HomePage> {
           isStaff: isStaff,
           onProfile: _openProfile,
           onProximity: _openProximityPrefs,
+          onDuplicateRadius: () {
+            unawaited(_openDuplicateRadiusPrefs());
+          },
           onDistanceUnit: () {
             unawaited(_openDistanceUnitPrefs());
           },

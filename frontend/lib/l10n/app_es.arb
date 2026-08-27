@@ -10,10 +10,20 @@
   "moreMenuOpenTooltip": "Más opciones",
   "moreMenuManageAccount": "Ver perfil",
   "moreMenuProximitySubtitle": "Radio y sitios públicos",
+  "moreMenuDuplicateRadiusSubtitle": "Al guardar un sitio (siempre en metros)",
+  "duplicateRadiusTitle": "Mismo sitio al guardar",
+  "duplicateRadiusSubtitle": "Si hay otro sitio dentro de este radio, te avisamos para no duplicarlo. Por defecto 100 m.",
+  "duplicateRadiusMetersInfo": "Este radio va siempre en metros. La unidad de distancia del menú (km, millas…) aplica en recuerdos cercanos, Explorar y etiquetas; no aquí.",
   "moreMenuDistanceUnit": "Unidad de distancia",
-  "moreMenuDistanceUnitSubtitle": "Cómo se muestran metros, km, millas…",
+  "moreMenuDistanceUnitSubtitle": "Cómo se muestran km, millas…",
   "distanceUnitSheetTitle": "Unidad de distancia",
-  "distanceUnitSheetHint": "Se aplica en recuerdos cercanos, Explorar y etiquetas de distancia.",
+  "distanceUnitSheetHint": "Se aplica en recuerdos cercanos, Explorar y etiquetas de distancia. El radio de sitios duplicados siempre usa metros.",
+  "profileDuplicateRadiusLabel": "Radio: {meters} m",
+  "@profileDuplicateRadiusLabel": {
+    "placeholders": {
+      "meters": {"type": "int"}
+    }
+  },
   "moreMenuReports": "Reportes",
   "moreMenuSignOut": "Cerrar sesión",
   "moreMenuAppVersion": "Versión {version}",
@@ -61,14 +71,6 @@
   },
   "profileUsernameMustSet": "Elegí un @usuario para usar la app. Se muestra en reseñas y fotos; las relaciones internas usan tu id, no el nombre.",
   "profileUsernameCooldownToast": "Todavía no podés cambiar el nombre de usuario.",
-  "profileDuplicateRadiusSection": "Mismo sitio al guardar",
-  "profileDuplicateRadiusHelp": "Si hay otro sitio dentro de este radio, te avisamos para no duplicarlo. Por defecto 100 m.",
-  "profileDuplicateRadiusLabel": "Radio: {meters} m",
-  "@profileDuplicateRadiusLabel": {
-    "placeholders": {
-      "meters": {"type": "int"}
-    }
-  },
   "actionCancel": "Cancelar",
   "actionDiscard": "Descartar",
   "actionSave": "Guardar",
