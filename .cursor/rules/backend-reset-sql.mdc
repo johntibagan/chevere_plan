@@ -1,5 +1,5 @@
 ---
-description: SQL/migraciones y reset_all — siempre validar default y --full
+description: SQL/migraciones y reset_all — baseline de 3; parches se pliegan y borran
 globs: backend/**/*.{sql,py,ps1}
 alwaysApply: true
 ---
@@ -18,31 +18,43 @@ catálogo masivo **debe seguir compatible con** `backend/reset_all.ps1`.
 
 Owner catálogo / root: `johnftm.proyectos@gmail.com`.
 
+## Baseline = solo 3 archivos
+
+Tras consolidar, en `backend/supabase/migrations/` deben quedar **únicamente**:
+
+1. `20260808000001_schema.sql` — esquema app (tablas, RPC, RLS, grants)
+2. `20260808000002_seed.sql` — seeds (categorías, unidades, …)
+3. `20260808000003_storage.sql` — buckets + policies de Storage
+
+La **DB viva es la fuente de verdad del esquema** (no de los datos de usuario).
+Un `--full` debe poder recrear ese esquema desde esos 3 archivos.
+
+## Ciclo obligatorio al tocar la DB (no acumular parches)
+
+1. **Crear** un `.sql` con timestamp posterior **solo** si hay que aplicar YA a la DB viva.
+2. **Aplicar** a Supabase (MCP `apply_migration` / `execute_sql` / `psql` con `SUPABASE_DB_URL`).
+3. **En el mismo trabajo, antes de cerrar:**
+   - Actualizar el baseline (`…01_schema.sql` y/o `…03_storage.sql` / seed si aplica) con el estado **final**.
+   - Preferible copiar definiciones desde la DB viva (`pg_get_functiondef`, columnas, policies) — **solo esquema, sin datos**.
+   - **Eliminar** el archivo de migración puntual.
+4. Sin esto el cambio **no está cerrado**. Queda prohibido dejar parches `20260826*` (u otros timestamps) acumulados.
+
+No reintroducir parches ya incluidos (search, reviews, anti-dupe, favoritos,
+distance_units, beta portal, username/avatar, `clear_site_location`, etc.).
+
+Un merge de datos one-shot (p. ej. unir dos sitios del catálogo) **no** va
+en migraciones: el import masivo recrea el catálogo.
+
 ## Checklist al tocar SQL o catálogo
 
-1. Baseline actual (como si el proyecto naciera hoy), **solo** estos tres en orden:
-   `20260808000001_schema.sql` → `…02_seed.sql` → `…03_storage.sql`.
-   El `--full` aplica **todas** las `*.sql` de `migrations/` en orden. Tras unificar,
-   no deben quedar parches sueltos: lo que hoy está en producción va **dentro** del
-   baseline (schema/seed/storage). Un `.sql` con timestamp posterior solo si hace
-   falta aplicar YA a la DB viva; en el mismo trabajo (o al cerrar el ciclo) se
-   **pliega** al baseline y se elimina el archivo suelto.
-   No reintroducir parches ya incluidos en el schema (search, reviews, anti-dupe,
-   favoritos, distance_units, beta portal, `clear_site_location`, etc.).
-   Un merge de datos one-shot (p. ej. unir dos sitios del catálogo) **no** va
-   en migraciones: el import masivo recrea el catálogo.
-2. SQL **idempotente** donde importe (`if not exists`, `on conflict`, etc.):
-   el reset full reejecuta desde cero; scripts sueltos pueden reaplicarse.
-3. Si cambias wipe: sitios del catálogo (`external_id IS NOT NULL`) **no** se
-   borran en el reset default.
+1. Baseline solo los tres de arriba; el `--full` aplica **todas** las `*.sql` de `migrations/` en orden — por eso no debe haber parches sueltos.
+2. SQL **idempotente** donde importe (`if not exists`, `on conflict`, etc.).
+3. Si cambias wipe: sitios del catálogo (`external_id IS NOT NULL`) **no** se borran en el reset default.
 4. Si cambias import / JSON: `06_import_public_sites.py` +
    `docs/data/colombia_departamentos_municipios_sitios.json`; el `--full`
-   llama `run_import` **en la misma conexión** (no subprocess que reconecte).
-5. Tras cambiar schema/RPC: anotar en la migración lo que el frontend espera;
-   no dejar el reset a medias.
-6. **Aplicar** la migración a la DB viva cuando el cambio deba usarse ya
-   (no basta con dejar el `.sql`). Si no se pudo: decirlo al cerrar
-   (ver regla `cierre-accion-manual`).
+   llama `run_import` **en la misma conexión**.
+5. Tras cambiar schema/RPC: anotar en docs/invariantes o aplicacion-actual lo que el frontend espera.
+6. **Aplicar** a la DB viva cuando el cambio deba usarse ya; luego plegar y borrar el parche.
 
 ## Conexión DB
 

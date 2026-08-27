@@ -905,6 +905,228 @@ AS $function$
     );
 $function$;
 
+-- ---------------------------------------------------------------------------
+-- Perfil público: @username + avatar (defs alineadas a la DB viva).
+-- ---------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.normalize_username(raw text)
+ RETURNS text
+ LANGUAGE plpgsql
+ IMMUTABLE
+ SET search_path TO 'public'
+AS $function$
+declare
+  s text;
+begin
+  if raw is null then
+    return null;
+  end if;
+  s := lower(btrim(raw));
+  s := regexp_replace(s, '^@+', '');
+  s := translate(
+    s,
+    'áàäâãåāăąéèëêēėęíìïîīįóòöôõøōúùüûūųýÿñçÁÀÄÂÃÅĀĂĄÉÈËÊĒĖĘÍÌÏÎĪĮÓÒÖÔÕØŌÚÙÜÛŪŲÝŸÑÇ',
+    'aaaaaaaaaeeeeeeeiiiiiiioooooooouuuuuuyyncaaaaaaaaaeeeeeeeiiiiiiioooooooouuuuuuyync'
+  );
+  s := regexp_replace(s, '[^a-z0-9._]', '', 'g');
+  if s = '' then
+    return null;
+  end if;
+  return s;
+end;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.is_reserved_username(u text)
+ RETURNS boolean
+ LANGUAGE sql
+ IMMUTABLE
+ SET search_path TO 'public'
+AS $function$
+  select u in (
+    'admin', 'root', 'support', 'soporte', 'help', 'ayuda',
+    'chevere', 'chevereplan', 'oficial', 'official', 'null',
+    'undefined', 'system', 'sistema', 'staff', 'mod', 'moderator'
+  );
+$function$;
+
+CREATE OR REPLACE FUNCTION public.username_available(p_username text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+declare
+  uid uuid := auth.uid();
+  norm text;
+  taken boolean;
+begin
+  if uid is null then
+    raise exception 'not authenticated';
+  end if;
+  norm := public.normalize_username(p_username);
+  if norm is null then
+    return jsonb_build_object(
+      'available', false,
+      'normalized', null,
+      'reason', 'invalid'
+    );
+  end if;
+  if char_length(norm) < 3 or char_length(norm) > 20 then
+    return jsonb_build_object(
+      'available', false,
+      'normalized', norm,
+      'reason', 'length'
+    );
+  end if;
+  if norm !~ '^[a-z0-9._]{3,20}$' then
+    return jsonb_build_object(
+      'available', false,
+      'normalized', norm,
+      'reason', 'invalid'
+    );
+  end if;
+  if public.is_reserved_username(norm) then
+    return jsonb_build_object(
+      'available', false,
+      'normalized', norm,
+      'reason', 'reserved'
+    );
+  end if;
+  select exists (
+    select 1
+    from public.profiles p
+    where p.username = norm
+      and p.id <> uid
+  ) into taken;
+  return jsonb_build_object(
+    'available', not taken,
+    'normalized', norm,
+    'reason', case when taken then 'taken' else 'ok' end
+  );
+end;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.suggest_usernames(p_base text, p_limit integer DEFAULT 5)
+ RETURNS text[]
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+declare
+  uid uuid := auth.uid();
+  base text;
+  out text[] := '{}';
+  cand text;
+  i int := 0;
+  n int;
+begin
+  if uid is null then
+    raise exception 'not authenticated';
+  end if;
+  n := greatest(1, least(coalesce(p_limit, 5), 8));
+  base := public.normalize_username(p_base);
+  if base is null or char_length(base) < 2 then
+    base := 'user';
+  end if;
+  if char_length(base) > 16 then
+    base := left(base, 16);
+  end if;
+
+  for i in 0..40 loop
+    if i = 0 then
+      cand := base;
+    elsif i <= 9 then
+      cand := base || i::text;
+    else
+      cand := base || '_' || (100 + i)::text;
+    end if;
+    if char_length(cand) > 20 then
+      cand := left(base, greatest(3, 20 - 3)) || (i % 100)::text;
+    end if;
+    if char_length(cand) < 3 then
+      continue;
+    end if;
+    if public.is_reserved_username(cand) then
+      continue;
+    end if;
+    if exists (
+      select 1 from public.profiles p
+      where p.username = cand and p.id <> uid
+    ) then
+      continue;
+    end if;
+    if not (cand = any (out)) then
+      out := array_append(out, cand);
+    end if;
+    exit when coalesce(array_length(out, 1), 0) >= n;
+  end loop;
+  return out;
+end;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.update_my_profile(p_username text DEFAULT NULL::text, p_use_google_avatar boolean DEFAULT NULL::boolean, p_clear_custom_avatar boolean DEFAULT false)
+ RETURNS profiles
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+declare
+  uid uuid := auth.uid();
+  avail jsonb;
+  norm text;
+  cur_username text;
+  cur_changed timestamptz;
+  row public.profiles;
+begin
+  if uid is null then
+    raise exception 'not authenticated';
+  end if;
+
+  if p_username is not null then
+    avail := public.username_available(p_username);
+    if not coalesce((avail->>'available')::boolean, false) then
+      raise exception 'username not available: %', avail->>'reason';
+    end if;
+    norm := avail->>'normalized';
+
+    select p.username, p.username_changed_at
+      into cur_username, cur_changed
+    from public.profiles p
+    where p.id = uid;
+
+    if cur_username is not null
+       and cur_username is distinct from norm then
+      if cur_changed is not null
+         and cur_changed > (timezone('utc', now()) - interval '3 months') then
+        raise exception 'username change cooldown';
+      end if;
+    end if;
+
+    if cur_username is distinct from norm then
+      update public.profiles
+      set
+        username = norm,
+        username_changed_at = timezone('utc', now())
+      where id = uid;
+    end if;
+  end if;
+
+  if p_use_google_avatar is not null then
+    update public.profiles
+    set use_google_avatar = p_use_google_avatar
+    where id = uid;
+  end if;
+
+  if p_clear_custom_avatar then
+    update public.profiles
+    set avatar_url = null
+    where id = uid;
+  end if;
+
+  select * into row from public.profiles where id = uid;
+  return row;
+end;
+$function$;
+
 CREATE OR REPLACE FUNCTION public.handle_new_user()
  RETURNS trigger
  LANGUAGE plpgsql
@@ -1957,12 +2179,14 @@ grant execute on function public.enforce_site_review_photo_limit() to anon, auth
 grant execute on function public.find_possible_duplicate_sites(p_name text, p_lat double precision, p_lng double precision, p_city text, p_radius_m double precision, p_exclude_site_id uuid, p_google_place_id text) to anon, authenticated, service_role;
 grant execute on function public.get_site_coords(p_site_id uuid) to anon, authenticated, service_role;
 grant execute on function public.handle_new_user() to anon, authenticated, service_role;
+grant execute on function public.is_reserved_username(u text) to anon, authenticated, service_role;
 grant execute on function public.is_staff() to anon, authenticated, service_role;
 grant execute on function public.link_save_to_existing_site(p_save_id uuid, p_existing_site_id uuid) to anon, authenticated, service_role;
 grant execute on function public.list_my_route_history() to anon, authenticated, service_role;
 grant execute on function public.list_open_content_reports() to anon, authenticated, service_role;
 grant execute on function public.list_plan_candidates(p_location_query text, p_include_public boolean, p_max_budget numeric) to anon, authenticated, service_role;
 grant execute on function public.list_proximity_sites(p_include_public boolean) to anon, authenticated, service_role;
+grant execute on function public.normalize_username(raw text) to anon, authenticated, service_role;
 grant execute on function public.prevent_role_escalation() to anon, authenticated, service_role;
 grant execute on function public.search_sites(p_query text, p_category_id uuid, p_location_query text, p_lat double precision, p_lng double precision, p_radius_km double precision, p_transport_group text, p_budget_min numeric, p_budget_max numeric, p_include_public boolean, p_category_ids uuid[], p_favorites_only boolean) to anon, authenticated, service_role;
 grant execute on function public.set_site_location(p_site_id uuid, p_lng double precision, p_lat double precision) to anon, authenticated, service_role;
@@ -1970,6 +2194,13 @@ grant execute on function public.set_updated_at() to anon, authenticated, servic
 grant execute on function public.site_cover_storage_path(p_site_id uuid) to anon, authenticated, service_role;
 grant execute on function public.site_privacy_blockers(p_site_id uuid) to anon, authenticated, service_role;
 grant execute on function public.site_rating_summary(p_site_id uuid) to anon, authenticated, service_role;
+
+revoke all on function public.suggest_usernames(text, integer) from public;
+grant execute on function public.suggest_usernames(text, integer) to authenticated;
+revoke all on function public.update_my_profile(text, boolean, boolean) from public;
+grant execute on function public.update_my_profile(text, boolean, boolean) to authenticated;
+revoke all on function public.username_available(text) from public;
+grant execute on function public.username_available(text) to authenticated;
 
 -- Portal beta: solo por RPC con PIN (nunca desde el cliente sin el PIN).
 revoke all on function public.beta_mark_feedback(uuid, boolean, text, text) from public;
