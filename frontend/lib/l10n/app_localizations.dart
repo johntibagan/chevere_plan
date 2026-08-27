@@ -376,6 +376,12 @@ abstract class AppLocalizations {
   /// **'Catálogo'**
   String get labelCatalog;
 
+  /// No description provided for @labelPublic.
+  ///
+  /// In es, this message translates to:
+  /// **'Público'**
+  String get labelPublic;
+
   /// No description provided for @homePendingBadge.
   ///
   /// In es, this message translates to:
@@ -1915,14 +1921,32 @@ abstract class AppLocalizations {
   /// No description provided for @sameSiteReviewPublic.
   ///
   /// In es, this message translates to:
-  /// **'Usarlo + reseña visible'**
+  /// **'Usarlo + reseña pública'**
   String get sameSiteReviewPublic;
+
+  /// No description provided for @sameSiteReviewPublicHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Escribes una reseña visible en la ficha del sitio. Cuenta en el promedio público.'**
+  String get sameSiteReviewPublicHint;
 
   /// No description provided for @sameSiteJournalPrivate.
   ///
   /// In es, this message translates to:
-  /// **'Usarlo + bitácora privada'**
+  /// **'Usarlo + reseña privada'**
   String get sameSiteJournalPrivate;
+
+  /// No description provided for @sameSiteJournalPrivateHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Escribes una reseña solo para ti en ese sitio. No aparece en la ficha pública.'**
+  String get sameSiteJournalPrivateHint;
+
+  /// No description provided for @sameSiteReviewPrivateHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Escribes una reseña solo para ti en ese sitio. No aparece en la ficha pública.'**
+  String get sameSiteReviewPrivateHint;
 
   /// No description provided for @sameSiteKeepEditing.
   ///
@@ -1930,11 +1954,59 @@ abstract class AppLocalizations {
   /// **'Seguir con el mío'**
   String get sameSiteKeepEditing;
 
+  /// No description provided for @sameSiteKeepEditingHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Cierra este aviso y seguí editando tu guardado como sitio nuevo.'**
+  String get sameSiteKeepEditingHint;
+
   /// No description provided for @sameSiteSaveAnyway.
   ///
   /// In es, this message translates to:
   /// **'Guardar de todas formas'**
   String get sameSiteSaveAnyway;
+
+  /// No description provided for @sameSiteSaveAnywayHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Creas un sitio público nuevo aunque haya uno parecido en Explorar.'**
+  String get sameSiteSaveAnywayHint;
+
+  /// No description provided for @sameSiteFavorite.
+  ///
+  /// In es, this message translates to:
+  /// **'Agregar a mis favoritos'**
+  String get sameSiteFavorite;
+
+  /// No description provided for @sameSiteFavoriteHint.
+  ///
+  /// In es, this message translates to:
+  /// **'No crea un guardado nuevo. Marca el sitio con corazón y abre su ficha.'**
+  String get sameSiteFavoriteHint;
+
+  /// No description provided for @sameSiteFavoriteTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Agregar a favoritos?'**
+  String get sameSiteFavoriteTitle;
+
+  /// No description provided for @sameSiteFavoriteBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Se descarta este guardado. El sitio quedará en Mis favoritos y verás su ficha.'**
+  String get sameSiteFavoriteBody;
+
+  /// No description provided for @sameSiteLinkNeedPublic.
+  ///
+  /// In es, this message translates to:
+  /// **'La reseña pública solo aplica en sitios públicos.'**
+  String get sameSiteLinkNeedPublic;
+
+  /// No description provided for @sameSitePickSiteFirst.
+  ///
+  /// In es, this message translates to:
+  /// **'Toca Usar como en una tarjeta; luego elige una opción abajo.'**
+  String get sameSitePickSiteFirst;
 
   /// No description provided for @sameSiteHardBody.
   ///
@@ -1951,13 +2023,13 @@ abstract class AppLocalizations {
   /// No description provided for @sameSitePickHint.
   ///
   /// In es, this message translates to:
-  /// **'Tocá una fila para ver la ficha (fotos, mapa, reseñas). El círculo marca cuál usar.'**
+  /// **'En cada tarjeta: Ver ficha o Usar como.'**
   String get sameSitePickHint;
 
   /// No description provided for @sameSiteHardPickHint.
   ///
   /// In es, this message translates to:
-  /// **'Mirá la ficha si dudás. Podés usarlo o guardar el tuyo de todas formas.'**
+  /// **'Tocá Usar como si es el mismo sitio; abajo podés guardar de todas formas.'**
   String get sameSiteHardPickHint;
 
   /// No description provided for @sameSiteTapForDetail.
@@ -1965,6 +2037,84 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Ver ficha'**
   String get sameSiteTapForDetail;
+
+  /// No description provided for @sameSiteUseIt.
+  ///
+  /// In es, this message translates to:
+  /// **'Usar como'**
+  String get sameSiteUseIt;
+
+  /// No description provided for @sameSiteUsePickOption.
+  ///
+  /// In es, this message translates to:
+  /// **'Elige una opción y confirma abajo.'**
+  String get sameSiteUsePickOption;
+
+  /// No description provided for @sameSiteUseConfirmSave.
+  ///
+  /// In es, this message translates to:
+  /// **'Confirmar'**
+  String get sameSiteUseConfirmSave;
+
+  /// No description provided for @sameSiteDiscardConfirmTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Descartar este guardado?'**
+  String get sameSiteDiscardConfirmTitle;
+
+  /// No description provided for @sameSiteDiscardConfirmBodyReview.
+  ///
+  /// In es, this message translates to:
+  /// **'Se descartará lo que estabas guardando. Irás a la ficha del sitio, pestaña Reseñas, para escribir tu reseña pública.'**
+  String get sameSiteDiscardConfirmBodyReview;
+
+  /// No description provided for @sameSiteDiscardConfirmBodyJournal.
+  ///
+  /// In es, this message translates to:
+  /// **'Se descartará lo que estabas guardando. Irás a la ficha del sitio, pestaña Reseñas, para escribir tu reseña privada.'**
+  String get sameSiteDiscardConfirmBodyJournal;
+
+  /// No description provided for @sameSiteDiscardConfirmBodyFavorite.
+  ///
+  /// In es, this message translates to:
+  /// **'Se descartará lo que estabas guardando. El sitio quedará en favoritos y verás su ficha en Info.'**
+  String get sameSiteDiscardConfirmBodyFavorite;
+
+  /// No description provided for @sameSiteDiscardConfirmBodyGeneric.
+  ///
+  /// In es, this message translates to:
+  /// **'Se descartará lo que estabas guardando e irás al sitio elegido.'**
+  String get sameSiteDiscardConfirmBodyGeneric;
+
+  /// No description provided for @sameSiteOptionReviewPublic.
+  ///
+  /// In es, this message translates to:
+  /// **'Reseña pública'**
+  String get sameSiteOptionReviewPublic;
+
+  /// No description provided for @sameSiteOptionReviewPrivate.
+  ///
+  /// In es, this message translates to:
+  /// **'Reseña privada'**
+  String get sameSiteOptionReviewPrivate;
+
+  /// No description provided for @sameSiteOptionJournal.
+  ///
+  /// In es, this message translates to:
+  /// **'Reseña privada'**
+  String get sameSiteOptionJournal;
+
+  /// No description provided for @sameSiteOptionFavorite.
+  ///
+  /// In es, this message translates to:
+  /// **'Agregar a favoritos'**
+  String get sameSiteOptionFavorite;
+
+  /// No description provided for @sameSiteInfoTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Información'**
+  String get sameSiteInfoTitle;
 
   /// No description provided for @sameSiteMarkThis.
   ///

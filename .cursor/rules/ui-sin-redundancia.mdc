@@ -5,12 +5,21 @@ alwaysApply: true
 
 # UI — sin redundancia (privacidad y señales)
 
+## Tarjetas de sitio (estándar)
+
+En **toda** tarjeta de sitio (Inicio, Explorar, anti-dupe, carrusel, etc.):
+
+- **Borde / franja** del color de visibilidad (verde = público, morado = privado).
+- **Icono** `VisibilityBadge` (público / privado) — no la palabra «Público»/«Privado» al lado del icono.
+- **Textos de origen** vía `SiteCardOriginRow` / `SiteOriginTags`: **Tuyo**, **Catálogo**, **Público**, **Vinculado**.
+- «Público» como texto de origen **solo** si el sitio es público **y** no es tuyo **ni** de catálogo (listado comunitario). No es una segunda etiqueta de la franja de color cuando ya es Tuyo o Catálogo.
+
 ## Privacidad pública / privada
 
 - **Color = significado.** Verde (`AppColors.success`) = público; morado (`AppColors.purple`) = privado.
-- Si la tarjeta/lista ya lleva **borde o franja** de ese color, **no** repetir la palabra «Público» / «Privado» ni un badge con ese texto.
+- Si la tarjeta/lista ya lleva **borde o franja** de ese color, **no** repetir la palabra «Público» / «Privado» ni un badge con ese texto junto al icono (icono = visibilidad; textos = origen).
 - Si hace falta un indicador sin borde (p. ej. ficha densa), usar **solo icono** (`Icons.public` / `Icons.lock_outline`) del mismo color, con `Tooltip` para accesibilidad. Nunca icono + etiqueta del mismo concepto.
-- Sí se permiten etiquetas **distintas** del color (Tuyo, Vinculado, Catálogo, estado de borrador, etc.).
+- Sí se permiten etiquetas **distintas** del color (Tuyo, Vinculado, Catálogo, origen «Público», estado de borrador, etc.).
 
 ## Otras señales
 

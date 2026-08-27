@@ -38,11 +38,21 @@ abstract final class WidgetKeys {
   static const saveExtraPhoto = Key('save_extra_photo');
 
   static const dupeKeepEditing = Key('dupe_keep_editing');
+  static const dupeKeepEditingInfo = Key('dupe_keep_editing_info');
   static const dupeSaveAnyway = Key('dupe_save_anyway');
+  static const dupeSaveAnywayInfo = Key('dupe_save_anyway_info');
   static const dupeJournal = Key('dupe_journal');
+  static const dupeJournalInfo = Key('dupe_journal_info');
   static const dupeReview = Key('dupe_review');
+  static const dupeReviewInfo = Key('dupe_review_info');
+  static const dupeFavorite = Key('dupe_favorite');
+  static const dupeFavoriteInfo = Key('dupe_favorite_info');
+  static const dupeConfirmSave = Key('dupe_confirm_save');
+  static const dupeUseConfirm = Key('dupe_use_confirm');
   static const dupePicker = Key('dupe_picker');
   static Key dupeMatch(String siteId) => Key('dupe_match_$siteId');
+  static Key dupeViewFicha(String siteId) => Key('dupe_view_ficha_$siteId');
+  static Key dupeUseIt(String siteId) => Key('dupe_use_it_$siteId');
   static const privacyBlockDialog = Key('privacy_block_dialog');
 
   static const locationPicker = Key('location_picker');
@@ -55,6 +65,7 @@ abstract final class WidgetKeys {
   static const siteOriginOwn = Key('site_origin_own');
   static const siteOriginLinked = Key('site_origin_linked');
   static const siteOriginCatalog = Key('site_origin_catalog');
+  static const siteOriginPublic = Key('site_origin_public');
 
   static const reviewEditor = Key('review_editor');
   static const reviewBody = Key('review_body');

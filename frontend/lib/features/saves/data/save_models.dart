@@ -44,17 +44,32 @@ class PossibleDuplicate {
     required this.siteId,
     required this.siteName,
     this.city,
+    this.department,
+    this.addressLine,
     this.distanceM,
     this.nameScore,
     this.contributorCount = 0,
+    this.isPublic = false,
+    this.isOwn = false,
+    this.isCatalog = false,
+    this.isLinked = false,
   });
 
   final String siteId;
   final String siteName;
   final String? city;
+  final String? department;
+  final String? addressLine;
   final double? distanceM;
   final double? nameScore;
   final int contributorCount;
+  final bool isPublic;
+  final bool isOwn;
+  final bool isCatalog;
+  final bool isLinked;
+
+  /// Reseña pública solo en sitios públicos.
+  bool get canReviewPublic => isPublic;
 
   factory PossibleDuplicate.fromJson(Map<String, dynamic> json) {
     final rawId = json['site_id'] ?? json['id'];
@@ -65,6 +80,8 @@ class PossibleDuplicate {
           json['name'] as String? ??
           'Sitio',
       city: json['city'] as String?,
+      department: json['department'] as String?,
+      addressLine: json['address_line'] as String?,
       distanceM: json['distance_m'] == null
           ? null
           : (json['distance_m'] as num).toDouble(),
@@ -72,6 +89,10 @@ class PossibleDuplicate {
           ? null
           : (json['name_score'] as num).toDouble(),
       contributorCount: (json['contributor_count'] as num?)?.toInt() ?? 0,
+      isPublic: parsePgBool(json['is_public']),
+      isOwn: parsePgBool(json['is_own']),
+      isCatalog: parsePgBool(json['is_catalog']),
+      isLinked: parsePgBool(json['is_linked']),
     );
   }
 }

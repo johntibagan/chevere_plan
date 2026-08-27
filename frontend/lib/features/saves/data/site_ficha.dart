@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'save_models.dart';
 import '../../search/data/search_models.dart';
 
@@ -329,3 +331,18 @@ class SiteFicha {
 
 /// Resultado al cerrar la ficha (para refrescar listas).
 enum SiteDetailOutcome { none, updated, deleted }
+
+/// Parámetros al abrir ficha (p. ej. tras anti-duplicados).
+class SiteDetailLaunchConfig {
+  const SiteDetailLaunchConfig({
+    this.initialTabIndex = 0,
+    this.openReviewEditor = false,
+    this.reviewInitialIsPublic,
+    this.reviewSeedPhotos = const [],
+  });
+
+  final int initialTabIndex;
+  final bool openReviewEditor;
+  final bool? reviewInitialIsPublic;
+  final List<File> reviewSeedPhotos;
+}

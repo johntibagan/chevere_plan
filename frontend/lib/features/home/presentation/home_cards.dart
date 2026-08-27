@@ -210,7 +210,7 @@ class HomeCategoryChip extends StatelessWidget {
   }
 }
 
-/// Carrusel Figma: foto 144×176, visibilidad + nombre, categoría debajo.
+/// Carrusel de guardados: borde/franja de visibilidad + origen + lugar.
 class HomeRecentRailCard extends StatelessWidget {
   const HomeRecentRailCard({
     super.key,
@@ -224,18 +224,23 @@ class HomeRecentRailCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final cat = save.categoryNames.isNotEmpty ? save.categoryNames.first : null;
+    final vis = save.isPublic ? AppColors.success : AppColors.purple;
     return SizedBox(
-      width: 144,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(16),
+      width: 152,
+      child: Material(
+        color: AppColors.surface,
+        clipBehavior: Clip.antiAlias,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(color: vis.withValues(alpha: 0.55)),
+        ),
+        child: InkWell(
+          onTap: onTap,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                flex: 6,
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
@@ -244,7 +249,13 @@ class HomeRecentRailCard extends StatelessWidget {
                       categoryNames: save.categoryNames,
                       coverStoragePath: save.coverStoragePath,
                     ),
-                    const SiteCoverScrim(bottomOpacity: 0.75),
+                    const SiteCoverScrim(),
+                    Positioned(
+                      left: 0,
+                      top: 0,
+                      bottom: 0,
+                      child: VisibilityStripe(isPublic: save.isPublic),
+                    ),
                     Positioned(
                       top: 8,
                       left: 8,
@@ -288,53 +299,39 @@ class HomeRecentRailCard extends StatelessWidget {
                       right: 8,
                       child: FavoriteHeartButton(siteId: save.siteId),
                     ),
-                    Positioned(
-                      left: 8,
-                      right: 8,
-                      bottom: 8,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Icon(
-                            save.isPublic
-                                ? Icons.visibility_outlined
-                                : Icons.lock_rounded,
-                            size: 12,
-                            color: save.isPublic
-                                ? AppColors.success
-                                : AppColors.purple,
-                          ),
-                          SizedBox(height: 2),
-                          Text(
-                            save.siteName,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w800,
-                              color: AppColors.onImage,
-                            ),
-                          ),
-                          if (save.city != null && save.city!.isNotEmpty)
-                            Text(
-                              save.city!,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontSize: 9,
-                                color: AppColors.onImageMuted,
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
                   ],
                 ),
               ),
-            ),
-            SizedBox(height: 6),
-            if (cat != null) HomeCategoryChip(label: cat),
-          ],
+              Expanded(
+                flex: 4,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(8, 6, 8, 8),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SiteCardOriginRow(
+                        isPublic: save.isPublic,
+                        isOwn: true,
+                        isLinked: save.isPossibleDuplicate,
+                        isCatalog: save.isCatalogSite,
+                      ),
+                      SizedBox(height: 4),
+                      Expanded(
+                        child: SingleChildScrollView(
+                          physics: const ClampingScrollPhysics(),
+                          child: SiteCardPlaceTexts(
+                            name: save.siteName,
+                            department: save.department,
+                            city: save.city,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -367,6 +364,8 @@ class SiteCardPlaceTexts extends StatelessWidget {
       children: [
         Text(
           name,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
           style: TextStyle(
             fontSize: nameSize,
             fontWeight: FontWeight.w800,
@@ -378,6 +377,8 @@ class SiteCardPlaceTexts extends StatelessWidget {
           SizedBox(height: 4),
           Text(
             place,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: TextStyle(
               fontSize: 10,
               color: AppColors.mutedDark,
@@ -389,6 +390,8 @@ class SiteCardPlaceTexts extends StatelessWidget {
           SizedBox(height: 4),
           Text(
             address,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: TextStyle(
               fontSize: 10,
               color: AppColors.muted,
@@ -402,20 +405,19 @@ class SiteCardPlaceTexts extends StatelessWidget {
 }
 
 /// Grilla: franja + borde de visibilidad, foto o ilustración padre.
+/// Portada [Expanded] con BoxFit.cover (sin forzar proporción); textos compactos.
 class HomePopularCard extends ConsumerWidget {
   const HomePopularCard({
     super.key,
     required this.hit,
     required this.onTap,
-    this.showOriginRow = false,
     this.photoHeight = 100,
     this.showPlaceOnCover = true,
   });
 
   final SearchHit hit;
   final VoidCallback onTap;
-  /// Explorar: visibilidad + Tuyo/Vinculado/Catálogo. Inicio: solo nombre/precio.
-  final bool showOriginRow;
+  /// Ignorado: la portada rellena el espacio libre de la celda.
   final double photoHeight;
   final bool showPlaceOnCover;
 
@@ -425,12 +427,8 @@ class HomePopularCard extends ConsumerWidget {
     final l10n = context.l10n;
     final unit = ref.watch(preferredDistanceUnitProvider);
     final price = hit.estimatedPriceAmount;
-    final origin = SiteOriginTags(
-      isOwn: hit.isOwn,
-      isLinked: hit.isLinked,
-      isCatalog: hit.isCatalog,
-    );
     final vis = hit.isPublic ? AppColors.success : AppColors.purple;
+    final hasMetaRow = hit.distanceKm != null || price != null;
     return Material(
       color: AppColors.surface,
       clipBehavior: Clip.antiAlias,
@@ -443,8 +441,8 @@ class HomePopularCard extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            SizedBox(
-              height: photoHeight,
+            Expanded(
+              flex: 6,
               child: Stack(
                 fit: StackFit.expand,
                 children: [
@@ -503,26 +501,19 @@ class HomePopularCard extends ConsumerWidget {
               ),
             ),
             Expanded(
+              flex: 4,
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
+                padding: const EdgeInsets.fromLTRB(8, 5, 8, 6),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    if (showOriginRow) ...[
-                      Row(
-                        children: [
-                          VisibilityBadge(
-                            isPublic: hit.isPublic,
-                            compact: true,
-                          ),
-                          if (origin.hasAny) ...[
-                            SizedBox(width: 6),
-                            Expanded(child: origin),
-                          ],
-                        ],
-                      ),
-                      SizedBox(height: 4),
-                    ],
+                    SiteCardOriginRow(
+                      isPublic: hit.isPublic,
+                      isOwn: hit.isOwn,
+                      isLinked: hit.isLinked,
+                      isCatalog: hit.isCatalog,
+                    ),
+                    SizedBox(height: 2),
                     Expanded(
                       child: SingleChildScrollView(
                         physics: const ClampingScrollPhysics(),
@@ -534,33 +525,38 @@ class HomePopularCard extends ConsumerWidget {
                         ),
                       ),
                     ),
-                    SizedBox(height: 4),
-                    Row(
-                      children: [
-                        if (hit.distanceKm != null)
-                          Text(
-                            formatDistanceFromKm(
-                              context.l10n,
-                              unit,
-                              hit.distanceKm!,
+                    if (hasMetaRow) ...[
+                      SizedBox(height: 2),
+                      Row(
+                        children: [
+                          if (hit.distanceKm != null)
+                            Text(
+                              formatDistanceFromKm(
+                                context.l10n,
+                                unit,
+                                hit.distanceKm!,
+                              ),
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: AppColors.mutedDark,
+                              ),
                             ),
-                            style: TextStyle(
-                              fontSize: 10,
-                              color: AppColors.mutedDark,
+                          Spacer(),
+                          if (price != null)
+                            Text(
+                              formatMoney(
+                                price,
+                                currencyCode: hit.currencyCode,
+                              ),
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w800,
+                                color: AppColors.primary,
+                              ),
                             ),
-                          ),
-                        Spacer(),
-                        if (price != null)
-                          Text(
-                            formatMoney(price, currencyCode: hit.currencyCode),
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w800,
-                              color: AppColors.primary,
-                            ),
-                          ),
-                      ],
-                    ),
+                        ],
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -587,16 +583,15 @@ class HomeSearchListCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     ref.watchAppThemeMode();
     final unit = ref.watch(preferredDistanceUnitProvider);
-    final origin = SiteOriginTags(
-      isOwn: hit.isOwn,
-      isLinked: hit.isLinked,
-      isCatalog: hit.isCatalog,
-    );
     final price = hit.estimatedPriceAmount;
     final vis = hit.isPublic ? AppColors.success : AppColors.purple;
 
+    // Altura = presupuesto de contenido ([SiteCardListMetrics]); miniatura ≈ 98%.
+    const rowH = SiteCardListMetrics.rowHeight;
+    const thumbPad = SiteCardListMetrics.thumbPad;
+    const thumb = SiteCardListMetrics.thumbSize;
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.only(bottom: 6),
       child: Material(
         color: AppColors.surface,
         clipBehavior: Clip.antiAlias,
@@ -606,18 +601,21 @@ class HomeSearchListCard extends ConsumerWidget {
         ),
         child: InkWell(
           onTap: onTap,
-          child: IntrinsicHeight(
+          child: SizedBox(
+            height: rowH,
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 VisibilityStripe(isPublic: hit.isPublic),
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(8, 10, 0, 10),
+                  padding: const EdgeInsets.only(top: thumbPad, bottom: thumbPad),
                   child: ClipRRect(
-                    borderRadius: const BorderRadius.all(Radius.circular(8)),
+                    borderRadius: const BorderRadius.horizontal(
+                      right: Radius.circular(8),
+                    ),
                     child: SizedBox(
-                      width: 80,
-                      height: 80,
+                      width: thumb,
+                      height: thumb,
                       child: SiteLookCover(
                         siteId: hit.siteId,
                         categoryNames: hit.categoryNames,
@@ -628,29 +626,22 @@ class HomeSearchListCard extends ConsumerWidget {
                 ),
                 Expanded(
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(10, 10, 4, 10),
+                    padding: const EdgeInsets.fromLTRB(8, 4, 4, 4),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
-                          children: [
-                            VisibilityBadge(
-                              isPublic: hit.isPublic,
-                              compact: true,
-                            ),
-                            if (origin.hasAny) ...[
-                              SizedBox(width: 6),
-                              Expanded(child: origin),
-                            ],
-                            FavoriteHeartButton(
-                              siteId: hit.siteId,
-                              style: FavoriteHeartStyle.icon,
-                            ),
-                          ],
+                        SiteCardOriginRow(
+                          isPublic: hit.isPublic,
+                          isOwn: hit.isOwn,
+                          isLinked: hit.isLinked,
+                          isCatalog: hit.isCatalog,
+                          trailing: FavoriteHeartButton(
+                            siteId: hit.siteId,
+                            style: FavoriteHeartStyle.icon,
+                          ),
                         ),
-                        SizedBox(height: 4),
-                        ConstrainedBox(
-                          constraints: const BoxConstraints(maxHeight: 96),
+                        SizedBox(height: 2),
+                        Expanded(
                           child: SingleChildScrollView(
                             physics: const ClampingScrollPhysics(),
                             child: SiteCardPlaceTexts(
@@ -658,50 +649,52 @@ class HomeSearchListCard extends ConsumerWidget {
                               department: hit.department,
                               city: hit.city,
                               addressLine: hit.addressLine,
-                              nameSize: 13,
+                              nameSize: 12,
                             ),
                           ),
                         ),
-                        SizedBox(height: 6),
-                        Row(
-                          children: [
-                            if (hit.distanceKm != null)
-                              Text(
-                                formatDistanceFromKm(
-                                  context.l10n,
-                                  unit,
-                                  hit.distanceKm!,
+                        if (hit.distanceKm != null || price != null)
+                          Row(
+                            children: [
+                              if (hit.distanceKm != null)
+                                Text(
+                                  formatDistanceFromKm(
+                                    context.l10n,
+                                    unit,
+                                    hit.distanceKm!,
+                                  ),
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    color: AppColors.mutedDark,
+                                  ),
                                 ),
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  color: AppColors.mutedDark,
+                              Spacer(),
+                              if (price != null)
+                                Text(
+                                  formatMoney(
+                                    price,
+                                    currencyCode: hit.currencyCode,
+                                  ),
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w800,
+                                    color: AppColors.primary,
+                                  ),
                                 ),
-                              ),
-                            Spacer(),
-                            if (price != null)
-                              Text(
-                                formatMoney(
-                                  price,
-                                  currencyCode: hit.currencyCode,
-                                ),
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w800,
-                                  color: AppColors.primary,
-                                ),
-                              ),
-                          ],
-                        ),
+                            ],
+                          ),
                       ],
                     ),
                   ),
                 ),
                 Padding(
-                  padding: EdgeInsets.only(right: 8),
-                  child: Icon(
-                    Icons.chevron_right,
-                    size: 16,
-                    color: AppColors.mutedDark,
+                  padding: const EdgeInsets.only(right: 8),
+                  child: Center(
+                    child: Icon(
+                      Icons.chevron_right,
+                      size: 16,
+                      color: AppColors.mutedDark,
+                    ),
                   ),
                 ),
               ],
@@ -778,13 +771,11 @@ class HomeFeedHits extends StatelessWidget {
     required this.hits,
     required this.layout,
     required this.onTap,
-    this.showOriginRow = false,
   });
 
   final List<SearchHit> hits;
   final FeedLayout layout;
   final void Function(SearchHit hit) onTap;
-  final bool showOriginRow;
 
   @override
   Widget build(BuildContext context) {
@@ -799,26 +790,27 @@ class HomeFeedHits extends StatelessWidget {
         ],
       );
     }
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: hits.length,
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: layout.crossAxisCount,
-        mainAxisSpacing: 10,
-        crossAxisSpacing: 10,
-        childAspectRatio: layout.childAspectRatio(
-          showOriginRow: showOriginRow,
-        ),
-      ),
-      itemBuilder: (context, i) {
-        final hit = hits[i];
-        return HomePopularCard(
-          hit: hit,
-          onTap: () => onTap(hit),
-          showOriginRow: showOriginRow,
-          photoHeight: layout.photoHeight(showOriginRow: showOriginRow),
-          showPlaceOnCover: layout != FeedLayout.grid4,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final ratio = layout.childAspectRatioForWidth(constraints.maxWidth);
+        return GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: hits.length,
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: layout.crossAxisCount,
+            mainAxisSpacing: 10,
+            crossAxisSpacing: 10,
+            childAspectRatio: ratio,
+          ),
+          itemBuilder: (context, i) {
+            final hit = hits[i];
+            return HomePopularCard(
+              hit: hit,
+              onTap: () => onTap(hit),
+              showPlaceOnCover: layout != FeedLayout.grid4,
+            );
+          },
         );
       },
     );

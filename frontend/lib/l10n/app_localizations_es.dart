@@ -157,6 +157,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get labelCatalog => 'Catálogo';
 
   @override
+  String get labelPublic => 'Público';
+
+  @override
   String get homePendingBadge => 'PENDIENTE';
 
   @override
@@ -1008,16 +1011,58 @@ class AppLocalizationsEs extends AppLocalizations {
   String get sameSiteYes => 'Usarlo y reseñar';
 
   @override
-  String get sameSiteReviewPublic => 'Usarlo + reseña visible';
+  String get sameSiteReviewPublic => 'Usarlo + reseña pública';
 
   @override
-  String get sameSiteJournalPrivate => 'Usarlo + bitácora privada';
+  String get sameSiteReviewPublicHint =>
+      'Escribes una reseña visible en la ficha del sitio. Cuenta en el promedio público.';
+
+  @override
+  String get sameSiteJournalPrivate => 'Usarlo + reseña privada';
+
+  @override
+  String get sameSiteJournalPrivateHint =>
+      'Escribes una reseña solo para ti en ese sitio. No aparece en la ficha pública.';
+
+  @override
+  String get sameSiteReviewPrivateHint =>
+      'Escribes una reseña solo para ti en ese sitio. No aparece en la ficha pública.';
 
   @override
   String get sameSiteKeepEditing => 'Seguir con el mío';
 
   @override
+  String get sameSiteKeepEditingHint =>
+      'Cierra este aviso y seguí editando tu guardado como sitio nuevo.';
+
+  @override
   String get sameSiteSaveAnyway => 'Guardar de todas formas';
+
+  @override
+  String get sameSiteSaveAnywayHint =>
+      'Creas un sitio público nuevo aunque haya uno parecido en Explorar.';
+
+  @override
+  String get sameSiteFavorite => 'Agregar a mis favoritos';
+
+  @override
+  String get sameSiteFavoriteHint =>
+      'No crea un guardado nuevo. Marca el sitio con corazón y abre su ficha.';
+
+  @override
+  String get sameSiteFavoriteTitle => '¿Agregar a favoritos?';
+
+  @override
+  String get sameSiteFavoriteBody =>
+      'Se descarta este guardado. El sitio quedará en Mis favoritos y verás su ficha.';
+
+  @override
+  String get sameSiteLinkNeedPublic =>
+      'La reseña pública solo aplica en sitios públicos.';
+
+  @override
+  String get sameSitePickSiteFirst =>
+      'Toca Usar como en una tarjeta; luego elige una opción abajo.';
 
   @override
   String get sameSiteHardBody =>
@@ -1028,15 +1073,57 @@ class AppLocalizationsEs extends AppLocalizations {
       'Ya existe un sitio público parecido. Úsalo para evitar duplicados, o sigue editando.';
 
   @override
-  String get sameSitePickHint =>
-      'Tocá una fila para ver la ficha (fotos, mapa, reseñas). El círculo marca cuál usar.';
+  String get sameSitePickHint => 'En cada tarjeta: Ver ficha o Usar como.';
 
   @override
   String get sameSiteHardPickHint =>
-      'Mirá la ficha si dudás. Podés usarlo o guardar el tuyo de todas formas.';
+      'Tocá Usar como si es el mismo sitio; abajo podés guardar de todas formas.';
 
   @override
   String get sameSiteTapForDetail => 'Ver ficha';
+
+  @override
+  String get sameSiteUseIt => 'Usar como';
+
+  @override
+  String get sameSiteUsePickOption => 'Elige una opción y confirma abajo.';
+
+  @override
+  String get sameSiteUseConfirmSave => 'Confirmar';
+
+  @override
+  String get sameSiteDiscardConfirmTitle => '¿Descartar este guardado?';
+
+  @override
+  String get sameSiteDiscardConfirmBodyReview =>
+      'Se descartará lo que estabas guardando. Irás a la ficha del sitio, pestaña Reseñas, para escribir tu reseña pública.';
+
+  @override
+  String get sameSiteDiscardConfirmBodyJournal =>
+      'Se descartará lo que estabas guardando. Irás a la ficha del sitio, pestaña Reseñas, para escribir tu reseña privada.';
+
+  @override
+  String get sameSiteDiscardConfirmBodyFavorite =>
+      'Se descartará lo que estabas guardando. El sitio quedará en favoritos y verás su ficha en Info.';
+
+  @override
+  String get sameSiteDiscardConfirmBodyGeneric =>
+      'Se descartará lo que estabas guardando e irás al sitio elegido.';
+
+  @override
+  String get sameSiteOptionReviewPublic => 'Reseña pública';
+
+  @override
+  String get sameSiteOptionReviewPrivate => 'Reseña privada';
+
+  @override
+  String get sameSiteOptionJournal => 'Reseña privada';
+
+  @override
+  String get sameSiteOptionFavorite => 'Agregar a favoritos';
+
+  @override
+  String get sameSiteInfoTitle => 'Información';
 
   @override
   String get sameSiteMarkThis => 'Marcar este';

@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -28,6 +31,9 @@ class SiteReviewsTab extends ConsumerStatefulWidget {
     this.siteIsPublic = true,
     this.isStaff = false,
     this.staffRoleLabel,
+    this.autoOpenEditor = false,
+    this.initialIsPublic,
+    this.seedPhotos = const [],
   });
 
   final String siteId;
@@ -36,6 +42,9 @@ class SiteReviewsTab extends ConsumerStatefulWidget {
   /// Admin/root: privilegios sobre contenido público (no bitácoras ajenas).
   final bool isStaff;
   final String? staffRoleLabel;
+  final bool autoOpenEditor;
+  final bool? initialIsPublic;
+  final List<File> seedPhotos;
 
   @override
   ConsumerState<SiteReviewsTab> createState() => _SiteReviewsTabState();
@@ -59,6 +68,12 @@ class _SiteReviewsTabState extends ConsumerState<SiteReviewsTab> {
     super.initState();
     _uid = ref.read(supabaseClientProvider).auth.currentUser?.id;
     _load();
+    if (widget.autoOpenEditor) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        unawaited(_openEditor(initialIsPublic: widget.initialIsPublic));
+      });
+    }
   }
 
   Future<void> _load() async {
@@ -123,7 +138,10 @@ class _SiteReviewsTabState extends ConsumerState<SiteReviewsTab> {
     return list;
   }
 
-  Future<void> _openEditor({SiteReview? review}) async {
+  Future<void> _openEditor({
+    SiteReview? review,
+    bool? initialIsPublic,
+  }) async {
     final ok = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
         builder: (_) => SiteReviewEditorPage(
@@ -131,6 +149,8 @@ class _SiteReviewsTabState extends ConsumerState<SiteReviewsTab> {
           siteName: widget.siteName,
           initialReview: review,
           siteIsPublic: widget.siteIsPublic,
+          initialIsPublic: initialIsPublic ?? widget.initialIsPublic,
+          seedPhotos: widget.seedPhotos,
         ),
       ),
     );

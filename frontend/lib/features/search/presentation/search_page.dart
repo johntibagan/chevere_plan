@@ -775,33 +775,39 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                       ),
                     )
                   else if (!layout.isList)
-                    SliverPadding(
-                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-                      sliver: SliverGrid(
-                        gridDelegate:
-                            SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: layout.crossAxisCount,
-                          mainAxisSpacing: 12,
+                    Builder(
+                      builder: (context) {
+                        final screenW = MediaQuery.sizeOf(context).width;
+                        final ratio = layout.childAspectRatioForWidth(
+                          screenW,
+                          horizontalPadding: 32,
                           crossAxisSpacing: 12,
-                          childAspectRatio:
-                              layout.childAspectRatio(showOriginRow: true),
-                        ),
-                        delegate: SliverChildBuilderDelegate(
-                          (context, index) {
-                            final h = visible[index];
-                            return HomePopularCard(
-                              hit: h,
-                              onTap: () => _openHit(h),
-                              showOriginRow: true,
-                              photoHeight: layout.photoHeight(
-                                showOriginRow: true,
-                              ),
-                              showPlaceOnCover: layout != FeedLayout.grid4,
-                            );
-                          },
-                          childCount: visible.length,
-                        ),
-                      ),
+                        );
+                        return SliverPadding(
+                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                          sliver: SliverGrid(
+                            gridDelegate:
+                                SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: layout.crossAxisCount,
+                              mainAxisSpacing: 12,
+                              crossAxisSpacing: 12,
+                              childAspectRatio: ratio,
+                            ),
+                            delegate: SliverChildBuilderDelegate(
+                              (context, index) {
+                                final h = visible[index];
+                                return HomePopularCard(
+                                  hit: h,
+                                  onTap: () => _openHit(h),
+                                  showPlaceOnCover:
+                                      layout != FeedLayout.grid4,
+                                );
+                              },
+                              childCount: visible.length,
+                            ),
+                          ),
+                        );
+                      },
                     )
                   else
                     SliverPadding(

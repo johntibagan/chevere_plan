@@ -221,21 +221,34 @@ class SavesRepository {
       throw const AppUserError('Debes iniciar sesión para guardar.');
     }
 
-    final raw = await _client.rpc(
-      'attach_save_to_existing_site',
-      params: {
-        'p_existing_site_id': existingSiteId,
-        'p_source_url': sourceUrl,
-        'p_source_network': sourceNetwork,
-        'p_notes': notes,
-      },
-    );
-    final saveId = raw?.toString();
-    if (saveId == null || saveId.isEmpty) {
-      throw const AppUserError('No se pudo vincular al sitio existente.');
-    }
+    try {
+      final raw = await _client.rpc(
+        'attach_save_to_existing_site',
+        params: {
+          'p_existing_site_id': existingSiteId,
+          'p_source_url': sourceUrl,
+          'p_source_network': sourceNetwork,
+          'p_notes': notes,
+        },
+      );
+      final saveId = raw?.toString();
+      if (saveId == null || saveId.isEmpty) {
+        throw const AppUserError('No se pudo vincular al sitio existente.');
+      }
 
-    return _readUserSave(saveId);
+      return _readUserSave(saveId);
+    } on PostgrestException catch (e) {
+      final msg = e.message.toLowerCase();
+      if (msg.contains('existing site must be public')) {
+        throw const AppUserError(
+          'Solo puedes vincular a un sitio público del catálogo.',
+        );
+      }
+      if (msg.contains('not authenticated')) {
+        throw const AppUserError('Debes iniciar sesión para guardar.');
+      }
+      rethrow;
+    }
   }
 
   Future<UserSave> createSave(SaveDraftInput input) async {

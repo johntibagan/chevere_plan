@@ -44,8 +44,8 @@ import '../domain/category_suggester.dart';
 import '../domain/save_policies.dart';
 import 'category_picker_sheet.dart';
 import 'location_picker_page.dart';
+import 'open_site_detail.dart';
 import 'same_site_picker_page.dart';
-import 'site_review_editor_page.dart';
 import 'site_status_l10n.dart';
 import 'social_link_preview_card.dart';
 
@@ -116,6 +116,8 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
   bool _addingSocial = false;
   TabController? _locationTabCtrl;
   bool _cameraBusy = false;
+  Timer? _dupeCheckTimer;
+  List<PossibleDuplicate> _possibleDupes = const [];
   /// true = pegar enlace Google Maps; false = mapa interactivo.
   final Set<_SaveExtra> _openExtras = {};
   final List<_PendingPhoto> _pendingPhotos = [];
@@ -160,6 +162,57 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
     final loc = ref.read(deviceLocationProvider);
     await loc.access(request: false);
     await loc.lastKnown();
+  }
+
+  bool _shouldPrefetchDuplicates() {
+    if (!_isPhysical) return false;
+    final lat = _lat;
+    final lng = _lng;
+    final city = _selectedCity?.name;
+    if ((lat == null || lng == null) &&
+        (city == null || city.trim().isEmpty)) {
+      return false;
+    }
+    final creating = _editSaveId == null && _editSiteId == null;
+    if (creating) return true;
+    return _isPublic && _hasFormLocation;
+  }
+
+  void _schedulePossibleDuplicateCheck() {
+    _dupeCheckTimer?.cancel();
+    _dupeCheckTimer = Timer(const Duration(milliseconds: 450), () {
+      unawaited(_refreshPossibleDuplicates());
+    });
+  }
+
+  Future<void> _refreshPossibleDuplicates() async {
+    if (!_shouldPrefetchDuplicates()) {
+      if (_possibleDupes.isNotEmpty && mounted) {
+        setState(() => _possibleDupes = const []);
+      }
+      return;
+    }
+    final name = _nameCtrl.text.trim();
+    if (name.isEmpty) {
+      if (_possibleDupes.isNotEmpty && mounted) {
+        setState(() => _possibleDupes = const []);
+      }
+      return;
+    }
+    try {
+      final dupes = await widget.savesRepository.findPossibleDuplicates(
+        name: name,
+        city: _selectedCity?.name,
+        latitude: _lat,
+        longitude: _lng,
+        excludeSiteId: _editSiteId,
+        googlePlaceId: _googlePlaceId,
+      );
+      if (!mounted) return;
+      setState(() => _possibleDupes = dupes);
+    } catch (_) {
+      if (mounted) setState(() => _possibleDupes = const []);
+    }
   }
 
   void _bindGeo({
@@ -430,9 +483,11 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
           _openExtras.addAll(_SaveExtra.values);
           _loadingCats = false;
         });
+        _schedulePossibleDuplicateCheck();
       } else {
         // Pintar form al toque (categorías listas). Social/Maps no bloquean.
         if (mounted) setState(() => _loadingCats = false);
+        _schedulePossibleDuplicateCheck();
         final social = _socialCtrl.text.trim();
         if (social.isNotEmpty) {
           _socialCtrl.clear();
@@ -456,6 +511,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
 
   @override
   void dispose() {
+    _dupeCheckTimer?.cancel();
     _locationTabCtrl?.dispose();
     _nameCtrl.dispose();
     _mapsCtrl.dispose();
@@ -498,7 +554,10 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
       }
       _openNameSectionIfNeeded(name: name);
     });
-    if (!_isEditing) _maybeSuggestCategories(force: true);
+    if (!_isEditing) {
+      _maybeSuggestCategories(force: true);
+      _schedulePossibleDuplicateCheck();
+    }
   }
 
   String? _nameFromGeoPlace(GeoPlace? place) {
@@ -889,22 +948,12 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
       final chosen = await _askDuplicate(dupes, allowCreateAnyway: false);
       if (chosen == null || !mounted) return false;
       if (chosen.action == SameSiteAction.saveAnyway) return false;
-      final siteId = chosen.siteId;
-      if (siteId == null) return false;
-      PossibleDuplicate match = dupes.first;
-      for (final d in dupes) {
-        if (d.siteId == siteId) {
-          match = d;
-          break;
-        }
+      if (chosen.action == SameSiteAction.addFavorite ||
+          chosen.action == SameSiteAction.reviewPublic ||
+          chosen.action == SameSiteAction.journalPrivate) {
+        return _applyDuplicateAction(chosen);
       }
-
-      final ok = await _linkExistingAndOpenReview(
-        existingSiteId: siteId,
-        displayName: name == 'Sin nombre' ? match.siteName : name,
-        reviewIsPublic: chosen.action == SameSiteAction.reviewPublic,
-      );
-      return ok;
+      return false;
     } catch (e) {
       if (mounted) {
         AppToast.error(context, e, logContext: 'dupe_soft_check');
@@ -913,140 +962,87 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
     }
   }
 
-  /// Vincular a sitio público existente y abrir reseña.
-  /// `true` si vinculó OK; `false` si falló o canceló internamente.
-  Future<bool> _linkExistingAndOpenReview({
-    required String existingSiteId,
-    required String displayName,
-    required bool reviewIsPublic,
-  }) async {
-    setState(() => _saving = true);
-    try {
-      var categoryIds = _resolvedCategoryIds();
-      if (categoryIds.isEmpty) {
-        setState(() => _saving = false);
-        if (!mounted) return false;
-        AppToast.show(
-          context,
-          'No hay categorías en la base. Aplica el seed / reseed de categorías.',
-          error: true,
+  Future<List<File>> _duplicateSeedPhotos() async {
+    final seed = <File>[];
+    for (final ph in _pendingPhotos) {
+      try {
+        final tmp = File(
+          '${Directory.systemTemp.path}/chevere_seed_${_photoUuid.v4()}.${ph.ext}',
         );
-        return false;
-      }
-      if (_selectedCategoryIds.isEmpty) {
-        setState(() {
-          _selectedCategoryIds.addAll(categoryIds);
-          _categoryWasAutoSuggested = true;
-        });
-        categoryIds = _resolvedCategoryIds();
-      }
+        await tmp.writeAsBytes(ph.bytes, flush: true);
+        seed.add(tmp);
+      } catch (_) {}
+    }
+    return seed;
+  }
 
-      final primaryLink =
-          _socialLinks.isNotEmpty ? _socialLinks.first : null;
-      final mapsUrl = _mapsCtrl.text.trim();
-      final sourceUrl = primaryLink?.url ??
-          (GoogleMapsLinkImporter.looksLikeMapsUrl(mapsUrl) ? mapsUrl : null);
-      final sourceNetwork = primaryLink?.network ??
-          (GoogleMapsLinkImporter.looksLikeMapsUrl(mapsUrl)
-              ? 'google_maps'
-              : null);
-      final onlyDefault = categoryIds.every((id) {
-        final cat = _categories.where((c) => c.id == id);
-        if (cat.isEmpty) return false;
-        final c = cat.first;
-        return c.slug == CategorySuggester.defaultChildSlug ||
-            c.slug == CategorySuggester.defaultParentSlug;
-      });
-      final categoryIsExplicit =
-          _categoriesUserTouched && !onlyDefault;
-
-      final input = SaveDraftInput(
-        name: displayName,
-        sourceUrl: sourceUrl,
-        sourceNetwork: sourceNetwork,
-        city: _selectedCity?.name,
-        cityId: _selectedCity?.id,
-        department: _selectedDept?.name,
-        departmentId: _selectedDept?.id,
-        addressLine: _addressCtrl.text,
-        latitude: _lat,
-        longitude: _lng,
-        categoryIds: categoryIds,
-        isPublic: true,
-        isPhysicalPlace: _isPhysical,
-        googlePlaceId: _googlePlaceId,
-        useExactPin: _useExactPin,
-        linkToExistingSiteId: existingSiteId,
-        categoryIsExplicit: categoryIsExplicit,
-      );
-
-      final UserSave saved;
+  /// Descarta el guardado en curso y abre la ficha con la acción elegida.
+  Future<bool> _applyDuplicateAction(SameSitePick chosen) async {
+    final siteId = chosen.siteId;
+    if (siteId == null) return false;
+    try {
       final editSaveId = _editSaveId;
       if (editSaveId != null) {
-        saved = await widget.savesRepository.linkSaveToExistingSite(
-          saveId: editSaveId,
-          existingSiteId: existingSiteId,
-          input: input,
-        );
-      } else {
-        saved = await widget.savesRepository.createSave(input);
-      }
-
-      if (!mounted) return false;
-      ref.invalidate(mySavesProvider);
-      ref.invalidate(homeNearbyProvider);
-      final uid = ref.read(supabaseClientProvider).auth.currentUser?.id;
-      if (uid != null) {
-        unawaited(
-          ref
-              .read(entityCacheStoreProvider)
-              .invalidate(CacheKeys.mySavesSummary(uid)),
-        );
-        unawaited(
-          ref
-              .read(entityCacheStoreProvider)
-              .invalidate(CacheKeys.homeNearby(uid)),
-        );
-      }
-      unawaited(
-        invalidateSearchResultCaches(ref.read(entityCacheStoreProvider)),
-      );
-      unawaited(
-        ref
-            .read(entityCacheStoreProvider)
-            .invalidate(CacheKeys.siteFicha(saved.siteId)),
-      );
-      ref.invalidate(siteFichaProvider(saved.siteId));
-
-      setState(() => _saving = false);
-      final seed = <File>[];
-      for (final ph in _pendingPhotos) {
-        try {
-          final tmp = File(
-            '${Directory.systemTemp.path}/chevere_seed_${_photoUuid.v4()}.${ph.ext}',
+        await widget.savesRepository.discardSave(editSaveId);
+        ref.invalidate(mySavesProvider);
+        final uid = ref.read(supabaseClientProvider).auth.currentUser?.id;
+        if (uid != null) {
+          unawaited(
+            ref
+                .read(entityCacheStoreProvider)
+                .invalidate(CacheKeys.mySavesSummary(uid)),
           );
-          await tmp.writeAsBytes(ph.bytes, flush: true);
-          seed.add(tmp);
-        } catch (_) {}
+        }
       }
-      await Navigator.of(context).push<bool>(
-        MaterialPageRoute(
-          builder: (_) => SiteReviewEditorPage(
-            siteId: saved.siteId,
-            siteName: displayName,
-            seedPhotos: seed,
-            siteIsPublic: true,
-            initialIsPublic: reviewIsPublic,
-          ),
-        ),
-      );
-      if (!mounted) return true;
-      Navigator.pop(context, saved);
-      return true;
-    } catch (e) {
+
+      final seed = await _duplicateSeedPhotos();
       if (!mounted) return false;
-      setState(() => _saving = false);
-      AppToast.error(context, e, logContext: 'link_and_review');
+
+      if (chosen.action == SameSiteAction.addFavorite) {
+        final favs = ref.read(favoriteSiteIdsProvider).valueOrNull ?? {};
+        if (!favs.contains(siteId)) {
+          await ref.read(favoriteSiteIdsProvider.notifier).toggle(siteId);
+        }
+      }
+
+      if (!mounted) return false;
+      final nav = Navigator.of(context);
+      final launch = switch (chosen.action) {
+        SameSiteAction.reviewPublic => SiteDetailLaunchConfig(
+            initialTabIndex: 1,
+            openReviewEditor: true,
+            reviewInitialIsPublic: true,
+            reviewSeedPhotos: seed,
+          ),
+        SameSiteAction.journalPrivate => SiteDetailLaunchConfig(
+            initialTabIndex: 1,
+            openReviewEditor: true,
+            reviewInitialIsPublic: false,
+            reviewSeedPhotos: seed,
+          ),
+        SameSiteAction.addFavorite => const SiteDetailLaunchConfig(
+            initialTabIndex: 0,
+          ),
+        _ => const SiteDetailLaunchConfig(),
+      };
+
+      nav.pop();
+      await openSiteDetail(
+        context,
+        siteId: siteId,
+        launch: launch,
+        navigator: nav,
+      );
+      return true;
+    } catch (e, st) {
+      if (!mounted) return false;
+      ClientDebugLog.reportAsync(
+        context: 'dupe_apply_action',
+        error: e,
+        stackTrace: st,
+        client: ref.read(supabaseClientProvider),
+      );
+      AppToast.show(context, context.l10n.errorProblemToast, error: true);
       return false;
     }
   }
@@ -1374,8 +1370,6 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
             (_selectedCity?.name.trim().isNotEmpty ?? false)) &&
         ((editSaveId == null && editSiteId == null) || wantPublic);
 
-    String? linkToExisting;
-    var pendingReviewIsPublic = false;
     if (shouldCheckDuplicates) {
       try {
         final dupes = await widget.savesRepository.findPossibleDuplicates(
@@ -1391,13 +1385,12 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
             dupes,
             allowCreateAnyway: true,
           );
-          if (chosen == null) return; // seguir con el mío
-          if (chosen.action != SameSiteAction.saveAnyway) {
-            final siteId = chosen.siteId;
-            if (siteId == null) return;
-            linkToExisting = siteId;
-            pendingReviewIsPublic =
-                chosen.action == SameSiteAction.reviewPublic;
+          if (chosen == null) return;
+          if (chosen.action == SameSiteAction.addFavorite ||
+              chosen.action == SameSiteAction.reviewPublic ||
+              chosen.action == SameSiteAction.journalPrivate) {
+            await _applyDuplicateAction(chosen);
+            return;
           }
         }
       } catch (e) {
@@ -1413,20 +1406,9 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
     try {
       String resultSiteId;
       UserSave? saved;
-      final linkedToExisting = linkToExisting != null;
       var status = widget.savesRepository.computeStatus(input);
 
-      if (editSaveId != null &&
-          editSiteId != null &&
-          linkToExisting != null) {
-        saved = await widget.savesRepository.linkSaveToExistingSite(
-          saveId: editSaveId,
-          existingSiteId: linkToExisting,
-          input: input,
-        );
-        resultSiteId = saved.siteId;
-        status = saved.status;
-      } else if (editSaveId != null && editSiteId != null) {
+      if (editSaveId != null && editSiteId != null) {
         saved = await widget.savesRepository.updateSave(
           saveId: editSaveId,
           siteId: editSiteId,
@@ -1435,32 +1417,6 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
         resultSiteId = saved.siteId;
         status = saved.status;
       } else if (editSiteId != null) {
-        // Staff/creador sin save: no se puede "vincular" a otro; solo editar.
-        if (linkToExisting != null) {
-          if (!mounted) return;
-          setState(() => _saving = false);
-          await showDialog<void>(
-            context: context,
-            builder: (context) => AlertDialog(
-              backgroundColor: AppColors.surface,
-              title: Text(
-                context.l10n.sameSiteTitle,
-                style: TextStyle(color: AppColors.foreground),
-              ),
-              content: Text(
-                context.l10n.sameSiteStaffHint,
-                style: TextStyle(color: AppColors.muted),
-              ),
-              actions: [
-                FilledButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: Text(context.l10n.actionDone),
-                ),
-              ],
-            ),
-          );
-          return;
-        }
         await widget.savesRepository.updateSiteWithoutSave(
           siteId: editSiteId,
           input: input,
@@ -1485,7 +1441,6 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
             isPhysicalPlace: _isPhysical,
             googlePlaceId: _googlePlaceId,
             useExactPin: _useExactPin,
-            linkToExistingSiteId: linkToExisting,
             categoryIsExplicit: categoryIsExplicit,
           ),
         );
@@ -1508,7 +1463,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
         } catch (_) {}
       }
 
-      if (_pendingPhotos.isNotEmpty && !linkedToExisting) {
+      if (_pendingPhotos.isNotEmpty) {
         var photoFail = false;
         var knownCount = _existingPhotos.isNotEmpty
             ? _existingPhotos.length
@@ -1541,31 +1496,28 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
         }
       }
 
-      // Vincular = no mutar ficha del sitio público (solo contributor + reseña).
-      if (!linkedToExisting) {
-        try {
-          final linksToSave = List<SocialLinkDraft>.from(_socialLinks);
-          if (GoogleMapsLinkImporter.looksLikeMapsUrl(mapsUrl) &&
-              linksToSave.every((l) => l.url != mapsUrl)) {
-            linksToSave.add(
-              SocialLinkDraft(url: mapsUrl, network: 'google_maps'),
-            );
-          }
-          await widget.savesRepository.replaceSocialLinks(
-            siteId: resultSiteId,
-            links: linksToSave,
-          );
-        } catch (e, st) {
-          ClientDebugLog.reportAsync(
-            context: 'save_social_links',
-            error: e,
-            stackTrace: st,
-            client: ref.read(supabaseClientProvider),
+      try {
+        final linksToSave = List<SocialLinkDraft>.from(_socialLinks);
+        if (GoogleMapsLinkImporter.looksLikeMapsUrl(mapsUrl) &&
+            linksToSave.every((l) => l.url != mapsUrl)) {
+          linksToSave.add(
+            SocialLinkDraft(url: mapsUrl, network: 'google_maps'),
           );
         }
+        await widget.savesRepository.replaceSocialLinks(
+          siteId: resultSiteId,
+          links: linksToSave,
+        );
+      } catch (e, st) {
+        ClientDebugLog.reportAsync(
+          context: 'save_social_links',
+          error: e,
+          stackTrace: st,
+          client: ref.read(supabaseClientProvider),
+        );
       }
 
-      if (saved != null && !linkedToExisting) {
+      if (saved != null) {
         try {
           if (saved.status == SiteStatus.complete) {
             await ref.read(draftReminderServiceProvider).cancelForSave(saved.id);
@@ -1624,64 +1576,39 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
       final l10n = context.l10n;
       final isPublicResult = saved?.isPublic ??
           (input.isPhysicalPlace && input.isPublic && _hasFormLocation);
-      if (linkedToExisting) {
-        setState(() => _saving = false);
-        final seed = <File>[];
-        for (final ph in _pendingPhotos) {
-          try {
-            final tmp = File(
-              '${Directory.systemTemp.path}/chevere_seed_${_photoUuid.v4()}.${ph.ext}',
-            );
-            await tmp.writeAsBytes(ph.bytes, flush: true);
-            seed.add(tmp);
-          } catch (_) {}
-        }
-        await Navigator.of(context).push<bool>(
-          MaterialPageRoute(
-            builder: (_) => SiteReviewEditorPage(
-              siteId: resultSiteId,
-              siteName: name,
-              seedPhotos: seed,
-              siteIsPublic: true,
-              initialIsPublic: pendingReviewIsPublic,
-            ),
+      await showDialog<void>(
+        context: context,
+        builder: (context) => AlertDialog(
+          backgroundColor: AppColors.surface,
+          title: Text(
+            _isEditing
+                ? l10n.saveSuccessTitleUpdate
+                : l10n.saveSuccessTitleCreate,
+            style: TextStyle(color: AppColors.foreground),
           ),
-        );
-      } else {
-        await showDialog<void>(
-          context: context,
-          builder: (context) => AlertDialog(
-            backgroundColor: AppColors.surface,
-            title: Text(
-              _isEditing
-                  ? l10n.saveSuccessTitleUpdate
-                  : l10n.saveSuccessTitleCreate,
-              style: TextStyle(color: AppColors.foreground),
-            ),
-            content: Text(
-              [
-                if (_isStaffSiteEdit)
-                  l10n.saveSuccessStaffBody
-                else if (status == SiteStatus.complete)
-                  l10n.saveSuccessCompleteBody
-                else if (_isPhysical && (lat == null || lng == null))
-                  l10n.saveNeedsMapPoint
-                else
-                  l10n.saveStatusAfterSave(status.label(l10n)),
-                if (!_isStaffSiteEdit && !isPublicResult)
-                  l10n.saveSuccessPrivateSuffix,
-              ].join(),
-              style: TextStyle(color: AppColors.muted),
-            ),
-            actions: [
-              FilledButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text(l10n.actionDone),
-              ),
-            ],
+          content: Text(
+            [
+              if (_isStaffSiteEdit)
+                l10n.saveSuccessStaffBody
+              else if (status == SiteStatus.complete)
+                l10n.saveSuccessCompleteBody
+              else if (_isPhysical && (lat == null || lng == null))
+                l10n.saveNeedsMapPoint
+              else
+                l10n.saveStatusAfterSave(status.label(l10n)),
+              if (!_isStaffSiteEdit && !isPublicResult)
+                l10n.saveSuccessPrivateSuffix,
+            ].join(),
+            style: TextStyle(color: AppColors.muted),
           ),
-        );
-      }
+          actions: [
+            FilledButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(l10n.actionDone),
+            ),
+          ],
+        ),
+      );
       if (!mounted) return;
       Navigator.pop(context, saved ?? resultSiteId);
     } catch (e, st) {
@@ -2061,7 +1988,10 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
             hint: l10n.savePlaceName,
           ),
           textCapitalization: TextCapitalization.words,
-          onChanged: (_) => setState(() {}),
+          onChanged: (_) {
+            setState(() {});
+            _schedulePossibleDuplicateCheck();
+          },
           onEditingComplete: () {
             _maybeSuggestCategories();
             FocusScope.of(context).unfocus();
@@ -2079,10 +2009,13 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
                 info: l10n.saveInfoPhysical,
                 switchKey: WidgetKeys.savePhysicalSwitch,
                 value: _isPhysical,
-                onChanged: (v) => setState(() {
-                  _isPhysical = v;
-                  if (!v) _isPublic = false;
-                }),
+                onChanged: (v) {
+                  setState(() {
+                    _isPhysical = v;
+                    if (!v) _isPublic = false;
+                  });
+                  _schedulePossibleDuplicateCheck();
+                },
               ),
             ),
             Container(
@@ -2102,7 +2035,10 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
                   switchKey: WidgetKeys.savePublicSwitch,
                   value: isPublicOn,
                   onChanged: canPublish
-                      ? (v) => setState(() => _isPublic = v)
+                      ? (v) {
+                          setState(() => _isPublic = v);
+                          _schedulePossibleDuplicateCheck();
+                        }
                       : null,
                 ),
               ),
@@ -2466,6 +2402,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final nameOk = _nameCtrl.text.trim().isNotEmpty;
+    final dupeWarning = _possibleDupes.isNotEmpty;
     return Scaffold(
       key: WidgetKeys.savePlacePage,
       appBar: AppBar(
@@ -2501,6 +2438,10 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
                         onPressed: (_saving || !nameOk) ? null : _submit,
                         style: FilledButton.styleFrom(
                           minimumSize: const Size.fromHeight(52),
+                          backgroundColor:
+                              dupeWarning ? AppColors.warning : null,
+                          foregroundColor:
+                              dupeWarning ? AppColors.onWarning : null,
                         ),
                         child: _saving
                             ? SizedBox(

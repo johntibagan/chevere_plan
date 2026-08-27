@@ -744,9 +744,25 @@ $function$;
 drop function if exists public.find_possible_duplicate_sites(
   text, double precision, double precision, text, double precision, uuid
 );
+drop function if exists public.find_possible_duplicate_sites(
+  text, double precision, double precision, text, double precision, uuid, text
+);
 
 CREATE OR REPLACE FUNCTION public.find_possible_duplicate_sites(p_name text, p_lat double precision DEFAULT NULL::double precision, p_lng double precision DEFAULT NULL::double precision, p_city text DEFAULT NULL::text, p_radius_m double precision DEFAULT 250, p_exclude_site_id uuid DEFAULT NULL::uuid, p_google_place_id text DEFAULT NULL::text)
- RETURNS TABLE(site_id uuid, site_name text, city text, distance_m double precision, name_score real, contributor_count bigint)
+ RETURNS TABLE(
+   site_id uuid,
+   site_name text,
+   city text,
+   department text,
+   address_line text,
+   distance_m double precision,
+   name_score real,
+   contributor_count bigint,
+   is_public boolean,
+   is_own boolean,
+   is_catalog boolean,
+   is_linked boolean
+ )
  LANGUAGE sql
  STABLE
  SET search_path TO 'public'
@@ -755,6 +771,8 @@ AS $function$
     s.id,
     s.name,
     s.city,
+    s.department,
+    s.address_line,
     case
       when p_lat is not null and p_lng is not null and s.location is not null then
         st_distance(
@@ -772,13 +790,31 @@ AS $function$
     end as score,
     (
       select count(*) from public.site_contributors sc where sc.site_id = s.id
-    ) + 1
+    ) + 1,
+    s.is_public,
+    exists (
+      select 1 from public.user_saves us
+      where us.site_id = s.id
+        and us.user_id = auth.uid()
+        and us.status = 'complete'
+    ),
+    (s.external_id is not null and length(trim(s.external_id)) > 0),
+    exists (
+      select 1 from public.user_saves us
+      where us.site_id = s.id
+        and us.user_id = auth.uid()
+        and us.is_possible_duplicate = true
+    )
   from public.sites s
   where s.is_physical_place = true
     and (p_exclude_site_id is null or s.id <> p_exclude_site_id)
     and (
       (s.is_public = true and s.status = 'complete')
-      or s.created_by = auth.uid()
+      or (
+        s.created_by = auth.uid()
+        and s.status = 'complete'
+        and s.location is not null
+      )
     )
     and (
       -- Mismo Place ID de Google.

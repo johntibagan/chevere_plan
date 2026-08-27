@@ -107,6 +107,9 @@ enum SameSiteAction {
 
   /// Guardar de todas formas (crear sitio propio). Solo en botón Guardar.
   saveAnyway,
+
+  /// Favorito: no guardar; marcar sitio y abrir ficha.
+  addFavorite,
 }
 
 /// Resultado del picker: acción + sitio elegido (si vincula).

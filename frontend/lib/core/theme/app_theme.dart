@@ -27,6 +27,8 @@ class AppColors {
   static Color get onPrimary => _palette.onPrimary;
   static Color get accent => _palette.accent;
   static Color get success => _palette.success;
+  static Color get warning => _palette.warning;
+  static Color get onWarning => _palette.onWarning;
   static Color get purple => _palette.purple;
   static Color get requiredMark => _palette.requiredMark;
   static Color get scrim => _palette.scrim;

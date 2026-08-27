@@ -1,0 +1,30 @@
+---
+description: UI responsiva — layouts y tarjetas según ancho de pantalla
+alwaysApply: true
+---
+
+# UI — responsiva (ancho de pantalla)
+
+Toda la UI de Flutter en Chevere Plan debe **adaptarse al ancho** del dispositivo (y al safe area). No quemar tamaños que solo se ven bien en un Motorola concreto.
+
+## Tarjetas de sitio (grilla)
+
+- Grilla: portada ≈ **60%** de la altura (`flex: 6`) y textos ≈ **40%** (`flex: 4`).
+- Lista: altura de fila **100** (`SiteCardListMetrics`, presupuesto: origen 28 + textos 1 línea 48 + meta 12 + pads). Miniatura ≈ **98%** (1 px arriba/abajo). El corazón en modo icono es **28×28** (no el IconButton de 40+).
+- **CTA / filas extra** (p. ej. Ver ficha + Usar como en anti-dupe): pie **fijo y compacto**. Textos siguen ≈40% de la **celda**; la portada = resto (≈60% menos altura de los CTA). No meter botones dentro del bloque de textos. La altura total de la celda **no** cambia.
+
+## Obligatorio (resto)
+
+- Grillas: `LayoutBuilder` / `MediaQuery` cuando el layout dependa del ancho; ratios compartidos en `FeedLayout` / `SiteCardGridMetrics`.
+- Sheets / drawers: anchos relativos y `viewInsets` para teclado.
+- Ante layouts densos (grid 3/4): tipografía/padding, no recortar a ciegas.
+
+## Prohibido
+
+- Bajar el `childAspectRatio` “para que se vea más foto” (eso hace la **tarjeta** más alta).
+- Asumir un ancho de pantalla fijo.
+- Dos layouts copiados con números distintos a mano.
+
+## Al dudar
+
+Preguntá al dueño. No inventes un tamaño nuevo de card.

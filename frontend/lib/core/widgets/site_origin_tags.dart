@@ -3,21 +3,29 @@ import 'package:flutter/material.dart';
 import '../l10n/context_l10n.dart';
 import '../testing/widget_keys.dart';
 import '../theme/app_theme.dart';
+import 'visibility_badge.dart';
 
-/// Tuyo / Vinculado / Catálogo — etiquetas distintas de la visibilidad (color).
+/// Tuyo / Catálogo / Público / Vinculado — etiquetas distintas de la franja de color.
+///
+/// «Público» aquí es **origen** (listado comunitario), no el color de visibilidad:
+/// se muestra si el sitio es público y no es tuyo ni de catálogo.
 class SiteOriginTags extends StatelessWidget {
   const SiteOriginTags({
     super.key,
     required this.isOwn,
     required this.isLinked,
     required this.isCatalog,
+    this.isPublic = false,
   });
 
   final bool isOwn;
   final bool isLinked;
   final bool isCatalog;
+  final bool isPublic;
 
-  bool get hasAny => isOwn || isLinked || isCatalog;
+  bool get _showPublicOrigin => isPublic && !isOwn && !isCatalog;
+
+  bool get hasAny => isOwn || isLinked || isCatalog || _showPublicOrigin;
 
   @override
   Widget build(BuildContext context) {
@@ -58,6 +66,55 @@ class SiteOriginTags extends StatelessWidget {
               color: AppColors.muted,
             ),
           ),
+        if (_showPublicOrigin)
+          Text(
+            l10n.labelPublic,
+            key: WidgetKeys.siteOriginPublic,
+            style: TextStyle(
+              fontSize: 9,
+              fontWeight: FontWeight.w800,
+              color: AppColors.success,
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+/// Fila estándar de tarjeta de sitio: icono público/privado + origen.
+class SiteCardOriginRow extends StatelessWidget {
+  const SiteCardOriginRow({
+    super.key,
+    required this.isPublic,
+    required this.isOwn,
+    required this.isLinked,
+    required this.isCatalog,
+    this.trailing,
+  });
+
+  final bool isPublic;
+  final bool isOwn;
+  final bool isLinked;
+  final bool isCatalog;
+  final Widget? trailing;
+
+  @override
+  Widget build(BuildContext context) {
+    final origin = SiteOriginTags(
+      isOwn: isOwn,
+      isLinked: isLinked,
+      isCatalog: isCatalog,
+      isPublic: isPublic,
+    );
+    return Row(
+      children: [
+        VisibilityBadge(isPublic: isPublic, compact: true),
+        if (origin.hasAny) ...[
+          SizedBox(width: 6),
+          Expanded(child: origin),
+        ] else
+          const Spacer(),
+        if (trailing != null) trailing!,
       ],
     );
   }

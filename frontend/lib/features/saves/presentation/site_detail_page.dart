@@ -47,11 +47,13 @@ class SiteDetailPage extends ConsumerStatefulWidget {
     required this.siteId,
     this.initialSave,
     this.initialHit,
+    this.launch = const SiteDetailLaunchConfig(),
   });
 
   final String siteId;
   final UserSave? initialSave;
   final SearchHit? initialHit;
+  final SiteDetailLaunchConfig launch;
 
   @override
   ConsumerState<SiteDetailPage> createState() => _SiteDetailPageState();
@@ -127,7 +129,8 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
   @override
   void initState() {
     super.initState();
-    _tabs = TabController(length: 3, vsync: this);
+    final tabIndex = widget.launch.initialTabIndex.clamp(0, 2);
+    _tabs = TabController(length: 3, vsync: this, initialIndex: tabIndex);
     _uid = ref.read(supabaseClientProvider).auth.currentUser?.id;
     if (widget.initialSave != null) {
       _ficha = SiteFicha.fromSave(widget.initialSave!);
@@ -761,6 +764,7 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
                               isOwn: ficha.isOwn,
                               isLinked: false,
                               isCatalog: ficha.isCatalogSite,
+                              isPublic: ficha.isOwn ? ficha.isPublic : true,
                             ),
                           ),
                           if (ficha.estimatedPriceAmount != null)
@@ -836,6 +840,9 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
                         isStaff: _isStaff,
                         staffRoleLabel:
                             _isStaff ? _staffRoleLabel(context) : null,
+                        autoOpenEditor: widget.launch.openReviewEditor,
+                        initialIsPublic: widget.launch.reviewInitialIsPublic,
+                        seedPhotos: widget.launch.reviewSeedPhotos,
                       ),
                       _TraceabilityTab(ficha: ficha),
                     ],

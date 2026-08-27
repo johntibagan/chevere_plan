@@ -44,7 +44,10 @@ class FavoriteHeartButton extends ConsumerWidget {
       return IconButton(
         tooltip: tooltip,
         onPressed: toggle,
+        padding: EdgeInsets.zero,
         visualDensity: VisualDensity.compact,
+        constraints: const BoxConstraints.tightFor(width: 28, height: 28),
+        iconSize: 20,
         icon: Icon(
           isFav ? Icons.favorite_rounded : Icons.favorite_border_rounded,
           color: isFav ? AppColors.accent : AppColors.muted,

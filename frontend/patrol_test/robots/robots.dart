@@ -104,6 +104,7 @@ class SavePlaceRobot {
 
   void expectDupeHardHasAnyway() {
     expect(find.byKey(WidgetKeys.dupeSaveAnyway), findsOneWidget);
+    expect(find.byKey(WidgetKeys.dupeKeepEditing), findsNothing);
   }
 }
 

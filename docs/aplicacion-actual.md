@@ -11,7 +11,7 @@ Estilo, pantallas y navegación (para Figma): [`ui-navegacion.md`](ui-navegacion
 
 Chevere Plan es una app Android para **guardar lugares** que ves en la vida o en redes, **evitar duplicados públicos**, **escribir reseñas o bitácoras**, **buscar** sitios (tuyos y públicos), **armar un plan de paradas** y **recordarte** cuando estás cerca de uno guardado.
 
-Público y privado se distinguen por **color** (verde / morado), no hace falta repetir las palabras en cada tarjeta.
+Público y privado se distinguen por **color** (verde / morado) e **icono** en cada tarjeta. Las cards de sitio (Inicio, Explorar, anti-dupe, etc.) muestran siempre el icono de visibilidad más textos de origen **Tuyo** / **Catálogo** / **Público** / **Vinculado** (`SiteCardOriginRow`). «Público» como texto de origen solo si es público y no es tuyo ni de catálogo. El **tamaño de la tarjeta** en grilla se mantiene (ratios 2/3/4); la portada ocupa ≈**60%** de la altura (textos ≈40%). Si la card lleva CTA propios (anti-dupe: Ver ficha / Usar como), van en un pie compacto: los textos siguen ≈40% de la celda y la portada cede esa altura. En lista la fila mide **100** (`SiteCardListMetrics`: cabe origen, nombre 1 línea, depto–ciudad, dirección y meta); miniatura ≈**98%** (1 px arriba/abajo). Sin agrandar la card de grilla para “más foto”.
 
 ---
 
@@ -110,13 +110,11 @@ flowchart TD
 
 La app no quiere dos fichas públicas del mismo parque a 80 metros.
 
-- Busca públicos **y tus propios** (aunque sean privados): mismo Place ID, pin cercano (~250 m), nombre parecido hasta 2,5 km, o misma ciudad + nombre.
+- Busca sitios **públicos completos** y **tus privados completos** (con pin): mismo Place ID, pin cercano (~250 m), nombre parecido hasta 2,5 km, o misma ciudad + nombre. **No** entran borradores propios (sin ubicación / incompletos).
 - Tras un **reset completo** el catálogo masivo vuelve: si el pin/nombre coincide, **sí hay un sitio real** (no es caché fantasma). Abrir la fila debe mostrar esa ficha; **Guardar de todas formas** crea el tuyo aunque el aviso siga saliendo.
-- **Aviso suave** al pegar Maps o elegir pin: ves **la lista** de sitios parecidos. Tocás la fila para **abrir la ficha** (igual que en Explorar). El círculo marca cuál usar (reseña o bitácora) o seguís con el tuyo. **No** aparece “guardar de todas formas”.
-- **Al Guardar**: la misma lista, más **crear el tuyo público igual** (“de todas formas”).
-- Vincular:
-  - **Reseña visible** en el sitio público (o)
-  - **Bitácora privada** (solo vos)
+- **Aviso suave** al pegar Maps o elegir pin: grilla 2×2 (mismo estándar de tarjeta: portada, franja de visibilidad, icono público/privado, Tuyo/Catálogo/Público/Vinculado, nombre, depto–ciudad, dirección). **Ver ficha** como enlace de texto; **Usar como** azul; seleccionado: fondo surface + borde foreground (tema claro/oscuro). Al usarlo: **Reseña pública** (solo si el sitio es público), **Reseña privada** o **Agregar a favoritos**; info con Tooltip; al **Confirmar** se descarta el guardado y navega a la ficha. Abajo **Seguir con el mío**.
+- **Al Guardar**: misma grilla; abajo **Guardar de todas formas** (Tooltip aparte). Botón **Guardar** amarillo si hay coincidencias.
+- Reseña pública solo en sitios públicos; reseña privada y favoritos en cualquiera de la lista.
 - El sitio de catálogo masivo (`external_id`) **no se vuelve privado**.
 
 Staff/admin **no** ve bitácoras ajenas privadas.

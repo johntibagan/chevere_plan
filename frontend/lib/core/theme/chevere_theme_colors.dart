@@ -18,6 +18,8 @@ class ChevereThemeColors extends ThemeExtension<ChevereThemeColors> {
     required this.onPrimary,
     required this.accent,
     required this.success,
+    required this.warning,
+    required this.onWarning,
     required this.purple,
     required this.requiredMark,
     required this.scrim,
@@ -58,6 +60,8 @@ class ChevereThemeColors extends ThemeExtension<ChevereThemeColors> {
   final Color onPrimary;
   final Color accent;
   final Color success;
+  final Color warning;
+  final Color onWarning;
   final Color purple;
   final Color requiredMark;
   final Color scrim;
@@ -98,6 +102,8 @@ class ChevereThemeColors extends ThemeExtension<ChevereThemeColors> {
     onPrimary: Color(0xFF0B0D15),
     accent: Color(0xFFFF5252),
     success: Color(0xFF00D68F),
+    warning: Color(0xFFFBBF24),
+    onWarning: Color(0xFF1A1400),
     purple: Color(0xFF8B7FFF),
     requiredMark: Color(0xFFFF8C00),
     scrim: Color(0x8A000000),
@@ -139,6 +145,8 @@ class ChevereThemeColors extends ThemeExtension<ChevereThemeColors> {
     onPrimary: Color(0xFFFFFFFF),
     accent: Color(0xFFE0393E),
     success: Color(0xFF00A876),
+    warning: Color(0xFFF59E0B),
+    onWarning: Color(0xFF1C1400),
     purple: Color(0xFF6C5CE7),
     requiredMark: Color(0xFFD9720A),
     scrim: Color(0x66000000),
@@ -187,6 +195,8 @@ class ChevereThemeColors extends ThemeExtension<ChevereThemeColors> {
     Color? onPrimary,
     Color? accent,
     Color? success,
+    Color? warning,
+    Color? onWarning,
     Color? purple,
     Color? requiredMark,
     Color? scrim,
@@ -227,6 +237,8 @@ class ChevereThemeColors extends ThemeExtension<ChevereThemeColors> {
       onPrimary: onPrimary ?? this.onPrimary,
       accent: accent ?? this.accent,
       success: success ?? this.success,
+      warning: warning ?? this.warning,
+      onWarning: onWarning ?? this.onWarning,
       purple: purple ?? this.purple,
       requiredMark: requiredMark ?? this.requiredMark,
       scrim: scrim ?? this.scrim,
@@ -273,6 +285,8 @@ class ChevereThemeColors extends ThemeExtension<ChevereThemeColors> {
       onPrimary: l(onPrimary, other.onPrimary),
       accent: l(accent, other.accent),
       success: l(success, other.success),
+      warning: l(warning, other.warning),
+      onWarning: l(onWarning, other.onWarning),
       purple: l(purple, other.purple),
       requiredMark: l(requiredMark, other.requiredMark),
       scrim: l(scrim, other.scrim),
