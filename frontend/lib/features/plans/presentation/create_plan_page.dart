@@ -11,6 +11,7 @@ import '../../../core/widgets/app_form_card.dart';
 import '../../../core/widgets/app_section_label.dart';
 import '../../../core/widgets/app_toast.dart';
 import '../../../core/widgets/coming_soon_page.dart';
+import '../../../core/widgets/discard_changes_scope.dart';
 import '../data/plan_builder.dart';
 import '../data/plan_models.dart';
 import '../data/plans_repository.dart';
@@ -38,28 +39,38 @@ class _CreatePlanPageState extends ConsumerState<CreatePlanPage> {
   final _budgetCtrl = TextEditingController();
   bool _includePublic = true;
   bool _saving = false;
+  final FormDirtyTracker _formDirty = FormDirtyTracker();
 
   bool get _isEdit => widget.existing != null;
 
   @override
   void initState() {
     super.initState();
-    final p = widget.existing;
-    if (p == null) return;
-    final defaultTitle = p.title.trim() == 'Plan sin título';
-    _titleCtrl.text = defaultTitle ? '' : p.title;
-    _zoneCtrl.text = p.locationQuery;
-    _includePublic = p.includePublic;
-    final budget = p.maxBudgetAmount;
-    if (budget != null) {
-      _budgetCtrl.text = budget == budget.roundToDouble()
-          ? budget.round().toString()
-          : '$budget';
+    void rebuildOnEdit() {
+      if (mounted) setState(() {});
     }
+    final p = widget.existing;
+    if (p != null) {
+      final defaultTitle = p.title.trim() == 'Plan sin título';
+      _titleCtrl.text = defaultTitle ? '' : p.title;
+      _zoneCtrl.text = p.locationQuery;
+      _includePublic = p.includePublic;
+      final budget = p.maxBudgetAmount;
+      if (budget != null) {
+        _budgetCtrl.text = budget == budget.roundToDouble()
+            ? budget.round().toString()
+            : '$budget';
+      }
+    }
+    _titleCtrl.addListener(rebuildOnEdit);
+    _zoneCtrl.addListener(rebuildOnEdit);
+    _budgetCtrl.addListener(rebuildOnEdit);
+    _formDirty.arm();
   }
 
   @override
   void dispose() {
+    _formDirty.dispose();
     _titleCtrl.dispose();
     _zoneCtrl.dispose();
     _budgetCtrl.dispose();
@@ -81,6 +92,7 @@ class _CreatePlanPageState extends ConsumerState<CreatePlanPage> {
 
   Future<void> _next() async {
     setState(() => _saving = true);
+    _formDirty.setSuppressed(true);
     try {
       final budgetRaw = _budgetCtrl.text.trim().replaceAll(',', '.');
       final budget = budgetRaw.isEmpty ? null : double.tryParse(budgetRaw);
@@ -138,6 +150,7 @@ class _CreatePlanPageState extends ConsumerState<CreatePlanPage> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _saving = false);
+      _formDirty.setSuppressed(false);
       AppToast.error(context, e, logContext: 'create_plan_draft');
     }
   }
@@ -148,99 +161,113 @@ class _CreatePlanPageState extends ConsumerState<CreatePlanPage> {
     final currencyCode =
         widget.existing?.currencyCode ?? kDefaultCurrencyCode;
 
-    return Scaffold(
-      key: WidgetKeys.createPlanPage,
-      appBar: AppBar(
-        title: Text(_isEdit ? l10n.planEditTitle : l10n.planCreateTitle),
-      ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
-        children: [
-          ComingSoonCard(
-            title: l10n.planCreateAiCta,
-            subtitle: l10n.comingSoonBadge,
-            pageTitle: l10n.comingSoonAiTitle,
-            pageBody: l10n.comingSoonAiBody,
+    return ListenableBuilder(
+      listenable: _formDirty,
+      builder: (context, _) => DiscardChangesScope(
+        hasUnsavedChanges: _formDirty.hasUnsavedChanges,
+        child: Scaffold(
+          key: WidgetKeys.createPlanPage,
+          appBar: AppBar(
+            title: Text(_isEdit ? l10n.planEditTitle : l10n.planCreateTitle),
           ),
-          SizedBox(height: 20),
-          AppSectionLabel(text: l10n.planTitleOptional, bottom: 8),
-          TextField(
-            key: WidgetKeys.createPlanTitle,
-            controller: _titleCtrl,
-            textCapitalization: TextCapitalization.sentences,
-            textInputAction: TextInputAction.next,
-            decoration: _fieldDec(
-              hint: _isEdit
-                  ? l10n.planEditTitleHint
-                  : l10n.planCreateStepTitleHint,
-            ),
-          ),
-          SizedBox(height: 16),
-          AppSectionLabel(text: l10n.planStatZone, bottom: 8),
-          TextField(
-            key: WidgetKeys.createPlanZone,
-            controller: _zoneCtrl,
-            textCapitalization: TextCapitalization.words,
-            decoration: _fieldDec(hint: l10n.planZoneHint),
-          ),
-          SizedBox(height: 16),
-          AppFormCard(
-            padding: const EdgeInsets.fromLTRB(14, 10, 8, 10),
-            child: Row(
+          body: DirtyInteractionScope(
+            tracker: _formDirty,
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
               children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                ComingSoonCard(
+                  title: l10n.planCreateAiCta,
+                  subtitle: l10n.comingSoonBadge,
+                  pageTitle: l10n.comingSoonAiTitle,
+                  pageBody: l10n.comingSoonAiBody,
+                ),
+                SizedBox(height: 20),
+                AppSectionLabel(text: l10n.planTitleOptional, bottom: 8),
+                TextField(
+                  key: WidgetKeys.createPlanTitle,
+                  controller: _titleCtrl,
+                  textCapitalization: TextCapitalization.sentences,
+                  textInputAction: TextInputAction.next,
+                  decoration: _fieldDec(
+                    hint: _isEdit
+                        ? l10n.planEditTitleHint
+                        : l10n.planCreateStepTitleHint,
+                  ),
+                ),
+                SizedBox(height: 16),
+                AppSectionLabel(text: l10n.planStatZone, bottom: 8),
+                TextField(
+                  key: WidgetKeys.createPlanZone,
+                  controller: _zoneCtrl,
+                  textCapitalization: TextCapitalization.words,
+                  decoration: _fieldDec(hint: l10n.planZoneHint),
+                ),
+                SizedBox(height: 16),
+                AppFormCard(
+                  padding: const EdgeInsets.fromLTRB(14, 10, 8, 10),
+                  child: Row(
                     children: [
-                      Text(
-                        l10n.searchIncludePublic,
-                        style: TextStyle(
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.foreground,
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              l10n.searchIncludePublic,
+                              style: TextStyle(
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.foreground,
+                              ),
+                            ),
+                            Text(
+                              l10n.planIncludePublicSubtitle,
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: AppColors.mutedDark,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      Text(
-                        l10n.planIncludePublicSubtitle,
-                        style: TextStyle(
-                          fontSize: 10,
-                          color: AppColors.mutedDark,
-                        ),
+                      Switch(
+                        key: WidgetKeys.createPlanIncludePublic,
+                        value: _includePublic,
+                        onChanged: (v) => setState(() => _includePublic = v),
                       ),
                     ],
                   ),
                 ),
-                Switch(
-                  key: WidgetKeys.createPlanIncludePublic,
-                  value: _includePublic,
-                  onChanged: (v) => setState(() => _includePublic = v),
+                SizedBox(height: 16),
+                AppSectionLabel(text: l10n.planStatBudget, bottom: 8),
+                TextField(
+                  key: WidgetKeys.createPlanBudget,
+                  controller: _budgetCtrl,
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
+                  decoration: _fieldDec(hint: l10n.searchBudgetMax).copyWith(
+                    prefixText: currencyInputPrefix(currencyCode),
+                    suffixText: currencyInputSuffix(currencyCode),
+                  ),
+                ),
+                SizedBox(height: 24),
+                FilledButton(
+                  key: WidgetKeys.createPlanNext,
+                  onPressed: _saving ? null : _next,
+                  child: _saving
+                      ? SizedBox(
+                          height: 22,
+                          width: 22,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : Text(
+                          _isEdit
+                              ? l10n.actionSave
+                              : l10n.planCreateNextStops,
+                        ),
                 ),
               ],
             ),
           ),
-          SizedBox(height: 16),
-          AppSectionLabel(text: l10n.planStatBudget, bottom: 8),
-          TextField(
-            key: WidgetKeys.createPlanBudget,
-            controller: _budgetCtrl,
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            decoration: _fieldDec(hint: l10n.searchBudgetMax).copyWith(
-              prefixText: currencyInputPrefix(currencyCode),
-              suffixText: currencyInputSuffix(currencyCode),
-            ),
-          ),
-          SizedBox(height: 24),
-          FilledButton(
-            key: WidgetKeys.createPlanNext,
-            onPressed: _saving ? null : _next,
-            child: _saving
-                ? SizedBox(
-                    height: 22,
-                    width: 22,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : Text(_isEdit ? l10n.actionSave : l10n.planCreateNextStops),
-          ),
-        ],
+        ),
       ),
     );
   }

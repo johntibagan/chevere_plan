@@ -436,6 +436,24 @@ abstract class AppLocalizations {
   /// **'Guardar'**
   String get actionSave;
 
+  /// No description provided for @discardChangesTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Descartar cambios?'**
+  String get discardChangesTitle;
+
+  /// No description provided for @discardChangesBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Se perderá lo que no hayas guardado.'**
+  String get discardChangesBody;
+
+  /// No description provided for @discardChangesStay.
+  ///
+  /// In es, this message translates to:
+  /// **'Seguir editando'**
+  String get discardChangesStay;
+
   /// No description provided for @actionRetry.
   ///
   /// In es, this message translates to:
@@ -799,13 +817,13 @@ abstract class AppLocalizations {
   /// No description provided for @homeDiscardTitle.
   ///
   /// In es, this message translates to:
-  /// **'Descartar guardado'**
+  /// **'¿Descartar guardado?'**
   String get homeDiscardTitle;
 
   /// No description provided for @homeDiscardConfirm.
   ///
   /// In es, this message translates to:
-  /// **'¿Eliminar \"{name}\" de tu lista?'**
+  /// **'Se quitará \"{name}\" de tu lista.'**
   String homeDiscardConfirm(String name);
 
   /// No description provided for @homeStaleDraftsSnack.
@@ -2293,31 +2311,31 @@ abstract class AppLocalizations {
   /// No description provided for @sameSiteDiscardConfirmTitle.
   ///
   /// In es, this message translates to:
-  /// **'¿Descartar este guardado?'**
+  /// **'¿Usar este sitio?'**
   String get sameSiteDiscardConfirmTitle;
 
   /// No description provided for @sameSiteDiscardConfirmBodyReview.
   ///
   /// In es, this message translates to:
-  /// **'Se descartará lo que estabas guardando. Irás a la ficha del sitio, pestaña Reseñas, para escribir tu reseña pública.'**
+  /// **'Se descarta tu guardado nuevo. Abrirás reseña pública en este sitio.'**
   String get sameSiteDiscardConfirmBodyReview;
 
   /// No description provided for @sameSiteDiscardConfirmBodyJournal.
   ///
   /// In es, this message translates to:
-  /// **'Se descartará lo que estabas guardando. Irás a la ficha del sitio, pestaña Reseñas, para escribir tu reseña privada.'**
+  /// **'Se descarta tu guardado nuevo. Abrirás bitácora privada en este sitio.'**
   String get sameSiteDiscardConfirmBodyJournal;
 
   /// No description provided for @sameSiteDiscardConfirmBodyFavorite.
   ///
   /// In es, this message translates to:
-  /// **'Se descartará lo que estabas guardando. El sitio quedará en favoritos y verás su ficha en Info.'**
+  /// **'Se descarta tu guardado nuevo. El sitio queda en favoritos.'**
   String get sameSiteDiscardConfirmBodyFavorite;
 
   /// No description provided for @sameSiteDiscardConfirmBodyGeneric.
   ///
   /// In es, this message translates to:
-  /// **'Se descartará lo que estabas guardando e irás al sitio elegido.'**
+  /// **'Se descarta tu guardado nuevo e irás al sitio elegido.'**
   String get sameSiteDiscardConfirmBodyGeneric;
 
   /// No description provided for @sameSiteOptionReviewPublic.
@@ -2377,13 +2395,13 @@ abstract class AppLocalizations {
   /// No description provided for @privacyBlockCatalog.
   ///
   /// In es, this message translates to:
-  /// **'Este sitio es del catálogo público y debe seguir visible para todos.'**
+  /// **'Es del catálogo público: debe seguir visible para todos.'**
   String get privacyBlockCatalog;
 
   /// No description provided for @privacyBlockOthers.
   ///
   /// In es, this message translates to:
-  /// **'Otros usuarios ya lo guardaron, aportaron o lo usan en planes. Mientras eso exista, debe seguir público.'**
+  /// **'Otros ya lo usan. Mientras exista vínculo, debe seguir público.'**
   String get privacyBlockOthers;
 
   /// No description provided for @reviewEditorTitle.
@@ -2455,7 +2473,7 @@ abstract class AppLocalizations {
   /// No description provided for @reviewDeleteBody.
   ///
   /// In es, this message translates to:
-  /// **'Se borrará esta reseña y sus fotos. No se puede deshacer.'**
+  /// **'Se borrará la reseña y sus fotos. No se puede deshacer.'**
   String get reviewDeleteBody;
 
   /// No description provided for @reviewDeleted.
@@ -2629,19 +2647,19 @@ abstract class AppLocalizations {
   /// No description provided for @photoDeleteTitle.
   ///
   /// In es, this message translates to:
-  /// **'Eliminar foto'**
+  /// **'¿Eliminar foto?'**
   String get photoDeleteTitle;
 
   /// No description provided for @photoDeleteConfirm.
   ///
   /// In es, this message translates to:
-  /// **'¿Quieres eliminar esta foto del sitio?'**
+  /// **'Se borrará del sitio. No se puede deshacer.'**
   String get photoDeleteConfirm;
 
   /// No description provided for @photoReportTitle.
   ///
   /// In es, this message translates to:
-  /// **'Reportar foto'**
+  /// **'¿Reportar foto?'**
   String get photoReportTitle;
 
   /// No description provided for @photoReportSend.
@@ -2881,13 +2899,13 @@ abstract class AppLocalizations {
   /// No description provided for @planDeleteTitle.
   ///
   /// In es, this message translates to:
-  /// **'Eliminar plan'**
+  /// **'¿Eliminar plan?'**
   String get planDeleteTitle;
 
   /// No description provided for @planDeleteConfirm.
   ///
   /// In es, this message translates to:
-  /// **'¿Eliminar este plan y sus paradas?'**
+  /// **'Se borrará el plan y sus paradas.'**
   String get planDeleteConfirm;
 
   /// No description provided for @adminActive.
@@ -3040,10 +3058,16 @@ abstract class AppLocalizations {
   /// **'No se pudo abrir Google Maps.'**
   String get siteDetailOpenMapsFail;
 
+  /// No description provided for @photoTermsTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Antes de subir la foto'**
+  String get photoTermsTitle;
+
   /// No description provided for @photoTermsBody.
   ///
   /// In es, this message translates to:
-  /// **'Al subir una foto confirmas que cumple los Términos de Uso de Chevere Plan (turismo, gastronomía y planes de ocio; sin contenido sexual, ilegal o de acoso).'**
+  /// **'La foto debe ser de turismo, gastronomía u ocio. Sin contenido sexual, ilegal o de acoso.'**
   String get photoTermsBody;
 
   /// No description provided for @photoAdded.
@@ -3073,7 +3097,7 @@ abstract class AppLocalizations {
   /// No description provided for @reviewReportTitle.
   ///
   /// In es, this message translates to:
-  /// **'Reportar reseña'**
+  /// **'¿Reportar reseña?'**
   String get reviewReportTitle;
 
   /// No description provided for @reviewReportSent.

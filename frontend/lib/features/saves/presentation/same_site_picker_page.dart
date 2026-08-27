@@ -4,6 +4,7 @@ import '../../../core/l10n/context_l10n.dart';
 import '../../../core/prefs/feed_layout.dart';
 import '../../../core/testing/widget_keys.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/app_confirm_dialog.dart';
 import '../../../core/widgets/app_form_card.dart';
 import '../../../core/widgets/site_cover.dart';
 import '../../../core/widgets/site_origin_tags.dart';
@@ -78,29 +79,20 @@ class _SameSitePickerPageState extends State<SameSitePickerPage> {
       _ => l10n.sameSiteDiscardConfirmBodyGeneric,
     };
 
-    final ok = await showDialog<bool>(
+    final ok = await showAppConfirmDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surface,
-        title: Text(
-          l10n.sameSiteDiscardConfirmTitle,
-          style: TextStyle(color: AppColors.foreground),
+      icon: Icons.link_rounded,
+      tone: AppConfirmTone.warning,
+      title: l10n.sameSiteDiscardConfirmTitle,
+      body: body,
+      actions: [
+        AppConfirmAction(label: l10n.actionCancel, value: false),
+        AppConfirmAction(
+          label: l10n.sameSiteUseConfirmSave,
+          value: true,
+          isPrimary: true,
         ),
-        content: Text(
-          body,
-          style: TextStyle(color: AppColors.muted, height: 1.35),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text(l10n.actionCancel),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text(l10n.sameSiteUseConfirmSave),
-          ),
-        ],
-      ),
+      ],
     );
     if (ok != true || !mounted) return;
     _pop(SameSitePick(action: action, siteId: match.siteId));

@@ -13,6 +13,7 @@ import '../../../core/theme/app_typography.dart';
 import '../../../core/theme/theme_rebuild.dart';
 import '../../../core/widgets/app_network_image.dart';
 import '../../../core/widgets/app_toast.dart';
+import '../../../core/widgets/discard_changes_scope.dart';
 import '../data/site_review_models.dart';
 
 /// Crear / editar reseña (comentario + estrellas + hasta 3 fotos + privacidad).
@@ -52,6 +53,7 @@ class _SiteReviewEditorPageState extends ConsumerState<SiteReviewEditorPage> {
   final Set<String> _removedExistingIds = {};
   bool _saving = false;
   bool _loadingExisting = false;
+  final FormDirtyTracker _formDirty = FormDirtyTracker();
 
   bool get _canChoosePrivacy => widget.siteIsPublic;
 
@@ -65,6 +67,9 @@ class _SiteReviewEditorPageState extends ConsumerState<SiteReviewEditorPage> {
     super.initState();
     final r = widget.initialReview;
     _body = TextEditingController(text: r?.body ?? '');
+    _body.addListener(() {
+      if (mounted) setState(() {});
+    });
     _rating = r?.rating ?? 5;
     _isPublic = widget.initialIsPublic ??
         r?.isPublic ??
@@ -76,6 +81,13 @@ class _SiteReviewEditorPageState extends ConsumerState<SiteReviewEditorPage> {
       _loadingExisting = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         unawaited(_loadExistingUrls());
+      });
+    }
+    _formDirty.arm();
+    // Semilla de fotos = ya hay contenido pendiente de guardar.
+    if (_newPhotos.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _formDirty.markDirty();
       });
     }
   }
@@ -98,6 +110,7 @@ class _SiteReviewEditorPageState extends ConsumerState<SiteReviewEditorPage> {
 
   @override
   void dispose() {
+    _formDirty.dispose();
     _body.dispose();
     super.dispose();
   }
@@ -114,10 +127,12 @@ class _SiteReviewEditorPageState extends ConsumerState<SiteReviewEditorPage> {
     );
     if (file == null) return;
     setState(() => _newPhotos.add(File(file.path)));
+    _formDirty.markDirty();
   }
 
   Future<void> _save() async {
     setState(() => _saving = true);
+    _formDirty.setSuppressed(true);
     try {
       final repo = ref.read(siteReviewsRepositoryProvider);
       for (final id in _removedExistingIds) {
@@ -136,6 +151,7 @@ class _SiteReviewEditorPageState extends ConsumerState<SiteReviewEditorPage> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _saving = false);
+      _formDirty.setSuppressed(false);
       AppToast.error(context, e, logContext: 'site_review_save');
     }
   }
@@ -176,130 +192,145 @@ class _SiteReviewEditorPageState extends ConsumerState<SiteReviewEditorPage> {
         .where((p) => !_removedExistingIds.contains(p.id))
         .toList();
 
-    return Scaffold(
-      key: WidgetKeys.reviewEditor,
-      appBar: AppBar(
-        title: Text(l10n.reviewEditorTitle),
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          Text(
-            widget.siteName,
-            style: AppTypography.tabTitle(color: AppColors.foreground),
+    return ListenableBuilder(
+      listenable: _formDirty,
+      builder: (context, _) => DiscardChangesScope(
+        hasUnsavedChanges: _formDirty.hasUnsavedChanges,
+        child: Scaffold(
+          key: WidgetKeys.reviewEditor,
+          appBar: AppBar(
+            title: Text(l10n.reviewEditorTitle),
           ),
-          SizedBox(height: 16),
-          Text(l10n.reviewRatingLabel, style: TextStyle(color: AppColors.muted)),
-          SizedBox(height: 8),
-          Row(
-            children: [
-              for (var i = 1; i <= 5; i++)
-                IconButton(
-                  key: WidgetKeys.reviewStar(i),
-                  onPressed: () => setState(() => _rating = i),
-                  icon: Icon(
-                    i <= _rating ? Icons.star : Icons.star_border,
-                    color: AppColors.primary,
+          body: DirtyInteractionScope(
+            tracker: _formDirty,
+            child: ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                Text(
+                  widget.siteName,
+                  style: AppTypography.tabTitle(color: AppColors.foreground),
+                ),
+                SizedBox(height: 16),
+                Text(
+                  l10n.reviewRatingLabel,
+                  style: TextStyle(color: AppColors.muted),
+                ),
+                SizedBox(height: 8),
+                Row(
+                  children: [
+                    for (var i = 1; i <= 5; i++)
+                      IconButton(
+                        key: WidgetKeys.reviewStar(i),
+                        onPressed: () => setState(() => _rating = i),
+                        icon: Icon(
+                          i <= _rating ? Icons.star : Icons.star_border,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                  ],
+                ),
+                SizedBox(height: 12),
+                TextField(
+                  key: WidgetKeys.reviewBody,
+                  controller: _body,
+                  maxLines: 5,
+                  maxLength: 800,
+                  decoration: InputDecoration(
+                    labelText: l10n.reviewCommentLabel,
+                    alignLabelWithHint: true,
                   ),
                 ),
-            ],
-          ),
-          SizedBox(height: 12),
-          TextField(
-            key: WidgetKeys.reviewBody,
-            controller: _body,
-            maxLines: 5,
-            maxLength: 800,
-            decoration: InputDecoration(
-              labelText: l10n.reviewCommentLabel,
-              alignLabelWithHint: true,
-            ),
-          ),
-          if (_canChoosePrivacy) ...[
-            SizedBox(height: 8),
-            SwitchListTile(
-              key: WidgetKeys.reviewPublicSwitch,
-              contentPadding: EdgeInsets.zero,
-              title: Text(
-                l10n.reviewMakePublic,
-                style: TextStyle(color: AppColors.foreground),
-              ),
-              subtitle: Text(
-                _isPublic ? l10n.reviewPublicHint : l10n.reviewPrivateHint,
-                style: TextStyle(color: AppColors.muted, fontSize: 13),
-              ),
-              value: _isPublic,
-              onChanged: (v) => setState(() => _isPublic = v),
-            ),
-          ],
-          SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            children: [
-              if (_loadingExisting)
-                const SizedBox(
-                  width: 72,
-                  height: 72,
-                  child: Center(
-                    child: SizedBox(
-                      width: 22,
-                      height: 22,
-                      child: CircularProgressIndicator(strokeWidth: 2),
+                if (_canChoosePrivacy) ...[
+                  SizedBox(height: 8),
+                  SwitchListTile(
+                    key: WidgetKeys.reviewPublicSwitch,
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(
+                      l10n.reviewMakePublic,
+                      style: TextStyle(color: AppColors.foreground),
                     ),
+                    subtitle: Text(
+                      _isPublic
+                          ? l10n.reviewPublicHint
+                          : l10n.reviewPrivateHint,
+                      style: TextStyle(color: AppColors.muted, fontSize: 13),
+                    ),
+                    value: _isPublic,
+                    onChanged: (v) => setState(() => _isPublic = v),
                   ),
-                ),
-              for (final p in keptExisting)
-                _thumbShell(
-                  onRemove: () =>
-                      setState(() => _removedExistingIds.add(p.id)),
-                  child: _existingUrls[p.id] != null
-                      ? AppNetworkImage(
-                          url: _existingUrls[p.id]!,
-                          width: 72,
-                          height: 72,
-                          cacheKey: p.storagePath,
-                        )
-                      : ColoredBox(
-                          color: AppColors.surfaceElevated,
-                          child: Icon(
-                            Icons.image_outlined,
-                            color: AppColors.muted,
+                ],
+                SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    if (_loadingExisting)
+                      const SizedBox(
+                        width: 72,
+                        height: 72,
+                        child: Center(
+                          child: SizedBox(
+                            width: 22,
+                            height: 22,
+                            child: CircularProgressIndicator(strokeWidth: 2),
                           ),
                         ),
+                      ),
+                    for (final p in keptExisting)
+                      _thumbShell(
+                        onRemove: () =>
+                            setState(() => _removedExistingIds.add(p.id)),
+                        child: _existingUrls[p.id] != null
+                            ? AppNetworkImage(
+                                url: _existingUrls[p.id]!,
+                                width: 72,
+                                height: 72,
+                                cacheKey: p.storagePath,
+                              )
+                            : ColoredBox(
+                                color: AppColors.surfaceElevated,
+                                child: Icon(
+                                  Icons.image_outlined,
+                                  color: AppColors.muted,
+                                ),
+                              ),
+                      ),
+                    for (var i = 0; i < _newPhotos.length; i++)
+                      _thumbShell(
+                        onRemove: () =>
+                            setState(() => _newPhotos.removeAt(i)),
+                        child: Image.file(
+                          _newPhotos[i],
+                          width: 72,
+                          height: 72,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                    if (_photoSlotsUsed < 3)
+                      OutlinedButton.icon(
+                        onPressed: _pickPhoto,
+                        icon: Icon(Icons.add_a_photo_outlined),
+                        label: Text(l10n.reviewAddPhoto),
+                      ),
+                  ],
                 ),
-              for (var i = 0; i < _newPhotos.length; i++)
-                _thumbShell(
-                  onRemove: () => setState(() => _newPhotos.removeAt(i)),
-                  child: Image.file(
-                    _newPhotos[i],
-                    width: 72,
-                    height: 72,
-                    fit: BoxFit.cover,
-                  ),
+                SizedBox(height: 24),
+                FilledButton(
+                  key: WidgetKeys.reviewSubmit,
+                  onPressed: _saving ? null : _save,
+                  child: _saving
+                      ? SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : Text(l10n.reviewSave),
                 ),
-              if (_photoSlotsUsed < 3)
-                OutlinedButton.icon(
-                  onPressed: _pickPhoto,
-                  icon: Icon(Icons.add_a_photo_outlined),
-                  label: Text(l10n.reviewAddPhoto),
-                ),
-            ],
+              ],
+            ),
           ),
-          SizedBox(height: 24),
-          FilledButton(
-            key: WidgetKeys.reviewSubmit,
-            onPressed: _saving ? null : _save,
-            child: _saving
-                ? SizedBox(
-                    width: 22,
-                    height: 22,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : Text(l10n.reviewSave),
-          ),
-        ],
+        ),
       ),
     );
   }

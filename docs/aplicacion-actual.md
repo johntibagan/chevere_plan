@@ -84,6 +84,7 @@ El resto va detrás de **Añadir sección**: chips `+` (**Nombre - Visibilidad**
 - Ayuda: icono **i** (tooltip al toque), no párrafos bajo cada campo.
 - Categorías: árbol de la base; al **crear**, default **Otros**; al **editar** no se pisa lo que ya tenía.
 - Sin nombre no se puede guardar (el botón queda desactivado). Sin ubicación el guardado puede quedar en borrador.
+- Al **volver** (atrás del sistema o AppBar): si hubo **cualquier toque** en el formulario (o cambio explícito), diálogo estándar **¿Descartar cambios?** (`FormDirtyTracker` + `AppConfirmDialog`). No hace falta comparar todos los campos. Igual en reseña y crear/editar plan.
 
 ### Estados del guardado
 

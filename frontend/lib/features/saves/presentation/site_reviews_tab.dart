@@ -10,6 +10,7 @@ import '../../../core/formatters/date_format.dart';
 import '../../../core/l10n/context_l10n.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/theme_rebuild.dart';
+import '../../../core/widgets/app_confirm_dialog.dart';
 import '../../../core/widgets/app_network_image.dart';
 import '../../../core/widgets/app_toast.dart';
 import '../../../core/widgets/site_photo_viewer_page.dart';
@@ -159,29 +160,21 @@ class _SiteReviewsTabState extends ConsumerState<SiteReviewsTab> {
 
   Future<void> _confirmDelete(SiteReview review) async {
     final l10n = context.l10n;
-    final ok = await showDialog<bool>(
+    final ok = await showAppConfirmDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppColors.surface,
-        title: Text(
-          l10n.reviewDeleteTitle,
-          style: TextStyle(color: AppColors.foreground),
+      icon: Icons.delete_outline,
+      tone: AppConfirmTone.danger,
+      title: l10n.reviewDeleteTitle,
+      body: l10n.reviewDeleteBody,
+      actions: [
+        AppConfirmAction(label: l10n.actionCancel, value: false),
+        AppConfirmAction(
+          label: l10n.reviewDelete,
+          value: true,
+          isPrimary: true,
+          isDestructive: true,
         ),
-        content: Text(
-          l10n.reviewDeleteBody,
-          style: TextStyle(color: AppColors.muted),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(l10n.actionCancel),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text(l10n.reviewDelete),
-          ),
-        ],
-      ),
+      ],
     );
     if (ok != true || !mounted) return;
     try {
@@ -242,22 +235,22 @@ class _SiteReviewsTabState extends ConsumerState<SiteReviewsTab> {
   }
 
   Future<void> _deleteReviewPhoto(SitePhotoViewItem item) async {
-    final ok = await showDialog<bool>(
+    final l10n = context.l10n;
+    final ok = await showAppConfirmDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(context.l10n.photoDeleteTitle),
-        content: Text(context.l10n.photoDeleteConfirm),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(context.l10n.actionCancel),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text(context.l10n.actionDelete),
-          ),
-        ],
-      ),
+      icon: Icons.delete_outline,
+      tone: AppConfirmTone.danger,
+      title: l10n.photoDeleteTitle,
+      body: l10n.photoDeleteConfirm,
+      actions: [
+        AppConfirmAction(label: l10n.actionCancel, value: false),
+        AppConfirmAction(
+          label: l10n.actionDelete,
+          value: true,
+          isPrimary: true,
+          isDestructive: true,
+        ),
+      ],
     );
     if (ok != true || !mounted) return;
     try {
@@ -275,29 +268,28 @@ class _SiteReviewsTabState extends ConsumerState<SiteReviewsTab> {
 
   Future<void> _reportReviewPhoto(SitePhotoViewItem item) async {
     final reasonCtrl = TextEditingController();
-    final ok = await showDialog<bool>(
+    final l10n = context.l10n;
+    final ok = await showAppConfirmDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(context.l10n.photoReportTitle),
-        content: TextField(
-          controller: reasonCtrl,
-          decoration: InputDecoration(
-            labelText: context.l10n.photoReportReason,
-            border: OutlineInputBorder(),
-          ),
-          maxLines: 3,
+      icon: Icons.flag_outlined,
+      tone: AppConfirmTone.warning,
+      title: l10n.photoReportTitle,
+      bodyWidget: TextField(
+        controller: reasonCtrl,
+        decoration: InputDecoration(
+          labelText: l10n.photoReportReason,
+          border: OutlineInputBorder(),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(context.l10n.actionCancel),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text(context.l10n.photoReportSend),
-          ),
-        ],
+        maxLines: 3,
       ),
+      actions: [
+        AppConfirmAction(label: l10n.actionCancel, value: false),
+        AppConfirmAction(
+          label: l10n.photoReportSend,
+          value: true,
+          isPrimary: true,
+        ),
+      ],
     );
     if (ok != true || !mounted) return;
     try {
@@ -315,29 +307,28 @@ class _SiteReviewsTabState extends ConsumerState<SiteReviewsTab> {
 
   Future<void> _reportReview(SiteReview review) async {
     final reasonCtrl = TextEditingController();
-    final ok = await showDialog<bool>(
+    final l10n = context.l10n;
+    final ok = await showAppConfirmDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(context.l10n.reviewReportTitle),
-        content: TextField(
-          controller: reasonCtrl,
-          decoration: InputDecoration(
-            labelText: context.l10n.photoReportReason,
-            border: OutlineInputBorder(),
-          ),
-          maxLines: 3,
+      icon: Icons.flag_outlined,
+      tone: AppConfirmTone.warning,
+      title: l10n.reviewReportTitle,
+      bodyWidget: TextField(
+        controller: reasonCtrl,
+        decoration: InputDecoration(
+          labelText: l10n.photoReportReason,
+          border: OutlineInputBorder(),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(context.l10n.actionCancel),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text(context.l10n.photoReportSend),
-          ),
-        ],
+        maxLines: 3,
       ),
+      actions: [
+        AppConfirmAction(label: l10n.actionCancel, value: false),
+        AppConfirmAction(
+          label: l10n.photoReportSend,
+          value: true,
+          isPrimary: true,
+        ),
+      ],
     );
     if (ok != true || !mounted) return;
     try {

@@ -24,6 +24,8 @@ import '../../../core/widgets/app_section_label.dart';
 import '../../../core/widgets/app_select_chip.dart';
 import '../../../core/widgets/app_toast.dart';
 import '../../../core/widgets/draft_needs_map_banner.dart';
+import '../../../core/widgets/app_confirm_dialog.dart';
+import '../../../core/widgets/discard_changes_scope.dart';
 import '../../../core/widgets/field_action_icon.dart';
 import '../../../core/widgets/non_physical_card_banner.dart';
 import 'site_look_cover.dart';
@@ -147,10 +149,16 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
   bool _categoryWasAutoSuggested = false;
   bool _categoriesUnavailable = false;
   bool _reloadingCategories = false;
+  /// Tras bootstrap: cualquier toque / cambio marca sucio y salir confirma.
+  final FormDirtyTracker _formDirty = FormDirtyTracker();
 
   bool get _isEditing => _editSaveId != null || _editSiteId != null;
   bool get _isStaffSiteEdit =>
       _editSaveId == null && _editSiteId != null;
+
+  void _markDirty() => _formDirty.markDirty();
+
+  void _armDirtyTracking() => _formDirty.arm();
 
   void _openNameSectionIfNeeded({String? name}) {
     if (_isEditing) return;
@@ -285,6 +293,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
       _selectedCity = null;
       _cityCtrl.clear();
     }
+    if (changed) _markDirty();
   }
 
   void _setCity(GeoCity? c) {
@@ -294,11 +303,19 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
       _selectedDept ??= _geoCatalog!.departmentById(c.departmentId);
       if (_selectedDept != null) _deptCtrl.text = _selectedDept!.name;
     }
+    _markDirty();
   }
 
   @override
   void initState() {
     super.initState();
+    void listenDirty(TextEditingController c) => c.addListener(_markDirty);
+    listenDirty(_nameCtrl);
+    listenDirty(_mapsCtrl);
+    listenDirty(_socialCtrl);
+    listenDirty(_cityCtrl);
+    listenDirty(_deptCtrl);
+    listenDirty(_addressCtrl);
     if (!_isEditing) {
       _locationTabCtrl = TabController(length: 3, vsync: this)
         ..addListener(() {
@@ -500,10 +517,12 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
           _loadingCats = false;
         });
         _schedulePossibleDuplicateCheck();
+        _armDirtyTracking();
       } else {
         // Pintar form al toque (categorías listas). Social/Maps no bloquean.
         if (mounted) setState(() => _loadingCats = false);
         _schedulePossibleDuplicateCheck();
+        _armDirtyTracking();
         final social = _socialCtrl.text.trim();
         if (social.isNotEmpty) {
           _socialCtrl.clear();
@@ -521,6 +540,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
         _loadingCats = false;
         _categoriesUnavailable = true;
       });
+      _armDirtyTracking();
       AppToast.error(context, e, logContext: 'save_place_bootstrap');
     }
   }
@@ -528,6 +548,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
   @override
   void dispose() {
     _dupeCheckTimer?.cancel();
+    _formDirty.dispose();
     _locationTabCtrl?.dispose();
     _nameCtrl.dispose();
     _mapsCtrl.dispose();
@@ -911,6 +932,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
       // Solo ficha de lugar conserva Place ID; el reverse de calle no.
       if (!place.isPlaceFicha) _googlePlaceId = null;
     });
+    _markDirty();
     if (!mounted) return;
     // Soft check: diálogo (no Toast). Si sigue editando, al Guardar se reitera.
     final linked = await _softCheckDuplicateAfterLocation();
@@ -944,25 +966,19 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
       if (dupes.isEmpty || !mounted) return false;
 
       if (_isStaffSiteEdit) {
-        await showDialog<void>(
+        await showAppConfirmDialog<bool>(
           context: context,
-          builder: (context) => AlertDialog(
-            backgroundColor: AppColors.surface,
-            title: Text(
-              context.l10n.sameSiteTitle,
-              style: TextStyle(color: AppColors.foreground),
+          icon: Icons.content_copy_rounded,
+          tone: AppConfirmTone.warning,
+          title: context.l10n.sameSiteTitle,
+          body: context.l10n.sameSiteStaffHint,
+          actions: [
+            AppConfirmAction(
+              label: context.l10n.actionDone,
+              value: true,
+              isPrimary: true,
             ),
-            content: Text(
-              context.l10n.sameSiteStaffHint,
-              style: TextStyle(color: AppColors.muted),
-            ),
-            actions: [
-              FilledButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text(context.l10n.actionDone),
-              ),
-            ],
-          ),
+          ],
         );
         return false;
       }
@@ -1091,22 +1107,21 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
       _pendingPhotos.length;
 
   Future<bool> _confirmPhotoTerms() async {
-    final accepted = await showDialog<bool>(
+    final l10n = context.l10n;
+    final accepted = await showAppConfirmDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(context.l10n.loginTerms),
-        content: Text(context.l10n.photoTermsBody),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(context.l10n.actionCancel),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text(context.l10n.actionAcceptContinue),
-          ),
-        ],
-      ),
+      icon: Icons.photo_camera_outlined,
+      tone: AppConfirmTone.info,
+      title: l10n.photoTermsTitle,
+      body: l10n.photoTermsBody,
+      actions: [
+        AppConfirmAction(label: l10n.actionCancel, value: false),
+        AppConfirmAction(
+          label: l10n.actionAcceptContinue,
+          value: true,
+          isPrimary: true,
+        ),
+      ],
     );
     return accepted == true;
   }
@@ -1428,6 +1443,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
     setState(() {
       _saving = true;
     });
+    _formDirty.setSuppressed(true);
     try {
       String resultSiteId;
       UserSave? saved;
@@ -1601,38 +1617,32 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
       final l10n = context.l10n;
       final isPublicResult = saved?.isPublic ??
           (input.isPhysicalPlace && input.isPublic && _hasFormLocation);
-      await showDialog<void>(
+      await showAppConfirmDialog<bool>(
         context: context,
-        builder: (context) => AlertDialog(
-          backgroundColor: AppColors.surface,
-          title: Text(
-            _isEditing
-                ? l10n.saveSuccessTitleUpdate
-                : l10n.saveSuccessTitleCreate,
-            style: TextStyle(color: AppColors.foreground),
+        icon: Icons.check_circle_outline,
+        tone: AppConfirmTone.success,
+        title: _isEditing
+            ? l10n.saveSuccessTitleUpdate
+            : l10n.saveSuccessTitleCreate,
+        body: [
+          if (_isStaffSiteEdit)
+            l10n.saveSuccessStaffBody
+          else if (status == SiteStatus.complete)
+            l10n.saveSuccessCompleteBody
+          else if (_isPhysical && (lat == null || lng == null))
+            l10n.saveNeedsMapPoint
+          else
+            l10n.saveStatusAfterSave(status.label(l10n)),
+          if (!_isStaffSiteEdit && !isPublicResult)
+            l10n.saveSuccessPrivateSuffix,
+        ].join(),
+        actions: [
+          AppConfirmAction(
+            label: l10n.actionDone,
+            value: true,
+            isPrimary: true,
           ),
-          content: Text(
-            [
-              if (_isStaffSiteEdit)
-                l10n.saveSuccessStaffBody
-              else if (status == SiteStatus.complete)
-                l10n.saveSuccessCompleteBody
-              else if (_isPhysical && (lat == null || lng == null))
-                l10n.saveNeedsMapPoint
-              else
-                l10n.saveStatusAfterSave(status.label(l10n)),
-              if (!_isStaffSiteEdit && !isPublicResult)
-                l10n.saveSuccessPrivateSuffix,
-            ].join(),
-            style: TextStyle(color: AppColors.muted),
-          ),
-          actions: [
-            FilledButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text(l10n.actionDone),
-            ),
-          ],
-        ),
+        ],
       );
       if (!mounted) return;
       Navigator.pop(context, saved ?? resultSiteId);
@@ -1645,6 +1655,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
         client: ref.read(supabaseClientProvider),
       );
       setState(() => _saving = false);
+      _formDirty.setSuppressed(false);
       AppToast.show(context, context.l10n.errorProblemToast, error: true);
     }
   }
@@ -1666,31 +1677,25 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
     );
   }
 
-  Future<void> _showCannotMakePrivate(SitePrivacyBlockers blockers) {
+  Future<void> _showCannotMakePrivate(SitePrivacyBlockers blockers) async {
     final l10n = context.l10n;
     final reason = blockers.isCatalog
         ? l10n.privacyBlockCatalog
         : l10n.privacyBlockOthers;
-    return showDialog<void>(
+    await showAppConfirmDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        key: WidgetKeys.privacyBlockDialog,
-        backgroundColor: AppColors.surface,
-        title: Text(
-          l10n.privacyBlockTitle,
-          style: TextStyle(color: AppColors.foreground),
+      dialogKey: WidgetKeys.privacyBlockDialog,
+      icon: Icons.lock_outline,
+      tone: AppConfirmTone.warning,
+      title: l10n.privacyBlockTitle,
+      body: reason,
+      actions: [
+        AppConfirmAction(
+          label: l10n.actionDone,
+          value: true,
+          isPrimary: true,
         ),
-        content: Text(
-          reason,
-          style: TextStyle(color: AppColors.muted),
-        ),
-        actions: [
-          FilledButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(l10n.actionDone),
-          ),
-        ],
-      ),
+      ],
     );
   }
 
@@ -1938,6 +1943,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
                 if (_lat == null || _lng == null) return;
               }
               setState(() => _useExactPin = v);
+              _markDirty();
             },
     );
   }
@@ -2038,6 +2044,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
                     _isPhysical = v;
                     if (!v) _isPublic = false;
                   });
+                  _markDirty();
                   _schedulePossibleDuplicateCheck();
                 },
               ),
@@ -2061,6 +2068,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
                   onChanged: canPublish
                       ? (v) {
                           setState(() => _isPublic = v);
+                          _markDirty();
                           _schedulePossibleDuplicateCheck();
                         }
                       : null,
@@ -2427,71 +2435,89 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
     final l10n = context.l10n;
     final nameOk = _nameCtrl.text.trim().isNotEmpty;
     final dupeWarning = _possibleDupes.isNotEmpty;
-    return Scaffold(
-      key: WidgetKeys.savePlacePage,
-      appBar: AppBar(
-        title: Text(
-          _isEditing ? l10n.savePlaceEditTitle : l10n.savePlaceTitle,
-        ),
-      ),
-      body: _loadingCats
-          ? Center(child: CircularProgressIndicator())
-          : ListView(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-              children: [
-                if (!_isPhysical) ...[
-                  const NonPhysicalCardBanner(),
-                  SizedBox(height: 12),
-                ],
-                if (_isPhysical && !_hasFormLocation) ...[
-                  const DraftNeedsMapBanner(),
-                  SizedBox(height: 12),
-                ],
-                if (_isPhysical) _locationSection(l10n),
-                for (final extra in _SaveExtra.values)
-                  if (_openExtras.contains(extra)) _extraSection(l10n, extra),
-                _addExtraChips(l10n),
-              ],
+    return ListenableBuilder(
+      listenable: _formDirty,
+      builder: (context, _) => DiscardChangesScope(
+        hasUnsavedChanges: _formDirty.hasUnsavedChanges,
+        child: Scaffold(
+          key: WidgetKeys.savePlacePage,
+          appBar: AppBar(
+            title: Text(
+              _isEditing ? l10n.savePlaceEditTitle : l10n.savePlaceTitle,
             ),
-      bottomNavigationBar: _loadingCats
-          ? null
-          : Material(
-              color: AppColors.surface,
-              child: SafeArea(
-                top: false,
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
+          ),
+          body: _loadingCats
+              ? Center(child: CircularProgressIndicator())
+              : DirtyInteractionScope(
+                  tracker: _formDirty,
+                  child: ListView(
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
                     children: [
-                      FilledButton(
-                        key: WidgetKeys.saveSubmit,
-                        onPressed: (_saving || !nameOk) ? null : _submit,
-                        style: FilledButton.styleFrom(
-                          minimumSize: const Size.fromHeight(52),
-                          backgroundColor:
-                              dupeWarning ? AppColors.warning : null,
-                          foregroundColor:
-                              dupeWarning ? AppColors.onWarning : null,
-                        ),
-                        child: _saving
-                            ? SizedBox(
-                                width: 22,
-                                height: 22,
-                                child: CircularProgressIndicator(strokeWidth: 2),
-                              )
-                            : Text(
-                                _isEditing
-                                    ? l10n.savePlaceSubmitEdit
-                                    : l10n.savePlaceSubmit,
-                              ),
-                      ),
+                      if (!_isPhysical) ...[
+                        const NonPhysicalCardBanner(),
+                        SizedBox(height: 12),
+                      ],
+                      if (_isPhysical && !_hasFormLocation) ...[
+                        const DraftNeedsMapBanner(),
+                        SizedBox(height: 12),
+                      ],
+                      if (_isPhysical) _locationSection(l10n),
+                      for (final extra in _SaveExtra.values)
+                        if (_openExtras.contains(extra))
+                          _extraSection(l10n, extra),
+                      _addExtraChips(l10n),
                     ],
                   ),
                 ),
-              ),
-            ),
+          bottomNavigationBar: _loadingCats
+              ? null
+              : DirtyInteractionScope(
+                  tracker: _formDirty,
+                  child: Material(
+                    color: AppColors.surface,
+                    child: SafeArea(
+                      top: false,
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            FilledButton(
+                              key: WidgetKeys.saveSubmit,
+                              onPressed:
+                                  (_saving || !nameOk) ? null : _submit,
+                              style: FilledButton.styleFrom(
+                                minimumSize: const Size.fromHeight(52),
+                                backgroundColor: dupeWarning
+                                    ? AppColors.warning
+                                    : null,
+                                foregroundColor: dupeWarning
+                                    ? AppColors.onWarning
+                                    : null,
+                              ),
+                              child: _saving
+                                  ? SizedBox(
+                                      width: 22,
+                                      height: 22,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      ),
+                                    )
+                                  : Text(
+                                      _isEditing
+                                          ? l10n.savePlaceSubmitEdit
+                                          : l10n.savePlaceSubmit,
+                                    ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+        ),
+      ),
     );
   }
 }

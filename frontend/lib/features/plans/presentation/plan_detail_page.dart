@@ -11,6 +11,7 @@ import '../../../core/formatters/money_format.dart';
 import '../../../core/l10n/context_l10n.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_busy_overlay.dart';
+import '../../../core/widgets/app_confirm_dialog.dart';
 import '../../../core/widgets/app_section_label.dart';
 import '../../../core/widgets/app_stat_card.dart';
 import '../../../core/widgets/app_toast.dart';
@@ -226,23 +227,22 @@ class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
 
   Future<void> _delete() async {
     final l10n = context.l10n;
-    final ok = await showDialog<bool>(
+    final ok = await showAppConfirmDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(l10n.planDeleteTitle),
-        content: Text(l10n.planDeleteConfirm),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text(l10n.actionCancel),
-          ),
-          FilledButton(
-            key: WidgetKeys.planDeleteConfirm,
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text(l10n.actionDelete),
-          ),
-        ],
-      ),
+      icon: Icons.delete_outline,
+      tone: AppConfirmTone.danger,
+      title: l10n.planDeleteTitle,
+      body: l10n.planDeleteConfirm,
+      actions: [
+        AppConfirmAction(label: l10n.actionCancel, value: false),
+        AppConfirmAction(
+          key: WidgetKeys.planDeleteConfirm,
+          label: l10n.actionDelete,
+          value: true,
+          isPrimary: true,
+          isDestructive: true,
+        ),
+      ],
     );
     if (ok != true) return;
     try {

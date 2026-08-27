@@ -163,6 +163,7 @@ Todo el texto de producto está en `app_es.arb` (i18n).
 5. **Corazón** en cards y ficha: **favorito** persistido. Relleno rojo `accent` si está marcado; outline si no. El tap no abre la ficha. “Tuyo” sigue siendo otra señal.
 6. **Badge de red** (IG / TK / FB / GM): solo si hay `sourceNetwork`. Si no hay origen, **nada**.
 7. Acciones de campo: icono **dentro** del input (lupa, pegar), no botones sueltos al lado del formulario.
+8. **Confirmaciones** (`AppConfirmDialog`): mismo estilo en toda la app. Icono de la acción antes del título; copy corto. Dos botones en una fila (el que prima a la derecha); tres o más en una columna (el que prima al final).
 
 ---
 
@@ -182,6 +183,7 @@ Todo el texto de producto está en `app_es.arb` (i18n).
 | `HomePopularCard` | mismo | Grid: franja, cover, corazón, nombre, departamento-municipio, dirección (scroll si no cabe), km/precio. |
 | `HomeQuickAction` | mismo | Icono circular tintado + label 10 px debajo. |
 | `HomeQuickActionsRow` / `HomeQuickActionsDock` | mismo | Fila de 4 atajos; dock flotante con desfijar. |
+| `AppConfirmDialog` / `showAppConfirmDialog` | `app_confirm_dialog.dart` | Confirmaciones: icono + título + texto breve. **2** acciones en fila (primaria a la derecha); **3+** en columna (primaria al final). |
 | `VisibilityBadge` | `visibility_badge.dart` | Icono público/privado. |
 | `AppListCard` | `app_list_card.dart` | `Card` theme, margin bottom 8. |
 | `AppAsyncBody` | `app_async_body.dart` | Pull-to-refresh: loading / `AppRetryCallout` / vacío / lista. |

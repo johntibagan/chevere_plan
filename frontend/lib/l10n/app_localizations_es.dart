@@ -198,6 +198,15 @@ class AppLocalizationsEs extends AppLocalizations {
   String get actionSave => 'Guardar';
 
   @override
+  String get discardChangesTitle => '¿Descartar cambios?';
+
+  @override
+  String get discardChangesBody => 'Se perderá lo que no hayas guardado.';
+
+  @override
+  String get discardChangesStay => 'Seguir editando';
+
+  @override
   String get actionRetry => 'Reintentar';
 
   @override
@@ -392,11 +401,11 @@ class AppLocalizationsEs extends AppLocalizations {
   String get homeAdminBadge => 'A';
 
   @override
-  String get homeDiscardTitle => 'Descartar guardado';
+  String get homeDiscardTitle => '¿Descartar guardado?';
 
   @override
   String homeDiscardConfirm(String name) {
-    return '¿Eliminar \"$name\" de tu lista?';
+    return 'Se quitará \"$name\" de tu lista.';
   }
 
   @override
@@ -1225,23 +1234,23 @@ class AppLocalizationsEs extends AppLocalizations {
   String get sameSiteUseConfirmSave => 'Confirmar';
 
   @override
-  String get sameSiteDiscardConfirmTitle => '¿Descartar este guardado?';
+  String get sameSiteDiscardConfirmTitle => '¿Usar este sitio?';
 
   @override
   String get sameSiteDiscardConfirmBodyReview =>
-      'Se descartará lo que estabas guardando. Irás a la ficha del sitio, pestaña Reseñas, para escribir tu reseña pública.';
+      'Se descarta tu guardado nuevo. Abrirás reseña pública en este sitio.';
 
   @override
   String get sameSiteDiscardConfirmBodyJournal =>
-      'Se descartará lo que estabas guardando. Irás a la ficha del sitio, pestaña Reseñas, para escribir tu reseña privada.';
+      'Se descarta tu guardado nuevo. Abrirás bitácora privada en este sitio.';
 
   @override
   String get sameSiteDiscardConfirmBodyFavorite =>
-      'Se descartará lo que estabas guardando. El sitio quedará en favoritos y verás su ficha en Info.';
+      'Se descarta tu guardado nuevo. El sitio queda en favoritos.';
 
   @override
   String get sameSiteDiscardConfirmBodyGeneric =>
-      'Se descartará lo que estabas guardando e irás al sitio elegido.';
+      'Se descarta tu guardado nuevo e irás al sitio elegido.';
 
   @override
   String get sameSiteOptionReviewPublic => 'Reseña pública';
@@ -1275,11 +1284,11 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get privacyBlockCatalog =>
-      'Este sitio es del catálogo público y debe seguir visible para todos.';
+      'Es del catálogo público: debe seguir visible para todos.';
 
   @override
   String get privacyBlockOthers =>
-      'Otros usuarios ya lo guardaron, aportaron o lo usan en planes. Mientras eso exista, debe seguir público.';
+      'Otros ya lo usan. Mientras exista vínculo, debe seguir público.';
 
   @override
   String get reviewEditorTitle => 'Tu reseña';
@@ -1316,7 +1325,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get reviewDeleteBody =>
-      'Se borrará esta reseña y sus fotos. No se puede deshacer.';
+      'Se borrará la reseña y sus fotos. No se puede deshacer.';
 
   @override
   String get reviewDeleted => 'Reseña eliminada.';
@@ -1411,13 +1420,14 @@ class AppLocalizationsEs extends AppLocalizations {
       'Activa la ubicación para centrar el mapa en ti.';
 
   @override
-  String get photoDeleteTitle => 'Eliminar foto';
+  String get photoDeleteTitle => '¿Eliminar foto?';
 
   @override
-  String get photoDeleteConfirm => '¿Quieres eliminar esta foto del sitio?';
+  String get photoDeleteConfirm =>
+      'Se borrará del sitio. No se puede deshacer.';
 
   @override
-  String get photoReportTitle => 'Reportar foto';
+  String get photoReportTitle => '¿Reportar foto?';
 
   @override
   String get photoReportSend => 'Enviar reporte';
@@ -1545,10 +1555,10 @@ class AppLocalizationsEs extends AppLocalizations {
   String get planShareCopied => 'Plan copiado al portapapeles.';
 
   @override
-  String get planDeleteTitle => 'Eliminar plan';
+  String get planDeleteTitle => '¿Eliminar plan?';
 
   @override
-  String get planDeleteConfirm => '¿Eliminar este plan y sus paradas?';
+  String get planDeleteConfirm => 'Se borrará el plan y sus paradas.';
 
   @override
   String get adminActive => 'Activa';
@@ -1633,8 +1643,11 @@ class AppLocalizationsEs extends AppLocalizations {
   String get siteDetailOpenMapsFail => 'No se pudo abrir Google Maps.';
 
   @override
+  String get photoTermsTitle => 'Antes de subir la foto';
+
+  @override
   String get photoTermsBody =>
-      'Al subir una foto confirmas que cumple los Términos de Uso de Chevere Plan (turismo, gastronomía y planes de ocio; sin contenido sexual, ilegal o de acoso).';
+      'La foto debe ser de turismo, gastronomía u ocio. Sin contenido sexual, ilegal o de acoso.';
 
   @override
   String get photoAdded => 'Foto añadida.';
@@ -1650,7 +1663,7 @@ class AppLocalizationsEs extends AppLocalizations {
       'Reporte enviado. Un administrador lo revisará.';
 
   @override
-  String get reviewReportTitle => 'Reportar reseña';
+  String get reviewReportTitle => '¿Reportar reseña?';
 
   @override
   String get reviewReportSent =>
