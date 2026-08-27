@@ -1942,12 +1942,11 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
 
   Widget _locationSection(AppLocalizations l10n) {
     if (_isEditing) {
+      // En editar: solo mapa (sin pestaña Enlace Maps).
       return _sectionCard(
         title: l10n.saveLocationSection,
         info: l10n.saveInfoLocation,
         children: [
-          _locationLinkField(l10n),
-          SizedBox(height: 10),
           _mapPreview(l10n),
           _exactPinSwitch(l10n),
         ],

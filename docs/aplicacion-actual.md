@@ -73,7 +73,7 @@ En el **mapa interactivo**, Confirmar / Usar empieza **desactivado** (centro de 
 
 ### Qué ves en el formulario
 
-Siempre visible al **crear** (vacío): **Ubicación** (tres pestañas: Mapa, Enlace, Cámara; debajo el interruptor de punto exacto). **Nombre** (con lugar físico + público en la misma card) va en **Añadir sección** como chip `+ Nombre - Visibilidad`; se abre sola cuando el autocompletado de ubicación rellena el nombre, o al tocar el chip. Al **compartir** desde una red social (no enlace Maps), **Nombre** y **Enlaces** se abren de inmediato, haya o no autocompletado. Al **editar** o completar borrador: todas las secciones visibles.
+Siempre visible al **crear** (vacío): **Ubicación** (tres pestañas: Mapa, Enlace, Cámara; debajo el interruptor de punto exacto). **Nombre** (con lugar físico + público en la misma card) va en **Añadir sección** como chip `+ Nombre - Visibilidad`; se abre sola cuando el autocompletado de ubicación rellena el nombre, o al tocar el chip. Al **compartir** desde una red social (no enlace Maps), **Nombre** y **Enlaces** se abren de inmediato, haya o no autocompletado. Al **editar** o completar borrador: todas las secciones visibles; en **Ubicación** solo mapa + punto exacto (**sin** pegar enlace Maps).
 
 El resto va detrás de **Añadir sección**: chips `+` (**Nombre - Visibilidad**, **Detalles**, **Enlaces**, **Categorías**, **Fotos**). Los que ya están abiertos dejan de mostrarse como chip. **Guardar** es un botón ancho **abajo** (un solo CTA; no está en el AppBar).
 

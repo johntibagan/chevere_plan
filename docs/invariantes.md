@@ -57,6 +57,7 @@ Público es **sección siempre visible**. Sin pin, el interruptor se muestra **d
 
 - Siempre: Ubicación → Nombre (obligatorio; Maps lo rellena) → **Visibilidad** (lugar físico + Público en **una** fila, cada uno con icono i).
 - Extra detrás de **+**: Detalles, Enlaces, Categorías, Fotos.
+- Al **editar**: misma pantalla, pero **Ubicación** sin pegar enlace Maps (solo mapa + punto exacto).
 - Crear: lugar físico **encendido** y privado por defecto (ambos interruptores visibles). Editar: mismas secciones fijas + extras abiertos.
 - Nombre vacío: no guardar (nada de “Sin nombre”).
 - Ayuda en tooltip (tap), no textos largos bajo los campos.
