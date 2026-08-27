@@ -1189,7 +1189,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get sameSiteFavoriteHint =>
-      'No crea un guardado nuevo. Marca el sitio con corazón y abre su ficha.';
+      'No crea un guardado nuevo. Lo agrega a favoritos y abre su ficha.';
 
   @override
   String get sameSiteFavoriteTitle => '¿Agregar a favoritos?';

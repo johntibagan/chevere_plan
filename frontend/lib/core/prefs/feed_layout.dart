@@ -58,13 +58,13 @@ enum FeedLayout {
 ///
 /// Presupuesto (1 línea de nombre + depto + dirección + meta distancia/precio):
 /// - padding vertical textos: 8 (4+4)
-/// - origen (badge 16 / corazón icon 28): 28
+/// - origen (badge 16 / corazón icon 32): 32
 /// - gap: 2
 /// - [SiteCardPlaceTexts] 1 línea: 12×1.25 + 4 + 10×1.25 + 4 + 10×1.25 = 48
 /// - meta: 12
-/// Total 98 → **100** (margen 2). Miniatura = fila − 1 px arriba/abajo.
+/// Total 102 → **104** (margen). Miniatura = fila − 1 px arriba/abajo.
 abstract final class SiteCardListMetrics {
-  static const double rowHeight = 100;
+  static const double rowHeight = 104;
   static const double thumbPad = 1;
   static const double thumbSize = rowHeight - thumbPad * 2;
 }

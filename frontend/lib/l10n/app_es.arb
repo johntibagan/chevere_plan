@@ -480,7 +480,7 @@
   "sameSiteSaveAnyway": "Guardar de todas formas",
   "sameSiteSaveAnywayHint": "Creas un sitio público nuevo aunque haya uno parecido en Explorar.",
   "sameSiteFavorite": "Agregar a mis favoritos",
-  "sameSiteFavoriteHint": "No crea un guardado nuevo. Marca el sitio con corazón y abre su ficha.",
+  "sameSiteFavoriteHint": "No crea un guardado nuevo. Lo agrega a favoritos y abre su ficha.",
   "sameSiteFavoriteTitle": "¿Agregar a favoritos?",
   "sameSiteFavoriteBody": "Se descarta este guardado. El sitio quedará en Mis favoritos y verás su ficha.",
   "sameSiteLinkNeedPublic": "La reseña pública solo aplica en sitios públicos.",

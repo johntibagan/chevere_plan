@@ -435,10 +435,10 @@ class CardHeartBadge extends StatelessWidget {
         shape: BoxShape.circle,
       ),
       child: Padding(
-        padding: const EdgeInsets.all(6),
+        padding: const EdgeInsets.all(7),
         child: Icon(
           saved ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-          size: 13,
+          size: 16,
           color: saved ? AppColors.accent : AppColors.onImage,
         ),
       ),

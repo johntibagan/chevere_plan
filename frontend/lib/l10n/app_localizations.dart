@@ -2233,7 +2233,7 @@ abstract class AppLocalizations {
   /// No description provided for @sameSiteFavoriteHint.
   ///
   /// In es, this message translates to:
-  /// **'No crea un guardado nuevo. Marca el sitio con corazón y abre su ficha.'**
+  /// **'No crea un guardado nuevo. Lo agrega a favoritos y abre su ficha.'**
   String get sameSiteFavoriteHint;
 
   /// No description provided for @sameSiteFavoriteTitle.

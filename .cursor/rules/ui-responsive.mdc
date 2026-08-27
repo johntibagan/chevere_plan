@@ -10,7 +10,7 @@ Toda la UI de Flutter en Chevere Plan debe **adaptarse al ancho** del dispositiv
 ## Tarjetas de sitio (grilla)
 
 - Grilla: portada ≈ **60%** de la altura (`flex: 6`) y textos ≈ **40%** (`flex: 4`).
-- Lista: altura de fila **100** (`SiteCardListMetrics`, presupuesto: origen 28 + textos 1 línea 48 + meta 12 + pads). Miniatura ≈ **98%** (1 px arriba/abajo). El corazón en modo icono es **28×28** (no el IconButton de 40+).
+- Lista: altura de fila **104** (`SiteCardListMetrics`, presupuesto: origen 32 + textos 1 línea 48 + meta 12 + pads). Miniatura ≈ **98%** (1 px arriba/abajo). El corazón en modo icono es **32×32** (icono 24; no el IconButton de 40+).
 - **CTA / filas extra** (p. ej. Ver ficha + Usar como en anti-dupe): pie **fijo y compacto**. Textos siguen ≈40% de la **celda**; la portada = resto (≈60% menos altura de los CTA). No meter botones dentro del bloque de textos. La altura total de la celda **no** cambia.
 
 ## Obligatorio (resto)
