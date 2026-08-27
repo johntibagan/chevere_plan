@@ -150,18 +150,33 @@ class SiteCover extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final url = imageUrl?.trim();
-    return Stack(
-      fit: StackFit.expand,
-      clipBehavior: Clip.antiAlias,
-      children: [
-        DefaultSiteCover(categoryHint: categoryHint),
-        if (url != null && url.isNotEmpty)
-          AppNetworkImage(
-            url: url,
-            cacheKey: cacheKey,
-            fit: BoxFit.cover,
-          ),
-      ],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Decode al tamaño de la celda (no al lado largo de la pantalla):
+        // sin esto, cada miniatura de grilla decodifica ≥1080 px y el scroll
+        // se siente a tirones.
+        final w = constraints.maxWidth.isFinite && constraints.maxWidth > 0
+            ? constraints.maxWidth
+            : null;
+        final h = constraints.maxHeight.isFinite && constraints.maxHeight > 0
+            ? constraints.maxHeight
+            : null;
+        return Stack(
+          fit: StackFit.expand,
+          clipBehavior: Clip.antiAlias,
+          children: [
+            DefaultSiteCover(categoryHint: categoryHint),
+            if (url != null && url.isNotEmpty)
+              AppNetworkImage(
+                url: url,
+                cacheKey: cacheKey,
+                fit: BoxFit.cover,
+                width: w,
+                height: h,
+              ),
+          ],
+        );
+      },
     );
   }
 }

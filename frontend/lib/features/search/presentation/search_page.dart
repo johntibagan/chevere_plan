@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 
@@ -22,7 +23,6 @@ import '../../../core/widgets/tab_screen_header.dart';
 import '../../admin/data/admin_models.dart';
 import '../../home/presentation/home_cards.dart';
 import '../../proximity/domain/proximity_policies.dart';
-import '../../saves/data/site_ficha.dart';
 import '../../saves/presentation/open_site_detail.dart';
 import '../data/explore_radius_store.dart';
 import '../data/search_models.dart';
@@ -746,46 +746,40 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                 ],
               ),
             ),
+            if (_searched)
+              Material(
+                color: Theme.of(context).scaffoldBackgroundColor,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          l10n.searchResultsCount(_hits.length),
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: AppColors.mutedDark,
+                          ),
+                        ),
+                      ),
+                      AppFeedLayoutToggle(
+                        value: layout,
+                        onChanged: (v) =>
+                            ref.read(feedLayoutProvider.notifier).setLayout(v),
+                        listTooltip: l10n.feedLayoutList,
+                        grid2Tooltip: l10n.feedLayoutGrid2,
+                        grid3Tooltip: l10n.feedLayoutGrid3,
+                        grid4Tooltip: l10n.feedLayoutGrid4,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             Expanded(
               child: CustomScrollView(
+                scrollCacheExtent: const ScrollCacheExtent.pixels(480),
+                physics: const ClampingScrollPhysics(),
                 slivers: [
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          if (_searched)
-                            Padding(
-                              padding: const EdgeInsets.only(bottom: 8),
-                              child: Row(
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      l10n.searchResultsCount(_hits.length),
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        color: AppColors.mutedDark,
-                                      ),
-                                    ),
-                                  ),
-                                  AppFeedLayoutToggle(
-                                    value: layout,
-                                    onChanged: (v) => ref
-                                        .read(feedLayoutProvider.notifier)
-                                        .setLayout(v),
-                                    listTooltip: l10n.feedLayoutList,
-                                    grid2Tooltip: l10n.feedLayoutGrid2,
-                                    grid3Tooltip: l10n.feedLayoutGrid3,
-                                    grid4Tooltip: l10n.feedLayoutGrid4,
-                                  ),
-                                ],
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                  ),
                   if (!_searched)
                     SliverToBoxAdapter(
                       child: Padding(
@@ -833,14 +827,18 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                             delegate: SliverChildBuilderDelegate(
                               (context, index) {
                                 final h = _hits[index];
-                                return HomePopularCard(
-                                  hit: h,
-                                  onTap: () => _openHit(h),
-                                  showPlaceOnCover:
-                                      layout != FeedLayout.grid4,
+                                return RepaintBoundary(
+                                  child: HomePopularCard(
+                                    key: ValueKey<String>(h.siteId),
+                                    hit: h,
+                                    onTap: () => _openHit(h),
+                                    showPlaceOnCover:
+                                        layout != FeedLayout.grid4,
+                                  ),
                                 );
                               },
                               childCount: _hits.length,
+                              addAutomaticKeepAlives: false,
                             ),
                           ),
                         );
@@ -853,12 +851,16 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                         delegate: SliverChildBuilderDelegate(
                           (context, index) {
                             final h = _hits[index];
-                            return HomeSearchListCard(
-                              hit: h,
-                              onTap: () => _openHit(h),
+                            return RepaintBoundary(
+                              child: HomeSearchListCard(
+                                key: ValueKey<String>(h.siteId),
+                                hit: h,
+                                onTap: () => _openHit(h),
+                              ),
                             );
                           },
                           childCount: _hits.length,
+                          addAutomaticKeepAlives: false,
                         ),
                       ),
                     ),

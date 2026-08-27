@@ -307,7 +307,7 @@ class HomeRecentRailCard extends StatelessWidget {
               Expanded(
                 flex: 4,
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(8, 6, 8, 8),
+                  padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -318,15 +318,22 @@ class HomeRecentRailCard extends StatelessWidget {
                         isCatalog: save.isCatalogSite,
                         isPhysicalPlace: save.isPhysicalPlace,
                       ),
-                      SizedBox(height: 4),
+                      SizedBox(height: 2),
                       Expanded(
-                        child: SingleChildScrollView(
-                          physics: const ClampingScrollPhysics(),
-                          child: SiteCardPlaceTexts(
-                            name: save.siteName,
-                            department: save.department,
-                            city: save.city,
-                          ),
+                        child: LayoutBuilder(
+                          builder: (context, constraints) {
+                            final h = constraints.maxHeight;
+                            return Align(
+                              alignment: Alignment.topLeft,
+                              child: SiteCardPlaceTexts(
+                                name: save.siteName,
+                                department:
+                                    h >= 20 ? save.department : null,
+                                city: h >= 20 ? save.city : null,
+                                maxNameLines: h >= 34 ? 2 : 1,
+                              ),
+                            );
+                          },
                         ),
                       ),
                     ],
@@ -341,7 +348,7 @@ class HomeRecentRailCard extends StatelessWidget {
   }
 }
 
-/// Nombre, departamento-municipio y dirección. Scroll si no cabe.
+/// Nombre, departamento-municipio y dirección (ellipsis si no cabe).
 class SiteCardPlaceTexts extends StatelessWidget {
   const SiteCardPlaceTexts({
     super.key,
@@ -350,6 +357,7 @@ class SiteCardPlaceTexts extends StatelessWidget {
     this.city,
     this.addressLine,
     this.nameSize = 12,
+    this.maxNameLines = 2,
   });
 
   final String name;
@@ -357,17 +365,19 @@ class SiteCardPlaceTexts extends StatelessWidget {
   final String? city;
   final String? addressLine;
   final double nameSize;
+  final int maxNameLines;
 
   @override
   Widget build(BuildContext context) {
     final place = formatDeptCity(department, city);
     final address = (addressLine ?? '').trim();
     return Column(
+      mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           name,
-          maxLines: 2,
+          maxLines: maxNameLines,
           overflow: TextOverflow.ellipsis,
           style: TextStyle(
             fontSize: nameSize,
@@ -506,7 +516,9 @@ class HomePopularCard extends ConsumerWidget {
             Expanded(
               flex: 4,
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(8, 5, 8, 6),
+                // Padding compacto: con origen + meta el bloque de textos
+                // apenas cabe en el 40% de la celda (overflow ~2 px).
+                padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -519,14 +531,26 @@ class HomePopularCard extends ConsumerWidget {
                     ),
                     SizedBox(height: 2),
                     Expanded(
-                      child: SingleChildScrollView(
-                        physics: const ClampingScrollPhysics(),
-                        child: SiteCardPlaceTexts(
-                          name: hit.name,
-                          department: hit.department,
-                          city: hit.city,
-                          addressLine: hit.addressLine,
-                        ),
+                      child: LayoutBuilder(
+                        builder: (context, constraints) {
+                          final h = constraints.maxHeight;
+                          // Presupuesto: nombre ~15, place ~16.5, address ~16.5.
+                          final maxNameLines = h >= 34 ? 2 : 1;
+                          final showPlace = h >= 20;
+                          final showAddress = h >= 50;
+                          return Align(
+                            alignment: Alignment.topLeft,
+                            child: SiteCardPlaceTexts(
+                              name: hit.name,
+                              department:
+                                  showPlace ? hit.department : null,
+                              city: showPlace ? hit.city : null,
+                              addressLine:
+                                  showAddress ? hit.addressLine : null,
+                              maxNameLines: maxNameLines,
+                            ),
+                          );
+                        },
                       ),
                     ),
                     if (hasMetaRow) ...[
@@ -647,8 +671,8 @@ class HomeSearchListCard extends ConsumerWidget {
                         ),
                         SizedBox(height: 2),
                         Expanded(
-                          child: SingleChildScrollView(
-                            physics: const ClampingScrollPhysics(),
+                          child: Align(
+                            alignment: Alignment.topLeft,
                             child: SiteCardPlaceTexts(
                               name: hit.name,
                               department: hit.department,

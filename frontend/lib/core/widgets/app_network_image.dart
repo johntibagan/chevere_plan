@@ -68,6 +68,11 @@ class AppNetworkImage extends StatelessWidget {
     if (quality == AppImageQuality.fullScreen) {
       memW = _screenLongSide(context);
       memH = null;
+    } else if (fit == BoxFit.cover && width != null && height != null) {
+      // Miniaturas / portadas de card: el lado mayor de la celda (no pantalla).
+      final side = width! > height! ? width! : height!;
+      memW = _decodeSide(context, side, minPx: 32);
+      memH = null;
     } else if (fit == BoxFit.fitHeight && height != null) {
       memW = null;
       memH = _decodeSide(
