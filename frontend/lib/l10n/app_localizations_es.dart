@@ -182,7 +182,12 @@ class AppLocalizationsEs extends AppLocalizations {
   String get homeNearbyMemoryTitle => 'Te avisamos cuando estés cerca';
 
   @override
-  String get homeDraftsHint => 'Completalo para poder compartirlo';
+  String get homeDraftsHint =>
+      'Sin punto en el mapa no entra en Explorar, planes ni rutas';
+
+  @override
+  String get draftNeedsMapPointWarning =>
+      'Este sitio está en borrador: no se tendrá en cuenta en Explorar, planes, rutas ni recuerdos cercanos hasta que asignes un punto en el mapa.';
 
   @override
   String get homeOpenReports => 'Reportes abiertos';
@@ -352,7 +357,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get saveNeedsMapPoint =>
-      'Guardado. Falta el punto en el mapa para marcarlo completo.';
+      'Guardado como borrador. Sin punto en el mapa no entra en Explorar, planes, rutas ni recuerdos cercanos.';
 
   @override
   String get siteDetailCategories => 'Categorías';

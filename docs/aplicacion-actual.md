@@ -87,7 +87,9 @@ El resto va detrás de **Añadir sección**: chips `+` (**Nombre - Visibilidad**
 - **Pendiente de ubicación**: hay categoría explícita pero aún no hay coordenadas
 - **Completo**: categoría + (si es físico) coordenadas
 
-Los borradores viejos avisan en Inicio (“completalo”). Hay recordatorios locales espaciados (24 h / 3 días / 7 días) con **tarjeta estándar** (nombre, depto–municipio, foto de portada si hay) hasta que completes o descartes. Tocar abre el formulario de edición.
+Si el lugar físico **no tiene punto en el mapa**, en la ficha y en Guardar sitio se muestra una **advertencia**: no entra en Explorar, planes, rutas ni recuerdos cercanos hasta asignar el pin. Tras guardar sin pin, el diálogo lo repite. En Inicio, el aviso de borradores usa la misma idea.
+
+Los borradores viejos avisan en Inicio. Hay recordatorios locales espaciados (24 h / 3 días / 7 días) con **tarjeta estándar** (nombre, depto–municipio, foto de portada si hay) hasta que completes o descartes. Tocar abre el formulario de edición.
 
 ```mermaid
 flowchart TD

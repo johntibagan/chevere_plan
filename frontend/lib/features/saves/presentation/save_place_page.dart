@@ -23,6 +23,7 @@ import '../../../core/widgets/app_retry_callout.dart';
 import '../../../core/widgets/app_section_label.dart';
 import '../../../core/widgets/app_select_chip.dart';
 import '../../../core/widgets/app_toast.dart';
+import '../../../core/widgets/draft_needs_map_banner.dart';
 import '../../../core/widgets/field_action_icon.dart';
 import 'site_look_cover.dart';
 import '../../admin/data/admin_models.dart';
@@ -2415,6 +2416,10 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
           : ListView(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
               children: [
+                if (_isPhysical && !_hasFormLocation) ...[
+                  const DraftNeedsMapBanner(),
+                  SizedBox(height: 12),
+                ],
                 _locationSection(l10n),
                 for (final extra in _SaveExtra.values)
                   if (_openExtras.contains(extra)) _extraSection(l10n, extra),

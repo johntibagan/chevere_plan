@@ -20,6 +20,7 @@ import '../../../core/formatters/money_format.dart';
 import '../../../core/l10n/context_l10n.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_network_image.dart';
+import '../../../core/widgets/draft_needs_map_banner.dart';
 import '../../../core/widgets/site_cover.dart';
 import '../../../core/widgets/site_photo_viewer_page.dart';
 import '../../../core/widgets/site_origin_tags.dart';
@@ -966,6 +967,13 @@ class _InfoTab extends ConsumerWidget {
               _Chip(label: l10n.siteDetailNotPhysical),
           ],
         ),
+        if (ficha.isOwn &&
+            ficha.isPhysicalPlace &&
+            (ficha.ownSave?.isIncomplete ?? false) &&
+            ficha.lat == null) ...[
+          SizedBox(height: 12),
+          const DraftNeedsMapBanner(),
+        ],
         SizedBox(height: 20),
         _GallerySection(
           photos: photos,

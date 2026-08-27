@@ -421,8 +421,14 @@ abstract class AppLocalizations {
   /// No description provided for @homeDraftsHint.
   ///
   /// In es, this message translates to:
-  /// **'Completalo para poder compartirlo'**
+  /// **'Sin punto en el mapa no entra en Explorar, planes ni rutas'**
   String get homeDraftsHint;
+
+  /// No description provided for @draftNeedsMapPointWarning.
+  ///
+  /// In es, this message translates to:
+  /// **'Este sitio está en borrador: no se tendrá en cuenta en Explorar, planes, rutas ni recuerdos cercanos hasta que asignes un punto en el mapa.'**
+  String get draftNeedsMapPointWarning;
 
   /// No description provided for @homeOpenReports.
   ///
@@ -733,7 +739,7 @@ abstract class AppLocalizations {
   /// No description provided for @saveNeedsMapPoint.
   ///
   /// In es, this message translates to:
-  /// **'Guardado. Falta el punto en el mapa para marcarlo completo.'**
+  /// **'Guardado como borrador. Sin punto en el mapa no entra en Explorar, planes, rutas ni recuerdos cercanos.'**
   String get saveNeedsMapPoint;
 
   /// No description provided for @siteDetailCategories.
