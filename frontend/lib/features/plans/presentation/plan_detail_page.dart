@@ -141,6 +141,7 @@ class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
     await _invalidatePlansCache();
   }
 
+  // Fase 2: compartir plan por @usuario (rediseño completo). UI oculta; lógica conservada.
   Future<void> _share() async {
     final plan = _plan;
     if (plan == null) return;
@@ -347,14 +348,15 @@ class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
                   _openMaps();
                 },
               ),
-              ListTile(
-                leading: Icon(Icons.ios_share_outlined),
-                title: Text(l10n.planMenuShare),
-                onTap: () {
-                  Navigator.pop(ctx);
-                  _share();
-                },
-              ),
+              // Fase 2: compartir por @usuario — menú ⋮ (no borrar _share).
+              // ListTile(
+              //   leading: Icon(Icons.ios_share_outlined),
+              //   title: Text(l10n.planMenuShare),
+              //   onTap: () {
+              //     Navigator.pop(ctx);
+              //     _share();
+              //   },
+              // ),
               ListTile(
                 key: WidgetKeys.planMenuDelete,
                 leading: Icon(Icons.delete_outline),
@@ -439,12 +441,13 @@ class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
                                 label: Text(l10n.planMenuOpenMaps),
                               ),
                             ),
-                            SizedBox(width: 8),
-                            AppSquareIconButton(
-                              icon: Icons.ios_share_outlined,
-                              tooltip: l10n.planMenuShare,
-                              onTap: _busy ? () {} : _share,
-                            ),
+                            // Fase 2: compartir por @usuario — barra inferior (no borrar _share).
+                            // SizedBox(width: 8),
+                            // AppSquareIconButton(
+                            //   icon: Icons.ios_share_outlined,
+                            //   tooltip: l10n.planMenuShare,
+                            //   onTap: _busy ? () {} : _share,
+                            // ),
                             SizedBox(width: 8),
                             AppSquareIconButton(
                               key: WidgetKeys.planDetailAdd,

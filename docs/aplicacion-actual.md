@@ -170,7 +170,7 @@ Visor de fotos de reseña = mismo que sitio (sin “usar como portada”). Staff
 2. Candidatos (tuyos + públicos si aplica) → armar paradas → reordenar (2+).
 3. Detalle: portada primer sitio, stats, itinerario, **Llevar a Maps**, icono compartir, `+` paradas, marcar visitado → **Rutas**.
 4. **Llevar a Maps:** al toque; origen = última ubicación conocida; destinos = **nombre** del sitio (lat/lng solo si punto exacto).
-5. **Compartir plan:** copia al **portapapeles** título + nombres de paradas (texto plano). **No** genera link, deep link ni invite. No hay control fino de privacidad por parada en ese texto.
+5. **Compartir plan:** **oculto en UI** hasta Fase 2 (compartir por @usuario; ver [`pendientes.md`](pendientes.md)). La lógica de portapapeles sigue en código pero no se muestra. **No** genera link ni invite.
 6. Transporte sugerido por tramo: UI “en construcción” (tipos sí existen en admin).
 
 ---
@@ -229,7 +229,7 @@ Reset `--full`: JSON masivo de sitios públicos (owner root) → Explorar, anti-
 
 Errores UI: callout de sección o toast de Guardar; nunca SQL/stacks.
 
-**Compartir por @usuario / notificaciones in-app:** diseño = **Fase 2** → [`pendientes.md`](pendientes.md). Hoy: sin share de ficha; plan = clipboard.
+**Hoy:** sin share de ficha; plan = compartir **oculto** (Fase 2: @usuario).
 
 ---
 
