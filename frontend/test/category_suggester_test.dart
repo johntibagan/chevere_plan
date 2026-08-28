@@ -17,7 +17,6 @@ Category _cat({
     slug: slug,
     nameEs: name,
     isActive: true,
-    ageRestricted: false,
     sortOrder: sortOrder,
     keywords: keywords,
   );

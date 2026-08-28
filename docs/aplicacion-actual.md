@@ -198,7 +198,7 @@ Geocercas (~100 tope práctico). Notificación tarjeta (portada, nombre, depto�
 
 ☰ → Panel / Reportes (staff).
 
-- Categorías (árbol, keywords, activo, +18)
+- Categorías (árbol, keywords, activo)
 - Transporte (grupo, km default, icono)
 - Unidades de distancia
 - Reportes abiertos (fotos, reseñas; tipos sitio/perfil/evento previstos)
@@ -243,7 +243,6 @@ Errores UI: callout de sección o toast de Guardar; nunca SQL/stacks.
 - Lista dedicada “Mis favoritos” / favoritos en ranking de planes
 - Monetización, eventos reales, fichas de negocio de pago
 - iOS como producto publicado
-- Flujo completo de edad (&lt;18) operativo en UI
 - Búsqueda de **planes** por título (solo sitios)
 
 Visión y fases: [`producto.md`](producto.md). Deuda menor: [`pendientes.md`](pendientes.md).

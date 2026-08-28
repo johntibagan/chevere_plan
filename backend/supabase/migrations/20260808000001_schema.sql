@@ -68,7 +68,6 @@ create table if not exists public.categories (
   slug text not null,
   name_i18n jsonb default '{}'::jsonb not null,
   is_active boolean default true not null,
-  age_restricted boolean default false not null,
   sort_order integer default 0 not null,
   icon_key text,
   color_hex text,
@@ -1486,7 +1485,6 @@ CREATE OR REPLACE FUNCTION public.search_sites(
 AS $function$
 declare
   v_uid uuid := auth.uid();
-  v_is_minor boolean := false;
   v_max_km numeric;
   v_group public.transport_group;
   v_category_ids uuid[];
@@ -1495,13 +1493,6 @@ declare
 begin
   v_limit := greatest(1, least(coalesce(p_limit, 100), 100));
   v_offset := greatest(0, coalesce(p_offset, 0));
-
-  select exists (
-    select 1 from public.profiles p
-    where p.id = v_uid
-      and p.birth_date is not null
-      and p.birth_date > (current_date - interval '18 years')
-  ) into v_is_minor;
 
   if p_category_ids is not null and cardinality(p_category_ids) > 0 then
     v_category_ids := p_category_ids;
@@ -1624,15 +1615,6 @@ begin
               c.id = any (v_category_ids)
               or c.parent_id = any (v_category_ids)
             )
-        )
-      )
-      and (
-        not v_is_minor
-        or not exists (
-          select 1
-          from public.site_categories sc
-          join public.categories c on c.id = sc.category_id
-          where sc.site_id = s.id and c.age_restricted = true
         )
       )
       and (

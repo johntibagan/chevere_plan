@@ -79,7 +79,6 @@ class _AdminPageState extends ConsumerState<AdminPage>
     final nameCtrl = TextEditingController(text: cat.nameEs);
     final keywordsCtrl = TextEditingController(text: cat.keywords.join(', '));
     var active = cat.isActive;
-    var ageRestricted = cat.ageRestricted;
 
     final saved = await showDialog<bool>(
       context: context,
@@ -117,12 +116,6 @@ class _AdminPageState extends ConsumerState<AdminPage>
                       value: active,
                       onChanged: (v) => setLocal(() => active = v),
                     ),
-                    SwitchListTile(
-                      contentPadding: EdgeInsets.zero,
-                      title: Text(context.l10n.adminAgeRestricted),
-                      value: ageRestricted,
-                      onChanged: (v) => setLocal(() => ageRestricted = v),
-                    ),
                   ],
                 ),
               ),
@@ -153,7 +146,6 @@ class _AdminPageState extends ConsumerState<AdminPage>
         cat.id,
         nameEs: nameCtrl.text.trim(),
         isActive: active,
-        ageRestricted: ageRestricted,
         keywords: keywords,
       );
       await ref
@@ -541,10 +533,7 @@ class _CategoriesTab extends StatelessWidget {
               ),
               title: Text(root.nameEs),
               subtitle: Text(
-                [
-                  root.isActive ? l10n.adminActive : l10n.adminInactive,
-                  if (root.ageRestricted) '+18',
-                ].join(' · '),
+                root.isActive ? l10n.adminActive : l10n.adminInactive,
               ),
               trailing: IconButton(
                 icon: Icon(Icons.edit_outlined),
@@ -556,10 +545,7 @@ class _CategoriesTab extends StatelessWidget {
                       contentPadding: const EdgeInsets.only(left: 32, right: 8),
                       title: Text(c.nameEs),
                       subtitle: Text(
-                        [
-                          c.isActive ? l10n.adminActive : l10n.adminInactive,
-                          if (c.ageRestricted) '+18',
-                        ].join(' · '),
+                        c.isActive ? l10n.adminActive : l10n.adminInactive,
                       ),
                       trailing: IconButton(
                         icon: Icon(Icons.edit_outlined),

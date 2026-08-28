@@ -156,7 +156,7 @@ class _CategoryPickerPageState extends State<CategoryPickerPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    c.ageRestricted ? '$label (+18)' : label,
+                    label,
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w700,

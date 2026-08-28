@@ -2914,12 +2914,6 @@ abstract class AppLocalizations {
   /// **'Activa'**
   String get adminActive;
 
-  /// No description provided for @adminAgeRestricted.
-  ///
-  /// In es, this message translates to:
-  /// **'Restringida +18'**
-  String get adminAgeRestricted;
-
   /// No description provided for @adminEditTransport.
   ///
   /// In es, this message translates to:

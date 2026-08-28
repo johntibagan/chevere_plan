@@ -14,7 +14,7 @@ class AdminRepository {
       final rows = await _client
           .from('categories')
           .select(
-            'id, parent_id, slug, name_i18n, is_active, age_restricted, '
+            'id, parent_id, slug, name_i18n, is_active, '
             'sort_order, icon_key, color_hex, keywords',
           )
           .order('sort_order');
@@ -26,7 +26,7 @@ class AdminRepository {
       final rows = await _client
           .from('categories')
           .select(
-            'id, parent_id, slug, name_i18n, is_active, age_restricted, '
+            'id, parent_id, slug, name_i18n, is_active, '
             'sort_order, icon_key, color_hex',
           )
           .order('sort_order');
@@ -40,13 +40,11 @@ class AdminRepository {
     String id, {
     required String nameEs,
     required bool isActive,
-    required bool ageRestricted,
     List<String> keywords = const [],
   }) async {
     await _client.from('categories').update({
       'name_i18n': {'es': nameEs},
       'is_active': isActive,
-      'age_restricted': ageRestricted,
       'keywords': keywords,
     }).eq('id', id);
   }

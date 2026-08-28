@@ -4,7 +4,6 @@ class Category {
     required this.slug,
     required this.nameEs,
     required this.isActive,
-    required this.ageRestricted,
     required this.sortOrder,
     this.parentId,
     this.iconKey,
@@ -17,7 +16,6 @@ class Category {
   final String slug;
   final String nameEs;
   final bool isActive;
-  final bool ageRestricted;
   final int sortOrder;
   final String? iconKey;
   final String? colorHex;
@@ -51,7 +49,6 @@ class Category {
         'slug': slug,
         'name_i18n': {'es': nameEs},
         'is_active': isActive,
-        'age_restricted': ageRestricted,
         'sort_order': sortOrder,
         'icon_key': iconKey,
         'color_hex': colorHex,
@@ -111,7 +108,6 @@ class Category {
       slug: json['slug'] as String? ?? '',
       nameEs: nameEs,
       isActive: json['is_active'] as bool? ?? true,
-      ageRestricted: json['age_restricted'] as bool? ?? false,
       sortOrder: (json['sort_order'] as num?)?.toInt() ?? 0,
       iconKey: json['icon_key'] as String?,
       colorHex: json['color_hex'] as String?,

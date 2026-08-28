@@ -1564,9 +1564,6 @@ class AppLocalizationsEs extends AppLocalizations {
   String get adminActive => 'Activa';
 
   @override
-  String get adminAgeRestricted => 'Restringida +18';
-
-  @override
   String get adminEditTransport => 'Editar transporte';
 
   @override

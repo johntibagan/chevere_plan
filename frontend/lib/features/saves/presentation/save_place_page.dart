@@ -2247,9 +2247,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
               final label =
                   parent.isEmpty ? c.nameEs : '$parent › ${c.nameEs}';
               return InputChip(
-                label: Text(
-                  c.ageRestricted ? '$label (+18)' : label,
-                ),
+                label: Text(label),
                 onDeleted: _saving
                     ? null
                     : () => setState(() {
@@ -2285,9 +2283,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
             return CheckboxListTile(
               dense: true,
               contentPadding: EdgeInsets.zero,
-              title: Text(
-                c.ageRestricted ? '$label (+18)' : label,
-              ),
+              title: Text(label),
               value: selected,
               onChanged: (v) {
                 setState(() {

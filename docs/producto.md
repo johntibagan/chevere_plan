@@ -125,7 +125,7 @@ Ya existen apps que resuelven parcialmente el problema de "guardar lugares desde
 
 ## 4. Organización y categorías
 
-Árbol **fijo en DB**, administrable (padres/hijos, keywords, +18, activar/desactivar). Un sitio: varias categorías.  
+Árbol **fijo en DB**, administrable (padres/hijos, keywords, activar/desactivar). Un sitio: varias categorías.  
 Ubicación: país / departamento / ciudad (DIVIPOLA), no listas quemadas en la app.
 
 *(Tabla larga de subcategorías de la visión original sigue siendo la guía editorial; el contenido vivo es el seed/admin en Supabase.)*
@@ -186,7 +186,6 @@ Staff edita público; no ve bitácoras privadas ajenas.
 
 - Reportar foto / reseña pública → bandeja admin.  
 - Aviso al subir fotos (Términos).  
-- Categorías +18 en datos; **sin** flujo completo de fecha de nacimiento en UI (filtro menor no operativo de punta a punta).  
 - Legales en login (borrador; revisión formal pendiente).
 
 ---
@@ -222,7 +221,7 @@ Staff edita público; no ve bitácoras privadas ajenas.
 
 | Módulo | Hoy |
 |---|---|
-| Categorías | Sí (árbol, keywords, +18, activo) |
+| Categorías | Sí (árbol, keywords, activo) |
 | Vehículos / transporte | Sí (grupo, km default, icono) |
 | Unidades de distancia | Sí |
 | Reportes abiertos | Sí (fotos, reseñas; tipos ampliables) |
@@ -260,7 +259,6 @@ Visión y checklist Colombia / pasarelas: siguen válidos como **marco**.
 - Validación de horarios de apertura en planes/búsqueda.  
 - Cálculo de transporte sugerido por tramo.  
 - IA que arma planes.  
-- Filtro de edad de punta a punta.  
 - iOS como producto publicado.
 
 ### Fase 2 — Compartir (siguiente gran bloque de producto)

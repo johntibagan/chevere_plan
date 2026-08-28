@@ -32,7 +32,6 @@ void main() {
       slug: 'naturaleza',
       nameEs: 'Naturaleza y aire libre',
       isActive: true,
-      ageRestricted: false,
       sortOrder: 1,
     );
     const child = Category(
@@ -41,7 +40,6 @@ void main() {
       slug: 'plaza-parque',
       nameEs: 'Plaza / parque principal',
       isActive: true,
-      ageRestricted: false,
       sortOrder: 2,
     );
     expect(
