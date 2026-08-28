@@ -2530,6 +2530,24 @@ abstract class AppLocalizations {
   /// **'Bitácora'**
   String get reviewPrivateBadge;
 
+  /// No description provided for @reviewPublishConfirmTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Publicar en la ficha?'**
+  String get reviewPublishConfirmTitle;
+
+  /// No description provided for @reviewPublishConfirmBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Esto será visible para otros usuarios.'**
+  String get reviewPublishConfirmBody;
+
+  /// No description provided for @reviewPublishAction.
+  ///
+  /// In es, this message translates to:
+  /// **'Publicar'**
+  String get reviewPublishAction;
+
   /// No description provided for @staffModeBanner.
   ///
   /// In es, this message translates to:

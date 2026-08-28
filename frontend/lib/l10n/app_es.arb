@@ -562,6 +562,9 @@
   "reviewPublicHint": "Aparece en la ficha y cuenta para el promedio",
   "reviewPrivateHint": "Solo tú la ves (bitácora / historial)",
   "reviewPrivateBadge": "Bitácora",
+  "reviewPublishConfirmTitle": "¿Publicar en la ficha?",
+  "reviewPublishConfirmBody": "Esto será visible para otros usuarios.",
+  "reviewPublishAction": "Publicar",
   "staffModeBanner": "{role}: privilegios de dueño en sitios y contenido público (las bitácoras privadas solo las ve su autor).",
   "@staffModeBanner": {
     "placeholders": {

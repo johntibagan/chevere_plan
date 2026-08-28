@@ -11,6 +11,7 @@ import '../../../core/l10n/context_l10n.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/theme/theme_rebuild.dart';
+import '../../../core/widgets/app_confirm_dialog.dart';
 import '../../../core/widgets/app_network_image.dart';
 import '../../../core/widgets/app_toast.dart';
 import '../../../core/widgets/discard_changes_scope.dart';
@@ -130,7 +131,29 @@ class _SiteReviewEditorPageState extends ConsumerState<SiteReviewEditorPage> {
     _formDirty.markDirty();
   }
 
+  Future<bool> _confirmPublicSave() async {
+    if (!_canChoosePrivacy || !_isPublic) return true;
+    final l10n = context.l10n;
+    final ok = await showAppConfirmDialog<bool>(
+      context: context,
+      icon: Icons.public,
+      tone: AppConfirmTone.warning,
+      title: l10n.reviewPublishConfirmTitle,
+      body: l10n.reviewPublishConfirmBody,
+      actions: [
+        AppConfirmAction(label: l10n.actionCancel, value: false),
+        AppConfirmAction(
+          label: l10n.reviewPublishAction,
+          value: true,
+          isPrimary: true,
+        ),
+      ],
+    );
+    return ok == true;
+  }
+
   Future<void> _save() async {
+    if (!await _confirmPublicSave()) return;
     setState(() => _saving = true);
     _formDirty.setSuppressed(true);
     try {

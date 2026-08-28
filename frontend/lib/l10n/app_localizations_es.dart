@@ -1388,6 +1388,16 @@ class AppLocalizationsEs extends AppLocalizations {
   String get reviewPrivateBadge => 'Bitácora';
 
   @override
+  String get reviewPublishConfirmTitle => '¿Publicar en la ficha?';
+
+  @override
+  String get reviewPublishConfirmBody =>
+      'Esto será visible para otros usuarios.';
+
+  @override
+  String get reviewPublishAction => 'Publicar';
+
+  @override
   String staffModeBanner(String role) {
     return '$role: privilegios de dueño en sitios y contenido público (las bitácoras privadas solo las ve su autor).';
   }

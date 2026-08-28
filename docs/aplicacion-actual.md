@@ -144,8 +144,8 @@ Editar: creador, quien lo tiene como propio en saves, o staff sobre público.
 
 Sitio **público**:
 
-- **Reseña pública:** texto, 1–5★, hasta 3 fotos; varias por usuario; promedio solo públicas; reportable.
-- **Bitácora privada:** mismo form; solo el autor; no reportable por otros.
+- **Reseña pública:** texto, 1–5★, hasta 3 fotos; varias por usuario; promedio solo públicas; reportable. Al guardar con «Visible en la ficha» activo, confirmación breve antes de publicar.
+- **Bitácora privada:** mismo form; solo el autor; **sin** confirmación al guardar.
 
 Visor de fotos de reseña = mismo que sitio (sin “usar como portada”). Staff: bandeja de reportes; **Eliminar foto** borra fila `site_photos`, archivo en Storage y cierra reportes del mismo objetivo; **Descartar** solo cierra el reporte.
 
