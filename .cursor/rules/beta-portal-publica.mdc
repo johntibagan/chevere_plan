@@ -1,33 +1,53 @@
 ---
-description: Al decir “publica” en beta-portal, pedir # de tickets y publicar flujos de prueba por versión.
+description: Flujo al decir “publica” en el portal beta (versión, reportes, APK).
 alwaysApply: true
 ---
 
-# Beta portal — “publica” (flujos de prueba)
+# Beta portal — “publica”
 
-Cuando el dueño diga **publica** / **publicar** (notas / flujos / cómo probar del portal beta):
+Cuando el dueño diga **publica** / **publicar**:
 
-## Obligatorio preguntar
+## 1. Versión
 
-1. **IDs** de reporte/mejora (`#1`, `#2`…) que entraron en esta publicación.
-2. **Versión** del APK (ej. `1.0.0+3`) si no está clara en `beta_release` o en el mensaje.
+- Usar la versión que indique (ej. `1.0.0+5`) o subir `+1` en `frontend/pubspec.yaml`.
+- **Siempre** dejar `frontend/pubspec.yaml` en esa versión antes de cerrar.
 
-No inventar IDs. Si faltan, preguntar y esperar.
+## 2. Reportes a incluir
 
-## Qué hacer después
+Consultar en Supabase (no inventar IDs):
 
-1. Leer en Supabase `beta_feedback` esos `ticket_no` (texto del reporte).
-2. Revisar qué se arregló en el código / chat (si aplica).
-3. Por cada ticket, escribir en español:
-   - **title**: qué se solucionó o mejoró (corto, 1 línea).
-   - **steps**: flujo para probar en el celular (pasos numerados, 3–8, concretos: dónde tocar, qué debe verse).
-4. Upsert en `public.beta_qa_flows` (MCP `execute_sql` o RPC `beta_upsert_qa_flow` con el PIN de `private.beta_admin`).
-   - Clave única: `(version, ticket_no)`.
-5. Si el ticket aún no está “listo”, ofrecer marcar `done` + `fixed_in_version` (RPC `beta_mark_feedback`); no asumir.
-6. Confirmar: sección **Cómo probar** del portal muestra la versión (sin redeploy de Pages si solo cambió la DB).
+```sql
+SELECT ticket_no, kind, text
+FROM public.beta_feedback
+WHERE in_review = true
+  AND (fixed_in_version IS NULL OR trim(fixed_in_version) = '')
+ORDER BY ticket_no;
+```
 
-## No hacer
+Si el dueño nombra IDs extra, sumarlos sin duplicar.
 
-- No publicar flujos sin IDs confirmados.
-- No poner SQL/stacks en el texto de prueba.
-- No redeploy de Pages solo por datos nuevos en `beta_qa_flows`.
+## 3. Flujos “Cómo probar”
+
+Por cada ticket, en español:
+
+- **title**: qué se arregló (1 línea).
+- **steps**: 3–8 pasos concretos para probar en el celular.
+
+Upsert en `public.beta_qa_flows` con `version` = versión completa (`1.0.0+5`).
+
+Cerrar ticket: `done = true`, `in_review = false`, `fixed_in_version` = misma versión.
+
+## 4. APK
+
+```powershell
+cd frontend
+.\tool\publish_beta.ps1 -SkipBump   # si el pubspec ya tiene el +N correcto
+```
+
+Sin `-SkipBump` si aún hay que subir el build en pubspec. Actualiza Storage y `beta_release`.
+
+## Cierre
+
+Mismo `+N` en: `pubspec.yaml`, `fixed_in_version`, `beta_qa_flows.version`, `beta_release.build`.
+
+No redeploy de Pages solo por cambios en la DB. No poner SQL ni stacks en los textos de prueba.
