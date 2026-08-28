@@ -136,7 +136,7 @@ Info: nombre, franja/icono visibilidad, origen, ciudad, pin, Maps (abrir / cómo
 
 Editar: creador, quien lo tiene como propio en saves, o staff sobre público.
 
-**Público → privado:** bloqueado si catálogo u otros saves / aportes / paradas de plan ajenas (`site_privacy_blockers`).
+**Público → privado:** bloqueado si catálogo o vínculos **de otros usuarios** (no el dueño): saves, aportes, paradas en planes ajenos, reseñas públicas (`site_privacy_blockers`); la app muestra el motivo concreto en un diálogo.
 
 ---
 

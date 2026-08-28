@@ -519,9 +519,32 @@
     }
   },
   "sameSiteStaffHint": "Hay un sitio público parecido. Edítalo desde su ficha; no creamos duplicados.",
-  "privacyBlockTitle": "No se puede hacer privado",
-  "privacyBlockCatalog": "Es del catálogo público: debe seguir visible para todos.",
-  "privacyBlockOthers": "Otros ya lo usan. Mientras exista vínculo, debe seguir público.",
+  "privacyBlockTitle": "Debe seguir público",
+  "privacyBlockReasonCatalog": "Es del catálogo público.",
+  "privacyBlockReasonSaves": "{count, plural, =1{Otra persona lo tiene guardado.} other{{count} personas lo tienen guardado.}}",
+  "@privacyBlockReasonSaves": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "privacyBlockReasonContributors": "{count, plural, =1{Hay un aporte de otro usuario.} other{Hay aportes de {count} usuarios.}}",
+  "@privacyBlockReasonContributors": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "privacyBlockReasonPlanStops": "{count, plural, =1{Está en un plan de otro usuario.} other{Está en planes de {count} usuarios.}}",
+  "@privacyBlockReasonPlanStops": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "privacyBlockReasonReviews": "{count, plural, =1{Hay una reseña pública de otro usuario.} other{Hay {count} reseñas públicas de otros usuarios.}}",
+  "@privacyBlockReasonReviews": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
   "reviewEditorTitle": "Tu reseña",
   "reviewRatingLabel": "Puntuación",
   "reviewCommentLabel": "Comentario",

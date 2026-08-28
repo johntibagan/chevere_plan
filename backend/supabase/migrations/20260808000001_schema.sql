@@ -1701,9 +1701,11 @@ CREATE OR REPLACE FUNCTION public.site_privacy_blockers(p_site_id uuid)
 AS $function$
 declare
   uid uuid := auth.uid();
+  v_owner uuid;
   v_other_saves bigint := 0;
   v_other_contrib bigint := 0;
   v_other_plans bigint := 0;
+  v_other_reviews bigint := 0;
   v_catalog boolean := false;
   v_allowed boolean := false;
 begin
@@ -1712,41 +1714,54 @@ begin
   end if;
 
   select
+    s.created_by,
     public.is_staff() or s.created_by = uid or exists (
       select 1 from public.user_saves us
       where us.site_id = s.id and us.user_id = uid
     ),
     (s.external_id is not null and length(trim(s.external_id)) > 0)
-  into v_allowed, v_catalog
+  into v_owner, v_allowed, v_catalog
   from public.sites s where s.id = p_site_id;
 
   if not coalesce(v_allowed, false) then
     raise exception 'forbidden';
   end if;
 
+  -- Solo vínculos de terceros (no el dueño del sitio).
   select count(*) into v_other_saves
   from public.user_saves us
-  where us.site_id = p_site_id and us.user_id <> uid;
+  where us.site_id = p_site_id
+    and us.user_id is distinct from v_owner;
 
   select count(*) into v_other_contrib
   from public.site_contributors sc
-  where sc.site_id = p_site_id and sc.user_id <> uid;
+  where sc.site_id = p_site_id
+    and sc.user_id is distinct from v_owner;
 
   select count(*) into v_other_plans
   from public.plan_stops ps
   join public.plans p on p.id = ps.plan_id
-  where ps.site_id = p_site_id and p.user_id <> uid;
+  where ps.site_id = p_site_id
+    and p.user_id is distinct from v_owner;
+
+  select count(*) into v_other_reviews
+  from public.site_reviews r
+  where r.site_id = p_site_id
+    and r.is_public = true
+    and r.user_id is distinct from v_owner;
 
   return json_build_object(
     'is_catalog', coalesce(v_catalog, false),
     'other_saves', v_other_saves,
     'other_contributors', v_other_contrib,
     'other_plan_stops', v_other_plans,
+    'other_reviews', v_other_reviews,
     'blocked',
       coalesce(v_catalog, false)
       or v_other_saves > 0
       or v_other_contrib > 0
       or v_other_plans > 0
+      or v_other_reviews > 0
   );
 end;
 $function$;

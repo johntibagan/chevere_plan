@@ -90,6 +90,7 @@ Alto riesgo: `save_place_page.dart`, `google_maps_link_importer.dart`, `save_pol
 - Identidad pública: **@usuario** es solo display. Reseñas, fotos, sitios, favoritos y contribuciones referencian **`profiles.id`** (nunca el username). Cambio de @usuario (máx. cada 3 meses) no rompe relaciones.
 - Populares cerca (Inicio): pintar caché; no GPS fino ni `search_sites` si seguís a menos de ~2 km del ancla y la lista tiene menos de 24 h. Solo públicos de **otros** (los tuyos van en Guardados recientes).
 - Reset: **solo TEST** (`CHEVERE_DB_ENV=test`, `SUPABASE_DB_URL`). Default conserva DIVIPOLA + catálogo (`external_id`); `-Full` pide escribir `test` en consola y recarga catálogo — migraciones baseline de **3** + DIVIPOLA + JSON. Parches se pliegan al schema y se borran en el mismo trabajo.
+- **PDN (beta, usuarios reales):** no aplicar SQL/MCP/`migrate_test_to_pdn` salvo que el dueño lo pida explícitamente (típicamente al publicar versión). Desarrollo = solo TEST.
 
 ## Código
 

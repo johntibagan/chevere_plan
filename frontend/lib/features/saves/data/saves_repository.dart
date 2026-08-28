@@ -779,9 +779,7 @@ class SavesRepository {
   Future<void> _assertCanMakePrivate(String siteId) async {
     final blockers = await loadPrivacyBlockers(siteId);
     if (blockers.blocked) {
-      throw const AppUserError(
-        'No puedes hacerlo privado: otros usuarios ya lo usan o es del catálogo.',
-      );
+      throw PrivacyBlockException(blockers);
     }
   }
 

@@ -106,6 +106,7 @@ class SitePrivacyBlockers {
     this.otherSaves = 0,
     this.otherContributors = 0,
     this.otherPlanStops = 0,
+    this.otherReviews = 0,
   });
 
   final bool blocked;
@@ -113,6 +114,7 @@ class SitePrivacyBlockers {
   final int otherSaves;
   final int otherContributors;
   final int otherPlanStops;
+  final int otherReviews;
 
   factory SitePrivacyBlockers.fromJson(Map<String, dynamic> json) {
     return SitePrivacyBlockers(
@@ -121,8 +123,16 @@ class SitePrivacyBlockers {
       otherSaves: (json['other_saves'] as num?)?.toInt() ?? 0,
       otherContributors: (json['other_contributors'] as num?)?.toInt() ?? 0,
       otherPlanStops: (json['other_plan_stops'] as num?)?.toInt() ?? 0,
+      otherReviews: (json['other_reviews'] as num?)?.toInt() ?? 0,
     );
   }
+}
+
+/// El sitio no puede pasar a privado por vínculos de terceros o catálogo.
+class PrivacyBlockException implements Exception {
+  const PrivacyBlockException(this.blockers);
+
+  final SitePrivacyBlockers blockers;
 }
 
 

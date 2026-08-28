@@ -1285,15 +1285,54 @@ class AppLocalizationsEs extends AppLocalizations {
       'Hay un sitio público parecido. Edítalo desde su ficha; no creamos duplicados.';
 
   @override
-  String get privacyBlockTitle => 'No se puede hacer privado';
+  String get privacyBlockTitle => 'Debe seguir público';
 
   @override
-  String get privacyBlockCatalog =>
-      'Es del catálogo público: debe seguir visible para todos.';
+  String get privacyBlockReasonCatalog => 'Es del catálogo público.';
 
   @override
-  String get privacyBlockOthers =>
-      'Otros ya lo usan. Mientras exista vínculo, debe seguir público.';
+  String privacyBlockReasonSaves(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count personas lo tienen guardado.',
+      one: 'Otra persona lo tiene guardado.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String privacyBlockReasonContributors(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Hay aportes de $count usuarios.',
+      one: 'Hay un aporte de otro usuario.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String privacyBlockReasonPlanStops(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Está en planes de $count usuarios.',
+      one: 'Está en un plan de otro usuario.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String privacyBlockReasonReviews(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Hay $count reseñas públicas de otros usuarios.',
+      one: 'Hay una reseña pública de otro usuario.',
+    );
+    return '$_temp0';
+  }
 
   @override
   String get reviewEditorTitle => 'Tu reseña';

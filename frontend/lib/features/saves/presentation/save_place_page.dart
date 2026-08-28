@@ -13,6 +13,7 @@ import '../../../core/cache/cache_ttl.dart';
 import '../../../core/cache/search_cache.dart';
 import '../../../core/config/env.dart';
 import '../../../core/di/providers.dart';
+import '../../../core/formatters/privacy_block_format.dart';
 import '../../../core/logging/client_debug_log.dart';
 import '../../../core/testing/widget_keys.dart';
 import '../../../core/l10n/context_l10n.dart';
@@ -1648,6 +1649,12 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
       Navigator.pop(context, saved ?? resultSiteId);
     } catch (e, st) {
       if (!mounted) return;
+      if (e is PrivacyBlockException) {
+        setState(() => _saving = false);
+        _formDirty.setSuppressed(false);
+        await _showCannotMakePrivate(e.blockers);
+        return;
+      }
       ClientDebugLog.reportAsync(
         context: 'save_place_submit',
         error: e,
@@ -1679,9 +1686,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
 
   Future<void> _showCannotMakePrivate(SitePrivacyBlockers blockers) async {
     final l10n = context.l10n;
-    final reason = blockers.isCatalog
-        ? l10n.privacyBlockCatalog
-        : l10n.privacyBlockOthers;
+    final reason = formatPrivacyBlockBody(l10n, blockers);
     await showAppConfirmDialog<bool>(
       context: context,
       dialogKey: WidgetKeys.privacyBlockDialog,
@@ -1697,6 +1702,28 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
         ),
       ],
     );
+  }
+
+  Future<void> _onPublicVisibilityChanged(bool v) async {
+    if (!v && _loadedIsPublic && _editSiteId != null) {
+      try {
+        final blockers =
+            await widget.savesRepository.loadPrivacyBlockers(_editSiteId!);
+        if (blockers.blocked) {
+          if (!mounted) return;
+          await _showCannotMakePrivate(blockers);
+          return;
+        }
+      } catch (e) {
+        if (!mounted) return;
+        AppToast.error(context, e, logContext: 'privacy_blockers');
+        return;
+      }
+    }
+    if (!mounted) return;
+    setState(() => _isPublic = v);
+    _markDirty();
+    _schedulePossibleDuplicateCheck();
   }
 
   Widget _infoTip(String message) {
@@ -2066,11 +2093,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
                   switchKey: WidgetKeys.savePublicSwitch,
                   value: isPublicOn,
                   onChanged: canPublish
-                      ? (v) {
-                          setState(() => _isPublic = v);
-                          _markDirty();
-                          _schedulePossibleDuplicateCheck();
-                        }
+                      ? (v) => unawaited(_onPublicVisibilityChanged(v))
                       : null,
                 ),
               ),

@@ -69,7 +69,7 @@ Lo que un usuario **ya puede hacer** en producción/beta. No inventar capacidade
 | Plan | Solo el **dueño** del plan | “Compartir” = portapapeles local (texto). Paradas pueden apuntar a sitios públicos o privados del dueño. |
 | Favorito | Relación privada user↔sitio | No es “compartir”; es marca personal. |
 
-**Bloqueo público → privado:** si otros tienen el sitio en saves, aportes, paradas de plan ajenas, o es catálogo → la app **impede** privatizar (`site_privacy_blockers`). Implica: lo público ya es un compromiso comunitario.
+**Bloqueo público → privado:** si **otros** (no el dueño del sitio) lo tienen en saves, aportes, paradas de plan o reseñas públicas, o es catálogo → la app **impide** privatizar (`site_privacy_blockers`). Los vínculos del dueño no bloquean.
 
 **Compartir (diseño en curso, no implementado):** fuente única → [`pendientes.md`](pendientes.md) (*Compartir sitios y planes*). No repetir decisiones aquí.
 

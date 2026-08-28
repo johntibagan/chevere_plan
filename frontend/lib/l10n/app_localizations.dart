@@ -2395,20 +2395,38 @@ abstract class AppLocalizations {
   /// No description provided for @privacyBlockTitle.
   ///
   /// In es, this message translates to:
-  /// **'No se puede hacer privado'**
+  /// **'Debe seguir público'**
   String get privacyBlockTitle;
 
-  /// No description provided for @privacyBlockCatalog.
+  /// No description provided for @privacyBlockReasonCatalog.
   ///
   /// In es, this message translates to:
-  /// **'Es del catálogo público: debe seguir visible para todos.'**
-  String get privacyBlockCatalog;
+  /// **'Es del catálogo público.'**
+  String get privacyBlockReasonCatalog;
 
-  /// No description provided for @privacyBlockOthers.
+  /// No description provided for @privacyBlockReasonSaves.
   ///
   /// In es, this message translates to:
-  /// **'Otros ya lo usan. Mientras exista vínculo, debe seguir público.'**
-  String get privacyBlockOthers;
+  /// **'{count, plural, =1{Otra persona lo tiene guardado.} other{{count} personas lo tienen guardado.}}'**
+  String privacyBlockReasonSaves(int count);
+
+  /// No description provided for @privacyBlockReasonContributors.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{Hay un aporte de otro usuario.} other{Hay aportes de {count} usuarios.}}'**
+  String privacyBlockReasonContributors(int count);
+
+  /// No description provided for @privacyBlockReasonPlanStops.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{Está en un plan de otro usuario.} other{Está en planes de {count} usuarios.}}'**
+  String privacyBlockReasonPlanStops(int count);
+
+  /// No description provided for @privacyBlockReasonReviews.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{Hay una reseña pública de otro usuario.} other{Hay {count} reseñas públicas de otros usuarios.}}'**
+  String privacyBlockReasonReviews(int count);
 
   /// No description provided for @reviewEditorTitle.
   ///

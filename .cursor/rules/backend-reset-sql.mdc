@@ -9,6 +9,9 @@ alwaysApply: true
 `reset_all` **solo TEST**: `CHEVERE_DB_ENV=test` + `SUPABASE_DB_URL` coherentes con
 `SUPABASE_URL`. `-Full` pide escribir `test` en consola.
 
+**PDN:** no aplicar migraciones ni SQL en `chevere_plan_pdn` hasta que el dueño lo
+indique (publicar versión / permiso explícito). Desarrollo = TEST únicamente.
+
 Cualquier cambio en migraciones, scripts SQL/Python de `backend/`, o el
 catálogo masivo **debe seguir compatible con** `backend/reset_all.ps1`.
 

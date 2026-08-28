@@ -5,6 +5,9 @@
 
 Requiere SUPABASE_DB_URL_PDN en backend/.env.
 La copia de datos TEST→PDN fue one-shot (2026); no se repite desde aquí.
+
+No ejecutar (ni MCP SQL contra PDN) salvo permiso explícito del dueño
+(p. ej. al publicar versión). Desarrollo = solo TEST.
 """
 
 from __future__ import annotations
