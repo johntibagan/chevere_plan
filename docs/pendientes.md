@@ -101,7 +101,6 @@ Seguir el MVP sin UI de share. Al tocar planes/permisos/shell, no pintar caminos
 ## Moderación
 
 - Reportar sitio/perfil/evento: tabla lista; UI MVP cubre fotos y reseñas.
-- Admin aún no borra el archivo de Storage al marcar un reporte como actioned.
 
 ## Proximidad
 

@@ -456,7 +456,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get reportsDismiss => 'Descartar';
 
   @override
-  String get reportsActioned => 'Acción tomada';
+  String get reportsActioned => 'Eliminar foto';
 
   @override
   String get searchTitle => 'Explorar';

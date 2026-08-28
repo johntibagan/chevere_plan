@@ -147,7 +147,7 @@ Sitio **público**:
 - **Reseña pública:** texto, 1–5★, hasta 3 fotos; varias por usuario; promedio solo públicas; reportable.
 - **Bitácora privada:** mismo form; solo el autor; no reportable por otros.
 
-Visor de fotos de reseña = mismo que sitio (sin “usar como portada”). Staff: bandeja de reportes; borrar archivo Storage al cerrar reporte aún puede faltar.
+Visor de fotos de reseña = mismo que sitio (sin “usar como portada”). Staff: bandeja de reportes; **Eliminar foto** borra fila `site_photos`, archivo en Storage y cierra reportes del mismo objetivo; **Descartar** solo cierra el reporte.
 
 ---
 

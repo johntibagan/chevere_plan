@@ -68,6 +68,8 @@ class _AdminReportsPageState extends State<AdminReportsPage> {
       await widget.repository.updateReportStatus(
         reportId: report.id,
         status: status,
+        photoStoragePath:
+            status == 'actioned' ? report.photoPath : null,
       );
       await _load();
     } catch (e) {

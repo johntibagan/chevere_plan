@@ -907,7 +907,7 @@ abstract class AppLocalizations {
   /// No description provided for @reportsActioned.
   ///
   /// In es, this message translates to:
-  /// **'Acción tomada'**
+  /// **'Eliminar foto'**
   String get reportsActioned;
 
   /// No description provided for @searchTitle.

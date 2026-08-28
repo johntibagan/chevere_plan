@@ -177,9 +177,19 @@ class ModerationRepository {
   Future<void> updateReportStatus({
     required String reportId,
     required String status,
+    String? photoStoragePath,
   }) async {
-    await _client.from('content_reports').update({
-      'status': status,
-    }).eq('id', reportId);
+    await _client.rpc(
+      'resolve_content_report',
+      params: {
+        'p_report_id': reportId,
+        'p_status': status,
+      },
+    );
+    if (status == 'actioned' &&
+        photoStoragePath != null &&
+        photoStoragePath.trim().isNotEmpty) {
+      SignedUrlCache.instance.evict(photoStoragePath);
+    }
   }
 }

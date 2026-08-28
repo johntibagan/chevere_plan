@@ -1307,6 +1307,65 @@ AS $function$
   limit 200;
 $function$;
 
+CREATE OR REPLACE FUNCTION public.resolve_content_report(p_report_id uuid, p_status text)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'storage', 'extensions'
+AS $function$
+declare
+  r public.content_reports%rowtype;
+  v_path text;
+begin
+  if not public.is_staff() then
+    raise exception 'forbidden';
+  end if;
+
+  if p_status not in ('reviewed', 'dismissed', 'actioned') then
+    raise exception 'invalid status';
+  end if;
+
+  select * into r
+  from public.content_reports
+  where id = p_report_id
+  for update;
+
+  if not found then
+    raise exception 'report not found';
+  end if;
+
+  if r.status <> 'open' then
+    raise exception 'report not open';
+  end if;
+
+  if p_status = 'actioned' and r.target_type = 'photo' then
+    select ph.storage_path into v_path
+    from public.site_photos ph
+    where ph.id = r.target_id;
+
+    if found then
+      delete from public.site_photos where id = r.target_id;
+
+      if v_path is not null and length(trim(v_path)) > 0 then
+        delete from storage.objects
+        where bucket_id = 'site-photos'
+          and name = v_path;
+      end if;
+    end if;
+
+    update public.content_reports
+    set status = p_status
+    where target_type = 'photo'
+      and target_id = r.target_id
+      and status = 'open';
+  else
+    update public.content_reports
+    set status = p_status
+    where id = p_report_id;
+  end if;
+end;
+$function$;
+
 CREATE OR REPLACE FUNCTION public.list_plan_candidates(p_location_query text, p_include_public boolean DEFAULT false, p_max_budget numeric DEFAULT NULL::numeric)
  RETURNS TABLE(site_id uuid, name text, city text, department text, lat double precision, lng double precision, estimated_price_amount numeric, currency_code character)
  LANGUAGE sql
@@ -2185,6 +2244,7 @@ grant execute on function public.is_staff() to anon, authenticated, service_role
 grant execute on function public.link_save_to_existing_site(p_save_id uuid, p_existing_site_id uuid) to anon, authenticated, service_role;
 grant execute on function public.list_my_route_history() to anon, authenticated, service_role;
 grant execute on function public.list_open_content_reports() to anon, authenticated, service_role;
+grant execute on function public.resolve_content_report(uuid, text) to authenticated, service_role;
 grant execute on function public.list_plan_candidates(p_location_query text, p_include_public boolean, p_max_budget numeric) to anon, authenticated, service_role;
 grant execute on function public.list_proximity_sites(p_include_public boolean) to anon, authenticated, service_role;
 grant execute on function public.normalize_username(raw text) to anon, authenticated, service_role;

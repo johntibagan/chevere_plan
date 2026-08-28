@@ -40,6 +40,8 @@ class SignedUrlCache {
     }
   }
 
+  void evict(String storagePath) => _entries.remove(storagePath);
+
   void clear() => _entries.clear();
 }
 
