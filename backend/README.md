@@ -47,3 +47,15 @@ python backend/supabase/scripts/05_sync_divipola.py --sql -o backend/supabase/sc
 ```
 
 El `-Full` ya intenta regenerarlo solo antes de aplicar.
+
+## Migrar TEST → PDN (beta)
+
+Migración de **datos** (one-shot, ago 2026): ya aplicada en `chevere_plan_pdn`. No volver a copiar datos.
+
+Para **cambios de esquema** en PDN tras tocar las migraciones baseline:
+
+```powershell
+python scripts/migrate_test_to_pdn.py
+```
+
+Requiere `SUPABASE_DB_URL_PDN` en `backend/.env`. Aplica los `.sql` de `supabase/migrations/` en orden.
