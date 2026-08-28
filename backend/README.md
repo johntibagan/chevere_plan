@@ -2,6 +2,10 @@
 
 ## Reset
 
+**Solo TEST.** Requiere `CHEVERE_DB_ENV=test` y `SUPABASE_DB_URL` en `backend/.env`.
+`SUPABASE_URL` debe ser el mismo proyecto que la DB (evita `.env` mal pegado).
+Con `-Full` pide escribir `test` en consola.
+
 **Root único:** `johnftm.proyectos@gmail.com`  
 (Catálogo masivo también queda con ese `created_by`.)
 
@@ -18,6 +22,8 @@ powershell -File C:\workspace\chevere_plan\backend\reset_all.ps1
 
 Nuke del schema `public` → **migraciones baseline** (`…01_schema` → `…02_seed` → `…03_storage`) → regenera/aplica DIVIPOLA →  
 carga masiva desde `docs/data/colombia_departamentos_municipios_sitios.json` → root único.
+
+Pide escribir `test` en consola para confirmar el entorno antes de ejecutar.
 
 **Parches SQL:** solo para aplicar YA a la DB viva; en el mismo trabajo se **pliegan** al baseline (esquema desde la DB = fuente de verdad, sin datos) y se **borran**. No acumular migraciones sueltas.
 

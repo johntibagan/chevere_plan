@@ -32,6 +32,66 @@ CATALOG_OWNER_EMAIL = ROOT_EMAIL
 CATALOG_JSON = REPO / "docs" / "data" / "colombia_departamentos_municipios_sitios.json"
 
 
+def _supabase_project_ref(url: str) -> str | None:
+    import re
+    from urllib.parse import urlparse, unquote
+
+    url = (url or "").strip()
+    m = re.search(r"https?://([a-z0-9]+)\.supabase\.co", url, re.I)
+    if m:
+        return m.group(1).lower()
+    try:
+        user = unquote(urlparse(url).username or "")
+        if user.lower().startswith("postgres."):
+            ref = user.split(".", 1)[1].lower()
+            if re.fullmatch(r"[a-z0-9]+", ref):
+                return ref
+        host = (urlparse(url).hostname or "").lower()
+    except Exception:
+        return None
+    m = re.search(r"db\.([a-z0-9]+)\.supabase\.co", host)
+    return m.group(1) if m else None
+
+
+def _assert_test_reset_env() -> None:
+    if (os.environ.get("CHEVERE_DB_ENV") or "").strip().lower() != "test":
+        print(
+            "ABORT: reset solo en TEST. Define CHEVERE_DB_ENV=test en backend/.env.",
+            file=sys.stderr,
+        )
+        sys.exit(3)
+
+    db_url = (os.environ.get("SUPABASE_DB_URL") or "").strip()
+    api_url = (os.environ.get("SUPABASE_URL") or "").strip()
+    if not db_url:
+        print("Falta SUPABASE_DB_URL en backend/.env.", file=sys.stderr)
+        sys.exit(3)
+
+    db_ref = _supabase_project_ref(db_url)
+    api_ref = _supabase_project_ref(api_url) if api_url else None
+    if api_ref and db_ref and db_ref != api_ref:
+        print(
+            "ABORT: SUPABASE_DB_URL y SUPABASE_URL no coinciden (mismo proyecto).\n"
+            "Revisa backend/.env antes de resetear.",
+            file=sys.stderr,
+        )
+        sys.exit(3)
+
+
+def _confirm_full_reset() -> None:
+    if not sys.stdin.isatty():
+        print(
+            "ABORT: --full requiere terminal interactivo para confirmar.",
+            file=sys.stderr,
+        )
+        sys.exit(3)
+    print("\n*** RESET FULL (TEST): nuke + catálogo masivo. ***", flush=True)
+    print("Escribe test para confirmar:", flush=True)
+    if input("> ").strip().lower() != "test":
+        print("ABORT: confirmación incorrecta.", file=sys.stderr)
+        sys.exit(3)
+
+
 def _load_dotenv(path: Path) -> None:
     if not path.is_file():
         return
@@ -439,6 +499,11 @@ def main() -> int:
     args = parser.parse_args()
 
     _load_dotenv(ROOT / ".env")
+    _assert_test_reset_env()
+    url = _db_url()
+    if args.full:
+        _confirm_full_reset()
+
     plan = _plan_full() if args.full else _plan_user_data()
 
     if args.full:
@@ -463,9 +528,8 @@ def main() -> int:
         print(f"  - import masivo ({CATALOG_JSON.name})")
 
     _ensure_psycopg()
-    url = _db_url()
     t0 = time.time()
-    print("Conectando...", flush=True)
+    print("Conectando (TEST)...", flush=True)
     conn = _connect(url)
     try:
         for label, path in plan:
