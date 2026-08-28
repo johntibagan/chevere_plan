@@ -29,9 +29,24 @@ Carpeta **única** que despliega Pages. Si no hay cambios aquí, el workflow **n
 | Navegación | Menú lateral (escritorio) + chips (móvil) con `#version`, `#reportes`, `#como-probar` |
 | Cómo probar (por versión) | Desplegable por versión → `#n` + pasos. Solo la **versión actual** del APK abierta al cargar |
 | Publicar flujos | En el chat del agente: decir **publica** → te pide los `#` → escribe los flujos en la DB |
-| Subir APK nuevo | `frontend\tool\publish_beta.ps1` → release **arm64 sin R8** (estable; Free ≤ 50 MB). |
+| Subir APK nuevo | Ver [Publicar APK](#publicar-apk) abajo. |
 
-Publicar un APK **no** requiere redeploy de Pages: el portal ya lee la URL desde Supabase. Los flujos de “Cómo probar” tampoco: viven en `beta_qa_flows`.
+Publicar un APK **no** requiere redeploy de Pages: el portal ya lee la URL desde Supabase. Los flujos de “Cómo probar” viven en `beta_qa_flows`.
+
+## Publicar APK
+
+Requisitos: `env/test.env`, `env/pdn.env`, `backend/.env` (service_role TEST para Storage).
+
+1. Sube `+N` en `frontend/pubspec.yaml` si corresponde.
+2. Desde `frontend/`:
+
+```powershell
+python ..\backend\scripts\merge_pdn_env.py
+flutter build apk --release --dart-define-from-file=env/.pdn.build.env --target-platform android-arm64
+python ..\backend\scripts\publish_beta_apk.py --version 1.0.0 --build N --apk build\app\outputs\flutter-apk\app-release.apk
+```
+
+Sustituye `1.0.0` y `N` por la versión del pubspec. Release **arm64** (Free ≤ 50 MB).
 
 ## Activar Pages (una vez)
 

@@ -29,7 +29,7 @@ Future<Widget> createRootApp({
       child: BootstrapErrorApp(
         message: kReleaseMode
             ? Env.missingConfigUserMessage
-            : 'Quitá SUPABASE_SERVICE_ROLE_KEY de frontend/.env. '
+            : 'Quitá SUPABASE_SERVICE_ROLE_KEY de frontend/env. '
                 'Esa clave es solo para backend/.env.',
       ),
     );

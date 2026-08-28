@@ -20,6 +20,7 @@ Si el código **cambia comportamiento** (flujo, reglas, textos, qué se puede/no
 
 - Misma pasada que el código, no un commit/docs suelto “luego”.
 - Frases cortas, sin tecnicismos de más. Si una regla nueva es de **no romper**, va a invariantes (o sección nueva ahí), no a un markdown extra.
+- **No duplicar** comandos ni setup en varios `.md` — ver `docs-sin-duplicar.mdc`.
 - **No** reescribir `docs/adr/` ni usar `docs/producto.md` como especificación de lo implementado.
 - Si no cambió comportamiento (refactor, typo), no hace falta tocar docs.
 

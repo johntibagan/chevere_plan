@@ -1,0 +1,34 @@
+---
+description: Documentación técnica mínima; una sola fuente por tema; sin duplicar.
+alwaysApply: true
+---
+
+# Docs — sin duplicar
+
+## Regla
+
+- **Un tema = un archivo dueño.** Si ya está documentado, enlaza; no copies comandos, tablas de env ni pasos en otro `.md`.
+- **Técnico:** lo mínimo indispensable — concreto, sin párrafos de contexto repetido.
+- **Negocio:** `docs/producto.md`, `docs/pendientes.md`, `docs/aplicacion-actual.md`, `docs/invariantes.md` — ahí sí puede haber detalle de producto/comportamiento.
+
+## Dueños (no repetir en otros sitios)
+
+| Tema | Archivo |
+|------|---------|
+| Correr app en local | `frontend/GETTINGSTAR.md` |
+| Publicar APK PDN / portal | `beta-portal/README.md` |
+| Reset DB / backend | `backend/README.md` |
+| E2E Patrol | `docs/e2e.md` |
+| Google Maps keys | `docs/google-maps-setup.md` |
+| Credenciales env | comentarios en `frontend/env/*.example` y `backend/.env.example` |
+
+## Al cambiar algo
+
+- ¿Cambia comportamiento de producto? → `docs/aplicacion-actual.md` / `invariantes.md` (ver `docs-al-cambiar.mdc`).
+- ¿Solo comando o ruta de config? → **solo** el dueño de la tabla; quita duplicados viejos en el mismo pase.
+- **Prohibido** propagar el mismo bloque de `copy env\…` + `flutter run` en README raíz, `frontend/README`, `docs/setup/*`, etc.
+
+## Comandos
+
+- Preferir **comandos nativos** (`flutter run`, `flutter build`, `python …`) en la doc dueña.
+- No crear scripts wrapper `.ps1` en frontend si un comando directo basta.

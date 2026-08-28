@@ -1,18 +1,7 @@
 #!/usr/bin/env python3
 """Publica APK de prueba cerrada a Supabase Storage (bucket beta-apks).
 
-Preferido (APK más liviano: release + R8 + arm64):
-  frontend\\tool\\publish_beta.ps1
-
-Manual:
-  flutter build apk --release --dart-define-from-file=.env --target-platform android-arm64
-  python backend/scripts/publish_beta_apk.py --version 1.0.0 --build 3 \\
-    --apk frontend/build/app/outputs/flutter-apk/app-release.apk
-
-Plan Free ≤ 50 MB: arm64 obligatorio. Universal suele pasar el tope.
-
-Requiere backend/.env con SUPABASE_URL y SUPABASE_SERVICE_ROLE_KEY.
-Imprime la URL pública de descarga (latest + versionada).
+Ver beta-portal/README.md#publicar-apk (merge_pdn_env.py + flutter build + este script).
 """
 
 from __future__ import annotations

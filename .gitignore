@@ -3,11 +3,9 @@ Thumbs.db
 Desktop.ini
 .DS_Store
 
-# Secrets
+# Secrets — frontend/env/*.env y backend/.env (ver .env.example en cada carpeta)
 .env
 .env.*
-!**/.env.example
-!**/.env.e2e.example
 **/.env
 **/.patrol.env
 **/google-services.json

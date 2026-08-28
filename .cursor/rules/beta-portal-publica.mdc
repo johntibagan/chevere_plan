@@ -39,12 +39,7 @@ Cerrar ticket: `done = true`, `in_review = false`, `fixed_in_version` = misma ve
 
 ## 4. APK
 
-```powershell
-cd frontend
-.\tool\publish_beta.ps1 -SkipBump   # si el pubspec ya tiene el +N correcto
-```
-
-Sin `-SkipBump` si aún hay que subir el build en pubspec. Actualiza Storage y `beta_release`.
+Comandos en [beta-portal/README.md](../beta-portal/README.md#publicar-apk). Sube `+N` en `pubspec.yaml` antes si hace falta.
 
 ## Cierre
 

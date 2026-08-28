@@ -34,6 +34,14 @@
       }
     }
   },
+  "moreMenuAppEnvironment": "Entorno: {env}",
+  "@moreMenuAppEnvironment": {
+    "placeholders": {
+      "env": {
+        "type": "String"
+      }
+    }
+  },
   "moreMenuTheme": "Tema",
   "moreMenuThemeLight": "Claro",
   "moreMenuThemeDark": "Oscuro",
@@ -394,7 +402,7 @@
   "saveLocationSearchHint": "Buscar o pegar enlace de Google Maps",
   "saveMapsPasteHelper": "maps.app.goo.gl o google.com/maps",
   "saveMapsNeedExactPin": "No se obtuvo el punto exacto. Ábrelo en el mapa interactivo y confirma el pin.",
-  "saveMapsNeedGoogleKey": "Falta GOOGLE_MAPS_API_KEY en el build. Corre con: flutter run --dart-define-from-file=.env",
+  "saveMapsNeedGoogleKey": "Falta GOOGLE_MAPS_API_KEY. Corre: flutter run --dart-define-from-file=env/test.env",
   "planSearchCompleteOnlyHint": "Solo aparecen sitios completos con ubicación en el mapa.",
   "planSearchEmptyQueryHint": "Deja el buscador vacío y toca buscar para ver todos tus sitios elegibles.",
   "planSearchHint": "Nombre, ciudad… o vacío = todos",

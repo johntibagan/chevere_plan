@@ -84,6 +84,11 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
+  String moreMenuAppEnvironment(String env) {
+    return 'Entorno: $env';
+  }
+
+  @override
   String get moreMenuTheme => 'Tema';
 
   @override
@@ -939,7 +944,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get saveMapsNeedGoogleKey =>
-      'Falta GOOGLE_MAPS_API_KEY en el build. Corre con: flutter run --dart-define-from-file=.env';
+      'Falta GOOGLE_MAPS_API_KEY. Corre: flutter run --dart-define-from-file=env/test.env';
 
   @override
   String get planSearchCompleteOnlyHint =>

@@ -1,37 +1,17 @@
 # Flutter + Android (Windows)
 
-Package: `com.chevere.plan`. SDK esperado: `C:\src\flutter` (stable).
+Package: `com.chevere.plan`. SDK: `C:\src\flutter` (stable).
 
 ## Una vez
 
-1. Clonar Flutter:
+1. Flutter en `C:\src\flutter` + PATH.
+2. Android Studio, SDK 34+, `flutter doctor`.
+3. Dispositivo o emulador.
 
-```powershell
-New-Item -ItemType Directory -Force -Path "C:\src" | Out-Null
-git clone https://github.com/flutter/flutter.git -b stable --depth 1 C:\src\flutter
-```
+## App
 
-2. Añadir `C:\src\flutter\bin` al PATH de usuario y abrir una terminal nueva.
+Ver [frontend/GETTINGSTAR.md](../../frontend/GETTINGSTAR.md).
 
-3. Android Studio + SDK (API 34+). Licencias:
+## APK PDN
 
-```powershell
-flutter doctor --android-licenses
-flutter doctor -v
-```
-
-4. Dispositivo USB o emulador.
-
-## Correr la app
-
-```powershell
-cd C:\workspace\chevere_plan\frontend
-copy .env.example .env   # si aún no existe; rellena valores
-.\tool\run_dev.ps1
-```
-
-Release:
-
-```powershell
-flutter build apk --release --obfuscate --split-debug-info=build/symbols --dart-define-from-file=.env
-```
+Ver [beta-portal/README.md](../../beta-portal/README.md#publicar-apk).

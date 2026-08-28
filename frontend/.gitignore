@@ -1,8 +1,8 @@
-# Secrets / local env (never commit)
-.env
-.env.*
-!.env.example
-!.env.e2e.example
+# Solo env/*.env (gitignored). No crear .env en la raíz de frontend.
+env/test.env
+env/pdn.env
+env/e2e.env
+env/.pdn.build.env
 google-services.json
 .patrol.env
 

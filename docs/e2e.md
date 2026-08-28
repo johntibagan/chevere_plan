@@ -15,10 +15,10 @@ Patrón **Robot** en `patrol_test/robots/`. Keys estables: `lib/core/testing/wid
 
 ```powershell
 # PR (emulador): solo critical
-patrol test --tags critical --dart-define-from-file=.env.e2e
+patrol test --tags critical --dart-define-from-file=env/e2e.env
 
 # Nightly / pre-release: suite completa
-patrol test --dart-define-from-file=.env.e2e
+patrol test --dart-define-from-file=env/e2e.env
 ```
 
 ## P0
@@ -49,10 +49,10 @@ Lógica pura (no E2E): `test/save_policies_test.dart`, `review_policies_test.dar
 
 ```powershell
 cd frontend
-copy .env.e2e.example .env.e2e
+copy env\e2e.env.example env\e2e.env
 dart pub global activate patrol_cli
 adb devices
-patrol test -d DEVICE_ID --dart-define-from-file=.env.e2e --tags critical
+patrol test -d DEVICE_ID --dart-define-from-file=env/e2e.env --tags critical
 ```
 
 `test_bundle.dart` lo regenera `patrol test`; no commitear.
@@ -72,5 +72,5 @@ Patrol 4.x + Android Test Orchestrator a veces termina con `Gradle test executio
 `--tags critical` cubre más archivos que esos 4 (guardar, rutas, búsqueda, segundo caso de privacidad). Si el Gradle muere a mitad, el HTML solo lista los que alcanzaron a correr. Para el resto, un archivo a la vez:
 
 ```powershell
-patrol test -d DEVICE_ID --dart-define-from-file=.env.e2e --target patrol_test/acceptance/p1_saves_test.dart
+patrol test -d DEVICE_ID --dart-define-from-file=env/e2e.env --target patrol_test/acceptance/p1_saves_test.dart
 ```

@@ -288,5 +288,5 @@ flowchart TB
 
 - Portal: `https://johntibagan.github.io/chevere_plan/` — versión, APK, reportes (`#N`), Cómo probar (`beta_qa_flows`).  
 - Al decir **publica** en chat: IDs + versión → flujos en DB.  
-- APK en Storage `beta-apks`; publish script en `frontend/tool/publish_beta.ps1`.  
+- APK en Storage `beta-apks`; ver `beta-portal/README.md` (publicar).  
 - Versionado `pubspec` `1.0.0+N`. PIN admin beta en `private.beta_admin`.

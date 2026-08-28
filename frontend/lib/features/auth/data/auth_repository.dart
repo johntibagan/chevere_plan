@@ -24,7 +24,7 @@ class AuthRepository {
     if (_googleReady) return;
     if (!Env.hasGoogleWebClientId) {
       AppLog.error(
-        'Falta GOOGLE_WEB_CLIENT_ID en .env (dart-define-from-file)',
+        'Falta GOOGLE_WEB_CLIENT_ID en env/test.env (dart-define-from-file)',
         name: 'auth',
       );
       throw const AppUserError(kGenericAppError);

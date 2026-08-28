@@ -1,10 +1,9 @@
 import 'package:flutter/foundation.dart';
 
 /// Configuración de cliente. **Solo** valores inyectados en compile-time
-/// (`--dart-define` / `--dart-define-from-file=.env`).
+/// (`--dart-define-from-file=env/test.env` o `env/.pdn.build.env`).
 ///
-/// Plantilla: `.env.example` → copia a `.env` (gitignored).
-/// No empaquetar `.env` como asset: acaba en el APK/IPA y es trivial de extraer.
+/// Plantillas: `env/test.env.example`, `env/pdn.env.example` → copias en `env/` (gitignored).
 ///
 /// Claves de cliente esperadas (públicas por diseño, protegidas por RLS / cuotas):
 /// - `SUPABASE_URL`, `SUPABASE_ANON_KEY` (nunca `service_role`)
@@ -13,6 +12,20 @@ import 'package:flutter/foundation.dart';
 /// - `GEOAPIFY_API_KEY`, `GEOAPIFY_DAILY_LIMIT` (fallback)
 class Env {
   Env._();
+
+  static const String appEnv =
+      String.fromEnvironment('APP_ENV', defaultValue: 'test');
+
+  /// Etiqueta corta para el menú ☰ (TEST / BETA).
+  static String get appEnvironmentLabel {
+    switch (appEnv.trim().toLowerCase()) {
+      case 'beta':
+      case 'pdn':
+        return 'BETA';
+      default:
+        return 'TEST';
+    }
+  }
 
   static const String supabaseUrl = String.fromEnvironment('SUPABASE_URL');
   static const String supabaseAnonKey =
@@ -68,6 +81,7 @@ class Env {
       return 'La app no está configurada correctamente. Reinstálala o contacta soporte.';
     }
     return 'Faltan defines de build: SUPABASE_URL y SUPABASE_ANON_KEY.\n'
-        'Copia .env.example → .env y usa --dart-define-from-file=.env';
+        'Copia env/test.env.example → env/test.env y usa '
+        '--dart-define-from-file=env/test.env';
   }
 }

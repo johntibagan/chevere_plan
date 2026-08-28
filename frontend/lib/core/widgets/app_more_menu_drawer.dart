@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../app_version.dart';
+import '../config/env.dart';
 import '../di/providers.dart';
 import '../l10n/context_l10n.dart';
 import '../theme/app_theme.dart';
@@ -234,13 +235,27 @@ class AppMoreMenuDrawer extends ConsumerWidget {
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 12, 20, 4),
               child: ref.watch(appVersionProvider).when(
-                    data: (version) => Text(
-                      l10n.moreMenuAppVersion(version),
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: AppColors.muted,
-                      ),
+                    data: (version) => Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          l10n.moreMenuAppVersion(version),
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppColors.muted,
+                          ),
+                        ),
+                        SizedBox(height: 2),
+                        Text(
+                          l10n.moreMenuAppEnvironment(Env.appEnvironmentLabel),
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: AppColors.mutedDark,
+                          ),
+                        ),
+                      ],
                     ),
                     loading: () => const SizedBox.shrink(),
                     error: (_, _) => const SizedBox.shrink(),

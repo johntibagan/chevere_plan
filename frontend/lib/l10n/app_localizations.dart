@@ -226,6 +226,12 @@ abstract class AppLocalizations {
   /// **'Versión {version}'**
   String moreMenuAppVersion(String version);
 
+  /// No description provided for @moreMenuAppEnvironment.
+  ///
+  /// In es, this message translates to:
+  /// **'Entorno: {env}'**
+  String moreMenuAppEnvironment(String env);
+
   /// No description provided for @moreMenuTheme.
   ///
   /// In es, this message translates to:
@@ -1795,7 +1801,7 @@ abstract class AppLocalizations {
   /// No description provided for @saveMapsNeedGoogleKey.
   ///
   /// In es, this message translates to:
-  /// **'Falta GOOGLE_MAPS_API_KEY en el build. Corre con: flutter run --dart-define-from-file=.env'**
+  /// **'Falta GOOGLE_MAPS_API_KEY. Corre: flutter run --dart-define-from-file=env/test.env'**
   String get saveMapsNeedGoogleKey;
 
   /// No description provided for @planSearchCompleteOnlyHint.

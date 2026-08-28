@@ -39,7 +39,7 @@ La prioridad número uno de este proyecto es **la agilidad percibida por el usua
 
 ## 2.1 Seguridad (cliente)
 
-- Secretos y URLs de Supabase: `--dart-define` / `.env` gitignored (`Env`). Nunca assets. Service role prohibida en el cliente.
+- Secretos y URLs de Supabase: `--dart-define-from-file=env/test.env` (`Env`). Nunca assets. Service role prohibida en el cliente.
 - Sesión JWT: `flutter_secure_storage` (Android Keystore, AES-GCM). Legales y cuotas pueden seguir en SharedPreferences.
 - HTTPS obligatorio hacia Supabase (`Env.supabaseUrlIsHttps` + `usesCleartextTraffic=false`). Sin certificate pinning (frágil con CDN/certs rotativos); vale la validación del SO.
 - Share/deep link: `ShareParser` recorta y rechaza `javascript:` / `data:` / `file:` / `content:`.

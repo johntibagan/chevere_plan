@@ -21,7 +21,7 @@ Maps SDK Android = **ilimitado ($0)**.
 
 ## 2. App
 
-1. `frontend/.env` → `GOOGLE_MAPS_API_KEY=...` y `GOOGLE_PLACES_DAILY_LIMIT=80`.
+1. `frontend/env/test.env` → `GOOGLE_MAPS_API_KEY=...` y `GOOGLE_PLACES_DAILY_LIMIT=80`.
 2. `frontend/android/local.properties` (gitignored):
 
 ```properties
@@ -31,7 +31,7 @@ GOOGLE_MAPS_API_KEY=la_misma_key
 3. Run:
 
 ```bash
-flutter run --dart-define-from-file=.env
+flutter run --dart-define-from-file=env/test.env
 ```
 
 ## 3. Anti-fugas (ya en código)
@@ -42,8 +42,8 @@ flutter run --dart-define-from-file=.env
   3. Si falta pin → **1× HTML** (consent / acortador)
   4. Si falta pin + key → Place Details (ChIJ/CID) o **Search Text** por nombre
   5. Reverse **solo** si hay coords y falta ciudad
-- **Importante:** la key en `.env` no basta sola: hay que correr con
-  `--dart-define-from-file=.env` (o `tool/run_dev.ps1`). Sin eso Places no se usa.
+- **Importante:** la key en `env/test.env` no basta sola: hay que correr con
+  `--dart-define-from-file=env/test.env`. Sin eso Places no se usa.
 - Buscador del mapa → **solo al pulsar 🔍** (sin teclas).
 - Autocomplete con **session token** → al elegir, Place Details y fin de sesión.
 - Tap en mapa → **1× Geocoding reverse**.

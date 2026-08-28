@@ -3,30 +3,13 @@
 App Flutter (Android) + Supabase: guardar lugares y armar planes de ocio en Colombia.
 
 ```
-frontend/   App Flutter — package com.chevere.plan
+frontend/   App Flutter
 backend/    Supabase: migraciones + reset
-docs/       Qué hace la app hoy + lo que no se toca
+docs/       Comportamiento actual e invariantes
 ```
 
-## Arranque diario
+**Correr en local:** [frontend/GETTINGSTAR.md](frontend/GETTINGSTAR.md)
 
-```powershell
-cd frontend
-.\tool\run_dev.ps1
-```
+**Reset DB:** [backend/README.md](backend/README.md)
 
-Requisitos: `frontend/.env` (ver `.env.example`) y un dispositivo/emulador Android.
-
-## Reset de la base
-
-```powershell
-powershell -File C:\workspace\chevere_plan\backend\reset_all.ps1
-```
-
-Detalles: [backend/README.md](backend/README.md).
-
-## Docs
-
-- [docs/aplicacion-actual.md](docs/aplicacion-actual.md) — comportamiento **actual**
-- [docs/invariantes.md](docs/invariantes.md) — lo que **no** se rompe
-- [docs/README.md](docs/README.md) — índice (setup, archivo)
+**Docs:** [docs/aplicacion-actual.md](docs/aplicacion-actual.md) · [docs/invariantes.md](docs/invariantes.md)
