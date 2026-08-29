@@ -56,19 +56,30 @@ El `-Full` ya intenta regenerarlo solo antes de aplicar.
 
 ## Esquema: TEST vs PDN (beta)
 
-| Dónde | Cuándo aplicar cambios SQL |
-|--------|----------------------------|
-| **TEST** (`SUPABASE_DB_URL`) | Al desarrollar: plegar al baseline y aplicar a la DB de TEST en el mismo trabajo. |
-| **PDN** (`SUPABASE_DB_URL_PDN`, usuarios reales) | **Solo cuando el dueño lo indique** (p. ej. al publicar versión / decir «aplica en PDN»). **No** MCP, `migrate_test_to_pdn.py` ni SQL directo contra PDN por defecto. |
+| Dónde | Cuándo |
+|--------|--------|
+| **TEST** (`SUPABASE_DB_URL`) | Desarrollo: parche → aplicar → plegar en `20260808000001_schema.sql` (y `…03_storage.sql` si aplica). |
+| **PDN** (`SUPABASE_DB_URL_PDN`) | Solo al **publica** (o permiso explícito). |
 
-Flujo habitual en TEST: editar `supabase/migrations/` → aplicar a TEST → plegar al baseline.
+**Baseline (3 archivos en `supabase/migrations/`):**
 
-Cuando toque PDN (el dueño lo dirá):
+1. `20260808000001_schema.sql` — espejo del esquema TEST (app).
+2. `20260808000002_seed.sql` — seeds (`--full` TEST; no va a PDN en publica).
+3. `20260808000003_storage.sql` — buckets + policies Storage.
+
+Entre publicaciones pueden existir **parches** temporales (`YYYYMMDDHHMMSS_*.sql`).
+Tras cada cambio de backend: aplicar a TEST y plegar al baseline; conservar el
+parche hasta la próxima publica.
+
+**Publica** (antes del APK):
 
 ```powershell
+cd backend
 python scripts/migrate_test_to_pdn.py
 ```
 
-Requiere `SUPABASE_DB_URL_PDN` en `backend/.env`.
+Aplica parches pendientes + baseline en PDN, borra parches del repo. Requiere
+`SUPABASE_DB_URL_PDN` en `.env` (reintenta con `docker psql` si falla DNS del
+pooler). Solo esquema — **no** seed ni datos.
 
 La copia masiva TEST→PDN (datos, one-shot 2026) ya está hecha; no repetir.

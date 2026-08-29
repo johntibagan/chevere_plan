@@ -16,9 +16,11 @@ Sin párrafos largos. No repetir el resumen técnico solo para rellenar.
 
 ## SQL / migraciones
 
-1. Crear archivo en `backend/supabase/migrations/` (compatible con `--full`).
-2. **Intentar aplicarlo** a la DB del proyecto (misma conexión/`SUPABASE_DB_URL`) cuando el cambio deba valer ya.
-3. En el cierre:
-   - Si se aplicó → `Nada de tu lado` (o solo hot restart de la app si tocó frontend).
-   - Si no se pudo aplicar → `Tú: aplica la migración …` o `reset_all.ps1 -Full` si corresponde.
-4. No asumir que “crear el .sql” = “ya está en Supabase”.
+1. Crear parche en `backend/supabase/migrations/` (compatible con `--full`).
+2. **Aplicar** a TEST (`SUPABASE_DB_URL`) cuando el cambio deba valer ya.
+3. **Plegar** al baseline (`20260808000001_schema.sql` / `…03_storage.sql`) en el mismo trabajo.
+4. **Conservar** el parche hasta **publica** (`migrate_test_to_pdn.py` lo aplica en PDN y lo borra).
+5. En el cierre:
+   - Si se aplicó a TEST → `Nada de tu lado` (o hot restart si tocó frontend).
+   - Si no se pudo aplicar → `Tú: aplica la migración …` o `reset_all.ps1 -Full`.
+6. No asumir que “crear el .sql” = “ya está en Supabase”.

@@ -1,5 +1,5 @@
 ---
-description: SQL/migraciones y reset_all — baseline de 3; parches se pliegan y borran
+description: SQL/migraciones y reset_all — baseline de 3; parches; publica → PDN
 globs: backend/**/*.{sql,py,ps1}
 alwaysApply: true
 ---
@@ -9,74 +9,81 @@ alwaysApply: true
 `reset_all` **solo TEST**: `CHEVERE_DB_ENV=test` + `SUPABASE_DB_URL` coherentes con
 `SUPABASE_URL`. `-Full` pide escribir `test` en consola.
 
-**PDN:** no aplicar migraciones ni SQL en `chevere_plan_pdn` hasta que el dueño lo
-indique (publicar versión / permiso explícito). Desarrollo = TEST únicamente.
+**PDN:** no SQL/MCP salvo permiso del dueño (**publica** / «iguala PDN»). Desarrollo = TEST.
 
-Cualquier cambio en migraciones, scripts SQL/Python de `backend/`, o el
-catálogo masivo **debe seguir compatible con** `backend/reset_all.ps1`.
+## Paridad TEST = PDN (esquema app, cero drift)
 
-## Dos modos (no romper ninguno)
+TEST y PDN deben tener **el mismo esquema app** (tablas, índices, RPC, triggers,
+policies `public`+`storage`, grants). Ni nombres de índice, ni `search_path`, ni
+cuerpos de función distintos.
+
+| Archivo | Rol |
+|---|---|
+| `20260808000001_schema.sql` | **Espejo consolidado** del esquema TEST (tablas, RPC, RLS, grants) |
+| `20260808000003_storage.sql` | Buckets + policies Storage |
+| `20260808000002_seed.sql` | Seeds (solo `--full` TEST; no va a PDN en publica) |
+
+**Prohibido:** dumps de referencia (`*_schema_test.sql`), scripts de compare/dump,
+u otros `.sql` sueltos que no sean parches temporales o baseline.
+
+## Ciclo al tocar backend (desarrollo en TEST)
+
+1. **Crear** parche `YYYYMMDDHHMMSS_descripcion.sql` si hay que aplicar YA a TEST.
+2. **Aplicar** a TEST (`SUPABASE_DB_URL` / MCP).
+3. **En el mismo trabajo, plegar** al baseline (`…01_schema.sql` y/o `…03_storage.sql`).
+4. **Conservar** el parche en `migrations/` hasta la próxima **publica** (PDN aún no lo tiene).
+
+Parches = idempotentes. Baseline = estado final ya plegado.
+
+## Ciclo «publica» (PDN + limpieza)
+
+Cuando el dueño diga **publica** / **publicar** (ver también `beta-portal-publica.mdc`):
+
+1. **`python scripts/migrate_test_to_pdn.py`** — obligatorio antes del APK:
+   - Aplica parches pendientes a PDN (orden por nombre).
+   - Aplica `…01_schema.sql` + `…03_storage.sql` (idempotente, cierra cualquier drift).
+   - **Elimina** los parches del repo (solo quedan los 3 baseline).
+2. Versión, tickets, APK (regla beta-portal).
+
+Si `migrate_test_to_pdn.py` falla, **no publicar** APK hasta corregir. Prohibido
+dejar PDN desincronizado.
+
+La copia masiva de **datos** TEST→PDN fue one-shot; no repetir — solo esquema.
+
+Cualquier cambio en migraciones/scripts **debe ser compatible** con `reset_all.ps1`.
+
+## Dos modos reset (TEST)
 
 | Modo | Qué hace | Conserva |
 |---|---|---|
-| **Default** | Wipe datos de usuarios (`01_wipe_user_data.sql`) | DIVIPOLA + sitios con `external_id` (catálogo) |
-| **`-Full` / `--full`** | Nuke → migraciones ordenadas → DIVIPOLA → import masivo → root | Nada previo |
+| **Default** | Wipe datos usuarios | DIVIPOLA + catálogo (`external_id`) |
+| **`-Full`** | Nuke → migraciones → DIVIPOLA → import → root | Nada previo |
 
 Owner catálogo / root: `johnftm.proyectos@gmail.com`.
 
-## Baseline = solo 3 archivos
+## Baseline = solo 3 archivos (tras publica)
 
-Tras consolidar, en `backend/supabase/migrations/` deben quedar **únicamente**:
+En `backend/supabase/migrations/` deben quedar **únicamente** los tres baseline
+(después de cada publica; durante desarrollo pueden existir parches temporales).
 
-1. `20260808000001_schema.sql` — esquema app (tablas, RPC, RLS, grants)
-2. `20260808000002_seed.sql` — seeds (categorías, unidades, …)
-3. `20260808000003_storage.sql` — buckets + policies de Storage
+`--full` en TEST aplica **todos** los `*.sql` en orden — parches deben ser
+idempotentes y compatibles con el baseline ya plegado.
 
-La **DB viva es la fuente de verdad del esquema** (no de los datos de usuario).
-Un `--full` debe poder recrear ese esquema desde esos 3 archivos.
+## Checklist SQL
 
-## Ciclo obligatorio al tocar la DB (no acumular parches)
-
-1. **Crear** un `.sql` con timestamp posterior **solo** si hay que aplicar YA a la DB viva.
-2. **Aplicar** a Supabase (MCP `apply_migration` / `execute_sql` / `psql` con `SUPABASE_DB_URL`).
-3. **En el mismo trabajo, antes de cerrar:**
-   - Actualizar el baseline (`…01_schema.sql` y/o `…03_storage.sql` / seed si aplica) con el estado **final**.
-   - Preferible copiar definiciones desde la DB viva (`pg_get_functiondef`, columnas, policies) — **solo esquema, sin datos**.
-   - **Eliminar** el archivo de migración puntual.
-4. Sin esto el cambio **no está cerrado**. Queda prohibido dejar parches `20260826*` (u otros timestamps) acumulados.
-
-No reintroducir parches ya incluidos (search, reviews, anti-dupe, favoritos,
-distance_units, beta portal, username/avatar, `clear_site_location`, etc.).
-
-Un merge de datos one-shot (p. ej. unir dos sitios del catálogo) **no** va
-en migraciones: el import masivo recrea el catálogo.
-
-## Checklist al tocar SQL o catálogo
-
-1. Baseline solo los tres de arriba; el `--full` aplica **todas** las `*.sql` de `migrations/` en orden — por eso no debe haber parches sueltos.
-2. SQL **idempotente** donde importe (`if not exists`, `on conflict`, etc.).
-3. Si cambias wipe: sitios del catálogo (`external_id IS NOT NULL`) **no** se borran en el reset default.
-4. Si cambias import / JSON: `06_import_public_sites.py` +
-   `docs/data/colombia_departamentos_municipios_sitios.json`; el `--full`
-   llama `run_import` **en la misma conexión**.
-5. Tras cambiar schema/RPC: anotar en docs/invariantes o aplicacion-actual lo que el frontend espera.
-6. **Aplicar** a la DB viva cuando el cambio deba usarse ya; luego plegar y borrar el parche.
+1. SQL idempotente (`if not exists`, `drop … if exists`, `create or replace`).
+2. Wipe default: catálogo (`external_id IS NOT NULL`) no se borra.
+3. Tras RPC/schema: actualizar `docs/invariantes.md` / `aplicacion-actual.md` si cambia producto.
+4. **No** acumular parches después de publica (el script los borra).
 
 ## Conexión DB
 
-`SUPABASE_DB_URL` = Session pooler (IPv4). En `--full`, **una sola** conexión
-para nuke → migs → DIVIPOLA → import → root. No cerrar/reabrir entre pasos
-salvo fallo real: un segundo `connect` a veces falla DNS en esta red.
+`SUPABASE_DB_URL` / `_PDN` = Session pooler. `migrate_test_to_pdn.py` reintenta
+con `docker psql` si falla DNS local al pooler.
 
-## Probar
+## Probar TEST
 
 ```powershell
-# Solo usuarios (rápido, conserva catálogo)
 powershell -File backend\reset_all.ps1
-
-# Cero + DIVIPOLA + carga masiva
 powershell -File backend\reset_all.ps1 -Full
 ```
-
-Si el full falla a mitad: schema/DIVIPOLA pueden estar OK y faltar solo el
-import → reintentar import in-process o `--full` de nuevo tras arreglar la red.

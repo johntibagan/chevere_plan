@@ -7,6 +7,19 @@ alwaysApply: true
 
 Cuando el dueño diga **publica** / **publicar**:
 
+## 0. Esquema PDN (= TEST) — primero, obligatorio
+
+Antes de versión/APK/tickets:
+
+```powershell
+cd backend
+python scripts/migrate_test_to_pdn.py
+```
+
+- Aplica parches pendientes + baseline (`…01_schema.sql`, `…03_storage.sql`) en PDN.
+- Borra parches del repo (solo quedan los 3 baseline).
+- Si falla: **parar** — corregir y reintentar. No publicar APK con PDN desincronizado.
+
 ## 1. Versión
 
 - Usar la versión que indique (ej. `1.0.0+5`) o subir `+1` en `frontend/pubspec.yaml`.
@@ -44,5 +57,7 @@ Comandos en [beta-portal/README.md](../beta-portal/README.md#publicar-apk). Sube
 ## Cierre
 
 Mismo `+N` en: `pubspec.yaml`, `fixed_in_version`, `beta_qa_flows.version`, `beta_release.build`.
+
+Migraciones: solo 3 baseline en repo. TEST y PDN con el mismo esquema app.
 
 No redeploy de Pages solo por cambios en la DB. No poner SQL ni stacks en los textos de prueba.
