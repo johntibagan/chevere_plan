@@ -64,4 +64,4 @@ Sustituye `1.0.0` y `N` por la versión del pubspec. Release **arm64** (Free ≤
 1. Repo → **Settings** → **Pages**
 2. Source: **GitHub Actions**
 3. Añade los secrets `SUPABASE_URL_PDN` y `SUPABASE_ANON_KEY_PDN` (valores = `frontend/env/pdn.env`)
-4. Push a `main` que toque `beta-portal/` (o **Actions** → *beta-portal-pages* → Run workflow). El job usa `runs-on: self-hosted` (tu runner en WSL debe estar encendido).
+4. Push a `main` que toque `beta-portal/` (o **Actions** → *beta-portal-pages* → Run workflow). Por defecto corre en `ubuntu-latest` (runner de GitHub). Si tienes runner propio, en *Run workflow* elige `self-hosted`.

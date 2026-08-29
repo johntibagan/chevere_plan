@@ -1,7 +1,8 @@
 # Deploy del portal de pruebas (GitHub Pages)
 #
 # Solo corre si cambió `beta-portal/**` (o este workflow).
-# Runner: self-hosted (WSL/Ubuntu en tu PC) — debe estar online.
+# Runner por defecto: ubuntu-latest (GitHub-hosted). No requiere tu PC encendida.
+# Opcional (workflow_dispatch): self-hosted si tienes runner propio registrado.
 # Credenciales: GitHub → Settings → Secrets and variables → Actions
 #   - SUPABASE_URL_PDN      (= frontend/env/pdn.env → mismo valor)
 #   - SUPABASE_ANON_KEY_PDN (= frontend/env/pdn.env → mismo valor)
@@ -18,6 +19,14 @@ on:
       - "beta-portal/**"
       - ".github/workflows/beta-portal-pages.yml"
   workflow_dispatch:
+    inputs:
+      runner:
+        description: Runner (github-hosted o self-hosted)
+        type: choice
+        options:
+          - ubuntu-latest
+          - self-hosted
+        default: ubuntu-latest
 
 permissions:
   contents: read
@@ -26,14 +35,13 @@ permissions:
 
 concurrency:
   # Un solo deploy: al lanzar otro, cancela el que está corriendo y el pending.
-  # (Sin esto, GitHub solo cancela pending; con cancel-in-progress también el activo.)
   group: ${{ github.workflow }}
   cancel-in-progress: true
 
 jobs:
   deploy:
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
-    runs-on: self-hosted
+    runs-on: ${{ github.event_name == 'workflow_dispatch' && inputs.runner || 'ubuntu-latest' }}
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
