@@ -18,6 +18,7 @@ import 'core/theme/app_theme.dart';
 import 'core/theme/chevere_theme_colors.dart';
 import 'core/theme/chevere_theme_scope.dart';
 import 'core/theme/theme_rebuild.dart';
+import 'features/beta/presentation/beta_update_gate.dart';
 
 final GlobalKey<NavigatorState> appNavigatorKey = GlobalKey<NavigatorState>();
 
@@ -109,7 +110,7 @@ class _CheverePlanAppState extends ConsumerState<CheverePlanApp> {
           child: child ?? const SizedBox.shrink(),
         );
       },
-      home: const AuthGate(),
+      home: const BetaUpdateGate(child: AuthGate()),
     );
   }
 }

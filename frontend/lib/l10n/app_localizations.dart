@@ -3459,6 +3459,36 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Otro (plataformas)'**
   String get adminTransportGroupOther;
+
+  /// No description provided for @betaUpdateTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Actualización disponible'**
+  String get betaUpdateTitle;
+
+  /// No description provided for @betaUpdateBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Hay una versión más reciente ({version}). Instálala para seguir usando la app.'**
+  String betaUpdateBody(String version);
+
+  /// No description provided for @betaUpdateCurrentVersion.
+  ///
+  /// In es, this message translates to:
+  /// **'Tu versión: {version}'**
+  String betaUpdateCurrentVersion(String version);
+
+  /// No description provided for @betaUpdateDownload.
+  ///
+  /// In es, this message translates to:
+  /// **'Descargar e instalar'**
+  String get betaUpdateDownload;
+
+  /// No description provided for @betaUpdateRetry.
+  ///
+  /// In es, this message translates to:
+  /// **'Revisar de nuevo'**
+  String get betaUpdateRetry;
 }
 
 class _AppLocalizationsDelegate

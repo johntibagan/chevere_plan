@@ -92,6 +92,7 @@ Alto riesgo: `save_place_page.dart`, `google_maps_link_importer.dart`, `save_pol
 - Reset: **solo TEST** (`CHEVERE_DB_ENV=test`, `SUPABASE_DB_URL`). Default conserva DIVIPOLA + catálogo (`external_id`); `-Full` pide escribir `test` en consola y recarga catálogo — migraciones baseline de **3** + DIVIPOLA + JSON.
 - **Esquema app:** `20260808000001_schema.sql` es el espejo consolidado del esquema TEST (tablas, RPC, RLS, grants). Al cambiar backend: parche timestamp → aplicar TEST → plegar al baseline; el parche se conserva hasta **publica**.
 - **Paridad esquema TEST = PDN:** mismo esquema app (tablas, RPC, triggers, RLS, storage). **Cero drift.** Al **publica**: `python backend/scripts/migrate_test_to_pdn.py` (parches + baseline en PDN, luego borra parches). Si falla, no publicar APK.
+- **APK beta (PDN):** `beta_release` y bucket `beta-apks` viven en **PDN** (no TEST). La app PDN compara su build con `beta_release.build` al abrir; si hay versión mayor, bloquea hasta descargar. Publicar APK actualiza esa fila **después** de subir el archivo.
 - **PDN (beta, usuarios reales):** no SQL/MCP salvo **publica** o permiso explícito del dueño. Desarrollo = solo TEST.
 
 ## Código

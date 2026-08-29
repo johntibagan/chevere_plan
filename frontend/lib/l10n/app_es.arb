@@ -769,5 +769,20 @@
       "km": {"type": "int"}
     }
   },
-  "adminTransportGroupOther": "Otro (plataformas)"
+  "adminTransportGroupOther": "Otro (plataformas)",
+  "betaUpdateTitle": "Actualización disponible",
+  "betaUpdateBody": "Hay una versión más reciente ({version}). Instálala para seguir usando la app.",
+  "@betaUpdateBody": {
+    "placeholders": {
+      "version": {"type": "String"}
+    }
+  },
+  "betaUpdateCurrentVersion": "Tu versión: {version}",
+  "@betaUpdateCurrentVersion": {
+    "placeholders": {
+      "version": {"type": "String"}
+    }
+  },
+  "betaUpdateDownload": "Descargar e instalar",
+  "betaUpdateRetry": "Revisar de nuevo"
 }

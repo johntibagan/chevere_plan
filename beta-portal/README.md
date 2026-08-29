@@ -8,12 +8,16 @@ Carpeta **única** que despliega Pages. Si no hay cambios aquí, el workflow **n
 
 ## Secrets (GitHub → Settings → Secrets and variables → Actions)
 
-| Secret | Qué es | Dónde sacarlo |
-|--------|--------|----------------|
-| `BETA_SUPABASE_URL` | URL del proyecto | Supabase → Project Settings → API → Project URL |
-| `BETA_SUPABASE_ANON_KEY` | Clave **anon** / publishable | Misma pantalla → `anon` `public` |
+Mismos nombres y valores que en `frontend/env/pdn.env` (proyecto **chevere_plan_pdn**, no TEST):
 
-**No** subas `SUPABASE_SERVICE_ROLE_KEY` a GitHub ni a esta carpeta. Esa clave solo vive en `backend/.env` (local) para publicar el APK.
+| Secret en GitHub | En `pdn.env` | Qué es | Dónde sacarlo |
+|--------|--------|--------|----------------|
+| `SUPABASE_URL_PDN` | `SUPABASE_URL_PDN` | URL del proyecto PDN | Supabase → chevere_plan_pdn → Settings → API → Project URL |
+| `SUPABASE_ANON_KEY_PDN` | `SUPABASE_ANON_KEY_PDN` | Clave **anon** / publishable PDN | Misma pantalla → `anon` `public` |
+
+**No** uses `SUPABASE_URL` / `SUPABASE_ANON_KEY` de `test.env` (eso es el proyecto TEST).
+
+**No** subas `SUPABASE_SERVICE_ROLE_KEY_PDN` a GitHub ni a esta carpeta. Esa clave solo vive en `backend/.env` (local) para publicar el APK.
 
 ## Qué hace cada cosa
 
@@ -35,10 +39,17 @@ Publicar un APK **no** requiere redeploy de Pages: el portal ya lee la URL desde
 
 ## Publicar APK
 
-Requisitos: `env/test.env`, `env/pdn.env`, `backend/.env` (service_role TEST para Storage).
+Requisitos: `env/test.env`, `env/pdn.env`, `backend/.env` con **`SUPABASE_URL_PDN`** y **`SUPABASE_SERVICE_ROLE_KEY_PDN`** (proyecto PDN).
 
-1. Sube `+N` en `frontend/pubspec.yaml` si corresponde.
-2. Desde `frontend/`:
+El APK beta se conecta a **PDN**; `beta_release` y Storage `beta-apks` viven en ese mismo proyecto. Los secrets de GitHub Pages (`SUPABASE_URL_PDN`, `SUPABASE_ANON_KEY_PDN`) son **copia literal** de `frontend/env/pdn.env`.
+
+Orden al **publica** (ver regla `beta-portal-publica.mdc`):
+
+1. `migrate_test_to_pdn.py` — esquema PDN = TEST
+2. Sube `+N` en `frontend/pubspec.yaml`
+3. Build + publish (abajo) — actualiza `beta_release` **después** de subir el APK
+
+Desde `frontend/`:
 
 ```powershell
 python ..\backend\scripts\merge_pdn_env.py
@@ -52,5 +63,5 @@ Sustituye `1.0.0` y `N` por la versión del pubspec. Release **arm64** (Free ≤
 
 1. Repo → **Settings** → **Pages**
 2. Source: **GitHub Actions**
-3. Añade los 2 secrets de arriba
+3. Añade los secrets `SUPABASE_URL_PDN` y `SUPABASE_ANON_KEY_PDN` (valores = `frontend/env/pdn.env`)
 4. Push a `main` que toque `beta-portal/` (o **Actions** → *beta-portal-pages* → Run workflow). El job usa `runs-on: self-hosted` (tu runner en WSL debe estar encendido).

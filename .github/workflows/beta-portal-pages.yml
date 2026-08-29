@@ -3,10 +3,10 @@
 # Solo corre si cambió `beta-portal/**` (o este workflow).
 # Runner: self-hosted (WSL/Ubuntu en tu PC) — debe estar online.
 # Credenciales: GitHub → Settings → Secrets and variables → Actions
-#   - BETA_SUPABASE_URL
-#   - BETA_SUPABASE_ANON_KEY
+#   - SUPABASE_URL_PDN      (= frontend/env/pdn.env → mismo valor)
+#   - SUPABASE_ANON_KEY_PDN (= frontend/env/pdn.env → mismo valor)
 #
-# Nunca uses la service_role aquí. El APK y beta_release se actualizan
+# Nunca uses service_role aquí. El APK y beta_release se actualizan
 # en local con backend/.env (publish_beta_apk.py), no en este deploy.
 
 name: beta-portal-pages
@@ -43,12 +43,13 @@ jobs:
 
       - name: Build site (solo carpeta beta-portal)
         env:
-          BETA_SUPABASE_URL: ${{ secrets.BETA_SUPABASE_URL }}
-          BETA_SUPABASE_ANON_KEY: ${{ secrets.BETA_SUPABASE_ANON_KEY }}
+          SUPABASE_URL_PDN: ${{ secrets.SUPABASE_URL_PDN }}
+          SUPABASE_ANON_KEY_PDN: ${{ secrets.SUPABASE_ANON_KEY_PDN }}
         run: |
           set -euo pipefail
-          if [ -z "${BETA_SUPABASE_URL}" ] || [ -z "${BETA_SUPABASE_ANON_KEY}" ]; then
-            echo "Faltan secrets BETA_SUPABASE_URL / BETA_SUPABASE_ANON_KEY"
+          if [ -z "${SUPABASE_URL_PDN}" ] || [ -z "${SUPABASE_ANON_KEY_PDN}" ]; then
+            echo "Faltan secrets SUPABASE_URL_PDN / SUPABASE_ANON_KEY_PDN"
+            echo "Copia los valores de frontend/env/pdn.env (proyecto chevere_plan_pdn)."
             exit 1
           fi
           mkdir -p _site
@@ -58,10 +59,10 @@ jobs:
           import os
           src = Path("beta-portal/index.html").read_text(encoding="utf-8")
           out = (
-              src.replace("__BETA_SUPABASE_URL__", os.environ["BETA_SUPABASE_URL"])
-              .replace("__BETA_SUPABASE_ANON_KEY__", os.environ["BETA_SUPABASE_ANON_KEY"])
+              src.replace("__SUPABASE_URL_PDN__", os.environ["SUPABASE_URL_PDN"])
+              .replace("__SUPABASE_ANON_KEY_PDN__", os.environ["SUPABASE_ANON_KEY_PDN"])
           )
-          if "__BETA_SUPABASE_" in out:
+          if "__SUPABASE_" in out and "_PDN__" in out:
               raise SystemExit("Quedaron placeholders sin reemplazar")
           Path("_site/index.html").write_text(out, encoding="utf-8")
           print("ok: _site/index.html")

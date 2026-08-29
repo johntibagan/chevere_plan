@@ -1893,4 +1893,23 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get adminTransportGroupOther => 'Otro (plataformas)';
+
+  @override
+  String get betaUpdateTitle => 'Actualización disponible';
+
+  @override
+  String betaUpdateBody(String version) {
+    return 'Hay una versión más reciente ($version). Instálala para seguir usando la app.';
+  }
+
+  @override
+  String betaUpdateCurrentVersion(String version) {
+    return 'Tu versión: $version';
+  }
+
+  @override
+  String get betaUpdateDownload => 'Descargar e instalar';
+
+  @override
+  String get betaUpdateRetry => 'Revisar de nuevo';
 }

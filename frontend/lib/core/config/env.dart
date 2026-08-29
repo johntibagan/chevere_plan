@@ -27,6 +27,17 @@ class Env {
     }
   }
 
+  /// APK de prueba cerrada (PDN). El de desarrollo (`test`) no chequea actualizaciones.
+  static bool get isBetaRelease {
+    switch (appEnv.trim().toLowerCase()) {
+      case 'beta':
+      case 'pdn':
+        return true;
+      default:
+        return false;
+    }
+  }
+
   static const String supabaseUrl = String.fromEnvironment('SUPABASE_URL');
   static const String supabaseAnonKey =
       String.fromEnvironment('SUPABASE_ANON_KEY');

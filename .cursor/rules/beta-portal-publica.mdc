@@ -54,6 +54,8 @@ Cerrar ticket: `done = true`, `in_review = false`, `fixed_in_version` = misma ve
 
 Comandos en [beta-portal/README.md](../beta-portal/README.md#publicar-apk). Sube `+N` en `pubspec.yaml` antes si hace falta.
 
+Publicar con `publish_beta_apk.py` usa **PDN** (`SUPABASE_URL_PDN`, `SUPABASE_SERVICE_ROLE_KEY_PDN`): sube APK a Storage y actualiza `beta_release` en la misma DB. Los testers con build anterior verán la pantalla de actualización al abrir la app.
+
 ## Cierre
 
 Mismo `+N` en: `pubspec.yaml`, `fixed_in_version`, `beta_qa_flows.version`, `beta_release.build`.

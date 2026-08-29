@@ -213,12 +213,20 @@ def main() -> int:
         return 1
 
     env = load_env(args.env)
-    base = env.get("SUPABASE_URL") or os.environ.get("SUPABASE_URL")
-    key = env.get("SUPABASE_SERVICE_ROLE_KEY") or os.environ.get(
-        "SUPABASE_SERVICE_ROLE_KEY"
+    base = (
+        env.get("SUPABASE_URL_PDN")
+        or os.environ.get("SUPABASE_URL_PDN")
+    )
+    key = (
+        env.get("SUPABASE_SERVICE_ROLE_KEY_PDN")
+        or os.environ.get("SUPABASE_SERVICE_ROLE_KEY_PDN")
     )
     if not base or not key:
-        print("Falta SUPABASE_URL o SUPABASE_SERVICE_ROLE_KEY", file=sys.stderr)
+        print(
+            "Falta SUPABASE_URL_PDN o SUPABASE_SERVICE_ROLE_KEY_PDN en backend/.env "
+            "(publicar APK y beta_release van al proyecto PDN).",
+            file=sys.stderr,
+        )
         return 1
 
     data = args.apk.read_bytes()
