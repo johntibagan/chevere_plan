@@ -2066,6 +2066,30 @@ create policy profiles_select_own_or_staff on public.profiles
   for select
   to authenticated using (((id = (select auth.uid())) OR (select public.is_staff())));
 
+-- @username visible en fichas/reseñas/aportes de sitios públicos (no solo el propio).
+drop policy if exists profiles_select_public_site_creators on public.profiles;
+create policy profiles_select_public_site_creators on public.profiles
+  for select
+  to authenticated using ((EXISTS ( SELECT 1
+   FROM sites s
+  WHERE ((s.created_by = profiles.id) AND (s.is_public = true)))));
+
+drop policy if exists profiles_select_public_contributors on public.profiles;
+create policy profiles_select_public_contributors on public.profiles
+  for select
+  to authenticated using ((EXISTS ( SELECT 1
+   FROM (site_contributors sc
+     JOIN sites s ON ((s.id = sc.site_id)))
+  WHERE ((sc.user_id = profiles.id) AND (s.is_public = true)))));
+
+drop policy if exists profiles_select_public_reviewers on public.profiles;
+create policy profiles_select_public_reviewers on public.profiles
+  for select
+  to authenticated using ((EXISTS ( SELECT 1
+   FROM (site_reviews r
+     JOIN sites s ON ((s.id = r.site_id)))
+  WHERE ((r.user_id = profiles.id) AND (r.is_public = true) AND (s.is_public = true)))));
+
 drop policy if exists profiles_staff_update on public.profiles;
 create policy profiles_staff_update on public.profiles
   for update
