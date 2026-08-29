@@ -11,8 +11,7 @@ import '../../../core/l10n/context_l10n.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/theme_rebuild.dart';
 import '../../../core/widgets/app_async_body.dart';
-import '../../../core/widgets/app_create_cta_card.dart';
-import '../../../core/widgets/app_section_label.dart';
+import '../../../core/widgets/app_floating_action_layout.dart';
 import '../../../core/widgets/app_status_pill.dart';
 import '../../../core/widgets/site_cover.dart';
 import '../../../core/widgets/tab_screen_header.dart';
@@ -20,7 +19,6 @@ import '../../saves/presentation/site_look_cover.dart';
 import '../data/plan_models.dart';
 import '../data/plans_repository.dart';
 import 'create_plan_page.dart';
-import 'plan_builder_page.dart';
 import 'plan_detail_page.dart';
 
 class PlansListPage extends ConsumerStatefulWidget {
@@ -59,18 +57,12 @@ class _PlansListPageState extends ConsumerState<PlansListPage> {
   }
 
   Future<void> _openPlan(Plan plan) async {
-    final isDraft = plan.status == 'draft';
     await Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (_) => isDraft && plan.stopCount == 0
-            ? PlanBuilderPage(
-                planId: plan.id,
-                repository: widget.repository,
-              )
-            : PlanDetailPage(
-                planId: plan.id,
-                repository: widget.repository,
-              ),
+        builder: (_) => PlanDetailPage(
+          planId: plan.id,
+          repository: widget.repository,
+        ),
       ),
     );
     await ref.read(plansProvider.notifier).refresh(force: false);
@@ -85,95 +77,101 @@ class _PlansListPageState extends ConsumerState<PlansListPage> {
     final plans = page?.items ?? const <Plan>[];
     final loading = async.isLoading && page == null;
     final loadFailed = async.hasError && page == null;
+    final listBottomPadding = AppFloatingActionLayout.listScrollPadding(
+      context,
+      aboveShellBottomNav: true,
+      extendedFab: true,
+    );
 
-    return Scaffold(
-      key: WidgetKeys.plansList,
-      body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            TabScreenHeader(
-              title: l10n.plansTitle,
-              subtitle: l10n.plansSubtitle,
-            ),
-            Expanded(
-              child: AppAsyncBody(
-                loading: loading,
-                hasError: loadFailed,
-                isEmpty: false,
-                emptyMessage: l10n.plansEmpty,
-                onRefresh: _refresh,
-                child: ListView.builder(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 88),
-                  itemCount: 2 +
-                      (plans.isEmpty
-                          ? 1
-                          : plans.length + ((page?.hasMore ?? false) ? 1 : 0)),
-                  itemBuilder: (context, index) {
-                    if (index == 0) {
-                      return AppCreateCtaCard(
-                        key: WidgetKeys.plansCreateCta,
-                        title: l10n.plansCreateCardTitle,
-                        hint: l10n.plansCreateCardHint,
-                        onTap: _openCreate,
-                      );
-                    }
-                    if (index == 1) {
-                      return Padding(
-                        padding: const EdgeInsets.only(top: 20),
-                        child: AppSectionLabel(text: l10n.plansSavedHeading),
-                      );
-                    }
-                    if (plans.isEmpty) {
-                      return Padding(
-                        padding: const EdgeInsets.only(top: 8, bottom: 24),
-                        child: Text(
-                          l10n.plansEmpty,
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: AppColors.muted,
-                          ),
-                        ),
-                      );
-                    }
-                    final planIndex = index - 2;
-                    if (planIndex >= plans.length) {
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        child: Center(
-                          child: (page?.loadingMore ?? false)
-                              ? SizedBox(
-                                  width: 24,
-                                  height: 24,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                  ),
-                                )
-                              : TextButton(
-                                  onPressed: () => ref
-                                      .read(plansProvider.notifier)
-                                      .loadMore(),
-                                  child: Text(context.l10n.actionLoadMore),
-                                ),
-                        ),
-                      );
-                    }
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: _PlanCard(
-                        key: WidgetKeys.planCard(plans[planIndex].id),
-                        plan: plans[planIndex],
-                        onTap: () => _openPlan(plans[planIndex]),
+    return Stack(
+      children: [
+        Scaffold(
+          key: WidgetKeys.plansList,
+          body: SafeArea(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                TabScreenHeader(title: l10n.plansTitle),
+                Expanded(
+                  child: AppAsyncBody(
+                    loading: loading,
+                    hasError: loadFailed,
+                    isEmpty: false,
+                    emptyMessage: l10n.plansEmpty,
+                    onRefresh: _refresh,
+                    child: ListView.builder(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: EdgeInsets.fromLTRB(
+                        AppSpacing.lg,
+                        AppSpacing.sm,
+                        AppSpacing.lg,
+                        listBottomPadding,
                       ),
-                    );
-                  },
+                      itemCount: plans.isEmpty
+                          ? 1
+                          : plans.length +
+                              ((page?.hasMore ?? false) ? 1 : 0),
+                      itemBuilder: (context, index) {
+                        if (plans.isEmpty) {
+                          return Padding(
+                            padding: const EdgeInsets.only(top: 8, bottom: 24),
+                            child: Text(
+                              l10n.plansEmpty,
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: AppColors.muted,
+                              ),
+                            ),
+                          );
+                        }
+                        if (index >= plans.length) {
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            child: Center(
+                              child: (page?.loadingMore ?? false)
+                                  ? SizedBox(
+                                      width: 24,
+                                      height: 24,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      ),
+                                    )
+                                  : TextButton(
+                                      onPressed: () => ref
+                                          .read(plansProvider.notifier)
+                                          .loadMore(),
+                                      child: Text(context.l10n.actionLoadMore),
+                                    ),
+                            ),
+                          );
+                        }
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: _PlanCard(
+                            key: WidgetKeys.planCard(plans[index].id),
+                            plan: plans[index],
+                            onTap: () => _openPlan(plans[index]),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
                 ),
-              ),
+              ],
             ),
-          ],
+          ),
         ),
-      ),
+        AppAnchoredFloatingAction(
+          aboveShellBottomNav: true,
+          child: FloatingActionButton.extended(
+            key: WidgetKeys.plansCreateFab,
+            heroTag: 'plans_create_fab',
+            onPressed: _openCreate,
+            icon: const Icon(Icons.add),
+            label: Text(l10n.plansCreateFab),
+          ),
+        ),
+      ],
     );
   }
 }

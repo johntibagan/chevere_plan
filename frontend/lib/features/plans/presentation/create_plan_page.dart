@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -7,18 +9,16 @@ import '../../../core/testing/widget_keys.dart';
 import '../../../core/formatters/money_format.dart';
 import '../../../core/l10n/context_l10n.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../../core/widgets/app_form_card.dart';
 import '../../../core/widgets/app_section_label.dart';
 import '../../../core/widgets/app_toast.dart';
-import '../../../core/widgets/coming_soon_page.dart';
 import '../../../core/widgets/discard_changes_scope.dart';
 import '../data/plan_builder.dart';
 import '../data/plan_models.dart';
 import '../data/plans_repository.dart';
-import 'plan_builder_page.dart';
+import 'plan_detail_page.dart';
 
-/// Crear o editar datos del plan (título, zona, públicos, presupuesto).
-/// Las paradas se arman en [PlanBuilderPage].
+/// Crear o editar datos del plan (título, zona, presupuesto).
+/// Las paradas se arman en [PlanDetailPage].
 class CreatePlanPage extends ConsumerStatefulWidget {
   const CreatePlanPage({
     super.key,
@@ -37,11 +37,13 @@ class _CreatePlanPageState extends ConsumerState<CreatePlanPage> {
   final _titleCtrl = TextEditingController();
   final _zoneCtrl = TextEditingController();
   final _budgetCtrl = TextEditingController();
-  bool _includePublic = true;
+  final _budgetFocus = FocusNode();
   bool _saving = false;
   final FormDirtyTracker _formDirty = FormDirtyTracker();
 
   bool get _isEdit => widget.existing != null;
+
+  bool get _titleValid => _titleCtrl.text.trim().length >= 3;
 
   @override
   void initState() {
@@ -51,10 +53,18 @@ class _CreatePlanPageState extends ConsumerState<CreatePlanPage> {
     }
     final p = widget.existing;
     if (p != null) {
+      final uid = ref.read(supabaseClientProvider).auth.currentUser?.id;
+      if (!p.isOwnedBy(uid)) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          AppToast.show(context, context.l10n.planEditNotOwner, error: true);
+          Navigator.of(context).pop();
+        });
+        return;
+      }
       final defaultTitle = p.title.trim() == 'Plan sin título';
       _titleCtrl.text = defaultTitle ? '' : p.title;
       _zoneCtrl.text = p.locationQuery;
-      _includePublic = p.includePublic;
       final budget = p.maxBudgetAmount;
       if (budget != null) {
         _budgetCtrl.text = budget == budget.roundToDouble()
@@ -74,12 +84,31 @@ class _CreatePlanPageState extends ConsumerState<CreatePlanPage> {
     _titleCtrl.dispose();
     _zoneCtrl.dispose();
     _budgetCtrl.dispose();
+    _budgetFocus.dispose();
     super.dispose();
   }
 
-  InputDecoration _fieldDec({String? hint}) {
+  void _submitFromKeyboard() {
+    if (_saving) return;
+    if (!_titleValid) {
+      AppToast.show(context, context.l10n.planTitleMinLength, error: true);
+      return;
+    }
+    unawaited(_next());
+  }
+
+  InputDecoration _fieldDec({
+    required TextEditingController controller,
+    String? hint,
+    String? helper,
+    String? prefixText,
+    String? suffixText,
+  }) {
+    final hasText = controller.text.isNotEmpty;
     return InputDecoration(
       hintText: hint,
+      helperText: helper,
+      helperMaxLines: 2,
       filled: true,
       fillColor: AppColors.surfaceElevated,
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
@@ -87,24 +116,36 @@ class _CreatePlanPageState extends ConsumerState<CreatePlanPage> {
         borderRadius: BorderRadius.circular(12),
         borderSide: BorderSide(color: AppColors.border),
       ),
+      prefixText: prefixText,
+      suffixText: suffixText,
+      suffixIcon: hasText
+          ? IconButton(
+              tooltip: context.l10n.actionClear,
+              icon: Icon(Icons.cancel_rounded, size: 20, color: AppColors.muted),
+              onPressed: () => controller.clear(),
+            )
+          : null,
     );
   }
 
   Future<void> _next() async {
+    final title = _titleCtrl.text.trim();
+    if (title.length < 3) {
+      AppToast.show(context, context.l10n.planTitleMinLength, error: true);
+      return;
+    }
     setState(() => _saving = true);
     _formDirty.setSuppressed(true);
     try {
       final budgetRaw = _budgetCtrl.text.trim().replaceAll(',', '.');
       final budget = budgetRaw.isEmpty ? null : double.tryParse(budgetRaw);
       final zone = _zoneCtrl.text.trim();
-      final title = _titleCtrl.text.trim();
       final existing = widget.existing;
       if (existing != null) {
         await widget.repository.updatePlanMeta(
           planId: existing.id,
           title: title,
           locationQuery: zone,
-          includePublic: _includePublic,
           maxBudget: budget,
         );
         final uid = ref.read(supabaseClientProvider).auth.currentUser?.id;
@@ -119,18 +160,12 @@ class _CreatePlanPageState extends ConsumerState<CreatePlanPage> {
         Navigator.of(context).pop(true);
         return;
       }
-      final Plan plan;
-      if (title.isEmpty && zone.isEmpty) {
-        plan = await widget.repository.createDraft(title: '');
-      } else {
-        plan = await widget.repository.createPlan(
-          title: title,
-          locationQuery: zone,
-          includePublic: _includePublic,
-          maxBudget: budget,
-          orderedStops: const <PlanCandidate>[],
-        );
-      }
+      final Plan plan = await widget.repository.createPlan(
+        title: title,
+        locationQuery: zone,
+        maxBudget: budget,
+        orderedStops: const <PlanCandidate>[],
+      );
       final uid = ref.read(supabaseClientProvider).auth.currentUser?.id;
       if (uid != null) {
         await ref
@@ -141,7 +176,7 @@ class _CreatePlanPageState extends ConsumerState<CreatePlanPage> {
       if (!mounted) return;
       await Navigator.of(context).pushReplacement(
         MaterialPageRoute<void>(
-          builder: (_) => PlanBuilderPage(
+          builder: (_) => PlanDetailPage(
             planId: plan.id,
             repository: widget.repository,
           ),
@@ -175,23 +210,23 @@ class _CreatePlanPageState extends ConsumerState<CreatePlanPage> {
             child: ListView(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
               children: [
-                ComingSoonCard(
-                  title: l10n.planCreateAiCta,
-                  subtitle: l10n.comingSoonBadge,
-                  pageTitle: l10n.comingSoonAiTitle,
-                  pageBody: l10n.comingSoonAiBody,
+                AppSectionLabel(
+                  text: l10n.planTitleOptional,
+                  required: true,
+                  bottom: 8,
                 ),
-                SizedBox(height: 20),
-                AppSectionLabel(text: l10n.planTitleOptional, bottom: 8),
                 TextField(
                   key: WidgetKeys.createPlanTitle,
                   controller: _titleCtrl,
                   textCapitalization: TextCapitalization.sentences,
-                  textInputAction: TextInputAction.next,
+                  textInputAction: TextInputAction.done,
+                  onSubmitted: (_) => _submitFromKeyboard(),
                   decoration: _fieldDec(
+                    controller: _titleCtrl,
                     hint: _isEdit
                         ? l10n.planEditTitleHint
                         : l10n.planCreateStepTitleHint,
+                    helper: l10n.planCreateTitleHelper,
                   ),
                 ),
                 SizedBox(height: 16),
@@ -200,40 +235,12 @@ class _CreatePlanPageState extends ConsumerState<CreatePlanPage> {
                   key: WidgetKeys.createPlanZone,
                   controller: _zoneCtrl,
                   textCapitalization: TextCapitalization.words,
-                  decoration: _fieldDec(hint: l10n.planZoneHint),
-                ),
-                SizedBox(height: 16),
-                AppFormCard(
-                  padding: const EdgeInsets.fromLTRB(14, 10, 8, 10),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              l10n.searchIncludePublic,
-                              style: TextStyle(
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.foreground,
-                              ),
-                            ),
-                            Text(
-                              l10n.planIncludePublicSubtitle,
-                              style: TextStyle(
-                                fontSize: 10,
-                                color: AppColors.mutedDark,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Switch(
-                        key: WidgetKeys.createPlanIncludePublic,
-                        value: _includePublic,
-                        onChanged: (v) => setState(() => _includePublic = v),
-                      ),
-                    ],
+                  textInputAction: TextInputAction.next,
+                  onSubmitted: (_) => _budgetFocus.requestFocus(),
+                  decoration: _fieldDec(
+                    controller: _zoneCtrl,
+                    hint: l10n.planZoneHint,
+                    helper: l10n.planCreateZoneHelper,
                   ),
                 ),
                 SizedBox(height: 16),
@@ -241,9 +248,15 @@ class _CreatePlanPageState extends ConsumerState<CreatePlanPage> {
                 TextField(
                   key: WidgetKeys.createPlanBudget,
                   controller: _budgetCtrl,
+                  focusNode: _budgetFocus,
                   keyboardType:
                       const TextInputType.numberWithOptions(decimal: true),
-                  decoration: _fieldDec(hint: l10n.searchBudgetMax).copyWith(
+                  textInputAction: TextInputAction.done,
+                  onSubmitted: (_) => _submitFromKeyboard(),
+                  decoration: _fieldDec(
+                    controller: _budgetCtrl,
+                    hint: l10n.searchBudgetMax,
+                    helper: l10n.planCreateBudgetHelper,
                     prefixText: currencyInputPrefix(currencyCode),
                     suffixText: currencyInputSuffix(currencyCode),
                   ),
@@ -251,7 +264,7 @@ class _CreatePlanPageState extends ConsumerState<CreatePlanPage> {
                 SizedBox(height: 24),
                 FilledButton(
                   key: WidgetKeys.createPlanNext,
-                  onPressed: _saving ? null : _next,
+                  onPressed: (_saving || !_titleValid) ? null : _next,
                   child: _saving
                       ? SizedBox(
                           height: 22,

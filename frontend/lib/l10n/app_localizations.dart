@@ -853,7 +853,7 @@ abstract class AppLocalizations {
   /// No description provided for @plansCreateFab.
   ///
   /// In es, this message translates to:
-  /// **'Armar plan'**
+  /// **'Crear plan'**
   String get plansCreateFab;
 
   /// No description provided for @routesTitle.
@@ -2737,7 +2737,7 @@ abstract class AppLocalizations {
   /// No description provided for @planTitleOptional.
   ///
   /// In es, this message translates to:
-  /// **'Título (opcional)'**
+  /// **'Título'**
   String get planTitleOptional;
 
   /// No description provided for @planTabSearch.
@@ -2824,6 +2824,12 @@ abstract class AppLocalizations {
   /// **'Plan actualizado.'**
   String get planEditSaved;
 
+  /// No description provided for @planEditNotOwner.
+  ///
+  /// In es, this message translates to:
+  /// **'Solo puedes editar planes que creaste.'**
+  String get planEditNotOwner;
+
   /// No description provided for @planMenuShare.
   ///
   /// In es, this message translates to:
@@ -2853,6 +2859,24 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Paradas'**
   String get planStatStops;
+
+  /// No description provided for @planStatReviews.
+  ///
+  /// In es, this message translates to:
+  /// **'Reseñas'**
+  String get planStatReviews;
+
+  /// No description provided for @planReviewCount.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =0{Sin reseñas} =1{1 reseña} other{{count} reseñas}}'**
+  String planReviewCount(int count);
+
+  /// No description provided for @planReviewEditorTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Reseña del plan'**
+  String get planReviewEditorTitle;
 
   /// No description provided for @planStatBudget.
   ///
@@ -2968,41 +2992,35 @@ abstract class AppLocalizations {
   /// **'Km inválido'**
   String get adminKmInvalid;
 
-  /// No description provided for @comingSoonBadge.
-  ///
-  /// In es, this message translates to:
-  /// **'Próximamente'**
-  String get comingSoonBadge;
-
-  /// No description provided for @comingSoonAiTitle.
-  ///
-  /// In es, this message translates to:
-  /// **'Armame un plan con IA'**
-  String get comingSoonAiTitle;
-
-  /// No description provided for @comingSoonAiBody.
-  ///
-  /// In es, this message translates to:
-  /// **'La generación automática de planes estará disponible más adelante. Podés armar el plan eligiendo sitios que ya guardaste.'**
-  String get comingSoonAiBody;
-
-  /// No description provided for @comingSoonTransportTitle.
-  ///
-  /// In es, this message translates to:
-  /// **'Transporte entre paradas'**
-  String get comingSoonTransportTitle;
-
-  /// No description provided for @comingSoonTransportBody.
-  ///
-  /// In es, this message translates to:
-  /// **'El cálculo de transporte sugerido entre paradas estará disponible más adelante.'**
-  String get comingSoonTransportBody;
-
   /// No description provided for @planZoneHint.
   ///
   /// In es, this message translates to:
   /// **'Ej. Villa de Leyva, Boyacá'**
   String get planZoneHint;
+
+  /// No description provided for @planCreateTitleHelper.
+  ///
+  /// In es, this message translates to:
+  /// **'Mínimo 3 caracteres. Luego eliges los sitios.'**
+  String get planCreateTitleHelper;
+
+  /// No description provided for @planTitleMinLength.
+  ///
+  /// In es, this message translates to:
+  /// **'Escribe al menos 3 caracteres para el título.'**
+  String get planTitleMinLength;
+
+  /// No description provided for @planCreateZoneHelper.
+  ///
+  /// In es, this message translates to:
+  /// **'Ciudad o zona para orientar la búsqueda de paradas.'**
+  String get planCreateZoneHelper;
+
+  /// No description provided for @planCreateBudgetHelper.
+  ///
+  /// In es, this message translates to:
+  /// **'Tope opcional para filtrar sitios al buscar paradas.'**
+  String get planCreateBudgetHelper;
 
   /// No description provided for @planIncludePublicSubtitle.
   ///
@@ -3015,12 +3033,6 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Siguiente: armar paradas'**
   String get planCreateNextStops;
-
-  /// No description provided for @planCreateAiCta.
-  ///
-  /// In es, this message translates to:
-  /// **'Armame un plan con IA'**
-  String get planCreateAiCta;
 
   /// No description provided for @categoryPickerSelectGroup.
   ///

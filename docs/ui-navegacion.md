@@ -54,9 +54,8 @@ flowchart TB
   T1 --> Ficha
   T2 --> PlanList[PlansListPage]
   PlanList --> Create[CreatePlanPage]
-  Create --> Builder[PlanBuilderPage]
+  Create --> Detail
   PlanList --> Detail[PlanDetailPage]
-  Detail --> Builder
   Detail --> Ficha
   T3 --> PlanDetailFromRoute[PlanDetailPage]
   T0 --> Menu[Más opciones endDrawer]
@@ -280,30 +279,25 @@ Tab activo: icono + label `primary`. Inactivo: `mutedDark`, label 10 px.
 
 ### 6.6 Planes — lista `PlansListPage`
 
-- `TabScreenHeader` + subtítulo.
-- Card CTA `AppCreateCtaCard` “Crear un plan” (único punto de alta; **sin FAB** duplicado).
-- `AppSectionLabel` “Mis planes guardados”.
+- `TabScreenHeader` “Planes” (sin subtítulo).
+- FAB extendido abajo derecha sobre la nav del shell (`AppAnchoredFloatingAction` + `AppFloatingActionLayout`; gap estándar **12** px).
 - Card de plan: portada 96 px del **primer sitio** (`SiteLookCover`) + `AppStatusPill` + título overlay + fila meta (zona, N sitios, presupuesto).
-- Vacío: mensaje bajo el heading, CTA sigue visible.
+- Vacío: mensaje; FAB sigue visible.
 
 ### 6.7 Crear / editar plan — `CreatePlanPage`
 
-Formulario: título, zona, incluir públicos, tope presupuesto. **Crear y editar = misma pantalla** (editar precarga). Card atenuada **IA** abre `ComingSoonPage` (no genera planes). Al crear: `PlanBuilderPage`. Al editar: Guardar y vuelve al detalle. Paradas: `+` / builder.
+Formulario: **título** * (mín. 3 caracteres; Enter guarda), zona (Siguiente → presupuesto), presupuesto (Enter guarda). Campos con ayuda y **X** para borrar. **Sin** incluir públicos (buscador del detalle). Al crear → `PlanDetailPage` (Buscar). Al editar meta → Guardar y volver.
 
-### 6.8 Armar paradas — `PlanBuilderPage`
+**Eliminar plan:** borra en cascada paradas, reseñas, fotos de reseña (DB + Storage vía trigger).
 
-Chips internos: buscar / resultados / añadidos. `AppSearchField` + filtros avanzados. Resultados en `AppFormCard` + `SiteCover`. Timeline de paradas.
+### 6.8 Detalle de plan — `PlanDetailPage` (buscar + agregados)
 
-### 6.9 Detalle de plan — `PlanDetailPage`
-
-- **Sin AppBar.** Hero 176: `SiteCover` + scrim + back circular + ⋮ + título 20 + zona primary.
-- 3 stats (`surface`, radio 12): Paradas (`accent`), Presupuesto (`success`), Zona (`primary`). Sin transporte (no está cableado).
-- Label “Itinerario” 11 extraBold mutedDark tracking.
-- `PlanTimeline`: puntos primary/success, arrastre si 2+, check visitado, borrar.
-- Barra inferior: **Llevar a Maps** + icono share + `+` (builder). **Sin FAB** duplicado. Maps: origen GPS (última posición al toque); destino = **nombre** del sitio (lat/lng solo si punto exacto).
-- Share: **copia al portapapeles** título + `• nombre` por parada; toast confirmación. **No** abre hoja del sistema ni genera URL.
-- Fila atenuada “Transporte entre paradas” → `ComingSoonPage` (no se calcula medio).
-- ⋮: editar (título/zona/presupuesto/públicos), Maps, share (mismo clipboard), eliminar (sheet).
+- **Sin AppBar.** Hero 176: portada primer sitio + scrim + back + ⋮ + título + zona.
+- 3 stats: Paradas, Presupuesto, Zona.
+- Hero: título + meta **zona — $ presupuesto** (`onImage` + icono `warning`).
+- Cuadros: **Buscar** | **Paradas** | **Reseñas** (conteo). Tocar Reseñas → bitácora del plan (sin estrellas; orden por fecha).
+- Pie: **Llevar a Maps** + **Listo** (Buscar) / **Guardar** (Paradas si cambió), mismo ancho.
+- ⋮: editar meta, eliminar (sin Maps duplicado).
 
 ### 6.10 Rutas — `MyRoutesPage`
 
@@ -320,7 +314,6 @@ Chips internos: buscar / resultados / añadidos. `AppSearchField` + filtros avan
 - `AdminReportsPage`: lista de reportes abiertos reales.
 - `LegalDocumentPage`: texto.
 - `LocationPickerPage`: mapa interactivo + confirmar pin.
-- `ComingSoonPage`: título + texto (IA, transporte). Sin “avísame”.
 
 ### 6.12 Sheets cortos
 
@@ -347,9 +340,8 @@ Chips internos: buscar / resultados / añadidos. `AppSearchField` + filtros avan
 | Más opciones → Reportes (staff) | | `AdminReportsPage` |
 | Más opciones → Perfil | | `ProfileSettingsPage` |
 | Banner recuerdo | | *(eliminado; recuerdos en menú ☰)* |
-| Planes CTA crear | | `CreatePlanPage` → builder |
+| Planes CTA crear | | `CreatePlanPage` → `PlanDetailPage` (Buscar) |
 | Card plan / item ruta | | `PlanDetailPage` |
-| Plan `+` | | `PlanBuilderPage` |
 | Marcar visitado en plan | | Ese stop aparece en Rutas (dato, no push) |
 | Plan icono share / menú Compartir | | Clipboard local (texto); toast |
 | Ficha sitio | | **Sin** destino share |
@@ -390,13 +382,11 @@ frontend/lib/core/widgets/site_cover.dart
 frontend/lib/features/home/presentation/home_page.dart      # shell + inicio + nav
 frontend/lib/features/home/presentation/home_cards.dart
 frontend/lib/features/search/presentation/search_page.dart
-frontend/lib/core/widgets/coming_soon_page.dart
 frontend/lib/features/saves/presentation/save_place_page.dart
 frontend/lib/features/saves/presentation/site_detail_page.dart
 frontend/lib/features/saves/presentation/category_picker_sheet.dart
 frontend/lib/features/plans/presentation/plans_list_page.dart
 frontend/lib/features/plans/presentation/create_plan_page.dart
-frontend/lib/features/plans/presentation/plan_builder_page.dart
 frontend/lib/features/plans/presentation/plan_detail_page.dart
 frontend/lib/features/routes/presentation/my_routes_page.dart
 frontend/lib/l10n/app_es.arb

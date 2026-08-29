@@ -18,6 +18,7 @@ import '../../features/auth/data/profile.dart';
 import '../../features/auth/data/profile_repository.dart';
 import '../../features/moderation/data/moderation_repository.dart';
 import '../../features/plans/data/plan_models.dart';
+import '../../features/plans/data/plan_reviews_repository.dart';
 import '../../features/plans/data/plans_repository.dart';
 import '../../features/proximity/data/geofence_sync_service.dart';
 import '../../features/proximity/data/proximity_repository.dart';
@@ -126,6 +127,10 @@ final favoritesRepositoryProvider = Provider<FavoritesRepository>((ref) {
 
 final siteReviewsRepositoryProvider = Provider<SiteReviewsRepository>((ref) {
   return SiteReviewsRepository(client: ref.watch(supabaseClientProvider));
+});
+
+final planReviewsRepositoryProvider = Provider<PlanReviewsRepository>((ref) {
+  return PlanReviewsRepository(client: ref.watch(supabaseClientProvider));
 });
 
 final adminRepositoryProvider = Provider<AdminRepository>((ref) {

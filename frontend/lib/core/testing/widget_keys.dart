@@ -79,27 +79,28 @@ abstract final class WidgetKeys {
   static const searchResults = Key('search_results');
 
   static const plansList = Key('plans_list');
-  static const plansCreateCta = Key('plans_create_cta');
+  static const plansCreateFab = Key('plans_create_fab');
   static Key planCard(String planId) => Key('plan_card_$planId');
 
   static const createPlanPage = Key('create_plan_page');
   static const createPlanTitle = Key('create_plan_title');
   static const createPlanZone = Key('create_plan_zone');
   static const createPlanBudget = Key('create_plan_budget');
-  static const createPlanIncludePublic = Key('create_plan_include_public');
   static const createPlanNext = Key('create_plan_next');
 
   static const planBuilder = Key('plan_builder');
   static const planBuilderSearch = Key('plan_builder_search');
   static const planBuilderIncludePublic = Key('plan_builder_include_public');
+  static const planBuilderDone = Key('plan_builder_done');
+  static const planBuilderSave = Key('plan_builder_save');
   static const planTimeline = Key('plan_timeline');
   static const planReorderHandle = Key('plan_reorder_handle');
 
   static const planDetail = Key('plan_detail');
   static const planDetailMore = Key('plan_detail_more');
-  static const planDetailAdd = Key('plan_detail_add');
+  static const planStatSearch = Key('plan_stat_search');
   static const planStatStops = Key('plan_stat_stops');
-  static const planStatBudget = Key('plan_stat_budget');
+  static const planStatReviews = Key('plan_stat_reviews');
   static const planDeleteConfirm = Key('plan_delete_confirm');
   static const planMenuDelete = Key('plan_menu_delete');
   static const planMenuEdit = Key('plan_menu_edit');

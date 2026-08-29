@@ -16,3 +16,4 @@ export '../theme/chevere_theme_colors.dart';
 export '../theme/chevere_theme_scope.dart';
 export '../theme/theme_rebuild.dart';
 export '../theme/google_brand_colors.dart';
+export '../widgets/app_floating_action_layout.dart';

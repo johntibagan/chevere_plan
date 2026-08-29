@@ -291,7 +291,6 @@ create table if not exists public.plans (
   location_query text not null,
   start_lat double precision,
   start_lng double precision,
-  include_public boolean default false not null,
   max_budget_amount numeric(12,2),
   currency_code character(3) default 'COP'::bpchar not null,
   status plan_status default 'active'::plan_status not null,
@@ -315,6 +314,30 @@ create table if not exists public.plan_stops (
   constraint plan_stops_site_id_fkey FOREIGN KEY (site_id) REFERENCES sites(id) ON DELETE CASCADE,
   constraint plan_stops_pkey PRIMARY KEY (id),
   constraint plan_stops_plan_id_site_id_key UNIQUE (plan_id, site_id)
+);
+
+create table if not exists public.plan_reviews (
+  id uuid default gen_random_uuid() not null,
+  plan_id uuid not null,
+  user_id uuid not null,
+  body text default ''::text not null,
+  created_at timestamp with time zone default now() not null,
+  updated_at timestamp with time zone default now() not null,
+  constraint plan_reviews_plan_id_fkey FOREIGN KEY (plan_id) REFERENCES plans(id) ON DELETE CASCADE,
+  constraint plan_reviews_user_id_fkey FOREIGN KEY (user_id) REFERENCES profiles(id) ON DELETE CASCADE,
+  constraint plan_reviews_pkey PRIMARY KEY (id)
+);
+
+create table if not exists public.plan_review_photos (
+  id uuid default gen_random_uuid() not null,
+  review_id uuid not null,
+  storage_path text not null,
+  sort_order integer default 0 not null,
+  uploaded_by uuid,
+  created_at timestamp with time zone default now() not null,
+  constraint plan_review_photos_review_id_fkey FOREIGN KEY (review_id) REFERENCES plan_reviews(id) ON DELETE CASCADE,
+  constraint plan_review_photos_uploaded_by_fkey FOREIGN KEY (uploaded_by) REFERENCES profiles(id) ON DELETE SET NULL,
+  constraint plan_review_photos_pkey PRIMARY KEY (id)
 );
 
 create table if not exists public.content_reports (
@@ -419,6 +442,8 @@ create index if not exists content_reports_target_idx ON public.content_reports 
 create index if not exists departments_country_name_idx ON public.departments USING btree (country_code, name);
 create index if not exists plan_stops_plan_id_idx ON public.plan_stops USING btree (plan_id, sort_order);
 create index if not exists plan_stops_site_id_idx ON public.plan_stops USING btree (site_id);
+create index if not exists plan_reviews_plan_created_idx ON public.plan_reviews USING btree (plan_id, created_at DESC);
+create index if not exists plan_review_photos_review_id_idx ON public.plan_review_photos USING btree (review_id, sort_order);
 create index if not exists plans_user_id_idx ON public.plans USING btree (user_id);
 create index if not exists site_photos_site_id_idx ON public.site_photos USING btree (site_id, sort_order);
 create index if not exists site_review_photos_review_id_idx ON public.site_review_photos USING btree (review_id, sort_order);
@@ -753,6 +778,37 @@ begin
     raise exception 'max 3 photos per review';
   end if;
   return new;
+end;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.enforce_plan_review_photo_limit()
+ RETURNS trigger
+ LANGUAGE plpgsql
+AS $function$
+declare
+  n int;
+begin
+  select count(*) into n from public.plan_review_photos where review_id = new.review_id;
+  if n >= 3 then
+    raise exception 'max 3 photos per plan review';
+  end if;
+  return new;
+end;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.purge_plan_review_photo_storage()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'storage'
+AS $function$
+begin
+  if old.storage_path is not null and length(trim(old.storage_path)) > 0 then
+    delete from storage.objects
+    where bucket_id = 'site-photos'
+      and name = old.storage_path;
+  end if;
+  return old;
 end;
 $function$;
 
@@ -1890,6 +1946,19 @@ drop trigger if exists site_reviews_set_updated_at on public.site_reviews;
 create trigger site_reviews_set_updated_at before update on public.site_reviews
 for each row EXECUTE FUNCTION set_updated_at();
 
+drop trigger if exists plan_review_photos_limit on public.plan_review_photos;
+create trigger plan_review_photos_limit before insert on public.plan_review_photos
+for each row EXECUTE FUNCTION enforce_plan_review_photo_limit();
+
+drop trigger if exists plan_review_photos_purge_storage on public.plan_review_photos;
+create trigger plan_review_photos_purge_storage
+  after delete on public.plan_review_photos
+  for each row execute function public.purge_plan_review_photo_storage();
+
+drop trigger if exists plan_reviews_set_updated_at on public.plan_reviews;
+create trigger plan_reviews_set_updated_at before update on public.plan_reviews
+for each row EXECUTE FUNCTION set_updated_at();
+
 drop trigger if exists sites_set_updated_at on public.sites;
 create trigger sites_set_updated_at before update on public.sites
 for each row EXECUTE FUNCTION set_updated_at();
@@ -1919,6 +1988,8 @@ alter table public.countries enable row level security;
 alter table public.departments enable row level security;
 alter table public.distance_units enable row level security;
 alter table public.plan_stops enable row level security;
+alter table public.plan_reviews enable row level security;
+alter table public.plan_review_photos enable row level security;
 alter table public.plans enable row level security;
 alter table public.profiles enable row level security;
 alter table public.site_categories enable row level security;
@@ -2055,6 +2126,47 @@ create policy plan_stops_owner_all on public.plan_stops
   WHERE ((p.id = plan_stops.plan_id) AND ((p.user_id = (select auth.uid())) OR (select public.is_staff())))))) with check ((EXISTS ( SELECT 1
    FROM plans p
   WHERE ((p.id = plan_stops.plan_id) AND ((p.user_id = (select auth.uid())) OR (select public.is_staff()))))));
+
+drop policy if exists plan_reviews_select on public.plan_reviews;
+create policy plan_reviews_select on public.plan_reviews
+  for select
+  to authenticated using ((EXISTS ( SELECT 1
+   FROM plans p
+  WHERE ((p.id = plan_reviews.plan_id) AND ((p.user_id = (select auth.uid())) OR (select public.is_staff()))))));
+
+drop policy if exists plan_reviews_insert on public.plan_reviews;
+create policy plan_reviews_insert on public.plan_reviews
+  for insert
+  to authenticated with check (((user_id = (select auth.uid())) AND (EXISTS ( SELECT 1
+   FROM plans p
+  WHERE ((p.id = plan_reviews.plan_id) AND (p.user_id = (select auth.uid())))))));
+
+drop policy if exists plan_reviews_update on public.plan_reviews;
+create policy plan_reviews_update on public.plan_reviews
+  for update
+  to authenticated using (((user_id = (select auth.uid())) OR (select public.is_staff()))) with check (((user_id = (select auth.uid())) OR (select public.is_staff())));
+
+drop policy if exists plan_reviews_delete on public.plan_reviews;
+create policy plan_reviews_delete on public.plan_reviews
+  for delete
+  to authenticated using (((user_id = (select auth.uid())) OR (select public.is_staff())));
+
+drop policy if exists plan_review_photos_select on public.plan_review_photos;
+create policy plan_review_photos_select on public.plan_review_photos
+  for select
+  to authenticated using ((EXISTS ( SELECT 1
+   FROM (plan_reviews r
+     JOIN plans p ON ((p.id = r.plan_id)))
+  WHERE ((r.id = plan_review_photos.review_id) AND ((p.user_id = (select auth.uid())) OR (select public.is_staff()))))));
+
+drop policy if exists plan_review_photos_write on public.plan_review_photos;
+create policy plan_review_photos_write on public.plan_review_photos
+  for all
+  to authenticated using ((EXISTS ( SELECT 1
+   FROM plan_reviews r
+  WHERE ((r.id = plan_review_photos.review_id) AND ((r.user_id = (select auth.uid())) OR (select public.is_staff())))))) with check ((EXISTS ( SELECT 1
+   FROM plan_reviews r
+  WHERE ((r.id = plan_review_photos.review_id) AND ((r.user_id = (select auth.uid())) OR (select public.is_staff()))))));
 
 drop policy if exists plans_owner_all on public.plans;
 create policy plans_owner_all on public.plans
@@ -2260,6 +2372,12 @@ grant execute on function public.clear_site_location(p_site_id uuid) to anon, au
 grant execute on function public.distance_units_clear_other_defaults() to anon, authenticated, service_role;
 grant execute on function public.enforce_site_cover_photo() to anon, authenticated, service_role;
 grant execute on function public.enforce_site_review_photo_limit() to anon, authenticated, service_role;
+grant execute on function public.enforce_plan_review_photo_limit() to anon, authenticated, service_role;
+grant execute on function public.purge_plan_review_photo_storage() to anon, authenticated, service_role;
+grant select, insert, update, delete on public.plan_reviews to authenticated;
+grant select, insert, update, delete on public.plan_review_photos to authenticated;
+grant all on public.plan_reviews to service_role;
+grant all on public.plan_review_photos to service_role;
 grant execute on function public.find_possible_duplicate_sites(p_name text, p_lat double precision, p_lng double precision, p_city text, p_radius_m double precision, p_exclude_site_id uuid, p_google_place_id text) to anon, authenticated, service_role;
 grant execute on function public.get_site_coords(p_site_id uuid) to anon, authenticated, service_role;
 grant execute on function public.handle_new_user() to anon, authenticated, service_role;

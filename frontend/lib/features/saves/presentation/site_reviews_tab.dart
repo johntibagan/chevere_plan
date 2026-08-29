@@ -11,6 +11,7 @@ import '../../../core/l10n/context_l10n.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/theme_rebuild.dart';
 import '../../../core/widgets/app_confirm_dialog.dart';
+import '../../../core/widgets/app_floating_action_layout.dart';
 import '../../../core/widgets/app_network_image.dart';
 import '../../../core/widgets/app_toast.dart';
 import '../../../core/widgets/site_photo_viewer_page.dart';
@@ -370,7 +371,12 @@ class _SiteReviewsTabState extends ConsumerState<SiteReviewsTab> {
     return Stack(
       children: [
         ListView(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 88),
+          padding: EdgeInsets.fromLTRB(
+            16,
+            16,
+            16,
+            AppFloatingActionLayout.listScrollPadding(context),
+          ),
           children: [
             if (widget.isStaff) ...[
               _StaffPrivilegesBanner(
@@ -489,9 +495,7 @@ class _SiteReviewsTabState extends ConsumerState<SiteReviewsTab> {
               ],
           ],
         ),
-        Positioned(
-          right: 16,
-          bottom: 16,
+        AppAnchoredFloatingAction(
           child: FloatingActionButton(
             heroTag: 'site_review_fab_${widget.siteId}',
             tooltip: l10n.reviewWrite,

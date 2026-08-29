@@ -53,6 +53,8 @@ Público es **sección siempre visible**. Sin pin, el interruptor se muestra **d
 
 **Llevar a Maps** (plan): origen = GPS; destino = nombre / Place ID del sitio. Prohibido armar la ruta solo con lat/lng del catálogo (el municipio es un centroide; Maps lo pega a otro POI).
 
+**Plan — solo dueño edita (hoy):** crear/editar meta, paradas, reordenar, borrar y marcar visitado solo si `plans.user_id` = usuario logueado. RLS `plans_owner_all` en backend. Fase 2 (compartir): reglas abierto/cerrado en [`pendientes.md`](pendientes.md).
+
 ### Layout del formulario
 
 - Si es **lugar físico**: Ubicación → Nombre (obligatorio; Maps lo rellena) → **Visibilidad** (lugar físico + Público en **una** fila, cada uno con icono i).

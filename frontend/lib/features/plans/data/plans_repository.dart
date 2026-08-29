@@ -17,9 +17,19 @@ class PlansRepository {
 
   String? get _uid => _client.auth.currentUser?.id;
 
+  void _assertPlanOwner(Plan plan) {
+    final uid = _uid;
+    if (uid == null) {
+      throw const AppUserError('Debes iniciar sesión.');
+    }
+    if (!plan.isOwnedBy(uid)) {
+      throw const AppUserError('Solo puedes editar planes que creaste.');
+    }
+  }
+
   static const _planSelect =
       'id, user_id, title, location_query, start_lat, start_lng, '
-      'include_public, max_budget_amount, currency_code, status, '
+      'max_budget_amount, currency_code, status, '
       'plan_stops(id, plan_id, site_id, sort_order, visited_at, '
       'estimated_price_amount, lat, lng, '
       'sites(name, city, department, google_place_id, use_exact_pin, '
@@ -29,7 +39,7 @@ class PlansRepository {
 
   static const _planSelectNoCover =
       'id, user_id, title, location_query, start_lat, start_lng, '
-      'include_public, max_budget_amount, currency_code, status, '
+      'max_budget_amount, currency_code, status, '
       'plan_stops(id, plan_id, site_id, sort_order, visited_at, '
       'estimated_price_amount, lat, lng, '
       'sites(name, city, department, google_place_id, use_exact_pin, '
@@ -39,7 +49,7 @@ class PlansRepository {
 
   static const _planSelectLite =
       'id, user_id, title, location_query, start_lat, start_lng, '
-      'include_public, max_budget_amount, currency_code, status, '
+      'max_budget_amount, currency_code, status, '
       'plan_stops(id, plan_id, site_id, sort_order, visited_at, '
       'estimated_price_amount, lat, lng, '
       'sites(name, city, department, google_place_id, use_exact_pin, '
@@ -49,7 +59,7 @@ class PlansRepository {
   /// Listado liviano (cards): count de paradas sin hidratar cada stop.
   static const _planListSelect =
       'id, user_id, title, location_query, start_lat, start_lng, '
-      'include_public, max_budget_amount, currency_code, status, '
+      'max_budget_amount, currency_code, status, '
       'plan_stops(id, plan_id, site_id, sort_order, '
       'sites(name, site_categories(categories(name_i18n)), '
       'cover_photo_id, '
@@ -57,14 +67,14 @@ class PlansRepository {
 
   static const _planListSelectNoCover =
       'id, user_id, title, location_query, start_lat, start_lng, '
-      'include_public, max_budget_amount, currency_code, status, '
+      'max_budget_amount, currency_code, status, '
       'plan_stops(id, plan_id, site_id, sort_order, '
       'sites(name, site_categories(categories(name_i18n)), '
       'site_photos(id, storage_path, sort_order, created_at)))';
 
   static const _planListSelectLite =
       'id, user_id, title, location_query, start_lat, start_lng, '
-      'include_public, max_budget_amount, currency_code, status, '
+      'max_budget_amount, currency_code, status, '
       'plan_stops(id, plan_id, site_id, sort_order, '
       'sites(name, site_categories(categories(name_i18n))))';
 
@@ -168,7 +178,6 @@ class PlansRepository {
           'user_id': uid,
           'title': trimmed.isEmpty ? 'Plan sin título' : trimmed,
           'location_query': '',
-          'include_public': true,
           'status': 'draft',
         })
         .select()
@@ -179,7 +188,6 @@ class PlansRepository {
   Future<Plan> createPlan({
     required String title,
     required String locationQuery,
-    required bool includePublic,
     double? maxBudget,
     double? startLat,
     double? startLng,
@@ -189,18 +197,19 @@ class PlansRepository {
     if (uid == null) {
       throw const AppUserError('Debes iniciar sesión.');
     }
+    final trimmedTitle = title.trim();
+    if (trimmedTitle.length < 3) {
+      throw const AppUserError('Escribe al menos 3 caracteres para el título.');
+    }
 
     final planRow = await _client
         .from('plans')
         .insert({
           'user_id': uid,
-          'title': title.trim().isEmpty
-              ? 'Plan en ${locationQuery.trim()}'
-              : title.trim(),
+          'title': trimmedTitle,
           'location_query': locationQuery.trim(),
           'start_lat': startLat,
           'start_lng': startLng,
-          'include_public': includePublic,
           'max_budget_amount': maxBudget,
           'status': orderedStops.isEmpty ? 'draft' : 'active',
         })
@@ -238,6 +247,7 @@ class PlansRepository {
     List<String> categoryNames = const [],
     String? coverStoragePath,
   }) async {
+    _assertPlanOwner(await fetchById(planId));
     final existing = await _client
         .from('plan_stops')
         .select('id, site_id, sort_order')
@@ -357,6 +367,7 @@ class PlansRepository {
     required String planId,
     required String stopId,
   }) async {
+    _assertPlanOwner(await fetchById(planId));
     await _client
         .from('plan_stops')
         .delete()
@@ -372,7 +383,84 @@ class PlansRepository {
     }
   }
 
+  /// Aplica en lote altas/bajas/reorden/visitado del builder (un solo viaje a red).
+  Future<void> persistPlanStops({
+    required String planId,
+    required List<PlanStop> initialStops,
+    required List<PlanStop> desiredStops,
+  }) async {
+    _assertPlanOwner(await fetchById(planId));
+
+    final desiredSiteIds = desiredStops.map((s) => s.siteId).toSet();
+    final initialBySite = {for (final s in initialStops) s.siteId: s};
+
+    final deletes = <Future<void>>[];
+    for (final stop in initialStops) {
+      if (desiredSiteIds.contains(stop.siteId)) continue;
+      deletes.add(
+        _client
+            .from('plan_stops')
+            .delete()
+            .eq('id', stop.id)
+            .eq('plan_id', planId)
+            .then((_) {}),
+      );
+    }
+    if (deletes.isNotEmpty) await Future.wait(deletes);
+
+    final insertRows = <Map<String, dynamic>>[];
+    for (var i = 0; i < desiredStops.length; i++) {
+      final stop = desiredStops[i];
+      if (initialBySite.containsKey(stop.siteId)) continue;
+      if (stop.lat == null || stop.lng == null) {
+        throw const AppUserError(
+          'Solo puedes agregar sitios con ubicación en el mapa.',
+        );
+      }
+      insertRows.add({
+        'plan_id': planId,
+        'site_id': stop.siteId,
+        'sort_order': i,
+        'lat': stop.lat,
+        'lng': stop.lng,
+        'estimated_price_amount': stop.estimatedPriceAmount,
+        if (stop.visitedAt != null)
+          'visited_at': stop.visitedAt!.toUtc().toIso8601String(),
+      });
+    }
+    if (insertRows.isNotEmpty) {
+      await _client.from('plan_stops').insert(insertRows);
+    }
+
+    final updates = <Future<void>>[];
+    for (var i = 0; i < desiredStops.length; i++) {
+      final stop = desiredStops[i];
+      final initial = initialBySite[stop.siteId];
+      if (initial == null) continue;
+      final patch = <String, dynamic>{};
+      if (initial.sortOrder != i) patch['sort_order'] = i;
+      final wasVisited = initial.visitedAt?.toUtc().toIso8601String();
+      final nowVisited = stop.visitedAt?.toUtc().toIso8601String();
+      if (wasVisited != nowVisited) patch['visited_at'] = nowVisited;
+      if (patch.isEmpty) continue;
+      updates.add(
+        _client
+            .from('plan_stops')
+            .update(patch)
+            .eq('id', initial.id)
+            .eq('plan_id', planId)
+            .then((_) {}),
+      );
+    }
+    if (updates.isNotEmpty) await Future.wait(updates);
+
+    await _client.from('plans').update({
+      'status': desiredStops.isEmpty ? 'draft' : 'active',
+    }).eq('id', planId);
+  }
+
   Future<void> deletePlan(String planId) async {
+    _assertPlanOwner(await fetchById(planId));
     await _client.from('plans').delete().eq('id', planId);
   }
 
@@ -380,22 +468,36 @@ class PlansRepository {
     required String planId,
     required String title,
     required String locationQuery,
-    required bool includePublic,
     double? maxBudget,
   }) async {
+    final uid = _uid;
+    if (uid == null) {
+      throw const AppUserError('Debes iniciar sesión.');
+    }
     final trimmed = title.trim();
-    await _client.from('plans').update({
-      'title': trimmed.isEmpty ? 'Plan sin título' : trimmed,
-      'location_query': locationQuery.trim(),
-      'include_public': includePublic,
-      'max_budget_amount': maxBudget,
-    }).eq('id', planId);
+    if (trimmed.length < 3) {
+      throw const AppUserError('Escribe al menos 3 caracteres para el título.');
+    }
+    final rows = await _client
+        .from('plans')
+        .update({
+          'title': trimmed,
+          'location_query': locationQuery.trim(),
+          'max_budget_amount': maxBudget,
+        })
+        .eq('id', planId)
+        .eq('user_id', uid)
+        .select('id');
+    if ((rows as List).isEmpty) {
+      throw const AppUserError('Solo puedes editar planes que creaste.');
+    }
   }
 
   Future<void> reorderStops({
     required String planId,
     required List<PlanStop> ordered,
   }) async {
+    _assertPlanOwner(await fetchById(planId));
     for (var i = 0; i < ordered.length; i++) {
       await _client
           .from('plan_stops')
@@ -409,6 +511,15 @@ class PlansRepository {
     required String stopId,
     required bool visited,
   }) async {
+    final stopRow = await _client
+        .from('plan_stops')
+        .select('plan_id')
+        .eq('id', stopId)
+        .maybeSingle();
+    if (stopRow == null) return;
+    final planId = stopRow['plan_id']?.toString();
+    if (planId == null || planId.isEmpty) return;
+    _assertPlanOwner(await fetchById(planId));
     await _client.from('plan_stops').update({
       'visited_at': visited ? DateTime.now().toUtc().toIso8601String() : null,
     }).eq('id', stopId);
@@ -418,6 +529,15 @@ class PlansRepository {
     required String stopId,
     required double? amount,
   }) async {
+    final stopRow = await _client
+        .from('plan_stops')
+        .select('plan_id')
+        .eq('id', stopId)
+        .maybeSingle();
+    if (stopRow == null) return;
+    final planId = stopRow['plan_id']?.toString();
+    if (planId == null || planId.isEmpty) return;
+    _assertPlanOwner(await fetchById(planId));
     await _client.from('plan_stops').update({
       'estimated_price_amount': amount,
     }).eq('id', stopId);
@@ -509,7 +629,6 @@ class PlansRepository {
       locationQuery: (json['location_query'] as String?) ?? '',
       startLat: (json['start_lat'] as num?)?.toDouble(),
       startLng: (json['start_lng'] as num?)?.toDouble(),
-      includePublic: json['include_public'] as bool? ?? false,
       maxBudgetAmount: budget == null ? null : (budget as num).toDouble(),
       currencyCode: (json['currency_code'] as String?) ?? 'COP',
       status: json['status'] as String? ?? 'active',

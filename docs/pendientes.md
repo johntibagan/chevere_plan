@@ -90,8 +90,16 @@ Seguir el MVP sin UI de share. Al tocar planes/permisos/shell, no pintar caminos
 ## Planes (otros)
 
 - Transporte usado al marcar visitado no se persiste.
-- IA / transporte sugerido por tramo: “en construcción”.
 - Estados abierto/cerrado del plan: **diseño Fase 2** (arriba); hoy no existen.
+
+## Fase 5 — IA y transporte inteligente (visión)
+
+Sin UI en la app hoy. Cuando se implemente:
+
+- **Armame un plan con IA:** en crear plan, generar itinerario desde título/zona/presupuesto + sitios guardados/públicos.
+- **Transporte entre paradas:** en detalle del plan, sugerir medio por tramo (usa catálogo admin `transport_types`); opcional persistir al marcar visitado.
+
+Tipos de transporte en admin siguen existiendo para parametrización futura.
 
 ## Búsqueda
 

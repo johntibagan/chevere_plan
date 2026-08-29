@@ -255,10 +255,8 @@ Visión y checklist Colombia / pasarelas: siguen válidos como **marco**.
 - Términos/privacidad en login (texto borrador).  
 - Beta portal (APK + reportes + cómo probar).
 
-**En el MVP de visión, aún no / parcial** *(siguen en Fase 1 o quedan para después; share = Fase 2)*  
+**En el MVP de visión, aún no / parcial** *(siguen en Fase 1 o quedan para después; share = Fase 2; IA/transporte plan = Fase 5)*  
 - Validación de horarios de apertura en planes/búsqueda.  
-- Cálculo de transporte sugerido por tramo.  
-- IA que arma planes.  
 - iOS como producto publicado.
 
 ### Fase 2 — Compartir (siguiente gran bloque de producto)
@@ -286,6 +284,11 @@ Resumen: @ dentro de la app, grupo cerrado en sitios privados, plan Abierto/Cerr
 - Presupuestos/paquetes promocionales para negocios.
 - Expansión geográfica fuera de Colombia (sujeto a validación de éxito y marco legal de cada país).
 - Push / tiempo real para notificaciones de compartir (evolución de Fase 2).
+
+### Fase 5 — IA y transporte inteligente (planes)
+
+Detalle: [`pendientes.md`](pendientes.md) § *Fase 5*. Generación de planes con IA; sugerencia de transporte por tramo en el detalle del plan.
+
 ---
 
 ## 16. Recomendación tecnológica y escalabilidad

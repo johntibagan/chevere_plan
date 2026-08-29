@@ -149,9 +149,8 @@ class PlanDetailRobot {
   PlanDetailRobot(this.$);
   final PatrolIntegrationTester $;
 
-  Future<void> addSites() async {
-    await $(WidgetKeys.planDetailAdd).tap();
-    await $.pumpAndSettle();
+  Future<void> openSearchTab() async {
+    await $(WidgetKeys.planBuilderSearch).scrollTo();
   }
 
   Future<void> deletePlan() async {

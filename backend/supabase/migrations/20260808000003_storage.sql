@@ -1,5 +1,6 @@
 -- Storage: bucket privado site-photos + bucket público beta-apks.
--- Sitio: {user_id}/{site_id}/{filename}. Reseña: {user_id}/reviews/{review_id}/…
+-- Sitio: {user_id}/{site_id}/{filename}. Reseña sitio: {user_id}/reviews/{review_id}/…
+-- Reseña plan: {user_id}/plan-reviews/{review_id}/…
 -- Lectura: dueño del path, staff, foto de sitio público/propio, o foto de
 -- reseña pública (en sitio visible).
 
@@ -55,6 +56,17 @@ create policy site_photos_storage_select on storage.objects
                 or public.is_staff()
               )
             )
+          )
+      )
+      or exists (
+        select 1
+        from public.plan_review_photos rp
+        join public.plan_reviews r on r.id = rp.review_id
+        join public.plans p on p.id = r.plan_id
+        where rp.storage_path = objects.name
+          and (
+            p.user_id = auth.uid()
+            or public.is_staff()
           )
       )
     )

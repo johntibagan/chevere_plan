@@ -51,7 +51,7 @@ sequenceDiagram
 | **Inicio** | Saludo + título, **foto de perfil** (menú), **Vista** lista/2/3/4, borradores, **Eventos** (próximamente, plegable), **Guardados recientes** (solo físicos, plegable), **Populares cerca**, **acciones rápidas** (plegable; se pueden **fijar** sobre el menú). **Ver más** → Explorar. Tarjetas no físicas: **☰ → Tarjetas**. |
 | **Explorar** | Misma foto de perfil. Búsqueda de sitios: query, chips categoría (multi opcional), avanzado (lugar, GPS+radio en unidad del usuario, mis guardados, mis favoritos). Transporte/presupuesto **ocultos**. Conteo + Vista **fijos** bajo categorías. Paginación servidor **15**. |
 | **+ (centro)** | Guardar / editar sitio (misma pantalla). |
-| **Planes** | CTA crear + lista de planes (sin FAB duplicado). |
+| **Planes** | FAB **Crear plan** (abajo derecha) + lista. |
 | **Rutas** | Historial de paradas visitadas. |
 
 Tabs ya abiertos quedan en memoria (`IndexedStack`). Listas: caché primero, red detrás. Errores de sección: **Error en la app.** + **Intenta de nuevo**. Fallo de Guardar: toast «Se ha presentado un problema.» (sin callout sobre el CTA).
@@ -166,12 +166,13 @@ Visor de fotos de reseña = mismo que sitio (sin “usar como portada”). Staff
 
 ## 6. Planes
 
-1. Crear/editar: título, zona, incluir públicos, tope presupuesto. Card IA → “en construcción”.
-2. Candidatos (tuyos + públicos si aplica) → armar paradas → reordenar (2+).
-3. Detalle: portada primer sitio, stats, itinerario, **Llevar a Maps**, icono compartir, `+` paradas, marcar visitado → **Rutas**.
-4. **Llevar a Maps:** al toque; origen = última ubicación conocida; destinos = **nombre** del sitio (lat/lng solo si punto exacto).
-5. **Compartir plan:** **oculto en UI** hasta Fase 2 (compartir por @usuario; ver [`pendientes.md`](pendientes.md)). La lógica de portapapeles sigue en código pero no se muestra. **No** genera link ni invite.
-6. Transporte sugerido por tramo: UI “en construcción” (tipos sí existen en admin).
+1. Crear/editar (**solo dueño**, `plans.user_id`): título (**mín. 3 caracteres**), zona, tope presupuesto. **Incluir sitios públicos** solo en el buscador del detalle.
+2. Detalle unificado: portada primer sitio; bajo el título **zona — $ presupuesto** (icono amarillo, texto blanco). Cuadros **Buscar** | **Paradas** | **Reseñas** (conteo).
+3. **Reseñas del plan:** tabla propia `plan_reviews` (sin rating; fotos como sitio). UI similar a reseñas de sitio; ordenar por fecha. Solo dueño del plan.
+4. Agregar/quitar paradas al instante (local). Pie: **Llevar a Maps** + **Listo** (Buscar) o **Guardar** (Paradas si cambió).
+5. **Llevar a Maps:** al toque; origen = última ubicación conocida; destinos = **nombre** del sitio (lat/lng solo si punto exacto).
+6. **Compartir plan:** **oculto en UI** hasta Fase 2 (compartir por @usuario; ver [`pendientes.md`](pendientes.md)). La lógica de portapapeles sigue en código pero no se muestra. **No** genera link ni invite.
+7. Transporte sugerido por tramo e IA de planes: **sin UI** (visión Fase 5 — [`pendientes.md`](pendientes.md)).
 
 ---
 

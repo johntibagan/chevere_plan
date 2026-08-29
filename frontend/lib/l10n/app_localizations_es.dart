@@ -426,7 +426,7 @@ class AppLocalizationsEs extends AppLocalizations {
       'Aún no tienes planes. Crea uno y agrega sitios cuando quieras.';
 
   @override
-  String get plansCreateFab => 'Armar plan';
+  String get plansCreateFab => 'Crear plan';
 
   @override
   String get routesTitle => 'Mis rutas';
@@ -1500,7 +1500,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get actionNext => 'Siguiente';
 
   @override
-  String get planTitleOptional => 'Título (opcional)';
+  String get planTitleOptional => 'Título';
 
   @override
   String get planTabSearch => 'Buscar';
@@ -1549,6 +1549,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get planEditSaved => 'Plan actualizado.';
 
   @override
+  String get planEditNotOwner => 'Solo puedes editar planes que creaste.';
+
+  @override
   String get planMenuShare => 'Compartir';
 
   @override
@@ -1562,6 +1565,24 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get planStatStops => 'Paradas';
+
+  @override
+  String get planStatReviews => 'Reseñas';
+
+  @override
+  String planReviewCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count reseñas',
+      one: '1 reseña',
+      zero: 'Sin reseñas',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get planReviewEditorTitle => 'Reseña del plan';
 
   @override
   String get planStatBudget => 'Presupuesto';
@@ -1624,24 +1645,23 @@ class AppLocalizationsEs extends AppLocalizations {
   String get adminKmInvalid => 'Km inválido';
 
   @override
-  String get comingSoonBadge => 'Próximamente';
-
-  @override
-  String get comingSoonAiTitle => 'Armame un plan con IA';
-
-  @override
-  String get comingSoonAiBody =>
-      'La generación automática de planes estará disponible más adelante. Podés armar el plan eligiendo sitios que ya guardaste.';
-
-  @override
-  String get comingSoonTransportTitle => 'Transporte entre paradas';
-
-  @override
-  String get comingSoonTransportBody =>
-      'El cálculo de transporte sugerido entre paradas estará disponible más adelante.';
-
-  @override
   String get planZoneHint => 'Ej. Villa de Leyva, Boyacá';
+
+  @override
+  String get planCreateTitleHelper =>
+      'Mínimo 3 caracteres. Luego eliges los sitios.';
+
+  @override
+  String get planTitleMinLength =>
+      'Escribe al menos 3 caracteres para el título.';
+
+  @override
+  String get planCreateZoneHelper =>
+      'Ciudad o zona para orientar la búsqueda de paradas.';
+
+  @override
+  String get planCreateBudgetHelper =>
+      'Tope opcional para filtrar sitios al buscar paradas.';
 
   @override
   String get planIncludePublicSubtitle =>
@@ -1649,9 +1669,6 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get planCreateNextStops => 'Siguiente: armar paradas';
-
-  @override
-  String get planCreateAiCta => 'Armame un plan con IA';
 
   @override
   String get categoryPickerSelectGroup => 'Seleccionar todo el grupo';

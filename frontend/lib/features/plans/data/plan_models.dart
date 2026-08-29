@@ -38,6 +38,11 @@ class PlanStop {
 
   bool get isVisited => visitedAt != null;
 
+  /// Parada solo en memoria hasta **Guardar** en el builder.
+  static String pendingId(String siteId) => 'pending:$siteId';
+
+  static bool isPendingId(String id) => id.startsWith('pending:');
+
   double? get displayPrice =>
       estimatedPriceAmount ?? siteEstimatedPriceAmount;
 
@@ -75,7 +80,6 @@ class Plan {
     required this.userId,
     required this.title,
     required this.locationQuery,
-    required this.includePublic,
     required this.status,
     required this.stops,
     this.startLat,
@@ -91,7 +95,6 @@ class Plan {
   final String locationQuery;
   final double? startLat;
   final double? startLng;
-  final bool includePublic;
   final double? maxBudgetAmount;
   final String currencyCode;
   final String status;
@@ -100,6 +103,12 @@ class Plan {
   final int? listedStopCount;
 
   int get stopCount => listedStopCount ?? stops.length;
+
+  /// Solo el creador (`user_id`) puede editar el plan (hoy; Fase 2 = reglas abierto/cerrado).
+  bool isOwnedBy(String? currentUserId) {
+    if (currentUserId == null || currentUserId.isEmpty) return false;
+    return userId.toLowerCase() == currentUserId.toLowerCase();
+  }
 
   List<PlanStop> get pendingStops =>
       stops.where((s) => !s.isVisited).toList();
@@ -110,7 +119,6 @@ class Plan {
       userId: userId,
       title: title,
       locationQuery: locationQuery,
-      includePublic: includePublic,
       status: status,
       stops: stops ?? this.stops,
       startLat: startLat,
@@ -119,6 +127,21 @@ class Plan {
       currencyCode: currencyCode,
       listedStopCount: listedStopCount,
     );
+  }
+
+  /// Compara paradas para detectar cambios locales (orden, altas/bajas, visitado).
+  static bool stopsSnapshotEqual(
+    List<PlanStop> initial,
+    List<PlanStop> current,
+  ) {
+    if (initial.length != current.length) return false;
+    for (var i = 0; i < initial.length; i++) {
+      if (initial[i].siteId != current[i].siteId) return false;
+      final a = initial[i].visitedAt?.toUtc().millisecondsSinceEpoch;
+      final b = current[i].visitedAt?.toUtc().millisecondsSinceEpoch;
+      if (a != b) return false;
+    }
+    return true;
   }
 
   /// Nuevo orden de paradas tras drag-and-drop ([ReorderableListView.onReorderItem]).
@@ -149,7 +172,6 @@ class Plan {
         'location_query': locationQuery,
         'start_lat': startLat,
         'start_lng': startLng,
-        'include_public': includePublic,
         'max_budget_amount': maxBudgetAmount,
         'currency_code': currencyCode,
         'status': status,
@@ -164,7 +186,6 @@ class Plan {
       locationQuery: json['location_query'] as String? ?? '',
       startLat: (json['start_lat'] as num?)?.toDouble(),
       startLng: (json['start_lng'] as num?)?.toDouble(),
-      includePublic: json['include_public'] as bool? ?? false,
       maxBudgetAmount: (json['max_budget_amount'] as num?)?.toDouble(),
       currencyCode: json['currency_code'] as String? ?? 'COP',
       status: json['status'] as String? ?? 'active',
