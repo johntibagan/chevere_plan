@@ -12,7 +12,7 @@
   "moreMenuProximitySubtitle": "Radio y sitios públicos",
   "moreMenuDuplicateRadiusSubtitle": "Al guardar un sitio (siempre en metros)",
   "duplicateRadiusTitle": "Mismo sitio al guardar",
-  "duplicateRadiusSubtitle": "Si hay otro sitio dentro de este radio, te avisamos para no duplicarlo. Por defecto 100 m.",
+  "duplicateRadiusSubtitle": "Si hay otro sitio dentro de este radio, te avisamos para no duplicarlo.",
   "duplicateRadiusMetersInfo": "Este radio va siempre en metros. La unidad de distancia del menú (km, millas…) aplica en recuerdos cercanos, Explorar y etiquetas; no aquí.",
   "moreMenuDistanceUnit": "Unidad de distancia",
   "moreMenuDistanceUnitSubtitle": "Cómo se muestran km, millas…",

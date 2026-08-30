@@ -120,7 +120,7 @@ flowchart TD
 
 ## 2. Anti-duplicados
 
-- Busca públicos **completos** y **tus** privados completos con pin: Place ID, radio (preferencia **m**, default **100**, rango 50–1000), fuzzy nombre, ciudad+nombre. No borradores sin pin.
+- Busca públicos **completos** y **tus** privados completos con pin: **Place ID** exacto, o **radio del perfil + nombre parecido** (ambos; default **100 m**, 50–1000). Ya **no** marca mismo nombre en otra ciudad/lejos. Sin nombre aún: solo pin en ese radio. No borradores sin pin.
 - Catálogo post-reset: si coincide, es sitio real.
 - **Aviso suave** (Maps/pin): grilla 2×2 estándar; Ver ficha; Usar como → reseña pública (solo si público) / privada / favorito; Confirmar descarta el draft y abre ficha; Seguir con el mío.
 - **Al Guardar:** misma grilla + **Guardar de todas formas**; CTA Guardar en amarillo si hay matches.

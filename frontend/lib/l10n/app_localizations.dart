@@ -169,7 +169,7 @@ abstract class AppLocalizations {
   /// No description provided for @duplicateRadiusSubtitle.
   ///
   /// In es, this message translates to:
-  /// **'Si hay otro sitio dentro de este radio, te avisamos para no duplicarlo. Por defecto 100 m.'**
+  /// **'Si hay otro sitio dentro de este radio, te avisamos para no duplicarlo.'**
   String get duplicateRadiusSubtitle;
 
   /// No description provided for @duplicateRadiusMetersInfo.

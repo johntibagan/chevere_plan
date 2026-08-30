@@ -48,7 +48,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get duplicateRadiusSubtitle =>
-      'Si hay otro sitio dentro de este radio, te avisamos para no duplicarlo. Por defecto 100 m.';
+      'Si hay otro sitio dentro de este radio, te avisamos para no duplicarlo.';
 
   @override
   String get duplicateRadiusMetersInfo =>

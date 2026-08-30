@@ -874,8 +874,8 @@ begin
 end;
 $function$;
 
--- Anti-dupe: mismo Place ID, pin (radio perfil, default 100 m), nombre parecido
--- en radio fuzzy (~5×), o misma ciudad + nombre. Incluye privados de quien busca.
+-- Anti-dupe: Place ID exacto, o radio del perfil + nombre parecido.
+-- Sin ciudad+nombre a distancia ni radio fuzzy ×5.
 drop function if exists public.find_possible_duplicate_sites(
   text, double precision, double precision, text, double precision, uuid
 );
@@ -904,9 +904,7 @@ CREATE OR REPLACE FUNCTION public.find_possible_duplicate_sites(p_name text, p_l
 AS $function$
   with me as (select auth.uid() as uid),
   params as (
-    select
-      greatest(coalesce(p_radius_m, 100), 50) as pin_r,
-      least(1500, greatest(coalesce(p_radius_m, 100) * 5, 400)) as fuzzy_r
+    select greatest(coalesce(p_radius_m, 100), 50) as pin_r
   )
   select
     s.id,
@@ -964,20 +962,14 @@ AS $function$
         and s.google_place_id = trim(p_google_place_id)
       )
       or (
-        p_lat is not null and p_lng is not null and s.location is not null
-        and st_dwithin(
-          s.location,
-          st_setsrid(st_makepoint(p_lng, p_lat), 4326)::geography,
-          params.pin_r
-        )
-      )
-      or (
-        p_lat is not null and p_lng is not null and s.location is not null
+        p_lat is not null
+        and p_lng is not null
+        and s.location is not null
         and nullif(trim(p_name), '') is not null
         and st_dwithin(
           s.location,
           st_setsrid(st_makepoint(p_lng, p_lat), 4326)::geography,
-          params.fuzzy_r
+          params.pin_r
         )
         and greatest(
           similarity(lower(s.name), lower(trim(p_name))),
@@ -985,13 +977,15 @@ AS $function$
         ) >= 0.28
       )
       or (
-        nullif(trim(coalesce(p_city, '')), '') is not null
-        and s.city ilike trim(p_city)
-        and nullif(trim(p_name), '') is not null
-        and greatest(
-          similarity(lower(s.name), lower(trim(p_name))),
-          word_similarity(lower(trim(p_name)), lower(s.name))
-        ) >= 0.32
+        p_lat is not null
+        and p_lng is not null
+        and s.location is not null
+        and nullif(trim(p_name), '') is null
+        and st_dwithin(
+          s.location,
+          st_setsrid(st_makepoint(p_lng, p_lat), 4326)::geography,
+          params.pin_r
+        )
       )
     )
   order by
