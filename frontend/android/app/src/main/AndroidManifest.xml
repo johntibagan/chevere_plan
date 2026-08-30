@@ -76,6 +76,9 @@
             android:foregroundServiceType="location"/>
     </application>
     <queries>
+        <package android:name="com.google.android.apps.maps"/>
+        <package android:name="com.waze"/>
+        <package android:name="com.ubercab"/>
         <intent>
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>
@@ -86,7 +89,7 @@
         </intent>
         <intent>
             <action android:name="android.intent.action.VIEW"/>
-            <data android:scheme="geo"/>
+            <data android:scheme="uber"/>
         </intent>
     </queries>
 </manifest>

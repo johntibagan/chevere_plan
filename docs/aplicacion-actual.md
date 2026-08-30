@@ -11,7 +11,7 @@ Dudas de **compartir** (abiertas / cerradas): [`pendientes.md`](pendientes.md) �
 
 ## En una frase
 
-Chevere Plan es una app Android para **guardar lugares** (y tarjetas no físicas), **evitar duplicados públicos**, **reseñar o llevar bitácora**, **buscar** sitios (tuyos, públicos, favoritos), **armar planes de paradas**, **llevarlos a Google Maps**, **recordarte** cuando estás cerca, y (planes) **copiar un resumen al portapapeles**. **No** hay aún compartir ficha de sitio ni link profundo de plan.
+Chevere Plan es una app Android para **guardar lugares** (y tarjetas no físicas), **evitar duplicados públicos**, **reseñar o llevar bitácora**, **buscar** sitios (tuyos, públicos, favoritos), **armar planes de paradas**, **llevarlos a Maps** (chooser: Google Maps · Waze · Uber), **recordarte** cuando estás cerca, y (planes) **copiar un resumen al portapapeles**. **No** hay aún compartir ficha de sitio ni link profundo de plan.
 
 ### Señales en tarjetas (lista y grilla)
 
@@ -169,8 +169,8 @@ Visor de fotos de reseña = mismo que sitio (sin “usar como portada”). Staff
 1. Crear/editar (**solo dueño**, `plans.user_id`): título (**mín. 3 caracteres**), zona, tope presupuesto. **Incluir sitios públicos** solo en el buscador del detalle.
 2. Detalle unificado: portada primer sitio; bajo el título **zona — $ presupuesto** (icono amarillo, texto blanco). Cuadros **Buscar** | **Paradas** | **Reseñas** (conteo).
 3. **Reseñas del plan:** tabla propia `plan_reviews` (sin rating; fotos como sitio). UI similar a reseñas de sitio; ordenar por fecha. Solo dueño del plan.
-4. Agregar/quitar paradas al instante (local). Pie: **Llevar a Maps** + **Listo** (Buscar) o **Guardar** (Paradas si cambió).
-5. **Llevar a Maps:** al toque; origen = última ubicación conocida; destinos = **nombre** del sitio (lat/lng solo si punto exacto).
+4. Agregar/quitar/reordenar paradas (local hasta **Guardar**). **Hecho**: UI al toque (A, B, C… solo pendientes); persiste en lote **3 s** tras el último toque (sin spinner). Pie: **Llevar a Maps** + **Listo** (Buscar) o **Guardar** (solo lista u orden).
+5. **Llevar a Maps:** chooser nativo **solo** Google Maps · Waze · Uber (importancia: Maps → Waze → Uber). Maps = multi-parada; Waze/Uber = 1.ª parada.
 6. **Compartir plan:** **oculto en UI** hasta Fase 2 (compartir por @usuario; ver [`pendientes.md`](pendientes.md)). La lógica de portapapeles sigue en código pero no se muestra. **No** genera link ni invite.
 7. Transporte sugerido por tramo e IA de planes: **sin UI** (visión Fase 5 — [`pendientes.md`](pendientes.md)).
 

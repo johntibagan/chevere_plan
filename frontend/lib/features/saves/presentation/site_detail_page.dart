@@ -32,6 +32,7 @@ import '../../auth/data/profile.dart';
 import '../../moderation/data/moderation_models.dart';
 import '../../search/data/search_models.dart';
 import '../data/google_maps_links.dart';
+import '../data/navigation_apps.dart';
 import '../data/save_models.dart';
 import '../data/site_ficha.dart';
 import '../data/social_link_models.dart';
@@ -434,49 +435,45 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
   }
 
   Future<void> _openMapsFor(SiteFicha ficha, {required bool directions}) async {
+    final l10n = context.l10n;
     if (!_canOpenMaps(ficha)) {
       if (!mounted) return;
-      AppToast.show(context, context.l10n.siteDetailNoCoords, error: true);
+      AppToast.show(context, l10n.siteDetailNoCoords, error: true);
       return;
     }
     SiteFicha f = ficha;
     try {
       f = await ref.read(savesRepositoryProvider).loadSiteFicha(ficha.siteId);
     } catch (_) {}
+    if (!mounted) return;
     final lat = f.lat ?? ficha.lat;
     final lng = f.lng ?? ficha.lng;
     final exact = f.useExactPin;
     if (exact && (lat == null || lng == null)) {
-      if (!mounted) return;
-      AppToast.show(context, context.l10n.siteDetailNoCoords, error: true);
+      AppToast.show(context, l10n.siteDetailNoCoords, error: true);
       return;
     }
-    final uri = directions
-        ? GoogleMapsLinks.directionsTo(
-            name: f.name,
-            city: f.city,
-            department: f.department,
-            googlePlaceId: f.googlePlaceId,
-            lat: lat,
-            lng: lng,
-            useExactPin: exact,
+    final place = MapsRouteStop(
+      name: f.name,
+      city: f.city,
+      department: f.department,
+      googlePlaceId: f.googlePlaceId,
+      lat: lat,
+      lng: lng,
+      useExactPin: exact,
+      isCatalogSite: f.isCatalogSite,
+    );
+    final ok = directions
+        ? await NavigationApps.openDirectionsChooser(
+            chooserTitle: l10n.openWithMapsChooser,
+            stopsInOrder: [place],
           )
-        : GoogleMapsLinks.viewPlace(
-            name: f.name,
-            city: f.city,
-            department: f.department,
-            googlePlaceId: f.googlePlaceId,
-            lat: lat,
-            lng: lng,
-            useExactPin: exact,
+        : await NavigationApps.openViewChooser(
+            chooserTitle: l10n.openWithMapsChooser,
+            place: place,
           );
-    await _launchMapsUri(uri);
-  }
-
-  Future<void> _launchMapsUri(Uri httpsUri) async {
-    final ok = await launchUrl(httpsUri, mode: LaunchMode.externalApplication);
     if (!ok && mounted) {
-      AppToast.show(context, context.l10n.siteDetailOpenMapsFail, error: true);
+      AppToast.show(context, l10n.siteDetailOpenMapsFail, error: true);
     }
   }
 

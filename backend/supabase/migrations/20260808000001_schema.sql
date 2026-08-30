@@ -1339,6 +1339,40 @@ begin
 end;
 $function$;
 
+CREATE OR REPLACE FUNCTION public.set_plan_stops_visited(p_plan_id uuid, p_updates jsonb)
+ RETURNS void
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+declare
+  item jsonb;
+begin
+  if p_updates is null or jsonb_array_length(p_updates) = 0 then
+    return;
+  end if;
+
+  if not exists (
+    select 1
+    from public.plans p
+    where p.id = p_plan_id
+      and (p.user_id = auth.uid() or public.is_staff())
+  ) then
+    raise exception 'not allowed';
+  end if;
+
+  for item in select * from jsonb_array_elements(p_updates)
+  loop
+    update public.plan_stops ps
+    set visited_at = case
+      when item->>'visited_at' is null or trim(item->>'visited_at') = '' then null
+      else (item->>'visited_at')::timestamptz
+    end
+    where ps.id = (item->>'stop_id')::uuid
+      and ps.plan_id = p_plan_id;
+  end loop;
+end;
+$function$;
+
 CREATE OR REPLACE FUNCTION public.list_my_route_history()
  RETURNS TABLE(stop_id uuid, plan_id uuid, plan_title text, site_id uuid, site_name text, city text, visited_at timestamp with time zone)
  LANGUAGE sql
@@ -2434,6 +2468,7 @@ grant execute on function public.handle_new_user() to anon, authenticated, servi
 grant execute on function public.is_reserved_username(u text) to anon, authenticated, service_role;
 grant execute on function public.is_staff() to anon, authenticated, service_role;
 grant execute on function public.link_save_to_existing_site(p_save_id uuid, p_existing_site_id uuid) to anon, authenticated, service_role;
+grant execute on function public.set_plan_stops_visited(uuid, jsonb) to anon, authenticated, service_role;
 grant execute on function public.list_my_route_history() to anon, authenticated, service_role;
 grant execute on function public.list_open_content_reports() to anon, authenticated, service_role;
 grant execute on function public.resolve_content_report(uuid, text) to authenticated, service_role;

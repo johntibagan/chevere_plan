@@ -48,12 +48,16 @@ class PlanDetailPage extends ConsumerStatefulWidget {
 
 class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
   static const _bottomClearance = AppFloatingActionLayout.fixedBottomBarClearance;
+  /// Tras el último toque Hecho/Pendiente; se reinicia en cada toggle.
+  static const _visitedFlushDelay = Duration(seconds: 3);
 
   Plan? _plan;
   List<PlanStop> _initialStops = const [];
   bool _loading = true;
   bool _mapsBusy = false;
   bool _saving = false;
+  Timer? _visitedFlushTimer;
+  bool _visitFlushInFlight = false;
   _PlanDetailPanel _panel = _PlanDetailPanel.stops;
   (double, double)? _cachedOrigin;
 
@@ -74,8 +78,16 @@ class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
 
   @override
   void dispose() {
+    _visitedFlushTimer?.cancel();
     _queryCtrl.dispose();
     super.dispose();
+  }
+
+  @override
+  void deactivate() {
+    _visitedFlushTimer?.cancel();
+    unawaited(_flushVisitedChanges());
+    super.deactivate();
   }
 
   bool get _canEditPlan {
@@ -88,7 +100,7 @@ class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
   bool get _stopsDirty {
     final plan = _plan;
     if (plan == null || !_canEditPlan) return false;
-    return !Plan.stopsSnapshotEqual(_initialStops, plan.stops);
+    return !Plan.stopsStructureEqual(_initialStops, plan.stops);
   }
 
   Set<String> get _addedSiteIds =>
@@ -257,6 +269,7 @@ class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
       lng: hit.lng,
       city: hit.city,
       department: hit.department,
+      isCatalogSite: hit.isCatalog,
       estimatedPriceAmount: hit.estimatedPriceAmount,
       categoryNames: hit.categoryNames,
       coverStoragePath: hit.coverStoragePath,
@@ -285,19 +298,74 @@ class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
   void _toggleVisited(PlanStop stop) {
     final plan = _plan;
     if (plan == null) return;
+
+    final markingVisited = !stop.isVisited;
+    final nextVisitedAt = markingVisited ? DateTime.now().toUtc() : null;
+
     setState(() {
       _plan = plan.copyWith(
         stops: [
           for (final s in plan.stops)
             if (s.id == stop.id)
-              s.isVisited
-                  ? s.copyWith(clearVisited: true)
-                  : s.copyWith(visitedAt: DateTime.now().toUtc())
+              markingVisited
+                  ? s.copyWith(visitedAt: nextVisitedAt)
+                  : s.copyWith(clearVisited: true)
             else
               s,
         ],
       );
     });
+
+    if (!PlanStop.isPendingId(stop.id)) {
+      _scheduleVisitedFlush();
+    }
+  }
+
+  void _scheduleVisitedFlush() {
+    _visitedFlushTimer?.cancel();
+    _visitedFlushTimer = Timer(_visitedFlushDelay, () {
+      unawaited(_flushVisitedChanges());
+    });
+  }
+
+  Future<void> _flushVisitedChanges() async {
+    if (_visitFlushInFlight) return;
+    final plan = _plan;
+    if (plan == null) return;
+
+    final updates = Plan.pendingVisitedChanges(
+      initial: _initialStops,
+      current: plan.stops,
+    );
+    if (updates.isEmpty) return;
+
+    _visitFlushInFlight = true;
+    try {
+      await widget.repository.setPlanStopsVisitedBatch(
+        planId: widget.planId,
+        updates: updates,
+      );
+      await _invalidatePlansCache();
+      if (!mounted) return;
+      setState(() {
+        _initialStops = [
+          for (final s in _initialStops)
+            () {
+              final match = updates.where((u) => u.stopId == s.id);
+              if (match.isEmpty) return s;
+              final v = match.first.visitedAt;
+              return v != null
+                  ? s.copyWith(visitedAt: v)
+                  : s.copyWith(clearVisited: true);
+            }(),
+        ];
+      });
+    } catch (e) {
+      if (!mounted) return;
+      AppToast.error(context, e, logContext: 'plan_flush_visited');
+    } finally {
+      _visitFlushInFlight = false;
+    }
   }
 
   void _reorderStops(int oldIndex, int newIndex) {
@@ -320,6 +388,7 @@ class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
     if (plan == null) return;
     setState(() => _saving = true);
     try {
+      await _flushVisitedChanges();
       await widget.repository.persistPlanStops(
         planId: widget.planId,
         initialStops: _initialStops,
@@ -426,7 +495,8 @@ class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
         throw AppUserError(l10n.planStopsMissingCoords);
       }
 
-      final ok = await openGoogleMapsDirections(
+      final ok = await openDirectionsChooser(
+        chooserTitle: l10n.openWithMapsChooser,
         originLat: start.$1,
         originLng: start.$2,
         stopsInOrder: routeStops,

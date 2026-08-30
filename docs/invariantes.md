@@ -51,9 +51,9 @@ Público en lugar físico exige **lat y lng guardados**. El interruptor apagado 
 
 Público es **sección siempre visible**. Sin pin, el interruptor se muestra **desactivado** (no se oculta). No reaparece el diálogo de “¿punto exacto?” al pegar Maps.
 
-**Llevar a Maps** (plan): origen = GPS; destino = nombre / Place ID del sitio. Prohibido armar la ruta solo con lat/lng del catálogo (el municipio es un centroide; Maps lo pega a otro POI).
+**Llevar a Maps** (plan/sitio): chooser nativo solo **Maps · Waze · Uber** (Maps primero). Uber siempre visible; lat/lng solo con **punto exacto** o sitio de usuario (no centroide catálogo).
 
-**Plan — solo dueño edita (hoy):** crear/editar meta, paradas, reordenar, borrar y marcar visitado solo si `plans.user_id` = usuario logueado. RLS `plans_owner_all` en backend. Fase 2 (compartir): reglas abierto/cerrado en [`pendientes.md`](pendientes.md).
+**Plan — solo dueño edita (hoy):** crear/editar meta, paradas, reordenar, borrar y marcar visitado solo si `plans.user_id` = usuario logueado. **Hecho** persiste en lote (debounce **3 s**, RPC `set_plan_stops_visited`); **Guardar** en Paradas solo altas/bajas/reorden. RLS `plans_owner_all` en backend. Fase 2 (compartir): reglas abierto/cerrado en [`pendientes.md`](pendientes.md).
 
 ### Layout del formulario
 

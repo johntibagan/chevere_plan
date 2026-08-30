@@ -296,7 +296,7 @@ Formulario: **título** * (mín. 3 caracteres; Enter guarda), zona (Siguiente �
 - 3 stats: Paradas, Presupuesto, Zona.
 - Hero: título + meta **zona — $ presupuesto** (`onImage` + icono `warning`).
 - Cuadros: **Buscar** | **Paradas** | **Reseñas** (conteo). Tocar Reseñas → bitácora del plan (sin estrellas; orden por fecha).
-- Pie: **Llevar a Maps** + **Listo** (Buscar) / **Guardar** (Paradas si cambió), mismo ancho.
+- Paradas: **Hecho** = UI al toque; guardado en lote a los **3 s** (sin spinner). **Guardar** abajo solo agregar/quitar/reordenar.
 - ⋮: editar meta, eliminar (sin Maps duplicado).
 
 ### 6.10 Rutas — `MyRoutesPage`

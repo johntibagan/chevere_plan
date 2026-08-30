@@ -11,6 +11,7 @@ class PlanStop {
     this.department,
     this.googlePlaceId,
     this.useExactPin = false,
+    this.isCatalogSite = false,
     this.visitedAt,
     this.estimatedPriceAmount,
     this.siteEstimatedPriceAmount,
@@ -30,6 +31,7 @@ class PlanStop {
   final String? googlePlaceId;
   /// Si es true, Maps usa lat/lng; si no, el nombre del lugar.
   final bool useExactPin;
+  final bool isCatalogSite;
   final DateTime? visitedAt;
   final double? estimatedPriceAmount;
   final double? siteEstimatedPriceAmount;
@@ -64,6 +66,7 @@ class PlanStop {
       department: department,
       googlePlaceId: googlePlaceId,
       useExactPin: useExactPin,
+      isCatalogSite: isCatalogSite,
       visitedAt: clearVisited ? null : (visitedAt ?? this.visitedAt),
       estimatedPriceAmount:
           estimatedPriceAmount ?? this.estimatedPriceAmount,
@@ -134,14 +137,44 @@ class Plan {
     List<PlanStop> initial,
     List<PlanStop> current,
   ) {
-    if (initial.length != current.length) return false;
+    if (!stopsStructureEqual(initial, current)) return false;
     for (var i = 0; i < initial.length; i++) {
-      if (initial[i].siteId != current[i].siteId) return false;
       final a = initial[i].visitedAt?.toUtc().millisecondsSinceEpoch;
       final b = current[i].visitedAt?.toUtc().millisecondsSinceEpoch;
       if (a != b) return false;
     }
     return true;
+  }
+
+  /// Solo altas, bajas y reorden (sin visitado — eso se guarda al tocar Hecho).
+  static bool stopsStructureEqual(
+    List<PlanStop> initial,
+    List<PlanStop> current,
+  ) {
+    if (initial.length != current.length) return false;
+    for (var i = 0; i < initial.length; i++) {
+      if (initial[i].siteId != current[i].siteId) return false;
+    }
+    return true;
+  }
+
+  /// Cambios de visitado pendientes de persistir (solo paradas ya guardadas).
+  static List<({String stopId, DateTime? visitedAt})> pendingVisitedChanges({
+    required List<PlanStop> initial,
+    required List<PlanStop> current,
+  }) {
+    final initialById = {for (final s in initial) s.id: s};
+    final out = <({String stopId, DateTime? visitedAt})>[];
+    for (final stop in current) {
+      if (PlanStop.isPendingId(stop.id)) continue;
+      final prev = initialById[stop.id];
+      if (prev == null) continue;
+      final a = prev.visitedAt?.toUtc().millisecondsSinceEpoch;
+      final b = stop.visitedAt?.toUtc().millisecondsSinceEpoch;
+      if (a == b) continue;
+      out.add((stopId: stop.id, visitedAt: stop.visitedAt));
+    }
+    return out;
   }
 
   /// Nuevo orden de paradas tras drag-and-drop ([ReorderableListView.onReorderItem]).

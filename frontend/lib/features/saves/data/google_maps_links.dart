@@ -8,6 +8,7 @@ class MapsRouteStop {
     this.lat,
     this.lng,
     this.useExactPin = false,
+    this.isCatalogSite = false,
   });
 
   final String name;
@@ -17,6 +18,8 @@ class MapsRouteStop {
   final double? lat;
   final double? lng;
   final bool useExactPin;
+  /// Catálogo: lat/lng suelen ser centroide → no mandarlos a Uber (sí a Maps/Waze por nombre).
+  final bool isCatalogSite;
 }
 
 /// Deep links a Google Maps (ficha del **lugar** vs **punto exacto**).

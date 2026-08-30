@@ -2713,7 +2713,7 @@ abstract class AppLocalizations {
   /// No description provided for @directionsMaps.
   ///
   /// In es, this message translates to:
-  /// **'Cómo llegar (Google Maps)'**
+  /// **'Cómo llegar'**
   String get directionsMaps;
 
   /// No description provided for @planCreateTitle.
@@ -2763,6 +2763,12 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Aún no hay sitios. Busca y agrégalos.'**
   String get planTimelineEmpty;
+
+  /// No description provided for @planMyLocation.
+  ///
+  /// In es, this message translates to:
+  /// **'Mi ubicación'**
+  String get planMyLocation;
 
   /// No description provided for @planSearchFirst.
   ///
@@ -2841,6 +2847,12 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Llevar a Maps'**
   String get planMenuOpenMaps;
+
+  /// No description provided for @openWithMapsChooser.
+  ///
+  /// In es, this message translates to:
+  /// **'Abrir con'**
+  String get openWithMapsChooser;
 
   /// No description provided for @planMenuMore.
   ///
@@ -3103,7 +3115,7 @@ abstract class AppLocalizations {
   /// No description provided for @siteDetailOpenMapsFail.
   ///
   /// In es, this message translates to:
-  /// **'No se pudo abrir Google Maps.'**
+  /// **'No se pudo abrir la app de mapas.'**
   String get siteDetailOpenMapsFail;
 
   /// No description provided for @photoTermsTitle.

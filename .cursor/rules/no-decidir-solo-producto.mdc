@@ -1,0 +1,32 @@
+---
+description: No decidir solo cambios de producto/UX/flujo; preguntar con opciones
+alwaysApply: true
+---
+
+# No decidir solo (producto / UX / flujo)
+
+## Prohibido
+
+Tomar **por tu cuenta** decisiones que cambien **cómo se ve o se usa** la app
+(flujo, UI nueva, quitar/poner chooser o diálogo, cambiar prioridad de apps,
+ocultar features, “mejor lo hago custom”) cuando el dueño **no** lo pidió
+explícitamente — aunque “arregle” un bug técnico.
+
+## Obligatorio si hay duda o varias formas
+
+1. **Parar** y preguntar en el chat.
+2. Dar **2–4 opciones** concretas (pros/contras en una línea).
+3. Dejar **una opción abierta** (“otra que se te ocurra / prefieres X”).
+4. Esperar respuesta antes de implementar esa parte.
+
+## Sí puedes decidir solo
+
+- Bugs claros con una sola corrección alineada a invariantes/docs ya escritas.
+- Refactors internos sin cambiar comportamiento visible.
+- Cumplir una instrucción **explícita** del dueño (esta manda).
+
+## Ejemplo
+
+Mal: inventar un diálogo propio de “Abrir con” porque el chooser del SO tiene límite.
+Bien: explicar el límite, proponer (A) chooser nativo (B) diálogo custom (C) otra, y
+esperar.

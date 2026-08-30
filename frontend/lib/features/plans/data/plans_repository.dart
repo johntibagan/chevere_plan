@@ -33,7 +33,7 @@ class PlansRepository {
       'plan_stops(id, plan_id, site_id, sort_order, visited_at, '
       'estimated_price_amount, lat, lng, '
       'sites(name, city, department, google_place_id, use_exact_pin, '
-      'estimated_price_amount, cover_photo_id, '
+      'external_id, estimated_price_amount, cover_photo_id, '
       'site_categories(categories(name_i18n)), '
       'site_photos(id, storage_path, sort_order, created_at)))';
 
@@ -43,7 +43,7 @@ class PlansRepository {
       'plan_stops(id, plan_id, site_id, sort_order, visited_at, '
       'estimated_price_amount, lat, lng, '
       'sites(name, city, department, google_place_id, use_exact_pin, '
-      'estimated_price_amount, '
+      'external_id, estimated_price_amount, '
       'site_categories(categories(name_i18n)), '
       'site_photos(id, storage_path, sort_order, created_at)))';
 
@@ -53,7 +53,7 @@ class PlansRepository {
       'plan_stops(id, plan_id, site_id, sort_order, visited_at, '
       'estimated_price_amount, lat, lng, '
       'sites(name, city, department, google_place_id, use_exact_pin, '
-      'estimated_price_amount, '
+      'external_id, estimated_price_amount, '
       'site_categories(categories(name_i18n))))';
 
   /// Listado liviano (cards): count de paradas sin hidratar cada stop.
@@ -383,7 +383,8 @@ class PlansRepository {
     }
   }
 
-  /// Aplica en lote altas/bajas/reorden/visitado del builder (un solo viaje a red).
+  /// Aplica en lote altas/bajas/reorden del builder (un solo viaje a red).
+  /// Visitado se persiste al tocar Hecho ([setVisited]).
   Future<void> persistPlanStops({
     required String planId,
     required List<PlanStop> initialStops,
@@ -439,9 +440,6 @@ class PlansRepository {
       if (initial == null) continue;
       final patch = <String, dynamic>{};
       if (initial.sortOrder != i) patch['sort_order'] = i;
-      final wasVisited = initial.visitedAt?.toUtc().toIso8601String();
-      final nowVisited = stop.visitedAt?.toUtc().toIso8601String();
-      if (wasVisited != nowVisited) patch['visited_at'] = nowVisited;
       if (patch.isEmpty) continue;
       updates.add(
         _client
@@ -504,6 +502,45 @@ class PlansRepository {
           .update({'sort_order': i})
           .eq('id', ordered[i].id)
           .eq('plan_id', planId);
+    }
+  }
+
+  Future<void> setPlanStopsVisitedBatch({
+    required String planId,
+    required List<({String stopId, DateTime? visitedAt})> updates,
+  }) async {
+    if (updates.isEmpty) return;
+    _assertPlanOwner(await fetchById(planId));
+    try {
+      await _client.rpc(
+        'set_plan_stops_visited',
+        params: {
+          'p_plan_id': planId,
+          'p_updates': updates
+              .map(
+                (u) => {
+                  'stop_id': u.stopId,
+                  'visited_at': u.visitedAt?.toUtc().toIso8601String(),
+                },
+              )
+              .toList(),
+        },
+      );
+    } on PostgrestException catch (e) {
+      // RPC ausente (TEST sin migrar): fallback silencioso por parada.
+      if (e.code == 'PGRST202' ||
+          e.message.contains('set_plan_stops_visited')) {
+        await Future.wait(
+          updates.map(
+            (u) => setVisited(
+              stopId: u.stopId,
+              visited: u.visitedAt != null,
+            ),
+          ),
+        );
+        return;
+      }
+      rethrow;
     }
   }
 
@@ -589,6 +626,10 @@ class PlansRepository {
                 department: siteMap?['department'] as String?,
                 googlePlaceId: siteMap?['google_place_id'] as String?,
                 useExactPin: parsePgBool(siteMap?['use_exact_pin']),
+                isCatalogSite: (siteMap?['external_id'] as String?)
+                        ?.trim()
+                        .isNotEmpty ==
+                    true,
                 lat: (m['lat'] as num?)?.toDouble(),
                 lng: (m['lng'] as num?)?.toDouble(),
                 visitedAt: visited == null

@@ -1,6 +1,5 @@
-import 'package:url_launcher/url_launcher.dart';
-
 import '../../saves/data/google_maps_links.dart';
+import '../../saves/data/navigation_apps.dart';
 import 'plan_models.dart';
 
 /// Cómo llegar: origen = tu GPS; cada parada = **nombre del sitio**.
@@ -11,7 +10,15 @@ Uri buildGoogleMapsDirectionsUri({
   required double originLng,
   required List<PlanStop> stopsInOrder,
 }) {
-  final stops = stopsInOrder
+  return GoogleMapsLinks.directionsFromOrigin(
+    originLat: originLat,
+    originLng: originLng,
+    stopsInOrder: _toRouteStops(stopsInOrder),
+  );
+}
+
+List<MapsRouteStop> _toRouteStops(List<PlanStop> stopsInOrder) {
+  return stopsInOrder
       .where(
         (s) =>
             s.siteName.trim().isNotEmpty ||
@@ -26,31 +33,25 @@ Uri buildGoogleMapsDirectionsUri({
           lat: s.lat,
           lng: s.lng,
           useExactPin: s.useExactPin,
+          isCatalogSite: s.isCatalogSite,
         ),
       )
       .toList();
-
-  return GoogleMapsLinks.directionsFromOrigin(
-    originLat: originLat,
-    originLng: originLng,
-    stopsInOrder: stops,
-  );
 }
 
-Future<bool> openGoogleMapsDirections({
+/// Chooser nativo: solo Maps · Waze · Uber (Maps = ruta multi-parada).
+Future<bool> openDirectionsChooser({
+  required String chooserTitle,
   required double originLat,
   required double originLng,
   required List<PlanStop> stopsInOrder,
 }) async {
-  if (stopsInOrder.every(
-    (s) => s.siteName.trim().isEmpty && (s.lat == null || s.lng == null),
-  )) {
-    return false;
-  }
-  final uri = buildGoogleMapsDirectionsUri(
+  final stops = _toRouteStops(stopsInOrder);
+  if (stops.isEmpty) return false;
+  return NavigationApps.openDirectionsChooser(
+    chooserTitle: chooserTitle,
     originLat: originLat,
     originLng: originLng,
-    stopsInOrder: stopsInOrder,
+    stopsInOrder: stops,
   );
-  return launchUrl(uri, mode: LaunchMode.externalApplication);
 }

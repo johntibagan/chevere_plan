@@ -1487,7 +1487,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get photoReportSend => 'Enviar reporte';
 
   @override
-  String get directionsMaps => 'Cómo llegar (Google Maps)';
+  String get directionsMaps => 'Cómo llegar';
 
   @override
   String get planCreateTitle => 'Armar plan';
@@ -1515,6 +1515,9 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get planTimelineEmpty => 'Aún no hay sitios. Busca y agrégalos.';
+
+  @override
+  String get planMyLocation => 'Mi ubicación';
 
   @override
   String get planSearchFirst => 'Busca arriba y verás los resultados aquí.';
@@ -1556,6 +1559,9 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get planMenuOpenMaps => 'Llevar a Maps';
+
+  @override
+  String get openWithMapsChooser => 'Abrir con';
 
   @override
   String get planMenuMore => 'Más opciones';
@@ -1708,7 +1714,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get errorLoadRetry => 'No se pudo cargar. Intenta de nuevo.';
 
   @override
-  String get siteDetailOpenMapsFail => 'No se pudo abrir Google Maps.';
+  String get siteDetailOpenMapsFail => 'No se pudo abrir la app de mapas.';
 
   @override
   String get photoTermsTitle => 'Antes de subir la foto';
