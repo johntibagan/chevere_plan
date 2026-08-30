@@ -1781,7 +1781,38 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
     );
   }
 
-  InputDecoration _dec(String label, {String? helper, String? hint}) {
+  InputDecoration _dec(
+    String label, {
+    String? helper,
+    String? hint,
+    TextEditingController? clearable,
+    VoidCallback? onCleared,
+    Widget? suffixIcon,
+  }) {
+    final clearBtn = clearable != null && clearable.text.isNotEmpty
+        ? IconButton(
+            tooltip: context.l10n.actionClear,
+            icon: Icon(
+              Icons.cancel_rounded,
+              size: 20,
+              color: AppColors.muted,
+            ),
+            onPressed: () {
+              clearable.clear();
+              setState(() {});
+              onCleared?.call();
+            },
+          )
+        : null;
+    Widget? suffix = suffixIcon;
+    if (clearBtn != null && suffixIcon != null) {
+      suffix = Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [clearBtn, suffixIcon],
+      );
+    } else if (clearBtn != null) {
+      suffix = clearBtn;
+    }
     return InputDecoration(
       labelText: hint == null ? label : null,
       hintText: hint,
@@ -1793,6 +1824,10 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
         borderRadius: BorderRadius.circular(12),
         borderSide: BorderSide(color: AppColors.border),
       ),
+      suffixIcon: suffix,
+      suffixIconConstraints: suffix is Row
+          ? const BoxConstraints(minWidth: 48, minHeight: 40)
+          : null,
     );
   }
 
@@ -2050,6 +2085,8 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
           decoration: _dec(
             l10n.savePlaceName,
             hint: l10n.savePlaceName,
+            clearable: _nameCtrl,
+            onCleared: _schedulePossibleDuplicateCheck,
           ),
           textCapitalization: TextCapitalization.words,
           onChanged: (_) {
@@ -2193,7 +2230,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
         SizedBox(height: 10),
         TextField(
           controller: _addressCtrl,
-          decoration: _dec(l10n.saveAddress),
+          decoration: _dec(l10n.saveAddress, clearable: _addressCtrl),
           textCapitalization: TextCapitalization.sentences,
           onChanged: (_) => setState(() {}),
         ),

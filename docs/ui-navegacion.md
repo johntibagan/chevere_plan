@@ -313,7 +313,7 @@ Formulario: **título** * (mín. 3 caracteres; Enter guarda), zona (Siguiente �
 - `AdminPage`: 3 `AppStatCard` **reales** (nº categorías, vehículos, reportes abiertos). Tabs categorías / vehículos. **No** hay cifras inventadas de usuarios.
 - `AdminReportsPage`: lista de reportes abiertos reales.
 - `LegalDocumentPage`: texto.
-- `LocationPickerPage`: mapa interactivo + confirmar pin.
+- `LocationPickerPage`: mapa + buscar. **Sin pin inicial** → foco automático en el buscador (+ X para limpiar). Con pin → no roba el foco.
 
 ### 6.12 Sheets cortos
 

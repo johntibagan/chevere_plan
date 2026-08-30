@@ -1,0 +1,26 @@
+---
+description: Microajustes UX — flujos más rápidos (foco, teclado, clear, menos toques)
+alwaysApply: true
+---
+
+# UX — flujos rápidos (Chevere Plan)
+
+Prioridad percibida: **menos toques, menos fricción**. Detalles chicos que aceleran crear/editar/navegar. El dueño irá señalando sitios; al tocar una pantalla, aplicar el mismo criterio.
+
+## Principios
+
+1. **Llevar al siguiente paso útil.** Si el usuario abre algo para escribir/buscar y el campo está vacío o no hay dato previo, **enfocar** ese campo (teclado listo). Si ya hay valor relevante (pin, texto cargado), **no** robar el foco.
+2. **Teclado como atajo.** `TextInputAction.next` / `done` / `search` coherentes con el flujo (Enter guarda o busca; Siguiente salta al campo útil). Ver crear plan: título → Enter guarda; zona → Siguiente → presupuesto → Enter guarda.
+3. **Limpiar texto con una X** dentro del campo cuando hay texto (`actionClear` / `Icons.cancel_rounded`). Patrón: `AppSearchField`, formulario crear plan, buscador del mapa. Al tocar UI de formularios/búsqueda, añadirla si falta.
+4. **Un CTA claro** por acción primaria; no duplicar (card + FAB iguales). FAB con margen estándar (`AppFloatingActionLayout`).
+5. **Ayudas cortas** (`helperText` / tooltip), no párrafos. Iconos de info donde aporte.
+
+## Ante duda
+
+- Deduce lo que **acelera el flujo** sin sorprender (ej. autofocus solo si no hay pin/dato).
+- Si choca con privacidad, anti-dupe, Guardar sitio o otra regla dura → **pregunta** al dueño.
+- No inventar pantallas nuevas por “mejor UX”; refinar lo que ya hay.
+
+## Al cerrar un microajuste
+
+Si cambió comportamiento visible, actualizar `docs/aplicacion-actual.md` / `ui-navegacion.md` en el mismo pase (`docs-al-cambiar.mdc`).

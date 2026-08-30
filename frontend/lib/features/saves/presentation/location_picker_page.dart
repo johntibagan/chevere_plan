@@ -40,6 +40,7 @@ class _LocationPickerPageState extends ConsumerState<LocationPickerPage> {
   GooglePlacesClient get _places => ref.read(googlePlacesClientProvider);
 
   final _searchCtrl = TextEditingController();
+  final _searchFocus = FocusNode();
   GoogleMapController? _mapController;
 
   late LatLng _pin;
@@ -58,14 +59,23 @@ class _LocationPickerPageState extends ConsumerState<LocationPickerPage> {
   @override
   void initState() {
     super.initState();
-    if (widget.initialLat != null && widget.initialLng != null) {
+    final hasInitialPin =
+        widget.initialLat != null && widget.initialLng != null;
+    if (hasInitialPin) {
       _pin = LatLng(widget.initialLat!, widget.initialLng!);
       _hasUserSelection = true;
       WidgetsBinding.instance.addPostFrameCallback((_) => _onMapPoint(_pin));
     } else {
       _pin = _colombiaCenter;
       _hasUserSelection = false;
+      // Sin pin aún: teclado listo en el buscador para ir más rápido.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _searchFocus.requestFocus();
+      });
     }
+    _searchCtrl.addListener(() {
+      if (mounted) setState(() {});
+    });
   }
 
   @override
@@ -79,6 +89,7 @@ class _LocationPickerPageState extends ConsumerState<LocationPickerPage> {
   @override
   void dispose() {
     _searchCtrl.dispose();
+    _searchFocus.dispose();
     _mapController?.dispose();
     super.dispose();
   }
@@ -396,17 +407,42 @@ class _LocationPickerPageState extends ConsumerState<LocationPickerPage> {
             padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
             child: TextField(
               controller: _searchCtrl,
+              focusNode: _searchFocus,
+              autofocus: widget.initialLat == null || widget.initialLng == null,
               decoration: InputDecoration(
                 hintText: l10n.locationPickerSearchHint,
                 border: const OutlineInputBorder(),
                 isDense: true,
-                suffixIcon: FieldActionIcon(
-                  icon: Icons.search,
-                  tooltip: l10n.actionSearch,
-                  loading: _busy,
-                  onPressed: _busy
-                      ? null
-                      : () => _runSearch(_searchCtrl.text),
+                suffixIconConstraints: const BoxConstraints(
+                  minWidth: 48,
+                  minHeight: 40,
+                ),
+                suffixIcon: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (_searchCtrl.text.isNotEmpty)
+                      IconButton(
+                        tooltip: l10n.actionClear,
+                        icon: Icon(
+                          Icons.cancel_rounded,
+                          size: 20,
+                          color: AppColors.muted,
+                        ),
+                        onPressed: () {
+                          _searchCtrl.clear();
+                          setState(() => _predictions = const []);
+                          _searchFocus.requestFocus();
+                        },
+                      ),
+                    FieldActionIcon(
+                      icon: Icons.search,
+                      tooltip: l10n.actionSearch,
+                      loading: _busy,
+                      onPressed: _busy
+                          ? null
+                          : () => _runSearch(_searchCtrl.text),
+                    ),
+                  ],
                 ),
               ),
               textInputAction: TextInputAction.search,
