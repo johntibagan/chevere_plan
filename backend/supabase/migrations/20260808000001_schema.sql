@@ -874,8 +874,8 @@ begin
 end;
 $function$;
 
--- Anti-dupe: Place ID exacto, o radio del perfil + nombre parecido.
--- Sin ciudad+nombre a distancia ni radio fuzzy ×5.
+-- Anti-dupe: Place ID exacto, o pin dentro del radio del perfil (sin exigir nombre).
+-- Place ID pegajoso en app; radio = preferencia ☰ Mismo sitio al guardar.
 drop function if exists public.find_possible_duplicate_sites(
   text, double precision, double precision, text, double precision, uuid
 );
@@ -965,22 +965,6 @@ AS $function$
         p_lat is not null
         and p_lng is not null
         and s.location is not null
-        and nullif(trim(p_name), '') is not null
-        and st_dwithin(
-          s.location,
-          st_setsrid(st_makepoint(p_lng, p_lat), 4326)::geography,
-          params.pin_r
-        )
-        and greatest(
-          similarity(lower(s.name), lower(trim(p_name))),
-          word_similarity(lower(trim(p_name)), lower(s.name))
-        ) >= 0.28
-      )
-      or (
-        p_lat is not null
-        and p_lng is not null
-        and s.location is not null
-        and nullif(trim(p_name), '') is null
         and st_dwithin(
           s.location,
           st_setsrid(st_makepoint(p_lng, p_lat), 4326)::geography,

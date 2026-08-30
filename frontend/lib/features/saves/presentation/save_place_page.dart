@@ -216,7 +216,10 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
       return;
     }
     final name = _nameCtrl.text.trim();
-    if (name.isEmpty) {
+    final hasPin = _lat != null && _lng != null;
+    final hasPlaceId = (_googlePlaceId ?? '').trim().isNotEmpty;
+    // Place ID o pin bastan; el nombre personalizado no es requisito.
+    if (name.isEmpty && !hasPin && !hasPlaceId) {
       if (_possibleDupes.isNotEmpty && mounted) {
         setState(() => _possibleDupes = const []);
       }
@@ -930,8 +933,12 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
     if (!mounted) return;
     setState(() {
       _useExactPin = !place.isPlaceFicha;
-      // Solo ficha de lugar conserva Place ID; el reverse de calle no.
-      if (!place.isPlaceFicha) _googlePlaceId = null;
+      // Place ID pegajoso: solo se actualiza con ficha de lugar; un pin/calle
+      // no borra el Place ID previo (sirve al anti-dupe y a Maps).
+      if (place.isPlaceFicha) {
+        final pid = place.placeId?.trim();
+        if (pid != null && pid.isNotEmpty) _googlePlaceId = pid;
+      }
     });
     _markDirty();
     if (!mounted) return;
