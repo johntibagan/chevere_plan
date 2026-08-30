@@ -59,6 +59,9 @@ class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
   Timer? _visitedFlushTimer;
   bool _visitFlushInFlight = false;
   _PlanDetailPanel _panel = _PlanDetailPanel.stops;
+  late final PageController _panelPageCtrl =
+      PageController(initialPage: _panelIndex(_PlanDetailPanel.stops));
+  final _searchFocus = FocusNode();
   (double, double)? _cachedOrigin;
 
   final _queryCtrl = TextEditingController();
@@ -79,8 +82,64 @@ class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
   @override
   void dispose() {
     _visitedFlushTimer?.cancel();
+    _panelPageCtrl.dispose();
+    _searchFocus.dispose();
     _queryCtrl.dispose();
     super.dispose();
+  }
+
+  static int _panelIndex(_PlanDetailPanel panel) => switch (panel) {
+        _PlanDetailPanel.search => 0,
+        _PlanDetailPanel.stops => 1,
+        _PlanDetailPanel.reviews => 2,
+      };
+
+  static _PlanDetailPanel _panelFromIndex(int index) => switch (index) {
+        0 => _PlanDetailPanel.search,
+        2 => _PlanDetailPanel.reviews,
+        _ => _PlanDetailPanel.stops,
+      };
+
+  void _dismissKeyboard() {
+    FocusManager.instance.primaryFocus?.unfocus();
+  }
+
+  void _focusSearchField() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _panel != _PlanDetailPanel.search) return;
+      // Re-enfocar aunque ya tuviera foco → vuelve a abrir el teclado.
+      if (_searchFocus.hasFocus) {
+        _searchFocus.unfocus();
+      }
+      FocusScope.of(context).requestFocus(_searchFocus);
+    });
+  }
+
+  void _syncPanelPage(_PlanDetailPanel panel, {bool animate = true}) {
+    final index = _panelIndex(panel);
+    if (!_panelPageCtrl.hasClients) return;
+    if (_panelPageCtrl.page?.round() == index) return;
+    if (animate) {
+      _panelPageCtrl.animateToPage(
+        index,
+        duration: const Duration(milliseconds: 280),
+        curve: Curves.easeOutCubic,
+      );
+    } else {
+      _panelPageCtrl.jumpToPage(index);
+    }
+  }
+
+  void _onPanelSwiped(int index) {
+    final panel = _panelFromIndex(index);
+    if (_panel != panel) {
+      setState(() => _panel = panel);
+    }
+    if (panel == _PlanDetailPanel.search) {
+      _focusSearchField();
+    } else {
+      _dismissKeyboard();
+    }
   }
 
   @override
@@ -150,7 +209,22 @@ class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
   }
 
   void _selectPanel(_PlanDetailPanel panel) {
+    if (_panel == panel) {
+      if (panel == _PlanDetailPanel.search) {
+        _focusSearchField();
+      } else {
+        _dismissKeyboard();
+      }
+      return;
+    }
+    if (panel != _PlanDetailPanel.search) {
+      _dismissKeyboard();
+    }
     setState(() => _panel = panel);
+    _syncPanelPage(panel);
+    if (panel == _PlanDetailPanel.search) {
+      _focusSearchField();
+    }
   }
 
   Future<void> _load() async {
@@ -169,6 +243,13 @@ class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
         _initialStops = List<PlanStop>.from(plan.stops);
         _panel = initialPanel;
         _loading = false;
+      });
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        _syncPanelPage(initialPanel, animate: false);
+        if (initialPanel == _PlanDetailPanel.search) {
+          _focusSearchField();
+        }
       });
       unawaited(_loadReviewCount());
     } catch (e) {
@@ -737,9 +818,15 @@ class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
         ),
       );
     }
-    return switch (_panel) {
-      _PlanDetailPanel.search => _buildSearchTab(l10n),
-      _PlanDetailPanel.stops => PlanTimeline(
+    return PageView(
+      controller: _panelPageCtrl,
+      onPageChanged: _onPanelSwiped,
+      physics: busy
+          ? const NeverScrollableScrollPhysics()
+          : const PageScrollPhysics(),
+      children: [
+        _buildSearchTab(l10n),
+        PlanTimeline(
           key: WidgetKeys.planTimeline,
           stops: plan.stops,
           emptyLabel: l10n.planTimelineEmpty,
@@ -752,13 +839,14 @@ class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
           onRemove: !busy ? _removeStop : null,
           onReorder: !busy ? _reorderStops : null,
         ),
-      _PlanDetailPanel.reviews => PlanReviewsTab(
+        PlanReviewsTab(
           planId: widget.planId,
           planTitle: plan.title,
           bottomPadding: _bottomClearance,
           onReviewsChanged: _loadReviewCount,
         ),
-    };
+      ],
+    );
   }
 
   Widget _buildSearchTab(AppLocalizations l10n) {
@@ -766,6 +854,7 @@ class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
       AppSearchField(
         key: WidgetKeys.planBuilderSearch,
         controller: _queryCtrl,
+        focusNode: _searchFocus,
         hint: l10n.planSearchHint,
         searchTooltip: l10n.actionSearch,
         loading: _searching,

@@ -14,6 +14,8 @@ class AppSearchField extends StatelessWidget {
     this.clearTooltip,
     this.loading = false,
     this.onChanged,
+    this.focusNode,
+    this.autofocus = false,
   });
 
   final TextEditingController controller;
@@ -24,6 +26,8 @@ class AppSearchField extends StatelessWidget {
   final String? clearTooltip;
   final bool loading;
   final ValueChanged<String>? onChanged;
+  final FocusNode? focusNode;
+  final bool autofocus;
 
   @override
   Widget build(BuildContext context) {
@@ -33,6 +37,8 @@ class AppSearchField extends StatelessWidget {
         final hasText = value.text.isNotEmpty;
         return TextField(
           controller: controller,
+          focusNode: focusNode,
+          autofocus: autofocus,
           textInputAction: TextInputAction.search,
           onChanged: onChanged,
           onSubmitted: (_) => onSearch(),
