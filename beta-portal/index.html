@@ -283,6 +283,7 @@
     .priority-badge.alta { color: #ff6b6b; }
     .priority-badge.media { color: #f0c040; }
     .priority-badge.baja { color: #3ecf8e; }
+    .priority-badge.none { color: var(--muted); font-style: italic; text-transform: none; }
     h2 {
       font-size: 0.78rem;
       text-transform: uppercase;
@@ -757,30 +758,36 @@
     }
 
     function priorityOf(row) {
-      const p = String(row.priority || "media").toLowerCase();
-      return PRIORITY_RANK[p] ? p : "media";
+      if (row.priority == null || row.priority === "") return null;
+      const p = String(row.priority).toLowerCase();
+      return PRIORITY_RANK[p] ? p : null;
     }
 
     function compareActive(a, b, mode) {
-      const pa = PRIORITY_RANK[priorityOf(a)] || 2;
-      const pb = PRIORITY_RANK[priorityOf(b)] || 2;
+      const pa = priorityOf(a);
+      const pb = priorityOf(b);
+      const ra = PRIORITY_RANK[pa] || 0;
+      const rb = PRIORITY_RANK[pb] || 0;
       const ta = a.ticket_no ?? 0;
       const tb = b.ticket_no ?? 0;
       const da = new Date(a.updated_at || a.created_at || 0).getTime();
       const db = new Date(b.updated_at || b.created_at || 0).getTime();
-      const ra = a.in_review ? 1 : 0;
-      const rb = b.in_review ? 1 : 0;
+      const ia = a.in_review ? 1 : 0;
+      const ib = b.in_review ? 1 : 0;
       switch (mode) {
         case "priority_desc":
-          return pb - pa || tb - ta;
+          // Sin prioridad primero (nuevos), luego alta → baja
+          if ((pa == null) !== (pb == null)) return pa == null ? -1 : 1;
+          return rb - ra || tb - ta;
         case "priority_asc":
-          return pa - pb || ta - tb;
+          if ((pa == null) !== (pb == null)) return pa == null ? -1 : 1;
+          return ra - rb || ta - tb;
         case "date_asc":
           return da - db || ta - tb;
         case "review_first":
-          return rb - ra || db - da;
+          return ib - ia || db - da;
         case "review_last":
-          return ra - rb || db - da;
+          return ia - ib || db - da;
         case "ticket_asc":
           return ta - tb;
         case "ticket_desc":
@@ -822,11 +829,14 @@
           input.disabled = false;
           if (error) {
             alert(error.message || "No se pudo cambiar la prioridad");
-            const prevInput = rowEl.querySelector(`input[value="${prev}"]`);
-            if (prevInput) prevInput.checked = true;
+            if (prev == null) {
+              input.checked = false;
+            } else {
+              const prevInput = rowEl.querySelector(`input[value="${prev}"]`);
+              if (prevInput) prevInput.checked = true;
+            }
             return;
           }
-          // Guarda en memoria; no reordenar ni refrescar la lista.
           current = p;
           row.priority = p;
         });
@@ -1072,9 +1082,15 @@
         appendPriorityRadios(desc, row, row.id);
       } else {
         desc.appendChild(document.createElement("br"));
+        const prio = priorityOf(row);
         const badge = document.createElement("span");
-        badge.className = "priority-badge " + priorityOf(row);
-        badge.textContent = "Prioridad: " + priorityOf(row);
+        if (prio) {
+          badge.className = "priority-badge " + prio;
+          badge.textContent = "Prioridad: " + prio;
+        } else {
+          badge.className = "priority-badge none";
+          badge.textContent = "Sin prioridad";
+        }
         desc.appendChild(badge);
       }
       el.appendChild(desc);

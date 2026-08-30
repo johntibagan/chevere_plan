@@ -400,11 +400,11 @@ create table if not exists public.beta_feedback (
   done boolean default false not null,
   in_review boolean default false not null,
   fixed_in_version text,
-  priority text default 'media' not null,
+  priority text,
   created_at timestamp with time zone default now() not null,
   updated_at timestamp with time zone default now() not null,
   constraint beta_feedback_body_len CHECK ((char_length(trim(body)) between 3 and 1000)),
-  constraint beta_feedback_priority_chk CHECK (priority in ('alta', 'media', 'baja')),
+  constraint beta_feedback_priority_chk CHECK (priority is null or priority in ('alta', 'media', 'baja')),
   constraint beta_feedback_pkey PRIMARY KEY (id),
   constraint beta_feedback_ticket_no_key UNIQUE (ticket_no)
 );
@@ -435,7 +435,7 @@ comment on column public.beta_feedback.ticket_no is
 comment on column public.beta_feedback.in_review is
   'Dueño (PIN): en revisión; el público no edita ni borra.';
 comment on column public.beta_feedback.priority is
-  'Prioridad (alta|media|baja). Solo el dueño la cambia vía beta_set_feedback_priority.';
+  'Prioridad (alta|media|baja) o null si el dueño aún no la definió.';
 
 -- indexes (sin duplicar PK/UNIQUE de la tabla)
 create index if not exists categories_keywords_gin ON public.categories USING gin (keywords);
@@ -598,7 +598,7 @@ AS $function$
 begin
   if tg_op = 'INSERT' then
     if coalesce(current_setting('chevere.beta_priority_ok', true), '') is distinct from '1' then
-      new.priority := 'media';
+      new.priority := null;
     end if;
     return new;
   end if;
@@ -2090,7 +2090,7 @@ create policy beta_feedback_insert on public.beta_feedback
     (done = false)
     and (in_review = false)
     and (fixed_in_version is null)
-    and (priority = 'media')
+    and (priority is null)
   );
 
 drop policy if exists beta_feedback_update_pending on public.beta_feedback;

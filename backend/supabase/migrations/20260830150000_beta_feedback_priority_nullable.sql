@@ -1,5 +1,5 @@
--- Prioridad en reportes/mejoras del portal beta (alta | media | baja | null).
--- Solo el dueño (RPC + PIN) puede asignarla; el insert público queda en null.
+-- Prioridad nullable: los nuevos inserts quedan sin prioridad (null)
+-- hasta que el dueño la asigne con beta_set_feedback_priority.
 
 alter table public.beta_feedback
   add column if not exists priority text;
@@ -23,7 +23,6 @@ comment on column public.beta_feedback.priority is
 create index if not exists beta_feedback_priority_idx
   on public.beta_feedback (priority);
 
--- Insert público siempre null; update no puede cambiar priority salvo RPC (flag).
 create or replace function public.beta_feedback_guard_priority()
 returns trigger
 language plpgsql
