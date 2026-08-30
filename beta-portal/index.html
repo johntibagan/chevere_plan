@@ -262,23 +262,27 @@
       gap: 4px;
       cursor: pointer;
       user-select: none;
+      font-weight: 600;
     }
+    .priority-row label.alta { color: #ff6b6b; }
+    .priority-row label.media { color: #f0c040; }
+    .priority-row label.baja { color: #3ecf8e; }
     .priority-row input {
       margin: 0;
-      accent-color: var(--accent);
     }
+    .priority-row label.alta input { accent-color: #ff6b6b; }
+    .priority-row label.media input { accent-color: #f0c040; }
+    .priority-row label.baja input { accent-color: #3ecf8e; }
     .priority-badge {
       display: inline-block;
-      margin-top: 4px;
       font-size: 0.72rem;
       font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 0.04em;
-      color: var(--muted);
     }
-    .priority-badge.alta { color: #ff8f8f; }
-    .priority-badge.media { color: var(--accent); }
-    .priority-badge.baja { color: var(--muted); }
+    .priority-badge.alta { color: #ff6b6b; }
+    .priority-badge.media { color: #f0c040; }
+    .priority-badge.baja { color: #3ecf8e; }
     h2 {
       font-size: 0.78rem;
       text-transform: uppercase;
@@ -794,11 +798,12 @@
       rowEl.className = "priority-row";
       rowEl.setAttribute("role", "radiogroup");
       rowEl.setAttribute("aria-label", "Prioridad");
-      const current = priorityOf(row);
+      let current = priorityOf(row);
       ["alta", "media", "baja"].forEach((p) => {
         const id = `prio-${nameSuffix}-${p}`;
         const label = document.createElement("label");
         label.htmlFor = id;
+        label.className = p;
         const input = document.createElement("input");
         input.type = "radio";
         input.name = `prio-${nameSuffix}`;
@@ -807,17 +812,23 @@
         input.checked = current === p;
         input.addEventListener("change", async () => {
           if (!input.checked) return;
+          const prev = current;
+          input.disabled = true;
           const { error } = await sb.rpc("beta_set_feedback_priority", {
             p_id: row.id,
             p_priority: p,
             p_pin: adminPin,
           });
+          input.disabled = false;
           if (error) {
             alert(error.message || "No se pudo cambiar la prioridad");
-            await loadFeedback();
+            const prevInput = rowEl.querySelector(`input[value="${prev}"]`);
+            if (prevInput) prevInput.checked = true;
             return;
           }
-          await loadFeedback();
+          // Guarda en memoria; no reordenar ni refrescar la lista.
+          current = p;
+          row.priority = p;
         });
         label.appendChild(input);
         label.appendChild(document.createTextNode(p.charAt(0).toUpperCase() + p.slice(1)));
@@ -1060,7 +1071,8 @@
       if (isAdmin && !row.done) {
         appendPriorityRadios(desc, row, row.id);
       } else {
-        const badge = document.createElement("div");
+        desc.appendChild(document.createElement("br"));
+        const badge = document.createElement("span");
         badge.className = "priority-badge " + priorityOf(row);
         badge.textContent = "Prioridad: " + priorityOf(row);
         desc.appendChild(badge);
