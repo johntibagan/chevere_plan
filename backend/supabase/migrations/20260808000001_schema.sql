@@ -400,9 +400,11 @@ create table if not exists public.beta_feedback (
   done boolean default false not null,
   in_review boolean default false not null,
   fixed_in_version text,
+  priority text default 'media' not null,
   created_at timestamp with time zone default now() not null,
   updated_at timestamp with time zone default now() not null,
   constraint beta_feedback_body_len CHECK ((char_length(trim(body)) between 3 and 1000)),
+  constraint beta_feedback_priority_chk CHECK (priority in ('alta', 'media', 'baja')),
   constraint beta_feedback_pkey PRIMARY KEY (id),
   constraint beta_feedback_ticket_no_key UNIQUE (ticket_no)
 );
@@ -432,6 +434,8 @@ comment on column public.beta_feedback.ticket_no is
   'Consecutivo corto para commits (#1, #2). Identity, inmutable.';
 comment on column public.beta_feedback.in_review is
   'Dueño (PIN): en revisión; el público no edita ni borra.';
+comment on column public.beta_feedback.priority is
+  'Prioridad (alta|media|baja). Solo el dueño la cambia vía beta_set_feedback_priority.';
 
 -- indexes (sin duplicar PK/UNIQUE de la tabla)
 create index if not exists categories_keywords_gin ON public.categories USING gin (keywords);
@@ -468,6 +472,7 @@ create index if not exists client_debug_logs_created_at_idx ON public.client_deb
 create index if not exists client_debug_logs_context_idx ON public.client_debug_logs USING btree (context, created_at DESC);
 create index if not exists client_debug_logs_status_created_idx ON public.client_debug_logs USING btree (status, created_at DESC);
 create index if not exists beta_feedback_created_at_idx ON public.beta_feedback USING btree (created_at DESC);
+create index if not exists beta_feedback_priority_idx ON public.beta_feedback USING btree (priority);
 create index if not exists beta_qa_flows_version_idx ON public.beta_qa_flows USING btree (version, ticket_no);
 
 -- functions
@@ -586,6 +591,26 @@ begin
 end;
 $function$;
 
+CREATE OR REPLACE FUNCTION public.beta_feedback_guard_priority()
+ RETURNS trigger
+ LANGUAGE plpgsql
+AS $function$
+begin
+  if tg_op = 'INSERT' then
+    if coalesce(current_setting('chevere.beta_priority_ok', true), '') is distinct from '1' then
+      new.priority := 'media';
+    end if;
+    return new;
+  end if;
+
+  if new.priority is distinct from old.priority
+     and coalesce(current_setting('chevere.beta_priority_ok', true), '') is distinct from '1' then
+    new.priority := old.priority;
+  end if;
+  return new;
+end;
+$function$;
+
 CREATE OR REPLACE FUNCTION public.beta_mark_feedback(p_id uuid, p_done boolean, p_fixed_in_version text, p_pin text)
  RETURNS public.beta_feedback
  LANGUAGE plpgsql
@@ -637,6 +662,43 @@ begin
   set in_review = p_in_review
   where id = p_id
     and done = false
+  returning * into row;
+
+  if row.id is null then
+    raise exception 'No encontrado';
+  end if;
+  return row;
+end;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.beta_set_feedback_priority(
+  p_id uuid,
+  p_priority text,
+  p_pin text
+)
+ RETURNS public.beta_feedback
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'extensions'
+AS $function$
+declare
+  expected text;
+  row public.beta_feedback;
+  prio text := lower(trim(coalesce(p_priority, '')));
+begin
+  select pin into expected from private.beta_admin where id = 1;
+  if expected is null or p_pin is distinct from expected then
+    raise exception 'PIN incorrecto';
+  end if;
+  if prio not in ('alta', 'media', 'baja') then
+    raise exception 'Prioridad inválida';
+  end if;
+
+  perform set_config('chevere.beta_priority_ok', '1', true);
+
+  update public.beta_feedback
+  set priority = prio
+  where id = p_id
   returning * into row;
 
   if row.id is null then
@@ -1901,6 +1963,11 @@ drop trigger if exists beta_feedback_set_updated_at on public.beta_feedback;
 create trigger beta_feedback_set_updated_at before update on public.beta_feedback
 for each row EXECUTE FUNCTION beta_feedback_touch_updated_at();
 
+drop trigger if exists beta_feedback_guard_priority on public.beta_feedback;
+create trigger beta_feedback_guard_priority
+  before insert or update on public.beta_feedback
+  for each row execute function public.beta_feedback_guard_priority();
+
 drop trigger if exists categories_set_updated_at on public.categories;
 create trigger categories_set_updated_at before update on public.categories
 for each row EXECUTE FUNCTION set_updated_at();
@@ -2019,7 +2086,12 @@ create policy beta_feedback_select on public.beta_feedback
 drop policy if exists beta_feedback_insert on public.beta_feedback;
 create policy beta_feedback_insert on public.beta_feedback
   for insert
-  to anon, authenticated with check ((done = false) and (in_review = false) and (fixed_in_version is null));
+  to anon, authenticated with check (
+    (done = false)
+    and (in_review = false)
+    and (fixed_in_version is null)
+    and (priority = 'media')
+  );
 
 drop policy if exists beta_feedback_update_pending on public.beta_feedback;
 create policy beta_feedback_update_pending on public.beta_feedback
@@ -2410,6 +2482,8 @@ revoke all on function public.beta_mark_feedback(uuid, boolean, text, text) from
 grant execute on function public.beta_mark_feedback(uuid, boolean, text, text) to anon, authenticated;
 revoke all on function public.beta_set_feedback_review(uuid, boolean, text) from public;
 grant execute on function public.beta_set_feedback_review(uuid, boolean, text) to anon, authenticated;
+revoke all on function public.beta_set_feedback_priority(uuid, text, text) from public;
+grant execute on function public.beta_set_feedback_priority(uuid, text, text) to anon, authenticated, service_role;
 revoke all on function public.beta_upsert_qa_flow(text, smallint, text, text, text) from public;
 grant execute on function public.beta_upsert_qa_flow(text, smallint, text, text, text) to anon, authenticated, service_role;
 revoke all on function public.beta_delete_qa_flow(text, smallint, text) from public;

@@ -287,7 +287,7 @@ flowchart TB
 
 ## Pruebas cerradas (APK)
 
-- Portal: `https://johntibagan.github.io/chevere_plan/` — versión, APK, reportes (`#N`), Cómo probar (`beta_qa_flows`). Lee **PDN** (secrets GitHub = `SUPABASE_URL_PDN` / `SUPABASE_ANON_KEY_PDN`, mismos nombres que `frontend/env/pdn.env`).
+- Portal: `https://johntibagan.github.io/chevere_plan/` — versión, APK, reportes (`#N`), Cómo probar (`beta_qa_flows`). Lee **PDN** (secrets GitHub = `SUPABASE_URL_PDN` / `SUPABASE_ANON_KEY_PDN`, mismos nombres que `frontend/env/pdn.env`). Prioridad (`alta`/`media`/`baja`) solo la cambia el dueño con PIN; el público agrega con `media`. Orden de activos en `localStorage` (no aplica a resueltos).
 - Al decir **publica** en chat: IDs + versión → flujos en DB.
 - APK en Storage `beta-apks` del proyecto **PDN**; `beta_release` (id=1) en la misma DB. Publicar con `publish_beta_apk.py` (`SUPABASE_URL_PDN` + service role PDN).
 - **Actualización obligatoria (solo APK beta/PDN):** al abrir, la app compara su `+N` con `beta_release.build`. Si hay build mayor, pantalla bloqueante con enlace de descarga (`apk_url`). Builds TEST no chequean.

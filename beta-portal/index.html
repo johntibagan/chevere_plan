@@ -217,6 +217,68 @@
       margin: 14px 0 6px;
       padding: 0 4px;
     }
+    .reports-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin: 14px 0 6px;
+      padding: 0 4px;
+    }
+    .reports-toolbar .reports-subhead {
+      margin: 0;
+      padding: 0;
+    }
+    .sort-wrap {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+    .sort-wrap select {
+      background: var(--bg);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      color: var(--text);
+      font: inherit;
+      font-size: 0.82rem;
+      padding: 6px 8px;
+      max-width: 100%;
+    }
+    .priority-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px 14px;
+      margin-top: 6px;
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+    .priority-row label {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      cursor: pointer;
+      user-select: none;
+    }
+    .priority-row input {
+      margin: 0;
+      accent-color: var(--accent);
+    }
+    .priority-badge {
+      display: inline-block;
+      margin-top: 4px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--muted);
+    }
+    .priority-badge.alta { color: #ff8f8f; }
+    .priority-badge.media { color: var(--accent); }
+    .priority-badge.baja { color: var(--muted); }
     h2 {
       font-size: 0.78rem;
       text-transform: uppercase;
@@ -601,7 +663,22 @@
           <textarea class="add" id="body" maxlength="1000" placeholder="¿Qué falló o qué mejorar?"></textarea>
           <button class="btn" id="add" type="button">Agregar</button>
           <div id="msg"></div>
-          <p class="reports-subhead" id="activeSubhead" hidden>Pendientes y en revisión</p>
+          <div class="reports-toolbar" id="activeToolbar" hidden>
+            <p class="reports-subhead" id="activeSubhead">Pendientes y en revisión</p>
+            <label class="sort-wrap">
+              Ordenar
+              <select id="sortActive" aria-label="Ordenar reportes activos">
+                <option value="priority_desc">Prioridad: alta → baja</option>
+                <option value="priority_asc">Prioridad: baja → alta</option>
+                <option value="date_desc">Fecha: reciente</option>
+                <option value="date_asc">Fecha: antiguo</option>
+                <option value="review_first">En revisión primero</option>
+                <option value="review_last">Sin revisión primero</option>
+                <option value="ticket_asc">#: menor → mayor</option>
+                <option value="ticket_desc">#: mayor → menor</option>
+              </select>
+            </label>
+          </div>
           <div class="reports-list" aria-label="Mejoras y reportes activos">
             <div class="reports-head" id="activeHead" aria-hidden="true">
               <div>#</div>
@@ -658,7 +735,96 @@
     /** Bucket activo/resuelto fijado al cargar; solo cambia con F5. */
     let feedbackBuckets = null;
 
+    const SORT_KEY = "beta_feedback_sort";
+    const SORT_DEFAULT = "date_desc";
+    const PRIORITY_RANK = { alta: 3, media: 2, baja: 1 };
+
     const NAV_IDS = ["version", "reportes", "como-probar"];
+
+    function readSortMode() {
+      const v = localStorage.getItem(SORT_KEY) || SORT_DEFAULT;
+      const sel = document.getElementById("sortActive");
+      if (sel && [...sel.options].some((o) => o.value === v)) return v;
+      return SORT_DEFAULT;
+    }
+
+    function writeSortMode(v) {
+      localStorage.setItem(SORT_KEY, v);
+    }
+
+    function priorityOf(row) {
+      const p = String(row.priority || "media").toLowerCase();
+      return PRIORITY_RANK[p] ? p : "media";
+    }
+
+    function compareActive(a, b, mode) {
+      const pa = PRIORITY_RANK[priorityOf(a)] || 2;
+      const pb = PRIORITY_RANK[priorityOf(b)] || 2;
+      const ta = a.ticket_no ?? 0;
+      const tb = b.ticket_no ?? 0;
+      const da = new Date(a.updated_at || a.created_at || 0).getTime();
+      const db = new Date(b.updated_at || b.created_at || 0).getTime();
+      const ra = a.in_review ? 1 : 0;
+      const rb = b.in_review ? 1 : 0;
+      switch (mode) {
+        case "priority_desc":
+          return pb - pa || tb - ta;
+        case "priority_asc":
+          return pa - pb || ta - tb;
+        case "date_asc":
+          return da - db || ta - tb;
+        case "review_first":
+          return rb - ra || db - da;
+        case "review_last":
+          return ra - rb || db - da;
+        case "ticket_asc":
+          return ta - tb;
+        case "ticket_desc":
+          return tb - ta;
+        case "date_desc":
+        default:
+          return db - da || tb - ta;
+      }
+    }
+
+    function appendPriorityRadios(parent, row, nameSuffix) {
+      const br = document.createElement("br");
+      parent.appendChild(br);
+      const rowEl = document.createElement("div");
+      rowEl.className = "priority-row";
+      rowEl.setAttribute("role", "radiogroup");
+      rowEl.setAttribute("aria-label", "Prioridad");
+      const current = priorityOf(row);
+      ["alta", "media", "baja"].forEach((p) => {
+        const id = `prio-${nameSuffix}-${p}`;
+        const label = document.createElement("label");
+        label.htmlFor = id;
+        const input = document.createElement("input");
+        input.type = "radio";
+        input.name = `prio-${nameSuffix}`;
+        input.id = id;
+        input.value = p;
+        input.checked = current === p;
+        input.addEventListener("change", async () => {
+          if (!input.checked) return;
+          const { error } = await sb.rpc("beta_set_feedback_priority", {
+            p_id: row.id,
+            p_priority: p,
+            p_pin: adminPin,
+          });
+          if (error) {
+            alert(error.message || "No se pudo cambiar la prioridad");
+            await loadFeedback();
+            return;
+          }
+          await loadFeedback();
+        });
+        label.appendChild(input);
+        label.appendChild(document.createTextNode(p.charAt(0).toUpperCase() + p.slice(1)));
+        rowEl.appendChild(label);
+      });
+      parent.appendChild(rowEl);
+    }
 
     function syncNavHighlight() {
       const hash = (location.hash || "#version").replace(/^#/, "");
@@ -843,6 +1009,10 @@
         ta.value = row.body;
         panel.appendChild(ta);
 
+        if (isAdmin) {
+          appendPriorityRadios(panel, row, "edit-" + row.id);
+        }
+
         const actions = document.createElement("div");
         actions.className = "edit-actions";
         const save = document.createElement("button");
@@ -886,7 +1056,15 @@
 
       const desc = document.createElement("div");
       desc.className = "col-desc";
-      desc.textContent = row.body;
+      desc.appendChild(document.createTextNode(row.body));
+      if (isAdmin && !row.done) {
+        appendPriorityRadios(desc, row, row.id);
+      } else {
+        const badge = document.createElement("div");
+        badge.className = "priority-badge " + priorityOf(row);
+        badge.textContent = "Prioridad: " + priorityOf(row);
+        desc.appendChild(badge);
+      }
       el.appendChild(desc);
 
       const metaMobile = document.createElement("div");
@@ -966,7 +1144,7 @@
     async function loadFeedback() {
       const { data, error } = await sb
         .from("beta_feedback")
-        .select("id, ticket_no, body, done, in_review, fixed_in_version, created_at, updated_at")
+        .select("id, ticket_no, body, done, in_review, fixed_in_version, priority, created_at, updated_at")
         .order("created_at", { ascending: false });
       if (error) throw error;
       const list = document.getElementById("list");
@@ -974,8 +1152,9 @@
       const empty = document.getElementById("empty");
       const archivedBlock = document.getElementById("reportsArchived");
       const archivedSummary = document.getElementById("archivedSummary");
-      const activeSubhead = document.getElementById("activeSubhead");
+      const activeToolbar = document.getElementById("activeToolbar");
       const activeHead = document.getElementById("activeHead");
+      const sortSel = document.getElementById("sortActive");
       list.innerHTML = "";
       listArchived.innerHTML = "";
       const rows = data || [];
@@ -994,12 +1173,17 @@
           if (!rows.some((r) => r.id === id)) feedbackBuckets.delete(id);
         }
       }
-      const active = rows.filter((row) => feedbackBuckets.get(row.id) === "active");
+      const mode = readSortMode();
+      if (sortSel) sortSel.value = mode;
+      const active = rows
+        .filter((row) => feedbackBuckets.get(row.id) === "active")
+        .slice()
+        .sort((a, b) => compareActive(a, b, mode));
       const archived = rows.filter((row) => feedbackBuckets.get(row.id) === "archived");
       active.forEach((row) => list.appendChild(renderRow(row)));
       archived.forEach((row) => listArchived.appendChild(renderRow(row)));
       empty.hidden = active.length > 0;
-      activeSubhead.hidden = active.length === 0;
+      activeToolbar.hidden = active.length === 0;
       activeHead.hidden = active.length === 0;
       archivedBlock.hidden = archived.length === 0;
       archivedSummary.textContent =
@@ -1142,6 +1326,11 @@
       isAdmin = true;
       sessionStorage.setItem("beta_pin", adminPin);
       syncOwnerBtn();
+      await loadFeedback();
+    });
+
+    document.getElementById("sortActive").addEventListener("change", async (e) => {
+      writeSortMode(e.target.value);
       await loadFeedback();
     });
 

@@ -24,8 +24,10 @@ Mismos nombres y valores que en `frontend/env/pdn.env` (proyecto **chevere_plan_
 | Acción | Dónde |
 |--------|--------|
 | Descargar APK / ver versión | Este portal (lee `beta_release` en Supabase) |
-| Agregar reporte (anónimo) | Este portal → tabla `beta_feedback` |
+| Agregar reporte (anónimo) | Este portal → tabla `beta_feedback` (prioridad inicial `media`) |
 | Editar / borrar | Solo si **no** está en revisión ni listo |
+| Prioridad (alta / media / baja) | Solo dueño con PIN (`beta_set_feedback_priority`) |
+| Ordenar activos | Desplegable (prioridad, fecha, revisión, `#`); se guarda en `localStorage` |
 | Marcar “en revisión” | Portal + PIN de dueño (bloquea editar/borrar) |
 | Marcar “listo” | Portal + PIN de dueño (en DB, no en Git) |
 | Número de ticket | Columna `#n` automática (tocar copia `#n` para el commit) |
