@@ -247,32 +247,47 @@
       padding: 6px 8px;
       max-width: 100%;
     }
-    .priority-row {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 10px 14px;
-      margin-top: 6px;
-      font-size: 0.78rem;
-      color: var(--muted);
-    }
-    .priority-row label {
+    .priority-group {
       display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      cursor: pointer;
-      user-select: none;
+      margin-top: 6px;
+      border: 1px solid #fff;
+      border-radius: 999px;
+      overflow: hidden;
+      vertical-align: middle;
+    }
+    .priority-group .prio-btn {
+      background: var(--bg);
+      color: #fff;
+      border: 0;
+      border-right: 1px solid rgba(255, 255, 255, 0.35);
+      padding: 3px 10px;
+      font: inherit;
+      font-size: 0.72rem;
       font-weight: 600;
+      line-height: 1.2;
+      cursor: pointer;
+      outline: none;
+      transition: background-color 0.15s ease, color 0.15s ease;
     }
-    .priority-row label.alta { color: #ff6b6b; }
-    .priority-row label.media { color: #f0c040; }
-    .priority-row label.baja { color: #3ecf8e; }
-    .priority-row input {
-      margin: 0;
+    .priority-group .prio-btn:last-child {
+      border-right: 0;
     }
-    .priority-row label.alta input { accent-color: #ff6b6b; }
-    .priority-row label.media input { accent-color: #f0c040; }
-    .priority-row label.baja input { accent-color: #3ecf8e; }
+    .priority-group .prio-btn:disabled {
+      opacity: 0.55;
+      cursor: wait;
+    }
+    .priority-group .prio-btn.active.alta {
+      background: #ff6b6b;
+      color: #fff;
+    }
+    .priority-group .prio-btn.active.media {
+      background: #d4a017;
+      color: #fff;
+    }
+    .priority-group .prio-btn.active.baja {
+      background: #3ecf8e;
+      color: #fff;
+    }
     .priority-badge {
       display: inline-block;
       font-size: 0.72rem;
@@ -798,53 +813,51 @@
       }
     }
 
-    function appendPriorityRadios(parent, row, nameSuffix) {
+    function appendPriorityGroup(parent, row) {
       const br = document.createElement("br");
       parent.appendChild(br);
-      const rowEl = document.createElement("div");
-      rowEl.className = "priority-row";
-      rowEl.setAttribute("role", "radiogroup");
-      rowEl.setAttribute("aria-label", "Prioridad");
+      const group = document.createElement("div");
+      group.className = "priority-group";
+      group.setAttribute("role", "group");
+      group.setAttribute("aria-label", "Prioridad");
       let current = priorityOf(row);
+
+      function paint() {
+        group.querySelectorAll(".prio-btn").forEach((btn) => {
+          btn.classList.toggle("active", btn.dataset.priority === current);
+        });
+      }
+
       ["alta", "media", "baja"].forEach((p) => {
-        const id = `prio-${nameSuffix}-${p}`;
-        const label = document.createElement("label");
-        label.htmlFor = id;
-        label.className = p;
-        const input = document.createElement("input");
-        input.type = "radio";
-        input.name = `prio-${nameSuffix}`;
-        input.id = id;
-        input.value = p;
-        input.checked = current === p;
-        input.addEventListener("change", async () => {
-          if (!input.checked) return;
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "prio-btn " + p;
+        btn.dataset.priority = p;
+        btn.textContent = p.charAt(0).toUpperCase() + p.slice(1);
+        btn.addEventListener("click", async () => {
+          if (current === p) return;
           const prev = current;
-          input.disabled = true;
+          current = p;
+          paint();
+          group.querySelectorAll(".prio-btn").forEach((b) => { b.disabled = true; });
           const { error } = await sb.rpc("beta_set_feedback_priority", {
             p_id: row.id,
             p_priority: p,
             p_pin: adminPin,
           });
-          input.disabled = false;
+          group.querySelectorAll(".prio-btn").forEach((b) => { b.disabled = false; });
           if (error) {
             alert(error.message || "No se pudo cambiar la prioridad");
-            if (prev == null) {
-              input.checked = false;
-            } else {
-              const prevInput = rowEl.querySelector(`input[value="${prev}"]`);
-              if (prevInput) prevInput.checked = true;
-            }
+            current = prev;
+            paint();
             return;
           }
-          current = p;
           row.priority = p;
         });
-        label.appendChild(input);
-        label.appendChild(document.createTextNode(p.charAt(0).toUpperCase() + p.slice(1)));
-        rowEl.appendChild(label);
+        group.appendChild(btn);
       });
-      parent.appendChild(rowEl);
+      paint();
+      parent.appendChild(group);
     }
 
     function syncNavHighlight() {
@@ -1031,7 +1044,7 @@
         panel.appendChild(ta);
 
         if (isAdmin) {
-          appendPriorityRadios(panel, row, "edit-" + row.id);
+          appendPriorityGroup(panel, row);
         }
 
         const actions = document.createElement("div");
@@ -1079,7 +1092,7 @@
       desc.className = "col-desc";
       desc.appendChild(document.createTextNode(row.body));
       if (isAdmin && !row.done) {
-        appendPriorityRadios(desc, row, row.id);
+        appendPriorityGroup(desc, row);
       } else {
         desc.appendChild(document.createElement("br"));
         const prio = priorityOf(row);
