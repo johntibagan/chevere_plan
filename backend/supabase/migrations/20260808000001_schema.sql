@@ -477,7 +477,7 @@ CREATE OR REPLACE FUNCTION public.is_staff()
  RETURNS boolean
  LANGUAGE sql
  STABLE SECURITY DEFINER
- SET search_path TO 'public'
+ SET search_path TO 'public', 'extensions'
 AS $function$
   select exists (
     select 1 from public.profiles p
@@ -489,7 +489,7 @@ CREATE OR REPLACE FUNCTION public.attach_save_to_existing_site(p_existing_site_i
  RETURNS uuid
  LANGUAGE plpgsql
  SECURITY DEFINER
- SET search_path TO 'public'
+ SET search_path TO 'public', 'extensions'
 AS $function$
 declare
   uid uuid := auth.uid();
@@ -557,7 +557,7 @@ CREATE OR REPLACE FUNCTION public.beta_delete_qa_flow(p_version text, p_ticket_n
  RETURNS void
  LANGUAGE plpgsql
  SECURITY DEFINER
- SET search_path TO 'public'
+ SET search_path TO 'public', 'extensions'
 AS $function$
 declare
   expected text;
@@ -590,7 +590,7 @@ CREATE OR REPLACE FUNCTION public.beta_mark_feedback(p_id uuid, p_done boolean, 
  RETURNS public.beta_feedback
  LANGUAGE plpgsql
  SECURITY DEFINER
- SET search_path TO 'public'
+ SET search_path TO 'public', 'extensions'
 AS $function$
 declare
   expected text;
@@ -622,7 +622,7 @@ CREATE OR REPLACE FUNCTION public.beta_set_feedback_review(p_id uuid, p_in_revie
  RETURNS public.beta_feedback
  LANGUAGE plpgsql
  SECURITY DEFINER
- SET search_path TO 'public'
+ SET search_path TO 'public', 'extensions'
 AS $function$
 declare
   expected text;
@@ -650,7 +650,7 @@ CREATE OR REPLACE FUNCTION public.beta_upsert_qa_flow(p_version text, p_ticket_n
  RETURNS public.beta_qa_flows
  LANGUAGE plpgsql
  SECURITY DEFINER
- SET search_path TO 'public'
+ SET search_path TO 'public', 'extensions'
 AS $function$
 declare
   expected text;
@@ -688,7 +688,7 @@ CREATE OR REPLACE FUNCTION public.clear_site_location(p_site_id uuid)
  RETURNS void
  LANGUAGE plpgsql
  SECURITY DEFINER
- SET search_path TO 'public'
+ SET search_path TO 'public', 'extensions'
 AS $function$
 begin
   if auth.uid() is null then
@@ -747,7 +747,7 @@ CREATE OR REPLACE FUNCTION public.site_cover_storage_path(p_site_id uuid)
  RETURNS text
  LANGUAGE sql
  STABLE
- SET search_path TO 'public'
+ SET search_path TO 'public', 'extensions'
 AS $function$
   select coalesce(
     (
@@ -800,7 +800,7 @@ CREATE OR REPLACE FUNCTION public.purge_plan_review_photo_storage()
  RETURNS trigger
  LANGUAGE plpgsql
  SECURITY DEFINER
- SET search_path TO 'public', 'storage'
+ SET search_path TO 'public', 'extensions', 'storage', 'extensions'
 AS $function$
 begin
   if old.storage_path is not null and length(trim(old.storage_path)) > 0 then
@@ -838,7 +838,7 @@ CREATE OR REPLACE FUNCTION public.find_possible_duplicate_sites(p_name text, p_l
  )
  LANGUAGE sql
  STABLE
- SET search_path TO 'public'
+ SET search_path TO 'public', 'extensions'
 AS $function$
   with me as (select auth.uid() as uid),
   params as (
@@ -949,7 +949,7 @@ CREATE OR REPLACE FUNCTION public.get_site_coords(p_site_id uuid)
  RETURNS TABLE(lat double precision, lng double precision)
  LANGUAGE sql
  STABLE SECURITY DEFINER
- SET search_path TO 'public'
+ SET search_path TO 'public', 'extensions'
 AS $function$
   select
     st_y(location::geometry) as lat,
@@ -975,7 +975,7 @@ CREATE OR REPLACE FUNCTION public.normalize_username(raw text)
  RETURNS text
  LANGUAGE plpgsql
  IMMUTABLE
- SET search_path TO 'public'
+ SET search_path TO 'public', 'extensions'
 AS $function$
 declare
   s text;
@@ -1002,7 +1002,7 @@ CREATE OR REPLACE FUNCTION public.is_reserved_username(u text)
  RETURNS boolean
  LANGUAGE sql
  IMMUTABLE
- SET search_path TO 'public'
+ SET search_path TO 'public', 'extensions'
 AS $function$
   select u in (
     'admin', 'root', 'support', 'soporte', 'help', 'ayuda',
@@ -1015,7 +1015,7 @@ CREATE OR REPLACE FUNCTION public.username_available(p_username text)
  RETURNS jsonb
  LANGUAGE plpgsql
  STABLE SECURITY DEFINER
- SET search_path TO 'public'
+ SET search_path TO 'public', 'extensions'
 AS $function$
 declare
   uid uuid := auth.uid();
@@ -1072,7 +1072,7 @@ CREATE OR REPLACE FUNCTION public.suggest_usernames(p_base text, p_limit integer
  RETURNS text[]
  LANGUAGE plpgsql
  STABLE SECURITY DEFINER
- SET search_path TO 'public'
+ SET search_path TO 'public', 'extensions'
 AS $function$
 declare
   uid uuid := auth.uid();
@@ -1130,7 +1130,7 @@ CREATE OR REPLACE FUNCTION public.update_my_profile(p_username text DEFAULT NULL
  RETURNS profiles
  LANGUAGE plpgsql
  SECURITY DEFINER
- SET search_path TO 'public'
+ SET search_path TO 'public', 'extensions'
 AS $function$
 declare
   uid uuid := auth.uid();
@@ -1194,7 +1194,7 @@ CREATE OR REPLACE FUNCTION public.handle_new_user()
  RETURNS trigger
  LANGUAGE plpgsql
  SECURITY DEFINER
- SET search_path TO 'public'
+ SET search_path TO 'public', 'extensions'
 AS $function$
 begin
   insert into public.profiles (id, display_name, google_avatar_url, avatar_url, use_google_avatar)
@@ -1214,7 +1214,7 @@ CREATE OR REPLACE FUNCTION public.link_save_to_existing_site(p_save_id uuid, p_e
  RETURNS uuid
  LANGUAGE plpgsql
  SECURITY DEFINER
- SET search_path TO 'public'
+ SET search_path TO 'public', 'extensions'
 AS $function$
 declare
   uid uuid := auth.uid();
@@ -1303,7 +1303,7 @@ CREATE OR REPLACE FUNCTION public.list_my_route_history()
  RETURNS TABLE(stop_id uuid, plan_id uuid, plan_title text, site_id uuid, site_name text, city text, visited_at timestamp with time zone)
  LANGUAGE sql
  STABLE SECURITY DEFINER
- SET search_path TO 'public'
+ SET search_path TO 'public', 'extensions'
 AS $function$
   select
     ps.id as stop_id,
@@ -1328,7 +1328,7 @@ CREATE OR REPLACE FUNCTION public.list_open_content_reports()
  RETURNS TABLE(report_id uuid, target_type text, target_id uuid, reason text, status text, created_at timestamp with time zone, reporter_id uuid, reporter_name text, photo_path text, site_name text, snippet text)
  LANGUAGE sql
  STABLE SECURITY DEFINER
- SET search_path TO 'public'
+ SET search_path TO 'public', 'extensions'
 AS $function$
   select
     r.id as report_id,
@@ -1367,7 +1367,7 @@ CREATE OR REPLACE FUNCTION public.resolve_content_report(p_report_id uuid, p_sta
  RETURNS void
  LANGUAGE plpgsql
  SECURITY DEFINER
- SET search_path TO 'public', 'storage', 'extensions'
+ SET search_path TO 'public', 'extensions', 'storage', 'extensions', 'extensions'
 AS $function$
 declare
   r public.content_reports%rowtype;
@@ -1426,7 +1426,7 @@ CREATE OR REPLACE FUNCTION public.list_plan_candidates(p_location_query text, p_
  RETURNS TABLE(site_id uuid, name text, city text, department text, lat double precision, lng double precision, estimated_price_amount numeric, currency_code character)
  LANGUAGE sql
  STABLE SECURITY DEFINER
- SET search_path TO 'public'
+ SET search_path TO 'public', 'extensions'
 AS $function$
   with q as (
     select trim(both from coalesce(p_location_query, '')) as loc
@@ -1503,7 +1503,7 @@ CREATE OR REPLACE FUNCTION public.list_proximity_sites(p_include_public boolean 
  )
  LANGUAGE sql
  STABLE SECURITY DEFINER
- SET search_path TO 'public'
+ SET search_path TO 'public', 'extensions'
 AS $function$
   with own_sites as (
     select
@@ -1546,7 +1546,7 @@ CREATE OR REPLACE FUNCTION public.prevent_role_escalation()
  RETURNS trigger
  LANGUAGE plpgsql
  SECURITY DEFINER
- SET search_path TO 'public'
+ SET search_path TO 'public', 'extensions'
 AS $function$
 begin
   if new.role is distinct from old.role then
@@ -1596,7 +1596,7 @@ CREATE OR REPLACE FUNCTION public.search_sites(
  RETURNS TABLE(site_id uuid, name text, city text, department text, address_line text, lat double precision, lng double precision, estimated_price_amount numeric, currency_code text, is_own boolean, is_public boolean, is_catalog boolean, is_linked boolean, updated_at timestamp with time zone, distance_km double precision, category_names text[], cover_storage_path text)
  LANGUAGE plpgsql
  STABLE SECURITY DEFINER
- SET search_path TO 'public'
+ SET search_path TO 'public', 'extensions'
 AS $function$
 declare
   v_uid uuid := auth.uid();
@@ -1784,7 +1784,7 @@ CREATE OR REPLACE FUNCTION public.set_site_location(p_site_id uuid, p_lng double
  RETURNS void
  LANGUAGE plpgsql
  SECURITY DEFINER
- SET search_path TO 'public'
+ SET search_path TO 'public', 'extensions'
 AS $function$
 begin
   if auth.uid() is null then
@@ -1812,7 +1812,7 @@ CREATE OR REPLACE FUNCTION public.site_privacy_blockers(p_site_id uuid)
  RETURNS json
  LANGUAGE plpgsql
  STABLE SECURITY DEFINER
- SET search_path TO 'public'
+ SET search_path TO 'public', 'extensions'
 AS $function$
 declare
   uid uuid := auth.uid();
@@ -1885,7 +1885,7 @@ CREATE OR REPLACE FUNCTION public.site_rating_summary(p_site_id uuid)
  RETURNS json
  LANGUAGE sql
  STABLE
- SET search_path TO 'public'
+ SET search_path TO 'public', 'extensions'
 AS $function$
   select json_build_object(
     'avg_rating', coalesce(round(avg(rating)::numeric, 1), 0),

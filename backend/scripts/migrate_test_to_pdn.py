@@ -67,6 +67,8 @@ def apply_sql_psycopg2(url: str, sql: str, label: str) -> None:
     conn.autocommit = False
     try:
         with conn.cursor() as cur:
+            # PDN: postgis suele vivir en schema extensions; sin esto falla ::geography.
+            cur.execute("SET LOCAL search_path TO public, extensions")
             cur.execute(sql)
         conn.commit()
     except Exception:
@@ -78,9 +80,10 @@ def apply_sql_psycopg2(url: str, sql: str, label: str) -> None:
 
 
 def apply_sql_docker_psql(url: str, sql: str, label: str) -> None:
+    wrapped = "SET search_path TO public, extensions;\n" + sql
     proc = subprocess.run(
         ["docker", "run", "--rm", "-i", "postgres:17", "psql", url, "-v", "ON_ERROR_STOP=1"],
-        input=sql,
+        input=wrapped,
         capture_output=True,
         text=True,
         encoding="utf-8",
@@ -124,7 +127,7 @@ def main() -> int:
     if patches:
         print(f"  Parches pendientes ({len(patches)}):", flush=True)
         for path in patches:
-            print(f"    → {path.name}", flush=True)
+            print(f"    -> {path.name}", flush=True)
             apply_file(url, path)
     else:
         print("  Sin parches pendientes.", flush=True)
