@@ -58,7 +58,7 @@ Tabs ya abiertos quedan en memoria (`IndexedStack`). Listas: caché primero, red
 
 **Atrás:** en Explorar/Planes/Rutas → Inicio. En Inicio → “pulsa otra vez para salir”. En pantallas apiladas → pop.
 
-**Menú (foto / ☰):** Tu perfil · Tarjetas · Recuerdos cercanos · Mismo sitio al guardar (m) · Unidad de distancia · Tema (Claro/Oscuro/Sistema) · Admin/Reportes (staff) · versión · Cerrar sesión. Con gestos del sistema, el drawer **no** se abre por borde; solo con la foto.
+**Menú (foto / ☰):** Tu perfil · Tarjetas · Recuerdos cercanos · Mismo sitio al guardar (m) · Unidad de distancia · Tema (Claro/Oscuro/Sistema; 1.ª vez = sistema, luego cacheado sin flash al abrir) · Admin/Reportes (staff) · versión · Cerrar sesión. Con gestos del sistema, el drawer **no** se abre por borde; solo con la foto.
 
 **Favoritos:** corazón en cards y ficha. **Sí hay** filtro **Mis favoritos** en Explorar avanzado y atajo desde Inicio. **No** hay pantalla “Mis favoritos” dedicada ni uso en ranking de planes.
 

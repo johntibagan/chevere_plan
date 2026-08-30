@@ -14,6 +14,7 @@ import 'core/config/env.dart';
 import 'core/logging/app_log.dart';
 import 'core/notifications/app_local_notifications.dart';
 import 'core/notifications/fcm_bootstrap.dart';
+import 'core/theme/app_theme_mode_store.dart';
 import 'features/proximity/data/proximity_reminder_service.dart';
 import 'features/saves/data/draft_reminder_service.dart';
 
@@ -40,6 +41,13 @@ Future<Widget> createRootApp({
       overrides: overrides,
       child: BootstrapErrorApp(message: Env.missingConfigUserMessage),
     );
+  }
+
+  // Tema desde disco antes del primer frame (evita flash claro↔oscuro).
+  try {
+    await AppThemeModeStore.loadBeforeRunApp();
+  } catch (e, st) {
+    AppLog.error('theme prefs', name: 'bootstrap', error: e, stackTrace: st);
   }
 
   // Caché disco (Hive CE) — fallos no bloquean el arranque.

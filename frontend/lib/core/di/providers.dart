@@ -45,6 +45,7 @@ import '../cache/search_cache.dart';
 import '../cache/swr_loader.dart';
 import '../distance/distance_unit.dart';
 import '../prefs/feed_layout.dart';
+import '../theme/app_theme_mode_store.dart';
 
 /// Cliente Supabase compartido (inyectable en tests).
 final supabaseClientProvider = Provider<SupabaseClient>((ref) {
@@ -1058,35 +1059,12 @@ final homeQuickActionsPinnedProvider =
 );
 
 class AppThemeModeNotifier extends Notifier<ThemeMode> {
-  static const _prefsKey = 'theme_mode';
-
   @override
-  ThemeMode build() {
-    Future.microtask(_hydrate);
-    return ThemeMode.dark;
-  }
-
-  Future<void> _hydrate() async {
-    final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getString(_prefsKey);
-    final next = switch (raw) {
-      'light' => ThemeMode.light,
-      'dark' => ThemeMode.dark,
-      'system' => ThemeMode.system,
-      _ => ThemeMode.dark,
-    };
-    if (next != state) state = next;
-  }
+  ThemeMode build() => AppThemeModeStore.current;
 
   Future<void> setMode(ThemeMode mode) async {
     state = mode;
-    final prefs = await SharedPreferences.getInstance();
-    final key = switch (mode) {
-      ThemeMode.light => 'light',
-      ThemeMode.dark => 'dark',
-      ThemeMode.system => 'system',
-    };
-    await prefs.setString(_prefsKey, key);
+    await AppThemeModeStore.save(mode);
   }
 }
 

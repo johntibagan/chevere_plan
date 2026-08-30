@@ -28,7 +28,7 @@ Contratos que no se pueden romper: [`invariantes.md`](invariantes.md).
 | Dato | Hoy |
 |---|---|
 | Plataforma | Android (Flutter, Material 3) |
-| Tema | **Oscuro** (default), **claro** o **sistema**; selector segmentado en menú ☰ (Claro · Oscuro · Sistema). Persiste en el dispositivo. |
+| Tema | Primera vez **sistema**; luego Claro / Oscuro / Sistema (menú ☰). Preferencia en disco **antes** del primer frame (sin flash). |
 | Idioma UI | Español (strings en `.arb`; no hardcodear copy en Figma si se puede evitar) |
 | Navegación raíz | `MaterialApp` + `Navigator` implícito. Sin GoRouter. |
 | Sesión | Sin login → `LoginPage`. Con sesión → `HomePage` (shell de 4 tabs + FAB). |
