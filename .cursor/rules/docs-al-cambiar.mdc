@@ -11,7 +11,8 @@ Si el código **cambia comportamiento** (flujo, reglas, textos, qué se puede/no
 
 | Tipo de cambio | Actualizar |
 |---|---|
-| Qué hace la app / un flujo / un límite | [`docs/aplicacion-actual.md`](docs/aplicacion-actual.md) |
+| Qué hace la app / un flujo / un límite | [`docs/aplicacion-actual.md`](docs/aplicacion-actual.md) **Parte I** |
+| Pantalla, navegación, tokens, señales UI | [`docs/aplicacion-actual.md`](docs/aplicacion-actual.md) **Parte II** |
 | Algo que **nunca** debe romperse | [`docs/invariantes.md`](docs/invariantes.md) y la regla `.cursor/rules/` de esa zona si existe |
 | Cómo se escribe frontend (caché, errores, forms) | [`docs/lineamientos-desarrollo-frontend.md`](docs/lineamientos-desarrollo-frontend.md) |
 | Reset / migraciones | [`docs/invariantes.md`](docs/invariantes.md) + `backend/README.md` si cambia el comando |

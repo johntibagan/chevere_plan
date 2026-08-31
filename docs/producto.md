@@ -1,8 +1,7 @@
 # Especificación de producto
 
-**App de hoy (fuente para implementar):** [`aplicacion-actual.md`](aplicacion-actual.md).  
-**Contratos que no romper:** [`invariantes.md`](invariantes.md).  
-**UI / Figma:** [`ui-navegacion.md`](ui-navegacion.md).
+**App de hoy (fuente para implementar):** [`aplicacion-actual.md`](aplicacion-actual.md) (Parte I producto · Parte II UI/Figma).  
+**Contratos que no romper:** [`invariantes.md`](invariantes.md).
 
 Este archivo mezcla **visión de negocio** y el **estado del MVP ya construido**.  
 Para decidir features nuevas (p. ej. **compartir sitios y planes**), usar la §**1bis** y [`aplicacion-actual.md`](aplicacion-actual.md).

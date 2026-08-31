@@ -1,6 +1,6 @@
 // Composition root (excepción a “core no importa features”):
 // Riverpod registra repos aquí. Features no importan otras features vía core
-// salvo este archivo. No usar GoRouter: ver docs/ui-navegacion.md.
+// salvo este archivo. No usar GoRouter: ver docs/aplicacion-actual.md Parte II.
 import 'dart:async';
 
 import 'package:flutter/material.dart';

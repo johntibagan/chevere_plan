@@ -4,7 +4,7 @@ Solo dos fuentes de producto:
 
 | | Documento |
 |---|---|
-| **Cómo está la app hoy** (se actualiza con cada cambio de comportamiento) | [aplicacion-actual.md](aplicacion-actual.md) |
+| **Cómo está la app hoy** (producto + UI; actualizar en el mismo pase) | [aplicacion-actual.md](aplicacion-actual.md) |
 | **Qué no se toca** | [invariantes.md](invariantes.md) |
 
 Al implementar: código **y** esos docs en el mismo pase (regla Cursor `docs-al-cambiar.mdc`).

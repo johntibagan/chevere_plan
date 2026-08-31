@@ -23,4 +23,4 @@ Prioridad percibida: **menos toques, menos fricción**. Detalles chicos que acel
 
 ## Al cerrar un microajuste
 
-Si cambió comportamiento visible, actualizar `docs/aplicacion-actual.md` / `ui-navegacion.md` en el mismo pase (`docs-al-cambiar.mdc`).
+Si cambió comportamiento visible, actualizar `docs/aplicacion-actual.md` (Parte I o II según toque) en el mismo pase (`docs-al-cambiar.mdc`).

@@ -1,6 +1,6 @@
 # Lineamientos de desarrollo — Frontend Chevere Plan
 
-> Cursor: `.cursor/rules/frontend-lineamientos.mdc`. App hoy: [`aplicacion-actual.md`](aplicacion-actual.md). No romper: [`invariantes.md`](invariantes.md). No inventar features. Todo cambio de comportamiento actualiza esos docs **en el mismo pase**.
+> Cursor: `.cursor/rules/frontend-lineamientos.mdc`. App hoy: [`aplicacion-actual.md`](aplicacion-actual.md) (Parte I producto, Parte II UI). No romper: [`invariantes.md`](invariantes.md). Todo cambio de comportamiento actualiza esos docs **en el mismo pase**.
 
 ## 1. Principio general
 
@@ -12,7 +12,7 @@ La prioridad número uno de este proyecto es **la agilidad percibida por el usua
 - **`lib/core/` no importa features**, salvo el composition root `lib/core/di/providers.dart` (Riverpod registra repos). Una feature nueva (p. ej. IA de planes, cuando exista) vive en su carpeta y se registra solo ahí.
 - **Inyección con Riverpod** explícita. Nada de service locators ni singletons de negocio globales. Nada de lógica de negocio dentro de widgets.
 - **Errores:** `Result`/`Failure` en `lib/core/errors/result.dart` para data/domain; UI solo `AppUserError` o `kGenericAppError` / `errorGeneric`. Nunca SQL/PostgREST/stack en pantalla.
-- **Navegación:** `Navigator` + sheets cortos, como [`ui-navegacion.md`](ui-navegacion.md). **No GoRouter** en este pase: el flujo documentado (push de `SavePlacePage`, sheets de proximidad) no se reescribe.
+- **Navegación:** `Navigator` + sheets cortos, como [`aplicacion-actual.md`](aplicacion-actual.md) Parte II. **No GoRouter** en este pase: el flujo documentado (push de `SavePlacePage`, sheets de proximidad) no se reescribe.
 - **Cero duplicación (diseño y funciones):** no copiar pantallas, cards, chips, CTA ni flujos. Un widget/módulo compartido; las pantallas solo componen. Si el mismo look o la misma acción aparece (o va a aparecer) en 2+ sitios, se extrae a `core/widgets` o al feature dueño (p. ej. `home_cards`). Variantes = parámetros, no un segundo archivo casi igual. Caso extremo: un layout de una sola pantalla que extraer empeora. **Prohibido** dos CTA que hacen lo mismo en la misma pantalla (card Crear + FAB Crear).
 - **Cero duplicación de código**: widgets, servicios y utilidades reutilizables antes que copiar-pegar. Si un patrón se repite 2+ veces, se extrae.
 - **Theming centralizado**: colores, tipografías y spacing como tokens de diseño (coherentes con el prototipo Figma), nunca valores sueltos hardcodeados en cada pantalla. **Mapa único:** [`frontend/lib/core/design/design_system.dart`](../frontend/lib/core/design/design_system.dart) (reexporta tokens y formatters).
