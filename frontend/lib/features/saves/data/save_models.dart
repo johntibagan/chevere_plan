@@ -1,4 +1,5 @@
 import '../../../core/l10n/display_defaults.dart';
+import '../../../core/photos/external_photo_url.dart';
 import '../../auth/domain/profile_public_display.dart';
 
 enum SiteStatus {
@@ -77,9 +78,8 @@ class PossibleDuplicate {
     final siteId = rawId?.toString().trim() ?? '';
     return PossibleDuplicate(
       siteId: siteId,
-      siteName: json['site_name'] as String? ??
-          json['name'] as String? ??
-          'Sitio',
+      siteName:
+          json['site_name'] as String? ?? json['name'] as String? ?? 'Sitio',
       city: json['city'] as String?,
       department: json['department'] as String?,
       addressLine: json['address_line'] as String?,
@@ -135,7 +135,6 @@ class PrivacyBlockException implements Exception {
   final SitePrivacyBlockers blockers;
 }
 
-
 /// Persona ligada a un sitio (creador o contribuidor).
 class SitePerson {
   const SitePerson({
@@ -146,9 +145,11 @@ class SitePerson {
   });
 
   final String userId;
+
   /// Público: `@username` (nunca el nombre del correo).
   final String? displayName;
   final String? avatarUrl;
+
   /// Cuándo se sumó como contribuidor (UTC).
   final DateTime? joinedAt;
 
@@ -159,11 +160,11 @@ class SitePerson {
   }
 
   Map<String, dynamic> toCacheJson() => {
-        'user_id': userId,
-        'display_name': displayName,
-        'avatar_url': avatarUrl,
-        'joined_at': joinedAt?.toUtc().toIso8601String(),
-      };
+    'user_id': userId,
+    'display_name': displayName,
+    'avatar_url': avatarUrl,
+    'joined_at': joinedAt?.toUtc().toIso8601String(),
+  };
 
   factory SitePerson.fromCacheJson(Map<String, dynamic> json) {
     return SitePerson(
@@ -205,10 +206,7 @@ class SitePerson {
     return out;
   }
 
-  static SitePerson? parseCreator({
-    String? createdById,
-    Map? creatorProfile,
-  }) {
+  static SitePerson? parseCreator({String? createdById, Map? creatorProfile}) {
     if (createdById == null || createdById.isEmpty) return null;
     final parsed = _fromProfileEmbed(creatorProfile);
     return SitePerson(
@@ -283,8 +281,10 @@ class UserSave {
   final DateTime? createdAt;
   final bool isPossibleDuplicate;
   final String? possibleDuplicateOfSiteId;
+
   /// Legacy: solo nombres (caché vieja). Preferir [alsoSharedPeople].
   final List<String> alsoSharedBy;
+
   /// Creador + compartidos (compat).
   final List<SitePerson> sharedPeople;
   final SitePerson? createdByPerson;
@@ -295,6 +295,7 @@ class UserSave {
   final bool isCatalogSite;
   final bool isPhysicalPlace;
   final String? googlePlaceId;
+
   /// Maps: true = pin lat/lng; false = ficha/búsqueda del lugar.
   final bool useExactPin;
   final String? coverStoragePath;
@@ -302,38 +303,37 @@ class UserSave {
   bool get isIncomplete => status != SiteStatus.complete;
 
   Map<String, dynamic> toCacheJson() => {
-        'id': id,
-        'user_id': userId,
-        'site_id': siteId,
-        'status': status.dbValue,
-        'is_public': isPublic,
-        'site_name': siteName,
-        'source_url': sourceUrl,
-        'source_network': sourceNetwork,
-        'notes': notes,
-        'city': city,
-        'city_id': cityId,
-        'department': department,
-        'department_id': departmentId,
-        'address_line': addressLine,
-        'category_names': categoryNames,
-        'created_at': createdAt?.toUtc().toIso8601String(),
-        'is_possible_duplicate': isPossibleDuplicate,
-        'possible_duplicate_of_site_id': possibleDuplicateOfSiteId,
-        'also_shared_by': alsoSharedBy,
-        'shared_people': sharedPeople.map((e) => e.toCacheJson()).toList(),
-        'created_by_person': createdByPerson?.toCacheJson(),
-        'also_shared_people':
-            alsoSharedPeople.map((e) => e.toCacheJson()).toList(),
-        'created_by_user_id': createdByUserId,
-        'site_created_at': siteCreatedAt?.toUtc().toIso8601String(),
-        'site_updated_at': siteUpdatedAt?.toUtc().toIso8601String(),
-        'is_catalog_site': isCatalogSite,
-        'is_physical_place': isPhysicalPlace,
-        'google_place_id': googlePlaceId,
-        'use_exact_pin': useExactPin,
-        'cover_storage_path': coverStoragePath,
-      };
+    'id': id,
+    'user_id': userId,
+    'site_id': siteId,
+    'status': status.dbValue,
+    'is_public': isPublic,
+    'site_name': siteName,
+    'source_url': sourceUrl,
+    'source_network': sourceNetwork,
+    'notes': notes,
+    'city': city,
+    'city_id': cityId,
+    'department': department,
+    'department_id': departmentId,
+    'address_line': addressLine,
+    'category_names': categoryNames,
+    'created_at': createdAt?.toUtc().toIso8601String(),
+    'is_possible_duplicate': isPossibleDuplicate,
+    'possible_duplicate_of_site_id': possibleDuplicateOfSiteId,
+    'also_shared_by': alsoSharedBy,
+    'shared_people': sharedPeople.map((e) => e.toCacheJson()).toList(),
+    'created_by_person': createdByPerson?.toCacheJson(),
+    'also_shared_people': alsoSharedPeople.map((e) => e.toCacheJson()).toList(),
+    'created_by_user_id': createdByUserId,
+    'site_created_at': siteCreatedAt?.toUtc().toIso8601String(),
+    'site_updated_at': siteUpdatedAt?.toUtc().toIso8601String(),
+    'is_catalog_site': isCatalogSite,
+    'is_physical_place': isPhysicalPlace,
+    'google_place_id': googlePlaceId,
+    'use_exact_pin': useExactPin,
+    'cover_storage_path': coverStoragePath,
+  };
 
   factory UserSave.fromCacheJson(Map<String, dynamic> json) {
     List<SitePerson> parsePeople(Object? raw) {
@@ -351,23 +351,24 @@ class UserSave {
     final creator = creatorRaw is Map
         ? SitePerson.fromCacheJson(Map<String, dynamic>.from(creatorRaw))
         : null;
-    final legacyNames = (json['also_shared_by'] as List?)
-            ?.map((e) => '$e')
-            .toList() ??
+    final legacyNames =
+        (json['also_shared_by'] as List?)?.map((e) => '$e').toList() ??
         const <String>[];
-    final createdById = json['created_by_user_id'] as String? ?? creator?.userId;
+    final createdById =
+        json['created_by_user_id'] as String? ?? creator?.userId;
     final resolvedAlso = also.isNotEmpty
         ? also
         : SitePerson.alsoSharedExcludingCreator(
             contributors: people,
             createdById: createdById,
           );
-    final resolvedCreator = creator ??
+    final resolvedCreator =
+        creator ??
         (createdById != null
             ? people.cast<SitePerson?>().firstWhere(
-                  (p) => p?.userId == createdById,
-                  orElse: () => null,
-                )
+                (p) => p?.userId == createdById,
+                orElse: () => null,
+              )
             : null);
     return UserSave(
       id: json['id'] as String,
@@ -384,9 +385,8 @@ class UserSave {
       department: json['department'] as String?,
       departmentId: json['department_id'] as String?,
       addressLine: json['address_line'] as String?,
-      categoryNames: (json['category_names'] as List?)
-              ?.map((e) => '$e')
-              .toList() ??
+      categoryNames:
+          (json['category_names'] as List?)?.map((e) => '$e').toList() ??
           const [],
       createdAt: json['created_at'] != null
           ? DateTime.tryParse(json['created_at'] as String)
@@ -397,10 +397,7 @@ class UserSave {
       alsoSharedBy: legacyNames,
       sharedPeople: people.isNotEmpty
           ? people
-          : [
-              ?resolvedCreator,
-              ...resolvedAlso,
-            ],
+          : [?resolvedCreator, ...resolvedAlso],
       createdByPerson: resolvedCreator,
       alsoSharedPeople: resolvedAlso,
       createdByUserId: createdById,
@@ -435,10 +432,7 @@ class UserSave {
       contributors: contribs,
       createdById: createdBy,
     );
-    final people = [
-      ?creator,
-      ...also,
-    ];
+    final people = [?creator, ...also];
     final ext = site['external_id'] as String?;
     // La ficha refleja el sitio: si el lugar es público, no mostrar «Privado»
     // por un user_save desfasado (p. ej. tras vincular).
@@ -489,17 +483,17 @@ class UserSave {
   }
 }
 
-String? siteCoverStoragePath({
-  required Object? photos,
-  String? coverPhotoId,
-}) {
+String? siteCoverStoragePath({required Object? photos, String? coverPhotoId}) {
   final id = coverPhotoId?.trim();
   if (id != null && id.isNotEmpty && photos is List) {
     for (final e in photos) {
       if (e is! Map) continue;
       if (e['id']?.toString() != id) continue;
-      final path = e['storage_path'] as String?;
-      if (path != null && path.trim().isNotEmpty) return path.trim();
+      final ref = photoDisplayRef(
+        storagePath: e['storage_path'] as String?,
+        externalUrl: e['external_url'] as String?,
+      );
+      if (ref != null) return ref;
     }
   }
   return firstCoverStoragePath(photos);
@@ -521,9 +515,10 @@ String? firstCoverStoragePath(Object? raw) {
     final tb = b['created_at'] as String? ?? '';
     return ta.compareTo(tb);
   });
-  final path = rows.first['storage_path'] as String?;
-  if (path == null || path.trim().isEmpty) return null;
-  return path.trim();
+  return photoDisplayRef(
+    storagePath: rows.first['storage_path'] as String?,
+    externalUrl: rows.first['external_url'] as String?,
+  );
 }
 
 List<String> categoryNamesFromJoin(Object? raw) {
@@ -553,10 +548,7 @@ Map<String, dynamic> joinMap(Object? raw) {
 }
 
 class SiteLook {
-  const SiteLook({
-    this.categoryNames = const [],
-    this.coverStoragePath,
-  });
+  const SiteLook({this.categoryNames = const [], this.coverStoragePath});
 
   final List<String> categoryNames;
   final String? coverStoragePath;
@@ -605,6 +597,7 @@ class SiteEditData {
     this.longitude,
     this.googlePlaceId,
     this.useExactPin = false,
+    this.isCatalogSite = false,
   });
 
   final String siteId;
@@ -621,6 +614,7 @@ class SiteEditData {
   final double? longitude;
   final String? googlePlaceId;
   final bool useExactPin;
+  final bool isCatalogSite;
 }
 
 class SaveDraftInput {
@@ -660,10 +654,13 @@ class SaveDraftInput {
   final bool isPublic;
   final bool isPhysicalPlace;
   final String? notes;
+
   /// Si el usuario confirma duplicado = mismo sitio público existente.
   final String? linkToExistingSiteId;
+
   /// False si la categoría es solo el default (Otros) autoasignado.
   final bool categoryIsExplicit;
+
   /// Al editar: quitar coords guardadas (ficha por nombre en Maps).
   final bool clearLocation;
   final String? googlePlaceId;

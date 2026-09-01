@@ -28,6 +28,16 @@ cd C:\workspace\chevere_plan\backend
 python supabase\scripts\06_import_public_sites.py ..\docs\data\colombia_departamentos_municipios_sitios.json
 ```
 
+Fotos de catálogo (Wikidata / Commons / Wikipedia), one-shot, **dry-run por defecto**:
+
+```powershell
+cd C:\workspace\chevere_plan\backend
+python supabase\scripts\09_import_catalog_photos_parallel.py
+python supabase\scripts\09_import_catalog_photos_parallel.py --apply
+```
+
+Si el sitio tiene **≥1 foto**, la primera es **portada** (`cover_photo_id`). Segunda foto (URL distinta) va a galería. Sin candidato → ilustración. `--apply` usa `_parallel_photos_report.json` (no reconsulta APIs).
+
 Resets (ver `backend/README.md`):
 
 - `reset_all.ps1` → solo datos de usuario  

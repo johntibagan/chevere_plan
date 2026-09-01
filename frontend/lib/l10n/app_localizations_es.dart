@@ -548,6 +548,37 @@ class AppLocalizationsEs extends AppLocalizations {
   String get photoAddTooltip => 'Añadir foto';
 
   @override
+  String get photoPasteLinkTooltip => 'Pegar enlace';
+
+  @override
+  String get photoPasteLinkTitle => 'Pegar enlace de imagen';
+
+  @override
+  String get photoPasteLinkUrlLabel => 'URL de la imagen';
+
+  @override
+  String get photoPasteLinkUrlHint => 'https://…';
+
+  @override
+  String get photoPasteLinkAttributionLabel => 'Atribución / fuente (opcional)';
+
+  @override
+  String get photoPasteLinkAttributionHint =>
+      'Foto: Wikimedia Commons, autor X, CC-BY-SA';
+
+  @override
+  String get photoPasteLinkAttributionHelper =>
+      'Confirma que tienes derecho a usar esta imagen.';
+
+  @override
+  String get photoPasteLinkNotImage =>
+      'Ese enlace no es una imagen. Usa la URL directa del archivo (jpg, png, webp…).';
+
+  @override
+  String get photoPasteLinkInvalidUrl =>
+      'Ese texto no es un enlace http(s) válido.';
+
+  @override
   String get siteDetailPhotosEmptyManage =>
       'Sin fotos. Usa el icono de cámara para añadir.';
 
@@ -583,6 +614,11 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get sitePhotoUploaderUnknown => 'alguien';
+
+  @override
+  String sitePhotoAttribution(String text) {
+    return '$text';
+  }
 
   @override
   String get photoCoverSet => 'Portada del sitio actualizada.';

@@ -1078,6 +1078,60 @@ abstract class AppLocalizations {
   /// **'Añadir foto'**
   String get photoAddTooltip;
 
+  /// No description provided for @photoPasteLinkTooltip.
+  ///
+  /// In es, this message translates to:
+  /// **'Pegar enlace'**
+  String get photoPasteLinkTooltip;
+
+  /// No description provided for @photoPasteLinkTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Pegar enlace de imagen'**
+  String get photoPasteLinkTitle;
+
+  /// No description provided for @photoPasteLinkUrlLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'URL de la imagen'**
+  String get photoPasteLinkUrlLabel;
+
+  /// No description provided for @photoPasteLinkUrlHint.
+  ///
+  /// In es, this message translates to:
+  /// **'https://…'**
+  String get photoPasteLinkUrlHint;
+
+  /// No description provided for @photoPasteLinkAttributionLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Atribución / fuente (opcional)'**
+  String get photoPasteLinkAttributionLabel;
+
+  /// No description provided for @photoPasteLinkAttributionHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Foto: Wikimedia Commons, autor X, CC-BY-SA'**
+  String get photoPasteLinkAttributionHint;
+
+  /// No description provided for @photoPasteLinkAttributionHelper.
+  ///
+  /// In es, this message translates to:
+  /// **'Confirma que tienes derecho a usar esta imagen.'**
+  String get photoPasteLinkAttributionHelper;
+
+  /// No description provided for @photoPasteLinkNotImage.
+  ///
+  /// In es, this message translates to:
+  /// **'Ese enlace no es una imagen. Usa la URL directa del archivo (jpg, png, webp…).'**
+  String get photoPasteLinkNotImage;
+
+  /// No description provided for @photoPasteLinkInvalidUrl.
+  ///
+  /// In es, this message translates to:
+  /// **'Ese texto no es un enlace http(s) válido.'**
+  String get photoPasteLinkInvalidUrl;
+
   /// No description provided for @siteDetailPhotosEmptyManage.
   ///
   /// In es, this message translates to:
@@ -1137,6 +1191,12 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'alguien'**
   String get sitePhotoUploaderUnknown;
+
+  /// No description provided for @sitePhotoAttribution.
+  ///
+  /// In es, this message translates to:
+  /// **'{text}'**
+  String sitePhotoAttribution(String text);
 
   /// No description provided for @photoCoverSet.
   ///

@@ -83,13 +83,13 @@ Alto riesgo: `save_place_page.dart`, `google_maps_link_importer.dart`, `save_pol
 - Listas clicables: chevron; fecha si aporta (`dd/mmm/aaaa`, sin hora).
 - Errores en UI: **en el bloque que falló**, **"Error en la app."** y botón/enlace **"Intenta de nuevo"** (reintenta esa carga). Nunca “failed”, SQL, PostgREST, stacks, keys. **No** toasts de error técnico. Detalle en `developer.log`.
 - Modales: nada de barrier sin contenido. Fotos del sitio en la ficha, no en sheet.
-- Portada: el **mismo sitio** se ve igual en lista, tarjeta, ficha, planes y rutas (`SiteLookCover`: padre + foto de encabezado). Encabezado = portada elegida (`sites.cover_photo_id`). Si no hay portada, la **primera foto** queda como portada y **no** cambia al añadir más; solo “Usar como portada” en el visor la cambia. Miniaturas = esa misma foto. En visor: autor, fecha (sin hora), ⋮. La tira pequeña no lleva ⋮. Verde/morado de visibilidad se mantiene.
+- Portada: el **mismo sitio** se ve igual en lista, tarjeta, ficha, planes y rutas (`SiteLookCover`: padre + foto de encabezado). Encabezado = portada elegida (`sites.cover_photo_id`). Si no hay portada, la **primera foto** queda como portada y **no** cambia al añadir más; solo “Usar como portada” en el visor la cambia. Miniaturas = esa misma foto. En visor: autor, fecha (sin hora), ⋮. La tira pequeña no lleva ⋮. Verde/morado de visibilidad se mantiene. Foto por enlace externo (`site_photos.external_url`, staff/catálogo) se renderiza igual que una de Storage; **pegar enlace no escribe** `cover_photo_id`.
 
 ## Datos
 
 - Categorías, transporte, **unidades de distancia**, depto/ciudad: **base + caché**, nunca hardcode en Dart (salvo fallback `km` si el catálogo no cargó).
 - Distancia en UI: siempre la unidad preferida del usuario (`profiles.preferred_distance_unit`); default **km**. Admin gestiona `distance_units`.
-- Identidad pública: **@usuario** es solo display. Reseñas, fotos, sitios, favoritos y contribuciones referencian **`profiles.id`** (nunca el username). Cambio de @usuario (máx. cada 3 meses) no rompe relaciones.
+- `site_photos`: exactamente **uno** de `storage_path` (Storage) o `external_url` (http/s); nunca ambos ni ninguno.
 - Populares cerca (Inicio): pintar caché; no GPS fino ni `search_sites` si seguís a menos de ~2 km del ancla y la lista tiene menos de 24 h. Solo públicos de **otros** (los tuyos van en Guardados recientes).
 - Reset: **solo TEST** (`CHEVERE_DB_ENV=test`, `SUPABASE_DB_URL`). Default conserva DIVIPOLA + catálogo (`external_id`); `-Full` pide escribir `test` en consola y recarga catálogo — migraciones baseline de **3** + DIVIPOLA + JSON.
 - **Esquema app:** `20260808000001_schema.sql` es el espejo consolidado del esquema TEST (tablas, RPC, RLS, grants). Al cambiar backend: parche timestamp → aplicar TEST → plegar al baseline; el parche se conserva hasta **publica**.

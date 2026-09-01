@@ -7,7 +7,7 @@ create extension if not exists pg_trgm;
 create extension if not exists pgcrypto;
 
 do $$ begin create type public.app_role as enum ('user', 'admin', 'root'); exception when duplicate_object then null; end $$;
-do $$ begin create type public.photo_source as enum ('google_places', 'user'); exception when duplicate_object then null; end $$;
+do $$ begin create type public.photo_source as enum ('google_places', 'user', 'external_link'); exception when duplicate_object then null; end $$;
 do $$ begin create type public.plan_status as enum ('draft', 'active', 'done'); exception when duplicate_object then null; end $$;
 do $$ begin create type public.site_status as enum ('draft', 'pending_location', 'complete'); exception when duplicate_object then null; end $$;
 do $$ begin create type public.transport_group as enum ('particular', 'publico', 'otro'); exception when duplicate_object then null; end $$;
@@ -184,15 +184,32 @@ create table if not exists public.site_contributors (
 create table if not exists public.site_photos (
   id uuid default gen_random_uuid() not null,
   site_id uuid not null,
-  storage_path text not null,
+  storage_path text,
+  external_url text,
+  attribution text,
   source photo_source default 'user'::photo_source not null,
   uploaded_by uuid,
   sort_order integer default 0 not null,
   created_at timestamp with time zone default now() not null,
   constraint site_photos_site_id_fkey FOREIGN KEY (site_id) REFERENCES sites(id) ON DELETE CASCADE,
   constraint site_photos_uploaded_by_fkey FOREIGN KEY (uploaded_by) REFERENCES profiles(id) ON DELETE SET NULL,
-  constraint site_photos_pkey PRIMARY KEY (id)
+  constraint site_photos_pkey PRIMARY KEY (id),
+  constraint site_photos_internal_or_external check (
+    (
+      nullif(btrim(coalesce(storage_path, '')), '') is not null
+    ) <> (
+      nullif(btrim(coalesce(external_url, '')), '') is not null
+    )
+  ),
+  constraint site_photos_external_url_http check (
+    external_url is null or external_url ~* '^https?://'
+  )
 );
+
+comment on column public.site_photos.external_url is
+  'URL http(s) de imagen externa. Null si la foto vive en Storage (storage_path).';
+comment on column public.site_photos.attribution is
+  'Crédito/licencia informado por staff al pegar un enlace externo.';
 
 -- Portada del sitio: la FK va aquí porque sites se crea antes que site_photos.
 alter table public.sites
@@ -813,13 +830,13 @@ CREATE OR REPLACE FUNCTION public.site_cover_storage_path(p_site_id uuid)
 AS $function$
   select coalesce(
     (
-      select ph.storage_path
+      select coalesce(nullif(trim(ph.external_url), ''), ph.storage_path)
       from public.site_photos ph
       join public.sites s on s.cover_photo_id = ph.id
       where s.id = p_site_id
     ),
     (
-      select ph.storage_path
+      select coalesce(nullif(trim(ph.external_url), ''), ph.storage_path)
       from public.site_photos ph
       where ph.site_id = p_site_id
       order by ph.sort_order, ph.created_at
@@ -1417,7 +1434,7 @@ AS $function$
         then '@' || pr.username
       else 'Usuario'
     end as reporter_name,
-    coalesce(ph.storage_path, null) as photo_path,
+    coalesce(nullif(trim(ph.external_url), ''), ph.storage_path) as photo_path,
     coalesce(s_photo.name, s_review.name) as site_name,
     case
       when r.target_type = 'review' then left(trim(coalesce(rev.body, '')), 160)
@@ -1476,7 +1493,9 @@ begin
     if found then
       delete from public.site_photos where id = r.target_id;
 
-      if v_path is not null and length(trim(v_path)) > 0 then
+      if v_path is not null
+         and length(trim(v_path)) > 0
+         and v_path !~* '^https?://' then
         delete from storage.objects
         where bucket_id = 'site-photos'
           and name = v_path;

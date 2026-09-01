@@ -7,16 +7,23 @@ import 'package:uuid/uuid.dart';
 
 import '../../../core/errors/user_facing_error.dart';
 import '../../../core/logging/app_log.dart';
+import '../../../core/photos/external_photo_url.dart';
+import '../../auth/data/profile.dart';
 import '../domain/save_policies.dart';
+import 'external_photo_link.dart';
 import 'save_models.dart';
 import 'site_ficha.dart';
 import 'social_link_models.dart';
 
 class SavesRepository {
-  SavesRepository({SupabaseClient? client})
-      : _client = client ?? Supabase.instance.client;
+  SavesRepository({
+    SupabaseClient? client,
+    ExternalPhotoLinkValidator? photoLinkValidator,
+  }) : _client = client ?? Supabase.instance.client,
+       _photoLinkValidator = photoLinkValidator ?? ExternalPhotoLinkValidator();
 
   final SupabaseClient _client;
+  final ExternalPhotoLinkValidator _photoLinkValidator;
   final _uuid = const Uuid();
 
   static const _saveSelect =
@@ -27,7 +34,7 @@ class SavesRepository {
       'cover_photo_id, '
       'profiles!sites_created_by_fkey(username, avatar_url, google_avatar_url, use_google_avatar), '
       'site_categories(categories(name_i18n)), '
-      'site_photos(id, storage_path, sort_order, created_at), '
+      'site_photos(id, storage_path, external_url, sort_order, created_at), '
       'site_contributors(user_id, created_at, profiles(username, avatar_url, google_avatar_url, use_google_avatar)))';
 
   /// Select liviano para Inicio (cards): sin contributors, notes, address, etc.
@@ -37,7 +44,7 @@ class SavesRepository {
       'is_physical_place, use_exact_pin, '
       'google_place_id, cover_photo_id, '
       'site_categories(categories(name_i18n)), '
-      'site_photos(id, storage_path, sort_order, created_at))';
+      'site_photos(id, storage_path, external_url, sort_order, created_at))';
 
   /// Fotos sí (misma portada en cards); sin `cover_photo_id` si PostgREST no la ve.
   static const _saveSelectSummaryNoCover =
@@ -46,7 +53,7 @@ class SavesRepository {
       'is_physical_place, use_exact_pin, '
       'google_place_id, '
       'site_categories(categories(name_i18n)), '
-      'site_photos(id, storage_path, sort_order, created_at))';
+      'site_photos(id, storage_path, external_url, sort_order, created_at))';
 
   static const _saveSelectSummaryLite =
       'id, user_id, site_id, status, is_public, created_at, '
@@ -195,10 +202,7 @@ class SavesRepository {
 
     await _client.rpc(
       'link_save_to_existing_site',
-      params: {
-        'p_save_id': saveId,
-        'p_existing_site_id': existingSiteId,
-      },
+      params: {'p_save_id': saveId, 'p_existing_site_id': existingSiteId},
     );
 
     await _client
@@ -272,8 +276,7 @@ class SavesRepository {
       longitude: input.longitude,
     );
     // Público solo con lugar físico + ubicación (§3.5 / §3.6).
-    final isPublic =
-        input.isPhysicalPlace && input.isPublic && located;
+    final isPublic = input.isPhysicalPlace && input.isPublic && located;
 
     final status = computeStatus(input);
 
@@ -313,7 +316,9 @@ class SavesRepository {
     await _syncSiteLocation(siteId: siteId, input: input);
 
     if (input.categoryIds.isNotEmpty) {
-      await _client.from('site_categories').insert(
+      await _client
+          .from('site_categories')
+          .insert(
             input.categoryIds
                 .map(
                   (cid) => {
@@ -396,7 +401,12 @@ class SavesRepository {
     try {
       return await one(_saveSelect);
     } catch (e, st) {
-      AppLog.error('readUserSave full', name: 'saves', error: e, stackTrace: st);
+      AppLog.error(
+        'readUserSave full',
+        name: 'saves',
+        error: e,
+        stackTrace: st,
+      );
       try {
         return await one(_saveSelectSummary);
       } catch (e2, st2) {
@@ -432,6 +442,7 @@ class SavesRepository {
   Future<String?> signedPhotoUrl(String storagePath) async {
     final p = storagePath.trim();
     if (p.isEmpty) return null;
+    if (isExternalPhotoUrl(p)) return p;
     try {
       return await _client.storage.from('site-photos').createSignedUrl(p, 3600);
     } catch (_) {
@@ -453,16 +464,12 @@ class SavesRepository {
       }
       bytes = await file.readAsBytes();
       if (bytes.isEmpty) {
-        throw const AppUserError(
-          'La foto está vacía. Volvé a elegirla.',
-        );
+        throw const AppUserError('La foto está vacía. Volvé a elegirla.');
       }
     } on AppUserError {
       rethrow;
     } catch (_) {
-      throw const AppUserError(
-        'No se pudo leer la foto. Volvé a elegirla.',
-      );
+      throw const AppUserError('No se pudo leer la foto. Volvé a elegirla.');
     }
 
     final rawExt = p.extension(file.path).replaceFirst('.', '').toLowerCase();
@@ -485,9 +492,7 @@ class SavesRepository {
     if (uid == null) throw const AppUserError('Sin sesión');
 
     if (bytes.isEmpty) {
-      throw const AppUserError(
-        'La foto está vacía. Volvé a elegirla.',
-      );
+      throw const AppUserError('La foto está vacía. Volvé a elegirla.');
     }
 
     final current = knownCount ?? await countPhotos(siteId);
@@ -498,7 +503,8 @@ class SavesRepository {
     }
 
     final rawExt = fileExtension.replaceFirst('.', '').toLowerCase();
-    final ext = (rawExt == 'jpg' ||
+    final ext =
+        (rawExt == 'jpg' ||
             rawExt == 'jpeg' ||
             rawExt == 'png' ||
             rawExt == 'webp' ||
@@ -514,13 +520,12 @@ class SavesRepository {
     };
 
     try {
-      await _client.storage.from('site-photos').uploadBinary(
+      await _client.storage
+          .from('site-photos')
+          .uploadBinary(
             objectPath,
             bytes,
-            fileOptions: FileOptions(
-              upsert: false,
-              contentType: contentType,
-            ),
+            fileOptions: FileOptions(upsert: false, contentType: contentType),
           );
     } on StorageException catch (e) {
       throw AppUserError(
@@ -535,19 +540,21 @@ class SavesRepository {
         error: e,
         stackTrace: st,
       );
-      throw const AppUserError(
-        'No se pudo subir la foto. Intenta de nuevo.',
-      );
+      throw const AppUserError('No se pudo subir la foto. Intenta de nuevo.');
     }
 
     try {
-      final inserted = await _client.from('site_photos').insert({
-        'site_id': siteId,
-        'storage_path': objectPath,
-        'source': 'user',
-        'uploaded_by': uid,
-        'sort_order': current,
-      }).select('id').single();
+      final inserted = await _client
+          .from('site_photos')
+          .insert({
+            'site_id': siteId,
+            'storage_path': objectPath,
+            'source': 'user',
+            'uploaded_by': uid,
+            'sort_order': current,
+          })
+          .select('id')
+          .single();
       // Primera foto = portada hasta que elijan otra en el visor.
       if (current == 0) {
         final photoId = inserted['id']?.toString();
@@ -571,6 +578,72 @@ class SavesRepository {
             ? e.message
             : 'No se pudo guardar la foto. Intenta de nuevo.',
       );
+    }
+  }
+
+  /// Staff + sitio de catálogo: guarda un enlace de imagen (sin Storage, sin portada).
+  Future<void> addExternalPhotoLink({
+    required String siteId,
+    required String url,
+    String? attribution,
+  }) async {
+    final uid = _uid;
+    if (uid == null) throw const AppUserError('Sin sesión');
+
+    final roleRow = await _client
+        .from('profiles')
+        .select('role')
+        .eq('id', uid)
+        .maybeSingle();
+    if (!AppRole.fromDb(roleRow?['role'] as String?).isStaff) {
+      throw const AppUserError(
+        'No puedes pegar un enlace de foto en este sitio.',
+      );
+    }
+
+    final site = await _client
+        .from('sites')
+        .select('external_id')
+        .eq('id', siteId)
+        .maybeSingle();
+    final ext = (site?['external_id'] as String?)?.trim();
+    if (ext == null || ext.isEmpty) {
+      throw const AppUserError(
+        'No puedes pegar un enlace de foto en este sitio.',
+      );
+    }
+
+    final current = await countPhotos(siteId);
+    if (current >= SavePolicies.maxPhotosPerSite) {
+      throw AppUserError(
+        'Máximo ${SavePolicies.maxPhotosPerSite} fotos por sitio.',
+      );
+    }
+
+    final uri = await _photoLinkValidator.requireImageUrl(url);
+    final credit = attribution?.trim();
+    final creditOrNull = (credit == null || credit.isEmpty)
+        ? null
+        : credit.substring(0, credit.length > 500 ? 500 : credit.length);
+
+    try {
+      await _client.from('site_photos').insert({
+        'site_id': siteId,
+        'storage_path': null,
+        'external_url': uri.toString(),
+        'source': 'external_link',
+        'attribution': creditOrNull,
+        'uploaded_by': uid,
+        'sort_order': current,
+      });
+    } on PostgrestException catch (e) {
+      AppLog.error('addExternalPhotoLink', name: 'saves', error: e);
+      if (e.code == '42501' || (e.message.toLowerCase().contains('policy'))) {
+        throw const AppUserError(
+          'No puedes pegar un enlace de foto en este sitio.',
+        );
+      }
+      throw const AppUserError('No se pudo guardar la foto. Intenta de nuevo.');
     }
   }
 
@@ -667,7 +740,8 @@ class SavesRepository {
         .from('sites')
         .select(
           'id, name, city, city_id, department, department_id, address_line, '
-          'is_public, is_physical_place, google_place_id, use_exact_pin',
+          'is_public, is_physical_place, google_place_id, use_exact_pin, '
+          'external_id',
         )
         .eq('id', siteId)
         .maybeSingle();
@@ -709,6 +783,7 @@ class SavesRepository {
       isPhysicalPlace: parsePgBool(m['is_physical_place'], orElse: true),
       googlePlaceId: m['google_place_id'] as String?,
       useExactPin: parsePgBool(m['use_exact_pin']),
+      isCatalogSite: ((m['external_id'] as String?) ?? '').trim().isNotEmpty,
       categoryIds: categoryIds,
       latitude: lat,
       longitude: lng,
@@ -732,33 +807,37 @@ class SavesRepository {
       latitude: input.latitude,
       longitude: input.longitude,
     );
-    final isPublic =
-        input.isPhysicalPlace && input.isPublic && located;
+    final isPublic = input.isPhysicalPlace && input.isPublic && located;
     final status = computeStatus(input);
 
     if (!isPublic) {
       await _assertCanMakePrivate(siteId);
     }
 
-    await _client.from('sites').update({
-      'name': name,
-      'status': status.dbValue,
-      'is_public': isPublic,
-      'is_physical_place': input.isPhysicalPlace,
-      'address_line': input.addressLine?.trim(),
-      'city': input.city?.trim(),
-      'city_id': input.cityId,
-      'department': input.department?.trim(),
-      'department_id': input.departmentId,
-      'google_place_id': input.googlePlaceId,
-      'use_exact_pin': input.useExactPin,
-    }).eq('id', siteId);
+    await _client
+        .from('sites')
+        .update({
+          'name': name,
+          'status': status.dbValue,
+          'is_public': isPublic,
+          'is_physical_place': input.isPhysicalPlace,
+          'address_line': input.addressLine?.trim(),
+          'city': input.city?.trim(),
+          'city_id': input.cityId,
+          'department': input.department?.trim(),
+          'department_id': input.departmentId,
+          'google_place_id': input.googlePlaceId,
+          'use_exact_pin': input.useExactPin,
+        })
+        .eq('id', siteId);
 
     await _syncSiteLocation(siteId: siteId, input: input);
 
     await _client.from('site_categories').delete().eq('site_id', siteId);
     if (input.categoryIds.isNotEmpty) {
-      await _client.from('site_categories').insert(
+      await _client
+          .from('site_categories')
+          .insert(
             input.categoryIds
                 .map(
                   (cid) => {
@@ -800,33 +879,37 @@ class SavesRepository {
       latitude: input.latitude,
       longitude: input.longitude,
     );
-    final isPublic =
-        input.isPhysicalPlace && input.isPublic && located;
+    final isPublic = input.isPhysicalPlace && input.isPublic && located;
     final status = computeStatus(input);
 
     if (!isPublic) {
       await _assertCanMakePrivate(siteId);
     }
 
-    await _client.from('sites').update({
-      'name': name,
-      'status': status.dbValue,
-      'is_public': isPublic,
-      'is_physical_place': input.isPhysicalPlace,
-      'address_line': input.addressLine?.trim(),
-      'city': input.city?.trim(),
-      'city_id': input.cityId,
-      'department': input.department?.trim(),
-      'department_id': input.departmentId,
-      'google_place_id': input.googlePlaceId,
-      'use_exact_pin': input.useExactPin,
-    }).eq('id', siteId);
+    await _client
+        .from('sites')
+        .update({
+          'name': name,
+          'status': status.dbValue,
+          'is_public': isPublic,
+          'is_physical_place': input.isPhysicalPlace,
+          'address_line': input.addressLine?.trim(),
+          'city': input.city?.trim(),
+          'city_id': input.cityId,
+          'department': input.department?.trim(),
+          'department_id': input.departmentId,
+          'google_place_id': input.googlePlaceId,
+          'use_exact_pin': input.useExactPin,
+        })
+        .eq('id', siteId);
 
     await _syncSiteLocation(siteId: siteId, input: input);
 
     await _client.from('site_categories').delete().eq('site_id', siteId);
     if (input.categoryIds.isNotEmpty) {
-      await _client.from('site_categories').insert(
+      await _client
+          .from('site_categories')
+          .insert(
             input.categoryIds
                 .map(
                   (cid) => {
@@ -1072,10 +1155,9 @@ class SavesRepository {
       });
     }
     if (rows.isEmpty) return;
-    await _client.from('site_social_links').upsert(
-          rows,
-          onConflict: 'site_id,url',
-        );
+    await _client
+        .from('site_social_links')
+        .upsert(rows, onConflict: 'site_id,url');
   }
 
   /// Asegura fila en site_contributors sin tumbar el guardado.
@@ -1085,14 +1167,13 @@ class SavesRepository {
     required String uid,
   }) async {
     try {
-      await _client.from('site_contributors').upsert(
-        {
-          'site_id': siteId,
-          'user_id': uid,
-        },
-        onConflict: 'site_id,user_id',
-        ignoreDuplicates: true,
-      );
+      await _client
+          .from('site_contributors')
+          .upsert(
+            {'site_id': siteId, 'user_id': uid},
+            onConflict: 'site_id,user_id',
+            ignoreDuplicates: true,
+          );
     } catch (e, st) {
       AppLog.error(
         'ensureSiteContributor',
@@ -1118,10 +1199,10 @@ class SavesRepository {
       );
       // Puede haber paradas en planes de otros; RLS no debe tumbar el guardado.
       try {
-        await _client.from('plan_stops').update({
-          'lat': input.latitude,
-          'lng': input.longitude,
-        }).eq('site_id', siteId);
+        await _client
+            .from('plan_stops')
+            .update({'lat': input.latitude, 'lng': input.longitude})
+            .eq('site_id', siteId);
       } catch (e, st) {
         AppLog.error(
           'syncSiteLocation plan_stops',
@@ -1133,10 +1214,7 @@ class SavesRepository {
       return;
     }
     if (input.clearLocation) {
-      await _client.rpc(
-        'clear_site_location',
-        params: {'p_site_id': siteId},
-      );
+      await _client.rpc('clear_site_location', params: {'p_site_id': siteId});
     }
   }
 }

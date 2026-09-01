@@ -7,6 +7,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../logging/app_log.dart';
+import '../photos/external_photo_url.dart';
 
 /// Descarga portadas a disco para BigPicture (válido en isolate de geofence).
 abstract final class NotificationCoverCache {
@@ -39,9 +40,15 @@ abstract final class NotificationCoverCache {
     if (trimmed.isEmpty) return null;
     try {
       final c = client ?? Supabase.instance.client;
-      final url = await c.storage.from('site-photos').createSignedUrl(trimmed, 3600);
-      final res = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 12));
-      if (res.statusCode < 200 || res.statusCode >= 300 || res.bodyBytes.isEmpty) {
+      final url = isExternalPhotoUrl(trimmed)
+          ? trimmed
+          : await c.storage.from('site-photos').createSignedUrl(trimmed, 3600);
+      final res = await http
+          .get(Uri.parse(url))
+          .timeout(const Duration(seconds: 12));
+      if (res.statusCode < 200 ||
+          res.statusCode >= 300 ||
+          res.bodyBytes.isEmpty) {
         return null;
       }
       return cacheBytes(cacheKey: cacheKey, bytes: res.bodyBytes);

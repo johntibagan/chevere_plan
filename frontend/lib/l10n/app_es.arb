@@ -233,6 +233,15 @@
   "siteDetailTraceEmpty": "Sin más datos de trazabilidad por ahora.",
   "siteDetailPhotos": "Fotos",
   "photoAddTooltip": "Añadir foto",
+  "photoPasteLinkTooltip": "Pegar enlace",
+  "photoPasteLinkTitle": "Pegar enlace de imagen",
+  "photoPasteLinkUrlLabel": "URL de la imagen",
+  "photoPasteLinkUrlHint": "https://…",
+  "photoPasteLinkAttributionLabel": "Atribución / fuente (opcional)",
+  "photoPasteLinkAttributionHint": "Foto: Wikimedia Commons, autor X, CC-BY-SA",
+  "photoPasteLinkAttributionHelper": "Confirma que tienes derecho a usar esta imagen.",
+  "photoPasteLinkNotImage": "Ese enlace no es una imagen. Usa la URL directa del archivo (jpg, png, webp…).",
+  "photoPasteLinkInvalidUrl": "Ese texto no es un enlace http(s) válido.",
   "siteDetailPhotosEmptyManage": "Sin fotos. Usa el icono de cámara para añadir.",
   "siteDetailPhotosEmpty": "Este sitio no tiene fotos.",
   "sitePhotoViewerClose": "Cerrar",
@@ -259,6 +268,12 @@
     }
   },
   "sitePhotoUploaderUnknown": "alguien",
+  "sitePhotoAttribution": "{text}",
+  "@sitePhotoAttribution": {
+    "placeholders": {
+      "text": {"type": "String"}
+    }
+  },
   "photoCoverSet": "Portada del sitio actualizada.",
   "siteDetailSource": "Origen",
   "siteDetailNotPhysical": "No es lugar físico",

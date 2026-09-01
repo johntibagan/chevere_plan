@@ -14,6 +14,7 @@ class SitePhotoViewItem {
     required this.cacheKey,
     this.uploaderName,
     this.uploadedAt,
+    this.attribution,
     this.canDelete = false,
     this.canSetCover = false,
     this.isCover = false,
@@ -24,6 +25,7 @@ class SitePhotoViewItem {
   final String cacheKey;
   final String? uploaderName;
   final DateTime? uploadedAt;
+  final String? attribution;
   final bool canDelete;
   final bool canSetCover;
   final bool isCover;
@@ -214,11 +216,25 @@ class _SitePhotoViewerPageState extends State<SitePhotoViewerPage> {
                           if (when != null) ...[
                             SizedBox(height: 4),
                             Text(
-                              l10n.sitePhotoUploadedAt(
-                                formatDateDmY(when),
+                              l10n.sitePhotoUploadedAt(formatDateDmY(when)),
+                              style: TextStyle(
+                                color: AppColors.onImage.withValues(
+                                  alpha: 0.85,
+                                ),
+                                fontSize: 13,
+                              ),
+                            ),
+                          ],
+                          if ((item.attribution ?? '').trim().isNotEmpty) ...[
+                            SizedBox(height: 4),
+                            Text(
+                              l10n.sitePhotoAttribution(
+                                item.attribution!.trim(),
                               ),
                               style: TextStyle(
-                                color: AppColors.onImage.withValues(alpha: 0.85),
+                                color: AppColors.onImage.withValues(
+                                  alpha: 0.85,
+                                ),
                                 fontSize: 13,
                               ),
                             ),

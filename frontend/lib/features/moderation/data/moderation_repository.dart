@@ -2,11 +2,12 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/cache/signed_url_cache.dart';
 import '../../../core/errors/user_facing_error.dart';
+import '../../../core/photos/external_photo_url.dart';
 import 'moderation_models.dart';
 
 class ModerationRepository {
   ModerationRepository({SupabaseClient? client})
-      : _client = client ?? Supabase.instance.client;
+    : _client = client ?? Supabase.instance.client;
 
   final SupabaseClient _client;
 
@@ -16,7 +17,8 @@ class ModerationRepository {
     final rows = await _client
         .from('site_photos')
         .select(
-          'id, site_id, storage_path, uploaded_by, created_at, '
+          'id, site_id, storage_path, external_url, source, attribution, '
+          'uploaded_by, created_at, '
           'profiles!site_photos_uploaded_by_fkey(username)',
         )
         .eq('site_id', siteId)
@@ -27,7 +29,7 @@ class ModerationRepository {
         .toList();
   }
 
-  /// URL firmada (bucket privado). Cacheada por [storagePath].
+  /// URL para mostrar: http(s) tal cual; ruta de Storage firmada. Cacheada por [storagePath].
   Future<String> signedPhotoUrl(
     String storagePath, {
     int expiresInSeconds = 3600,
@@ -35,18 +37,25 @@ class ModerationRepository {
     final cached = SignedUrlCache.instance.get(storagePath);
     if (cached != null) return cached;
 
+    if (isExternalPhotoUrl(storagePath)) {
+      final url = storagePath.trim();
+      SignedUrlCache.instance.put(
+        storagePath,
+        url,
+        ttlSeconds: expiresInSeconds,
+      );
+      return url;
+    }
+
     final url = await _client.storage
         .from('site-photos')
         .createSignedUrl(storagePath, expiresInSeconds);
-    SignedUrlCache.instance.put(
-      storagePath,
-      url,
-      ttlSeconds: expiresInSeconds,
-    );
+    SignedUrlCache.instance.put(storagePath, url, ttlSeconds: expiresInSeconds);
     return url;
   }
 
   /// Firma varias fotos (caché + un lote Storage). Clave = [id] de cada ítem.
+  /// [storagePath] puede ser ruta interna o URL externa.
   Future<Map<String, String>> signedPhotoUrlsParallel(
     Iterable<({String id, String storagePath})> items, {
     int expiresInSeconds = 3600,
@@ -57,6 +66,14 @@ class ModerationRepository {
       final cached = SignedUrlCache.instance.get(item.storagePath);
       if (cached != null) {
         out[item.id] = cached;
+      } else if (isExternalPhotoUrl(item.storagePath)) {
+        final url = item.storagePath.trim();
+        SignedUrlCache.instance.put(
+          item.storagePath,
+          url,
+          ttlSeconds: expiresInSeconds,
+        );
+        out[item.id] = url;
       } else if (item.storagePath.trim().isNotEmpty) {
         missing.add(item);
       }
@@ -64,9 +81,7 @@ class ModerationRepository {
     if (missing.isEmpty) return out;
 
     try {
-      final paths = [
-        for (final m in missing) m.storagePath,
-      ];
+      final paths = [for (final m in missing) m.storagePath];
       final results = await _client.storage
           .from('site-photos')
           .createSignedUrlsResult(paths, expiresInSeconds);
@@ -112,17 +127,19 @@ class ModerationRepository {
       throw const AppUserError('Debes iniciar sesión.');
     }
     await _client.from('site_photos').delete().eq('id', photo.id);
+    if (photo.isExternalLink || isExternalPhotoUrl(photo.storagePath)) {
+      return;
+    }
+    final path = photo.storagePath.trim();
+    if (path.isEmpty) return;
     try {
-      await _client.storage.from('site-photos').remove([photo.storagePath]);
+      await _client.storage.from('site-photos').remove([path]);
     } catch (_) {
       // La fila ya se borró; el archivo huérfano lo puede limpiar staff/cron.
     }
   }
 
-  Future<void> reportPhoto({
-    required String photoId,
-    String? reason,
-  }) async {
+  Future<void> reportPhoto({required String photoId, String? reason}) async {
     final uid = _uid;
     if (uid == null) {
       throw const AppUserError('Debes iniciar sesión.');
@@ -143,10 +160,7 @@ class ModerationRepository {
     }
   }
 
-  Future<void> reportReview({
-    required String reviewId,
-    String? reason,
-  }) async {
+  Future<void> reportReview({required String reviewId, String? reason}) async {
     final uid = _uid;
     if (uid == null) {
       throw const AppUserError('Debes iniciar sesión.');
@@ -181,10 +195,7 @@ class ModerationRepository {
   }) async {
     await _client.rpc(
       'resolve_content_report',
-      params: {
-        'p_report_id': reportId,
-        'p_status': status,
-      },
+      params: {'p_report_id': reportId, 'p_status': status},
     );
     if (status == 'actioned' &&
         photoStoragePath != null &&

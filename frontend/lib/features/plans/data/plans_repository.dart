@@ -35,7 +35,7 @@ class PlansRepository {
       'sites(name, city, department, google_place_id, use_exact_pin, '
       'external_id, estimated_price_amount, cover_photo_id, '
       'site_categories(categories(name_i18n)), '
-      'site_photos(id, storage_path, sort_order, created_at)))';
+      'site_photos(id, storage_path, external_url, sort_order, created_at)))';
 
   static const _planSelectNoCover =
       'id, user_id, title, location_query, start_lat, start_lng, '
@@ -45,7 +45,7 @@ class PlansRepository {
       'sites(name, city, department, google_place_id, use_exact_pin, '
       'external_id, estimated_price_amount, '
       'site_categories(categories(name_i18n)), '
-      'site_photos(id, storage_path, sort_order, created_at)))';
+      'site_photos(id, storage_path, external_url, sort_order, created_at)))';
 
   static const _planSelectLite =
       'id, user_id, title, location_query, start_lat, start_lng, '
@@ -63,14 +63,14 @@ class PlansRepository {
       'plan_stops(id, plan_id, site_id, sort_order, '
       'sites(name, site_categories(categories(name_i18n)), '
       'cover_photo_id, '
-      'site_photos(id, storage_path, sort_order, created_at)))';
+      'site_photos(id, storage_path, external_url, sort_order, created_at)))';
 
   static const _planListSelectNoCover =
       'id, user_id, title, location_query, start_lat, start_lng, '
       'max_budget_amount, currency_code, status, '
       'plan_stops(id, plan_id, site_id, sort_order, '
       'sites(name, site_categories(categories(name_i18n)), '
-      'site_photos(id, storage_path, sort_order, created_at)))';
+      'site_photos(id, storage_path, external_url, sort_order, created_at)))';
 
   static const _planListSelectLite =
       'id, user_id, title, location_query, start_lat, start_lng, '

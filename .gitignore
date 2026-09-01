@@ -27,3 +27,8 @@ node_modules/
 # Python
 **/__pycache__/
 *.pyc
+
+# Reportes one-shot (Wikidata fotos catálogo)
+backend/supabase/scripts/_wikidata_photos_report*.json
+backend/supabase/scripts/_parallel_photos_report*.json
+backend/scripts/_multisource_photos_report*.json

@@ -115,7 +115,7 @@ final siteLookProvider =
   try {
     final photos = await client
         .from('site_photos')
-        .select('id, storage_path, sort_order, created_at')
+        .select('id, storage_path, external_url, sort_order, created_at')
         .eq('site_id', id);
     site['site_photos'] = photos;
   } catch (_) {}

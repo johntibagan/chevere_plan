@@ -8,8 +8,10 @@ import '../theme/app_theme.dart';
 enum AppImageQuality {
   /// Covers / avatares: tamaño en pantalla × DPR.
   standard,
+
   /// Tira de fotos: ~2× el alto visible, mínimo 720 px (nítido sin archivo original).
   photo,
+
   /// Visor a pantalla completa: lado largo de la pantalla, mínimo 1080 px.
   fullScreen,
 }
@@ -32,12 +34,14 @@ class AppNetworkImage extends StatelessWidget {
   });
 
   final String url;
+
   /// Clave estable de caché (recomendado: `photo.id` o `storage_path`).
   final String? cacheKey;
   final double? width;
   final double? height;
   final BoxFit fit;
   final BorderRadius? borderRadius;
+
   /// Si false (default), placeholder es un bloque de color (más liviano).
   final bool showLoadingIndicator;
   final AppImageQuality quality;
@@ -136,7 +140,10 @@ class AppNetworkImage extends StatelessWidget {
         height: height,
         child: ColoredBox(
           color: AppColors.surfaceElevated,
-          child: Icon(Icons.broken_image, color: AppColors.muted),
+          child: Icon(
+            Icons.image_not_supported_outlined,
+            color: AppColors.muted,
+          ),
         ),
       ),
     );

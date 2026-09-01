@@ -103,7 +103,7 @@ flowchart TD
 
 Tabs: **Info**, **Reseñas**, **Más** (creador, catálogo, fechas, también lo guardaron).
 
-Info: nombre, franja/icono visibilidad, origen, ciudad, pin, Maps (abrir / cómo llegar), categorías, precio, notas, fotos en tira → visor fullscreen (autor, fecha `dd/mmm/aaaa`, ⋮ portada/eliminar/reportar). Corazón favorito en header. **Sin** “agregar a plan” ni **compartir ficha**.
+Info: nombre, franja/icono visibilidad, origen, ciudad, pin, Maps (abrir / cómo llegar), categorías, precio, notas, fotos en tira → visor fullscreen (autor, fecha `dd/mmm/aaaa`, ⋮ portada/eliminar/reportar). Staff en **catálogo** (`external_id`): segundo icono **Pegar enlace** (URL de imagen + atribución opcional). Antes de guardar, comprueba que la URL responda con `Content-Type` de imagen (HEAD o GET liviano); si no, toast claro y no inserta. `source=external_link` y columna `external_url`; **pegar enlace no** marca portada sola. Carga masiva del catálogo: si hay ≥1 foto, la **primera es portada**. Si el link no carga: icono de imagen no disponible, sin error feo. Borrar enlace = solo la fila (no Storage). Corazón favorito en header. **Sin** “agregar a plan” ni **compartir ficha**.
 
 Editar: creador, quien lo tiene como propio en saves, o staff sobre público.
 
@@ -214,7 +214,7 @@ flowchart TB
 - Geografía: DIVIPOLA + caché 30/90 d
 - Sitios, saves, planes, reseñas, favoritos: servidor; SWR en cliente
 - Populares cerca: Hive + ancla GPS
-- Fotos: Storage; firmadas; decode acotado en cards
+- Fotos: Storage (firmadas) o URL externa en `site_photos.external_url` (staff, solo catálogo); decode acotado en cards
 
 ### Pruebas cerradas (APK)
 
@@ -343,7 +343,7 @@ Iconografía: Material Icons. Redes en cards = texto 2 letras (IG/TK/FB/GM).
 
 **Guardar** (`SavePlacePage`): AppBar título; **Guardar** abajo único; mapa / enlace / categorías / anti-dupe grilla.
 
-**Ficha** (`SiteDetailPage`): hero 176; tabs Info / Reseñas / Más; tira fotos; sin share ni “agregar a plan”.
+**Ficha** (`SiteDetailPage`): hero 176; tabs Info / Reseñas / Más; tira fotos (staff/catálogo: cámara + pegar enlace); sin share ni “agregar a plan”.
 
 **Planes lista** (`PlansListPage`): FAB crear; card portada 96 del primer sitio.
 

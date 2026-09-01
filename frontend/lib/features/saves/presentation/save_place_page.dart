@@ -50,6 +50,7 @@ import '../domain/save_policies.dart';
 import 'category_picker_sheet.dart';
 import 'location_picker_page.dart';
 import 'open_site_detail.dart';
+import 'paste_external_photo_dialog.dart';
 import 'same_site_picker_page.dart';
 import 'site_status_l10n.dart';
 import 'social_link_preview_card.dart';
@@ -73,13 +74,15 @@ class SavePlacePage extends ConsumerStatefulWidget {
     this.existingSiteId,
     required this.savesRepository,
   }) : assert(
-          existingSaveId == null || existingSiteId == null,
-          'Usar existingSaveId o existingSiteId, no ambos',
-        );
+         existingSaveId == null || existingSiteId == null,
+         'Usar existingSaveId o existingSiteId, no ambos',
+       );
 
   final String? initialSharedText;
+
   /// Si viene, carga y actualiza ese guardado (completar borrador / editar).
   final String? existingSaveId;
+
   /// Admin/root o creador sin guardado: edita sitio sin `user_saves`.
   final String? existingSiteId;
   final SavesRepository savesRepository;
@@ -106,8 +109,10 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
   double? _lat;
   double? _lng;
   String? _googlePlaceId;
+
   /// false = Maps abre el **lugar** (nombre/place id); true = **punto exacto** (lat/lng).
   bool _useExactPin = false;
+
   /// Había pin persistido al abrir (editar). Si lo quitan, hay que borrar en DB.
   bool _hadStoredCoords = false;
 
@@ -123,6 +128,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
   bool _cameraBusy = false;
   Timer? _dupeCheckTimer;
   List<PossibleDuplicate> _possibleDupes = const [];
+
   /// true = pegar enlace Google Maps; false = mapa interactivo.
   final Set<_SaveExtra> _openExtras = {};
   final List<_PendingPhoto> _pendingPhotos = [];
@@ -134,6 +140,8 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
   String? _pendingMapImageUrl;
   String? _editSaveId;
   String? _editSiteId;
+  bool _isCatalogSite = false;
+
   /// Visibilidad al cargar (editar): detecta público → privado.
   bool _loadedIsPublic = false;
   final List<SocialLinkDraft> _socialLinks = [];
@@ -141,21 +149,20 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
 
   PlaceGeocoder get _placeGeocoder => ref.read(placeGeocoderProvider);
   GooglePlacesClient get _placesClient => ref.read(googlePlacesClientProvider);
-  GoogleMapsLinkImporter get _mapsImporter => GoogleMapsLinkImporter(
-        geocoder: _placeGeocoder,
-        places: _placesClient,
-      );
+  GoogleMapsLinkImporter get _mapsImporter =>
+      GoogleMapsLinkImporter(geocoder: _placeGeocoder, places: _placesClient);
+
   /// Si el usuario eligió/quitó categorías a mano, no sobrescribir la sugerencia.
   bool _categoriesUserTouched = false;
   bool _categoryWasAutoSuggested = false;
   bool _categoriesUnavailable = false;
   bool _reloadingCategories = false;
+
   /// Tras bootstrap: cualquier toque / cambio marca sucio y salir confirma.
   final FormDirtyTracker _formDirty = FormDirtyTracker();
 
   bool get _isEditing => _editSaveId != null || _editSiteId != null;
-  bool get _isStaffSiteEdit =>
-      _editSaveId == null && _editSiteId != null;
+  bool get _isStaffSiteEdit => _editSaveId == null && _editSiteId != null;
 
   void _markDirty() => _formDirty.markDirty();
 
@@ -180,8 +187,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
     final lat = _lat;
     final lng = _lng;
     final city = _selectedCity?.name;
-    if ((lat == null || lng == null) &&
-        (city == null || city.trim().isEmpty)) {
+    if ((lat == null || lng == null) && (city == null || city.trim().isEmpty)) {
       return false;
     }
     final creating = _editSaveId == null && _editSiteId == null;
@@ -200,8 +206,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
     try {
       final p = await ref.read(profileRepositoryProvider).fetchCurrent();
       return SavePolicies.clampDuplicateSearchRadiusM(
-        p?.duplicateSearchRadiusM ??
-            SavePolicies.defaultDuplicateSearchRadiusM,
+        p?.duplicateSearchRadiusM ?? SavePolicies.defaultDuplicateSearchRadiusM,
       );
     } catch (_) {
       return SavePolicies.defaultDuplicateSearchRadiusM;
@@ -364,8 +369,9 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
       }
       return active;
     } catch (_) {
-      final cats =
-          await ref.read(categoriesProvider.notifier).reloadFromNetwork();
+      final cats = await ref
+          .read(categoriesProvider.notifier)
+          .reloadFromNetwork();
       return cats.where((c) => c.isActive).toList();
     }
   }
@@ -382,8 +388,9 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
       setState(() => _categoriesUnavailable = false);
     }
     try {
-      final cats =
-          await ref.read(categoriesProvider.notifier).reloadFromNetwork();
+      final cats = await ref
+          .read(categoriesProvider.notifier)
+          .reloadFromNetwork();
       if (!mounted) return;
       final active = cats.where((c) => c.isActive).toList();
       setState(() => _applyCategories(active));
@@ -433,6 +440,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
         setState(() {
           _editSaveId = s.id;
           _editSiteId = s.siteId;
+          _isCatalogSite = s.isCatalogSite;
           _isPublic = s.isPublic;
           _loadedIsPublic = s.isPublic;
           _isPhysical = s.isPhysicalPlace;
@@ -463,18 +471,16 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
           if (_socialLinks.isEmpty &&
               (s.sourceUrl?.trim().isNotEmpty ?? false)) {
             _socialLinks.add(
-              SocialLinkDraft(
-                url: s.sourceUrl!,
-                network: s.sourceNetwork,
-              ),
+              SocialLinkDraft(url: s.sourceUrl!, network: s.sourceNetwork),
             );
           }
           _openExtras.addAll(_SaveExtra.values);
           _loadingCats = false;
         });
       } else if (siteIdOnly != null) {
-        final data =
-            await widget.savesRepository.loadSiteForStaffEdit(siteIdOnly);
+        final data = await widget.savesRepository.loadSiteForStaffEdit(
+          siteIdOnly,
+        );
         if (!mounted) return;
         _nameCtrl.text = data.name == 'Sin nombre' ? '' : data.name;
         _addressCtrl.text = data.addressLine ?? '';
@@ -484,12 +490,12 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
           department: data.department,
           city: data.city,
         );
-        final links =
-            await widget.savesRepository.listSocialLinks(data.siteId);
+        final links = await widget.savesRepository.listSocialLinks(data.siteId);
         if (!mounted) return;
         setState(() {
           _editSaveId = null;
           _editSiteId = data.siteId;
+          _isCatalogSite = data.isCatalogSite;
           _isPublic = data.isPublic;
           _loadedIsPublic = data.isPublic;
           _isPhysical = data.isPhysicalPlace;
@@ -648,16 +654,16 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
         context,
         !hasPin
             ? (Env.hasGoogleMapsKey
-                ? context.l10n.saveMapsNeedExactPin
-                : context.l10n.saveMapsNeedGoogleKey)
+                  ? context.l10n.saveMapsNeedExactPin
+                  : context.l10n.saveMapsNeedGoogleKey)
             : !result.hasExactPin && result.hasCoords
-                ? context.l10n.saveMapsApproxPin
-                : (_cityCtrl.text.trim().isNotEmpty
-                    ? context.l10n.saveLocationAppliedNamed(
-                        _nameCtrl.text.trim(),
-                        _cityCtrl.text.trim(),
-                      )
-                    : context.l10n.saveMapsNeedCity),
+            ? context.l10n.saveMapsApproxPin
+            : (_cityCtrl.text.trim().isNotEmpty
+                  ? context.l10n.saveLocationAppliedNamed(
+                      _nameCtrl.text.trim(),
+                      _cityCtrl.text.trim(),
+                    )
+                  : context.l10n.saveMapsNeedCity),
         error: !hasPin,
       );
     } catch (e) {
@@ -766,11 +772,11 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
   }
 
   bool get _hasFormLocation => SavePolicies.hasLocation(
-        city: _selectedCity?.name,
-        addressLine: _addressCtrl.text,
-        latitude: _lat,
-        longitude: _lng,
-      );
+    city: _selectedCity?.name,
+    addressLine: _addressCtrl.text,
+    latitude: _lat,
+    longitude: _lng,
+  );
 
   Future<void> _tryFillLocationFromHint(SocialPlaceHint hint) async {
     final name = hint.suggestedPlaceName;
@@ -804,18 +810,13 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
   }
 
   String get _categoryHaystack => [
-        _nameCtrl.text,
-        _cityCtrl.text,
-        _deptCtrl.text,
-        _addressCtrl.text,
-        _mapsCtrl.text,
-        for (final l in _socialLinks) ...[
-          l.title,
-          l.description,
-          l.network,
-          l.url,
-        ],
-      ].whereType<String>().join(' ');
+    _nameCtrl.text,
+    _cityCtrl.text,
+    _deptCtrl.text,
+    _addressCtrl.text,
+    _mapsCtrl.text,
+    for (final l in _socialLinks) ...[l.title, l.description, l.network, l.url],
+  ].whereType<String>().join(' ');
 
   /// Sugiere y marca categoría según nombre / Maps; si no hay match → Otros.
   /// Solo al crear. En editar se respetan las categorías ya guardadas.
@@ -914,10 +915,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
   Future<void> _openMap() async {
     final place = await Navigator.of(context).push<GeoPlace>(
       MaterialPageRoute(
-        builder: (_) => LocationPickerPage(
-          initialLat: _lat,
-          initialLng: _lng,
-        ),
+        builder: (_) => LocationPickerPage(initialLat: _lat, initialLng: _lng),
       ),
     );
     if (place == null || !mounted) return;
@@ -1055,20 +1053,20 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
       final nav = Navigator.of(context);
       final launch = switch (chosen.action) {
         SameSiteAction.reviewPublic => SiteDetailLaunchConfig(
-            initialTabIndex: 1,
-            openReviewEditor: true,
-            reviewInitialIsPublic: true,
-            reviewSeedPhotos: seed,
-          ),
+          initialTabIndex: 1,
+          openReviewEditor: true,
+          reviewInitialIsPublic: true,
+          reviewSeedPhotos: seed,
+        ),
         SameSiteAction.journalPrivate => SiteDetailLaunchConfig(
-            initialTabIndex: 1,
-            openReviewEditor: true,
-            reviewInitialIsPublic: false,
-            reviewSeedPhotos: seed,
-          ),
+          initialTabIndex: 1,
+          openReviewEditor: true,
+          reviewInitialIsPublic: false,
+          reviewSeedPhotos: seed,
+        ),
         SameSiteAction.addFavorite => const SiteDetailLaunchConfig(
-            initialTabIndex: 0,
-          ),
+          initialTabIndex: 0,
+        ),
         _ => const SiteDetailLaunchConfig(),
       };
 
@@ -1099,7 +1097,8 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
       throw Exception('empty image');
     }
     final rawExt = p.extension(picked.path).replaceFirst('.', '').toLowerCase();
-    final ext = (rawExt == 'png' ||
+    final ext =
+        (rawExt == 'png' ||
             rawExt == 'webp' ||
             rawExt == 'heic' ||
             rawExt == 'jpg' ||
@@ -1164,7 +1163,11 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
         client: ref.read(supabaseClientProvider),
       );
       if (!mounted) return;
-      AppToast.show(context, context.l10n.savePhotoUploadPartialFail, error: true);
+      AppToast.show(
+        context,
+        context.l10n.savePhotoUploadPartialFail,
+        error: true,
+      );
     }
   }
 
@@ -1179,11 +1182,14 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
 
     setState(() => _cameraBusy = true);
     try {
-      final fix =
-          await ref.read(deviceLocationProvider).tryQuickFix();
+      final fix = await ref.read(deviceLocationProvider).tryQuickFix();
       if (!mounted) return;
       if (fix == null) {
-        AppToast.show(context, context.l10n.saveCameraNeedLocation, error: true);
+        AppToast.show(
+          context,
+          context.l10n.saveCameraNeedLocation,
+          error: true,
+        );
         return;
       }
 
@@ -1193,12 +1199,14 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
         _useExactPin = true;
       });
 
-      unawaited(_enrichLocationFromCoords(
-        fix.lat,
-        fix.lng,
-        showToast: true,
-        checkDuplicate: true,
-      ));
+      unawaited(
+        _enrichLocationFromCoords(
+          fix.lat,
+          fix.lng,
+          showToast: true,
+          checkDuplicate: true,
+        ),
+      );
     } finally {
       if (mounted) setState(() => _cameraBusy = false);
     }
@@ -1258,7 +1266,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
       final moderation = ref.read(moderationRepositoryProvider);
       final photos = await moderation.listSitePhotos(siteId);
       final urls = await moderation.signedPhotoUrlsParallel(
-        photos.map((ph) => (id: ph.id, storagePath: ph.storagePath)),
+        photos.map((ph) => (id: ph.id, storagePath: ph.displayRef)),
       );
       if (!mounted) return;
       setState(() {
@@ -1312,8 +1320,39 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
         client: ref.read(supabaseClientProvider),
       );
       if (!mounted) return;
-      AppToast.show(context, context.l10n.savePhotoUploadPartialFail, error: true);
+      AppToast.show(
+        context,
+        context.l10n.savePhotoUploadPartialFail,
+        error: true,
+      );
     }
+  }
+
+  Future<void> _pasteExternalPhoto() async {
+    final siteId = _editSiteId;
+    if (siteId == null || !_isStaffSiteEdit || !_isCatalogSite) return;
+    if (_photoSlotsLeft <= 0) {
+      AppToast.show(
+        context,
+        context.l10n.savePhotoMaxReached(SavePolicies.maxPhotosPerSite),
+        error: true,
+      );
+      return;
+    }
+    await showPasteExternalPhotoDialog(
+      context: context,
+      onSubmit: (url, attribution) async {
+        await widget.savesRepository.addExternalPhotoLink(
+          siteId: siteId,
+          url: url,
+          attribution: attribution,
+        );
+        _existingPhotosLoaded = false;
+        await _ensureExistingPhotosLoaded();
+        if (!mounted) return;
+        AppToast.show(context, context.l10n.photoAdded);
+      },
+    );
   }
 
   Future<void> _submit() async {
@@ -1327,12 +1366,13 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
       AppToast.show(context, context.l10n.saveNameRequired, error: true);
       return;
     }
-    final primaryLink =
-        _socialLinks.isNotEmpty ? _socialLinks.first : null;
+    final primaryLink = _socialLinks.isNotEmpty ? _socialLinks.first : null;
     final mapsUrl = _isPhysical ? _mapsCtrl.text.trim() : '';
-    final sourceUrl = primaryLink?.url ??
+    final sourceUrl =
+        primaryLink?.url ??
         (GoogleMapsLinkImporter.looksLikeMapsUrl(mapsUrl) ? mapsUrl : null);
-    final sourceNetwork = primaryLink?.network ??
+    final sourceNetwork =
+        primaryLink?.network ??
         (GoogleMapsLinkImporter.looksLikeMapsUrl(mapsUrl)
             ? 'google_maps'
             : null);
@@ -1365,8 +1405,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
       return c.slug == CategorySuggester.defaultChildSlug ||
           c.slug == CategorySuggester.defaultParentSlug;
     });
-    final categoryIsExplicit =
-        _categoriesUserTouched && !onlyDefault;
+    final categoryIsExplicit = _categoriesUserTouched && !onlyDefault;
 
     final input = SaveDraftInput(
       name: name,
@@ -1385,8 +1424,9 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
       googlePlaceId: _isPhysical ? _googlePlaceId : null,
       useExactPin: _isPhysical && _useExactPin,
       categoryIsExplicit: categoryIsExplicit,
-      clearLocation:
-          !_isPhysical ? _hadStoredCoords : (_hadStoredCoords && (lat == null || lng == null)),
+      clearLocation: !_isPhysical
+          ? _hadStoredCoords
+          : (_hadStoredCoords && (lat == null || lng == null)),
     );
 
     final editSaveId = _editSaveId;
@@ -1396,8 +1436,9 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
     // Público → privado: validar asociaciones de otros / catálogo.
     if (editSiteId != null && _loadedIsPublic && !wantPublic) {
       try {
-        final blockers =
-            await widget.savesRepository.loadPrivacyBlockers(editSiteId);
+        final blockers = await widget.savesRepository.loadPrivacyBlockers(
+          editSiteId,
+        );
         if (blockers.blocked) {
           if (!mounted) return;
           await _showCannotMakePrivate(blockers);
@@ -1411,7 +1452,8 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
     }
 
     // Anti-dupe: crear o editar hacia/como público.
-    final shouldCheckDuplicates = _isPhysical &&
+    final shouldCheckDuplicates =
+        _isPhysical &&
         ((lat != null && lng != null) ||
             (_selectedCity?.name.trim().isNotEmpty ?? false)) &&
         ((editSaveId == null && editSiteId == null) || wantPublic);
@@ -1429,10 +1471,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
           radiusM: radiusM,
         );
         if (dupes.isNotEmpty && mounted) {
-          final chosen = await _askDuplicate(
-            dupes,
-            allowCreateAnyway: true,
-          );
+          final chosen = await _askDuplicate(dupes, allowCreateAnyway: true);
           if (chosen == null) return;
           if (chosen.action == SameSiteAction.addFavorite ||
               chosen.action == SameSiteAction.reviewPublic ||
@@ -1505,9 +1544,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
           if (res.statusCode >= 200 &&
               res.statusCode < 300 &&
               res.bodyBytes.isNotEmpty) {
-            _pendingPhotos.add(
-              _PendingPhoto(bytes: res.bodyBytes, ext: 'jpg'),
-            );
+            _pendingPhotos.add(_PendingPhoto(bytes: res.bodyBytes, ext: 'jpg'));
           }
         } catch (_) {}
       }
@@ -1569,15 +1606,19 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
       if (saved != null) {
         try {
           if (saved.status == SiteStatus.complete) {
-            await ref.read(draftReminderServiceProvider).cancelForSave(saved.id);
+            await ref
+                .read(draftReminderServiceProvider)
+                .cancelForSave(saved.id);
           } else {
-            await ref.read(draftReminderServiceProvider).scheduleForSave(
-              saveId: saved.id,
-              title: saved.siteName,
-              city: saved.city,
-              department: saved.department,
-              coverStoragePath: saved.coverStoragePath,
-            );
+            await ref
+                .read(draftReminderServiceProvider)
+                .scheduleForSave(
+                  saveId: saved.id,
+                  title: saved.siteName,
+                  city: saved.city,
+                  department: saved.department,
+                  coverStoragePath: saved.coverStoragePath,
+                );
           }
         } catch (e, st) {
           ClientDebugLog.reportAsync(
@@ -1623,7 +1664,8 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
         ref.invalidate(siteFichaProvider(resultSiteId));
       }
       final l10n = context.l10n;
-      final isPublicResult = saved?.isPublic ??
+      final isPublicResult =
+          saved?.isPublic ??
           (input.isPhysicalPlace && input.isPublic && _hasFormLocation);
       await showAppConfirmDialog<bool>(
         context: context,
@@ -1702,11 +1744,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
       title: l10n.privacyBlockTitle,
       body: reason,
       actions: [
-        AppConfirmAction(
-          label: l10n.actionDone,
-          value: true,
-          isPrimary: true,
-        ),
+        AppConfirmAction(label: l10n.actionDone, value: true, isPrimary: true),
       ],
     );
   }
@@ -1714,8 +1752,9 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
   Future<void> _onPublicVisibilityChanged(bool v) async {
     if (!v && _loadedIsPublic && _editSiteId != null) {
       try {
-        final blockers =
-            await widget.savesRepository.loadPrivacyBlockers(_editSiteId!);
+        final blockers = await widget.savesRepository.loadPrivacyBlockers(
+          _editSiteId!,
+        );
         if (blockers.blocked) {
           if (!mounted) return;
           await _showCannotMakePrivate(blockers);
@@ -1792,11 +1831,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
     final clearBtn = clearable != null && clearable.text.isNotEmpty
         ? IconButton(
             tooltip: context.l10n.actionClear,
-            icon: Icon(
-              Icons.cancel_rounded,
-              size: 20,
-              color: AppColors.muted,
-            ),
+            icon: Icon(Icons.cancel_rounded, size: 20, color: AppColors.muted),
             onPressed: () {
               clearable.clear();
               setState(() {});
@@ -1900,9 +1935,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
             children: [
               SiteLookCover(
                 imageUrl: _pendingMapImageUrl,
-                categoryNames: [
-                  for (final c in _selectedCategories) c.nameEs,
-                ],
+                categoryNames: [for (final c in _selectedCategories) c.nameEs],
               ),
               Align(
                 alignment: Alignment.bottomLeft,
@@ -1932,18 +1965,21 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
     return TextField(
       key: WidgetKeys.saveMapsField,
       controller: _mapsCtrl,
-      decoration: _dec(
-        l10n.saveMapsPasteLabel,
-        hint: l10n.saveLocationSearchHint,
-        helper: l10n.saveMapsPasteHelper,
-      ).copyWith(
-        suffixIcon: FieldActionIcon(
-          icon: Icons.content_paste,
-          tooltip: l10n.actionPaste,
-          loading: _importingMaps,
-          onPressed: (_saving || _importingMaps) ? null : _pasteMapsAndImport,
-        ),
-      ),
+      decoration:
+          _dec(
+            l10n.saveMapsPasteLabel,
+            hint: l10n.saveLocationSearchHint,
+            helper: l10n.saveMapsPasteHelper,
+          ).copyWith(
+            suffixIcon: FieldActionIcon(
+              icon: Icons.content_paste,
+              tooltip: l10n.actionPaste,
+              loading: _importingMaps,
+              onPressed: (_saving || _importingMaps)
+                  ? null
+                  : _pasteMapsAndImport,
+            ),
+          ),
       keyboardType: TextInputType.url,
       textInputAction: TextInputAction.done,
       onSubmitted: (_) {
@@ -1997,9 +2033,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
       contentPadding: EdgeInsets.zero,
       title: Text(l10n.saveExactPinSwitch),
       subtitle: Text(
-        _useExactPin
-            ? l10n.saveExactPinMapsPin
-            : l10n.saveExactPinMapsPlace,
+        _useExactPin ? l10n.saveExactPinMapsPin : l10n.saveExactPinMapsPlace,
       ),
       secondary: _infoTip(l10n.saveInfoExactPin),
       value: _useExactPin,
@@ -2023,10 +2057,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
       return _sectionCard(
         title: l10n.saveLocationSection,
         info: l10n.saveInfoLocation,
-        children: [
-          _mapPreview(l10n),
-          _exactPinSwitch(l10n),
-        ],
+        children: [_mapPreview(l10n), _exactPinSwitch(l10n)],
       );
     }
 
@@ -2038,10 +2069,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
         TabBar(
           controller: tabs,
           tabs: [
-            Tab(
-              key: WidgetKeys.saveLocationTabMap,
-              text: l10n.saveLocationMap,
-            ),
+            Tab(key: WidgetKeys.saveLocationTabMap, text: l10n.saveLocationMap),
             Tab(
               key: WidgetKeys.saveLocationTabLink,
               text: l10n.saveLocationGoogleLink,
@@ -2066,12 +2094,11 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
   Widget _nameAndVisibilitySection(AppLocalizations l10n) {
     final canPublish = _isPhysical && _hasFormLocation;
     final isPublicOn = _isPublic && canPublish;
-    final publicColor =
-        isPublicOn ? AppColors.success : AppColors.purple;
+    final publicColor = isPublicOn ? AppColors.success : AppColors.purple;
     final publicSwitchTip = !canPublish
         ? (!_isPhysical
-            ? l10n.savePublicNonPhysical
-            : l10n.savePublicNeedLocation)
+              ? l10n.savePublicNonPhysical
+              : l10n.savePublicNeedLocation)
         : (isPublicOn ? l10n.savePublicVisible : l10n.saveMakePublic);
 
     return _sectionCard(
@@ -2267,9 +2294,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
               padding: const EdgeInsets.only(bottom: 8),
               child: SocialLinkPreviewCard(
                 draft: d,
-                loading: _addingSocial &&
-                    d.title == null &&
-                    d.imageUrl == null,
+                loading: _addingSocial && d.title == null && d.imageUrl == null,
                 onRemove: _saving
                     ? null
                     : () => setState(() => _socialLinks.remove(d)),
@@ -2311,16 +2336,15 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
             runSpacing: 6,
             children: _selectedCategories.map((c) {
               final parent = _parentName(c);
-              final label =
-                  parent.isEmpty ? c.nameEs : '$parent › ${c.nameEs}';
+              final label = parent.isEmpty ? c.nameEs : '$parent › ${c.nameEs}';
               return InputChip(
                 label: Text(label),
                 onDeleted: _saving
                     ? null
                     : () => setState(() {
-                          _markCategoriesTouched();
-                          _selectedCategoryIds.remove(c.id);
-                        }),
+                        _markCategoriesTouched();
+                        _selectedCategoryIds.remove(c.id);
+                      }),
               );
             }).toList(),
           ),
@@ -2344,8 +2368,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
           SizedBox(height: 4),
           ..._filteredCategories.map((c) {
             final parent = _parentName(c);
-            final label =
-                parent.isEmpty ? c.nameEs : '$parent › ${c.nameEs}';
+            final label = parent.isEmpty ? c.nameEs : '$parent › ${c.nameEs}';
             final selected = _selectedCategoryIds.contains(c.id);
             return CheckboxListTile(
               dense: true,
@@ -2374,10 +2397,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
     );
   }
 
-  Widget _photoThumb({
-    required Widget child,
-    required VoidCallback onRemove,
-  }) {
+  Widget _photoThumb({required Widget child, required VoidCallback onRemove}) {
     return Stack(
       clipBehavior: Clip.none,
       children: [
@@ -2406,12 +2426,15 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
   }
 
   Widget _photoSection(AppLocalizations l10n) {
-    if (_editSiteId != null && !_existingPhotosLoaded && !_loadingExistingPhotos) {
+    if (_editSiteId != null &&
+        !_existingPhotosLoaded &&
+        !_loadingExistingPhotos) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         unawaited(_ensureExistingPhotosLoaded());
       });
     }
-    final slotsLeft = SavePolicies.maxPhotosPerSite -
+    final slotsLeft =
+        SavePolicies.maxPhotosPerSite -
         _existingPhotos.length -
         _pendingPhotos.length;
     return _sectionCard(
@@ -2467,16 +2490,26 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
                   height: 72,
                   errorBuilder: (_, _, _) => ColoredBox(
                     color: AppColors.surfaceElevated,
-                    child: Icon(Icons.broken_image_outlined, color: AppColors.muted),
+                    child: Icon(
+                      Icons.broken_image_outlined,
+                      color: AppColors.muted,
+                    ),
                   ),
                 ),
               ),
-            if (slotsLeft > 0)
+            if (slotsLeft > 0) ...[
               OutlinedButton.icon(
                 onPressed: _saving ? null : _pickPhoto,
                 icon: Icon(Icons.add_photo_alternate_outlined),
                 label: Text(l10n.saveAddPhoto),
               ),
+              if (_isStaffSiteEdit && _isCatalogSite)
+                OutlinedButton.icon(
+                  onPressed: _saving ? null : _pasteExternalPhoto,
+                  icon: Icon(Icons.link),
+                  label: Text(l10n.photoPasteLinkTooltip),
+                ),
+            ],
           ],
         ),
       ],
@@ -2548,8 +2581,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
                           children: [
                             FilledButton(
                               key: WidgetKeys.saveSubmit,
-                              onPressed:
-                                  (_saving || !nameOk) ? null : _submit,
+                              onPressed: (_saving || !nameOk) ? null : _submit,
                               style: FilledButton.styleFrom(
                                 minimumSize: const Size.fromHeight(52),
                                 backgroundColor: dupeWarning

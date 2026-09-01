@@ -1,4 +1,5 @@
 import '../../../core/l10n/display_defaults.dart';
+import '../../../core/photos/external_photo_url.dart';
 import '../../auth/domain/profile_public_display.dart';
 
 class SitePhoto {
@@ -6,6 +7,9 @@ class SitePhoto {
     required this.id,
     required this.siteId,
     required this.storagePath,
+    this.externalUrl,
+    this.source = 'user',
+    this.attribution,
     this.uploadedBy,
     this.uploaderName,
     this.createdAt,
@@ -13,10 +17,22 @@ class SitePhoto {
 
   final String id;
   final String siteId;
+
+  /// Ruta en bucket `site-photos`. Vacío si la foto es un enlace externo.
   final String storagePath;
+  final String? externalUrl;
+  final String source;
+  final String? attribution;
   final String? uploadedBy;
   final String? uploaderName;
   final DateTime? createdAt;
+
+  bool get isExternalLink =>
+      source == 'external_link' || isExternalPhotoUrl(externalUrl);
+
+  /// URL http(s) o ruta de Storage para firmar / mostrar.
+  String get displayRef =>
+      photoDisplayRef(storagePath: storagePath, externalUrl: externalUrl) ?? '';
 
   factory SitePhoto.fromJson(Map<String, dynamic> json) {
     final profiles = json['profiles'];
@@ -28,7 +44,10 @@ class SitePhoto {
     return SitePhoto(
       id: json['id'] as String,
       siteId: json['site_id'] as String,
-      storagePath: json['storage_path'] as String,
+      storagePath: json['storage_path'] as String? ?? '',
+      externalUrl: json['external_url'] as String?,
+      source: json['source'] as String? ?? 'user',
+      attribution: json['attribution'] as String?,
       uploadedBy: json['uploaded_by'] as String?,
       uploaderName: (name != null && name.isNotEmpty) ? name : null,
       createdAt: createdRaw == null ? null : DateTime.tryParse(createdRaw),
@@ -61,6 +80,7 @@ class ContentReport {
   final String reporterName;
   final String? photoPath;
   final String? siteName;
+
   /// Vista previa del cuerpo (p. ej. reseña reportada).
   final String? snippet;
 
@@ -74,11 +94,13 @@ class ContentReport {
       status: json['status'] as String? ?? 'open',
       createdAt: DateTime.parse(json['created_at'] as String),
       reporterId: json['reporter_id'] as String,
-      reporterName: (json['reporter_name'] as String?) ??
-          DisplayDefaults.userDisplayName,
+      reporterName:
+          (json['reporter_name'] as String?) ?? DisplayDefaults.userDisplayName,
       photoPath: json['photo_path'] as String?,
       siteName: json['site_name'] as String?,
-      snippet: (rawSnippet != null && rawSnippet.isNotEmpty) ? rawSnippet : null,
+      snippet: (rawSnippet != null && rawSnippet.isNotEmpty)
+          ? rawSnippet
+          : null,
     );
   }
 }

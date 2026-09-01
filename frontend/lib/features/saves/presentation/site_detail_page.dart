@@ -38,6 +38,7 @@ import '../data/site_ficha.dart';
 import '../data/social_link_models.dart';
 import 'favorite_heart_button.dart';
 import 'save_place_page.dart';
+import 'paste_external_photo_dialog.dart';
 import 'site_look_cover.dart';
 import 'site_notif_test_section.dart';
 import 'site_reviews_tab.dart';
@@ -107,13 +108,9 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
     final path = _coverStoragePath?.trim();
     if (path != null && path.isNotEmpty) {
       for (final p in _photos) {
-        if (p.storagePath == path) return p;
+        if (p.displayRef == path || p.storagePath == path) return p;
       }
-      return SitePhoto(
-        id: path,
-        siteId: widget.siteId,
-        storagePath: path,
-      );
+      return SitePhoto(id: path, siteId: widget.siteId, storagePath: path);
     }
     return null;
   }
@@ -122,7 +119,9 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
     final photo = _headerPhoto;
     if (photo != null) {
       return _photoUrls[photo.id] ??
+          _photoUrls[photo.displayRef] ??
           _photoUrls[photo.storagePath] ??
+          SignedUrlCache.instance.get(photo.displayRef) ??
           SignedUrlCache.instance.get(photo.storagePath);
     }
     final path = _coverStoragePath?.trim();
@@ -154,13 +153,7 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
     if (path == null || path.isEmpty) return;
     final url = SignedUrlCache.instance.get(path);
     _coverStoragePath = path;
-    _photos = [
-      SitePhoto(
-        id: path,
-        siteId: widget.siteId,
-        storagePath: path,
-      ),
-    ];
+    _photos = [SitePhoto(id: path, siteId: widget.siteId, storagePath: path)];
     if (url != null) _photoUrls[path] = url;
     _photosLoading = false;
   }
@@ -206,7 +199,8 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
       if (!mounted) return;
       setState(() {
         _ficha = ficha.copyWithMeta(
-          estimatedPriceAmount: ficha.estimatedPriceAmount ??
+          estimatedPriceAmount:
+              ficha.estimatedPriceAmount ??
               widget.initialHit?.estimatedPriceAmount,
           currencyCode: widget.initialHit?.currencyCode ?? ficha.currencyCode,
           distanceKm: ficha.distanceKm ?? widget.initialHit?.distanceKm,
@@ -247,7 +241,7 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
       final seededPath = _coverStoragePath?.trim();
       if (coverId == null && seededPath != null && seededPath.isNotEmpty) {
         for (final p in photos) {
-          if (p.storagePath == seededPath) {
+          if (p.displayRef == seededPath || p.storagePath == seededPath) {
             coverId = p.id;
             break;
           }
@@ -257,13 +251,13 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
       if (coverId != null) {
         for (final p in photos) {
           if (p.id == coverId) {
-            coverPath = p.storagePath;
+            coverPath = p.displayRef;
             break;
           }
         }
       }
       final urls = await moderation.signedPhotoUrlsParallel(
-        photos.map((p) => (id: p.id, storagePath: p.storagePath)),
+        photos.map((p) => (id: p.id, storagePath: p.displayRef)),
       );
       if (!mounted) return;
       setState(() {
@@ -311,11 +305,7 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
       if (fallback != null && fallback.isNotEmpty) {
         setState(() {
           _socialLinks = [
-            SiteSocialLink(
-              id: 'legacy',
-              siteId: widget.siteId,
-              url: fallback,
-            ),
+            SiteSocialLink(id: 'legacy', siteId: widget.siteId, url: fallback),
           ];
         });
       } else {
@@ -328,11 +318,7 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
       if (fallback != null && fallback.isNotEmpty) {
         setState(() {
           _socialLinks = [
-            SiteSocialLink(
-              id: 'legacy',
-              siteId: widget.siteId,
-              url: fallback,
-            ),
+            SiteSocialLink(id: 'legacy', siteId: widget.siteId, url: fallback),
           ];
         });
       }
@@ -343,8 +329,7 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
     final ficha = _ficha;
     if (ficha == null || !_canEditSite) return;
     final save = ficha.ownSave;
-    final editSiteOnly =
-        save == null && (ficha.isCreatorOf(_uid) || _isStaff);
+    final editSiteOnly = save == null && (ficha.isCreatorOf(_uid) || _isStaff);
     final result = await Navigator.of(context).push<Object?>(
       MaterialPageRoute(
         builder: (_) => SavePlacePage(
@@ -356,7 +341,9 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
     );
     if (result != null && mounted) {
       _outcome = SiteDetailOutcome.updated;
-      await ref.read(siteFichaProvider(widget.siteId).notifier).refresh(force: true);
+      await ref
+          .read(siteFichaProvider(widget.siteId).notifier)
+          .refresh(force: true);
       await _load();
     }
   }
@@ -505,9 +492,10 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
 
     setState(() => _photosBusy = true);
     try {
-      final realCount =
-          _photos.where((p) => p.id != p.storagePath).length;
-      await ref.read(savesRepositoryProvider).uploadPhoto(
+      final realCount = _photos.where((p) => p.id != p.storagePath).length;
+      await ref
+          .read(savesRepositoryProvider)
+          .uploadPhoto(
             siteId: widget.siteId,
             file: File(picked.path),
             knownCount: realCount,
@@ -522,6 +510,27 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
     } finally {
       if (mounted) setState(() => _photosBusy = false);
     }
+  }
+
+  Future<void> _addExternalPhoto() async {
+    final ficha = _ficha;
+    if (ficha == null || !_isStaff || !ficha.isCatalogSite) return;
+    await showPasteExternalPhotoDialog(
+      context: context,
+      onSubmit: (url, attribution) async {
+        await ref
+            .read(savesRepositoryProvider)
+            .addExternalPhotoLink(
+              siteId: widget.siteId,
+              url: url,
+              attribution: attribution,
+            );
+        ref.invalidate(siteLookProvider(widget.siteId));
+        await _loadPhotos();
+        if (!mounted) return;
+        AppToast.show(context, context.l10n.photoAdded);
+      },
+    );
   }
 
   Future<void> _deletePhoto(SitePhoto photo) async {
@@ -585,10 +594,9 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
     );
     if (ok != true) return;
     try {
-      await ref.read(moderationRepositoryProvider).reportPhoto(
-            photoId: photo.id,
-            reason: reasonCtrl.text,
-          );
+      await ref
+          .read(moderationRepositoryProvider)
+          .reportPhoto(photoId: photo.id, reason: reasonCtrl.text);
       if (!mounted) return;
       AppToast.show(context, context.l10n.photoReportSent);
     } catch (e) {
@@ -612,14 +620,13 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
     if (_coverPhotoId == photo.id) return;
     setState(() => _photosBusy = true);
     try {
-      await ref.read(savesRepositoryProvider).setSiteCoverPhoto(
-            siteId: widget.siteId,
-            photoId: photo.id,
-          );
+      await ref
+          .read(savesRepositoryProvider)
+          .setSiteCoverPhoto(siteId: widget.siteId, photoId: photo.id);
       if (!mounted) return;
       setState(() {
         _coverPhotoId = photo.id;
-        _coverStoragePath = photo.storagePath;
+        _coverStoragePath = photo.displayRef;
       });
       ref.invalidate(siteLookProvider(widget.siteId));
       ref.invalidate(mySavesProvider);
@@ -730,7 +737,8 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
                     SiteLookCover(
                       siteId: widget.siteId,
                       categoryNames: ficha.categoryNames,
-                      coverStoragePath: _headerPhoto?.storagePath ??
+                      coverStoragePath:
+                          _headerPhoto?.displayRef ??
                           _coverStoragePath ??
                           ficha.ownSave?.coverStoragePath ??
                           widget.initialHit?.coverStoragePath,
@@ -794,60 +802,64 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
               child: _loading && ficha == null
                   ? Center(child: CircularProgressIndicator())
                   : _error != null && ficha == null
-                ? Center(
-                    child: AppRetryCallout(onRetry: _load),
-                  )
-                : TabBarView(
-                    controller: _tabs,
-                    children: [
-                      _InfoTab(
-                        ficha: ficha!,
-                        photos: _photos,
-                        photoUrls: _photoUrls,
-                        photosLoading: _photosLoading,
-                        photosBusy: _photosBusy,
-                        socialLinks: _socialLinks,
-                        isStaff: _isStaff,
-                        staffRoleLabel:
-                            _isStaff ? _staffRoleLabel(context) : null,
-                        onAddPhoto:
-                            (ficha.isOwn ||
-                                    ficha.isCreatorOf(_uid) ||
-                                    _isStaff)
-                                ? _addPhoto
-                                : null,
-                        onPhotoMenu: _onPhotoMenu,
-                        canSetCover: _canSetCover,
-                        coverPhotoId: _coverPhotoId,
-                        onOpenLink: _openUrl,
-                        onOpenPlaceOnMaps: _canOpenMaps(ficha)
-                            ? () => _openPlaceOnMaps(ficha)
-                            : null,
-                        onOpenDirectionsOnMaps: _canOpenMaps(ficha)
-                            ? () => _openDirectionsOnMaps(ficha)
-                            : null,
-                        coverStoragePath: _coverStoragePath ??
-                            ficha.ownSave?.coverStoragePath ??
-                            widget.initialHit?.coverStoragePath,
-                      ),
-                      SiteReviewsTab(
-                        siteId: widget.siteId,
-                        siteName: ficha.name,
-                        siteIsPublic: ficha.isPublic,
-                        isStaff: _isStaff,
-                        staffRoleLabel:
-                            _isStaff ? _staffRoleLabel(context) : null,
-                        autoOpenEditor: widget.launch.openReviewEditor,
-                        initialIsPublic: widget.launch.reviewInitialIsPublic,
-                        seedPhotos: widget.launch.reviewSeedPhotos,
-                      ),
-                      _TraceabilityTab(ficha: ficha),
-                    ],
-                  ),
-              ),
-            ],
-          ),
+                  ? Center(child: AppRetryCallout(onRetry: _load))
+                  : TabBarView(
+                      controller: _tabs,
+                      children: [
+                        _InfoTab(
+                          ficha: ficha!,
+                          photos: _photos,
+                          photoUrls: _photoUrls,
+                          photosLoading: _photosLoading,
+                          photosBusy: _photosBusy,
+                          socialLinks: _socialLinks,
+                          isStaff: _isStaff,
+                          staffRoleLabel: _isStaff
+                              ? _staffRoleLabel(context)
+                              : null,
+                          onAddPhoto:
+                              (ficha.isOwn ||
+                                  ficha.isCreatorOf(_uid) ||
+                                  _isStaff)
+                              ? _addPhoto
+                              : null,
+                          onPastePhotoLink: (_isStaff && ficha.isCatalogSite)
+                              ? _addExternalPhoto
+                              : null,
+                          onPhotoMenu: _onPhotoMenu,
+                          canSetCover: _canSetCover,
+                          coverPhotoId: _coverPhotoId,
+                          onOpenLink: _openUrl,
+                          onOpenPlaceOnMaps: _canOpenMaps(ficha)
+                              ? () => _openPlaceOnMaps(ficha)
+                              : null,
+                          onOpenDirectionsOnMaps: _canOpenMaps(ficha)
+                              ? () => _openDirectionsOnMaps(ficha)
+                              : null,
+                          coverStoragePath:
+                              _coverStoragePath ??
+                              ficha.ownSave?.coverStoragePath ??
+                              widget.initialHit?.coverStoragePath,
+                        ),
+                        SiteReviewsTab(
+                          siteId: widget.siteId,
+                          siteName: ficha.name,
+                          siteIsPublic: ficha.isPublic,
+                          isStaff: _isStaff,
+                          staffRoleLabel: _isStaff
+                              ? _staffRoleLabel(context)
+                              : null,
+                          autoOpenEditor: widget.launch.openReviewEditor,
+                          initialIsPublic: widget.launch.reviewInitialIsPublic,
+                          seedPhotos: widget.launch.reviewSeedPhotos,
+                        ),
+                        _TraceabilityTab(ficha: ficha),
+                      ],
+                    ),
+            ),
+          ],
         ),
+      ),
     );
   }
 }
@@ -867,6 +879,7 @@ class _InfoTab extends ConsumerWidget {
     this.isStaff = false,
     this.staffRoleLabel,
     this.onAddPhoto,
+    this.onPastePhotoLink,
     this.onOpenPlaceOnMaps,
     this.onOpenDirectionsOnMaps,
     this.coverStoragePath,
@@ -885,6 +898,7 @@ class _InfoTab extends ConsumerWidget {
   final bool isStaff;
   final String? staffRoleLabel;
   final VoidCallback? onAddPhoto;
+  final VoidCallback? onPastePhotoLink;
   final VoidCallback? onOpenPlaceOnMaps;
   final VoidCallback? onOpenDirectionsOnMaps;
   final String? coverStoragePath;
@@ -895,8 +909,8 @@ class _InfoTab extends ConsumerWidget {
     final distanceUnit = ref.watch(preferredDistanceUnitProvider);
     final location = ficha.locationLine;
     final legacySource = ficha.sourceUrl?.trim();
-    final showLegacySource = (legacySource != null &&
-            legacySource.isNotEmpty) &&
+    final showLegacySource =
+        (legacySource != null && legacySource.isNotEmpty) &&
         socialLinks.every((l) => l.url != legacySource);
 
     return ListView(
@@ -909,23 +923,18 @@ class _InfoTab extends ConsumerWidget {
             decoration: BoxDecoration(
               color: AppColors.primary.withValues(alpha: 0.14),
               borderRadius: BorderRadius.circular(10),
-              border:
-                  Border.all(color: AppColors.primary.withValues(alpha: 0.35)),
+              border: Border.all(
+                color: AppColors.primary.withValues(alpha: 0.35),
+              ),
             ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(
-                  Icons.shield_outlined,
-                  size: 18,
-                  color: AppColors.primary,
-                ),
+                Icon(Icons.shield_outlined, size: 18, color: AppColors.primary),
                 SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    l10n.staffModeBanner(
-                      staffRoleLabel ?? l10n.staffRoleAdmin,
-                    ),
+                    l10n.staffModeBanner(staffRoleLabel ?? l10n.staffRoleAdmin),
                     style: TextStyle(
                       fontSize: 12,
                       height: 1.35,
@@ -959,8 +968,7 @@ class _InfoTab extends ConsumerWidget {
             if (ficha.isOwn && ficha.ownSave != null)
               _Chip(label: ficha.ownSave!.status.label(l10n)),
             if (ficha.isOwn) _Chip(label: l10n.labelOwn),
-            if (!ficha.isPhysicalPlace)
-              _Chip(label: l10n.labelCard),
+            if (!ficha.isPhysicalPlace) _Chip(label: l10n.labelCard),
           ],
         ),
         if (ficha.isOwn &&
@@ -984,6 +992,7 @@ class _InfoTab extends ConsumerWidget {
           canSetCover: canSetCover,
           coverPhotoId: coverPhotoId,
           onAddPhoto: onAddPhoto,
+          onPastePhotoLink: onPastePhotoLink,
           onPhotoMenu: onPhotoMenu,
         ),
         if (location.isNotEmpty ||
@@ -993,8 +1002,8 @@ class _InfoTab extends ConsumerWidget {
           _Section(
             icon: Icons.place_outlined,
             title: l10n.siteDetailLocation,
-            trailing: (onOpenPlaceOnMaps == null &&
-                    onOpenDirectionsOnMaps == null)
+            trailing:
+                (onOpenPlaceOnMaps == null && onOpenDirectionsOnMaps == null)
                 ? null
                 : Row(
                     mainAxisSize: MainAxisSize.min,
@@ -1005,8 +1014,9 @@ class _InfoTab extends ConsumerWidget {
                           onPressed: onOpenPlaceOnMaps,
                           style: IconButton.styleFrom(
                             foregroundColor: AppColors.primary,
-                            backgroundColor:
-                                AppColors.primary.withValues(alpha: 0.12),
+                            backgroundColor: AppColors.primary.withValues(
+                              alpha: 0.12,
+                            ),
                           ),
                           icon: Icon(Icons.place_outlined),
                         ),
@@ -1016,8 +1026,9 @@ class _InfoTab extends ConsumerWidget {
                           onPressed: onOpenDirectionsOnMaps,
                           style: IconButton.styleFrom(
                             foregroundColor: AppColors.primary,
-                            backgroundColor:
-                                AppColors.primary.withValues(alpha: 0.12),
+                            backgroundColor: AppColors.primary.withValues(
+                              alpha: 0.12,
+                            ),
                           ),
                           icon: Icon(Icons.directions_outlined),
                         ),
@@ -1070,11 +1081,7 @@ class _InfoTab extends ConsumerWidget {
             icon: Icons.near_me_outlined,
             title: l10n.siteDetailDistance,
             child: Text(
-              formatDistanceFromKm(
-                l10n,
-                distanceUnit,
-                ficha.distanceKm!,
-              ),
+              formatDistanceFromKm(l10n, distanceUnit, ficha.distanceKm!),
               style: TextStyle(color: AppColors.muted),
             ),
           ),
@@ -1133,10 +1140,7 @@ class _InfoTab extends ConsumerWidget {
           _Section(
             icon: Icons.notes_outlined,
             title: l10n.siteDetailNotes,
-            child: Text(
-              ficha.notes!,
-              style: TextStyle(color: AppColors.muted),
-            ),
+            child: Text(ficha.notes!, style: TextStyle(color: AppColors.muted)),
           ),
         ],
         SizedBox(height: 24),
@@ -1166,7 +1170,8 @@ class _TraceabilityTab extends StatelessWidget {
     final createdAt = ficha.siteCreatedAt;
     final updatedAt = ficha.siteUpdatedAt;
     final ownSavedAt = ficha.ownSave?.createdAt;
-    final hasAny = creator != null ||
+    final hasAny =
+        creator != null ||
         also.isNotEmpty ||
         createdAt != null ||
         updatedAt != null ||
@@ -1310,6 +1315,7 @@ class _GallerySection extends StatelessWidget {
     this.coverPhotoId,
     required this.onPhotoMenu,
     this.onAddPhoto,
+    this.onPastePhotoLink,
   });
 
   final List<SitePhoto> photos;
@@ -1321,19 +1327,33 @@ class _GallerySection extends StatelessWidget {
   final String? coverPhotoId;
   final void Function(SitePhoto photo, String action) onPhotoMenu;
   final VoidCallback? onAddPhoto;
+  final VoidCallback? onPastePhotoLink;
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
+    final showPaste = onPastePhotoLink != null;
 
     return _Section(
       icon: Icons.photo_library_outlined,
       title: l10n.siteDetailPhotos,
-      trailing: canManage
-          ? IconButton(
-              tooltip: l10n.photoAddTooltip,
-              onPressed: busy ? null : onAddPhoto,
-              icon: Icon(Icons.add_a_photo_outlined, size: 20),
+      trailing: (canManage || showPaste)
+          ? Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (canManage)
+                  IconButton(
+                    tooltip: l10n.photoAddTooltip,
+                    onPressed: busy ? null : onAddPhoto,
+                    icon: Icon(Icons.add_a_photo_outlined, size: 20),
+                  ),
+                if (showPaste)
+                  IconButton(
+                    tooltip: l10n.photoPasteLinkTooltip,
+                    onPressed: busy ? null : onPastePhotoLink,
+                    icon: Icon(Icons.link, size: 20),
+                  ),
+              ],
             )
           : null,
       child: loading && photos.isEmpty
@@ -1348,76 +1368,89 @@ class _GallerySection extends StatelessWidget {
               ),
             )
           : photos.isEmpty
-              ? Text(
-                  canManage
-                      ? l10n.siteDetailPhotosEmptyManage
-                      : l10n.siteDetailPhotosEmpty,
-                  style: TextStyle(color: AppColors.muted),
-                )
-              : SizedBox(
-                  height: _PhotoTile.stripHeight,
-                  child: ListView.separated(
-                    scrollDirection: Axis.horizontal,
-                    clipBehavior: Clip.none,
-                    itemCount: photos.length,
-                    separatorBuilder: (_, _) => SizedBox(width: 8),
-                    itemBuilder: (context, index) {
-                      final photo = photos[index];
-                      final url = photoUrls[photo.id] ??
-                          photoUrls[photo.storagePath] ??
-                          SignedUrlCache.instance.get(photo.storagePath);
-                      String? effectiveCover = coverPhotoId;
-                      if (effectiveCover != null) {
-                        final exists = photos.any((p) => p.id == effectiveCover);
-                        if (!exists) effectiveCover = null;
+          ? Text(
+              canManage
+                  ? l10n.siteDetailPhotosEmptyManage
+                  : l10n.siteDetailPhotosEmpty,
+              style: TextStyle(color: AppColors.muted),
+            )
+          : SizedBox(
+              height: _PhotoTile.stripHeight,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                clipBehavior: Clip.none,
+                itemCount: photos.length,
+                separatorBuilder: (_, _) => SizedBox(width: 8),
+                itemBuilder: (context, index) {
+                  final photo = photos[index];
+                  final url =
+                      photoUrls[photo.id] ??
+                      photoUrls[photo.displayRef] ??
+                      photoUrls[photo.storagePath] ??
+                      SignedUrlCache.instance.get(photo.displayRef) ??
+                      SignedUrlCache.instance.get(photo.storagePath) ??
+                      (photo.isExternalLink && photo.displayRef.isNotEmpty
+                          ? photo.displayRef
+                          : null);
+                  String? effectiveCover = coverPhotoId;
+                  if (effectiveCover != null) {
+                    final exists = photos.any((p) => p.id == effectiveCover);
+                    if (!exists) effectiveCover = null;
+                  }
+                  effectiveCover ??= photos.first.id;
+                  return _PhotoTile(
+                    url: url,
+                    cacheKey: photo.id,
+                    onOpen: () {
+                      final items = <SitePhotoViewItem>[];
+                      var start = 0;
+                      for (final p in photos) {
+                        final u =
+                            photoUrls[p.id] ??
+                            photoUrls[p.displayRef] ??
+                            photoUrls[p.storagePath] ??
+                            SignedUrlCache.instance.get(p.displayRef) ??
+                            SignedUrlCache.instance.get(p.storagePath) ??
+                            (p.isExternalLink && p.displayRef.isNotEmpty
+                                ? p.displayRef
+                                : null);
+                        if (u == null || u.isEmpty) continue;
+                        if (p.id == photo.id) start = items.length;
+                        items.add(
+                          SitePhotoViewItem(
+                            id: p.id,
+                            url: u,
+                            cacheKey: p.id,
+                            uploaderName: p.uploaderName,
+                            uploadedAt: p.createdAt,
+                            attribution: p.attribution,
+                            canDelete: canManage,
+                            canSetCover: canSetCover,
+                            isCover: p.id == effectiveCover,
+                          ),
+                        );
                       }
-                      effectiveCover ??= photos.first.id;
-                      return _PhotoTile(
-                        url: url,
-                        cacheKey: photo.storagePath,
-                        onOpen: () {
-                          final items = <SitePhotoViewItem>[];
-                          var start = 0;
+                      SitePhotoViewerPage.open(
+                        context,
+                        photos: items,
+                        initialIndex: start,
+                        onMenu: (item, action) {
+                          SitePhoto? match;
                           for (final p in photos) {
-                            final u = photoUrls[p.id] ??
-                                photoUrls[p.storagePath] ??
-                                SignedUrlCache.instance.get(p.storagePath);
-                            if (u == null || u.isEmpty) continue;
-                            if (p.id == photo.id) start = items.length;
-                            items.add(
-                              SitePhotoViewItem(
-                                id: p.id,
-                                url: u,
-                                cacheKey: p.storagePath,
-                                uploaderName: p.uploaderName,
-                                uploadedAt: p.createdAt,
-                                canDelete: canManage,
-                                canSetCover: canSetCover,
-                                isCover: p.id == effectiveCover,
-                              ),
-                            );
+                            if (p.id == item.id) {
+                              match = p;
+                              break;
+                            }
                           }
-                          SitePhotoViewerPage.open(
-                            context,
-                            photos: items,
-                            initialIndex: start,
-                            onMenu: (item, action) {
-                              SitePhoto? match;
-                              for (final p in photos) {
-                                if (p.id == item.id) {
-                                  match = p;
-                                  break;
-                                }
-                              }
-                              if (match == null) return;
-                              onPhotoMenu(match, action);
-                            },
-                          );
+                          if (match == null) return;
+                          onPhotoMenu(match, action);
                         },
                       );
                     },
-                  ),
-                ),
+                  );
+                },
+              ),
+            ),
     );
   }
 }
@@ -1462,7 +1495,7 @@ class _PhotoTile extends StatelessWidget {
                   child: ColoredBox(
                     color: AppColors.surfaceElevated,
                     child: Icon(
-                      Icons.broken_image,
+                      Icons.image_not_supported_outlined,
                       color: AppColors.muted,
                     ),
                   ),
@@ -1474,10 +1507,7 @@ class _PhotoTile extends StatelessWidget {
 }
 
 class _PersonAvatar extends StatelessWidget {
-  const _PersonAvatar({
-    required this.person,
-    this.showJoinedHint = false,
-  });
+  const _PersonAvatar({required this.person, this.showJoinedHint = false});
 
   final SitePerson person;
   final bool showJoinedHint;
