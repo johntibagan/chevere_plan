@@ -65,7 +65,6 @@ class _PlansListPageState extends ConsumerState<PlansListPage> {
         ),
       ),
     );
-    await ref.read(plansProvider.notifier).refresh(force: false);
   }
 
   @override
@@ -206,15 +205,10 @@ class _PlanCard extends StatelessWidget {
                 fit: StackFit.expand,
                 children: [
                   SiteLookCover(
-                    siteId: plan.stops.isNotEmpty
-                        ? plan.stops.first.siteId
-                        : null,
-                    categoryNames: plan.stops.isNotEmpty
-                        ? plan.stops.first.categoryNames
-                        : const [],
-                    coverStoragePath: plan.stops.isNotEmpty
-                        ? plan.stops.first.coverStoragePath
-                        : null,
+                    siteId: plan.coverStop?.siteId,
+                    categoryNames:
+                        plan.coverStop?.categoryNames ?? const [],
+                    coverStoragePath: plan.coverStop?.coverStoragePath,
                   ),
                   const SiteCoverScrim(bottomOpacity: 0.8),
                   Positioned(

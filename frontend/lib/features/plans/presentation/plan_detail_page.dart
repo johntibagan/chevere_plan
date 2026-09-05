@@ -145,8 +145,15 @@ class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
   @override
   void deactivate() {
     _visitedFlushTimer?.cancel();
+    _syncPlanToList();
     unawaited(_flushVisitedChanges());
     super.deactivate();
+  }
+
+  void _syncPlanToList() {
+    final plan = _plan;
+    if (plan == null) return;
+    unawaited(ref.read(plansProvider.notifier).upsertPlan(plan));
   }
 
   bool get _canEditPlan {
@@ -400,6 +407,7 @@ class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
     if (!PlanStop.isPendingId(stop.id)) {
       _scheduleVisitedFlush();
     }
+    _syncPlanToList();
   }
 
   void _scheduleVisitedFlush() {
@@ -426,7 +434,6 @@ class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
         planId: widget.planId,
         updates: updates,
       );
-      await _invalidatePlansCache();
       if (!mounted) return;
       setState(() {
         _initialStops = [
@@ -441,6 +448,7 @@ class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
             }(),
         ];
       });
+      _syncPlanToList();
     } catch (e) {
       if (!mounted) return;
       AppToast.error(context, e, logContext: 'plan_flush_visited');
@@ -1022,13 +1030,9 @@ class _PlanHero extends StatelessWidget {
         fit: StackFit.expand,
         children: [
           SiteLookCover(
-            siteId: plan.stops.isNotEmpty ? plan.stops.first.siteId : null,
-            categoryNames: plan.stops.isNotEmpty
-                ? plan.stops.first.categoryNames
-                : const [],
-            coverStoragePath: plan.stops.isNotEmpty
-                ? plan.stops.first.coverStoragePath
-                : null,
+            siteId: plan.coverStop?.siteId,
+            categoryNames: plan.coverStop?.categoryNames ?? const [],
+            coverStoragePath: plan.coverStop?.coverStoragePath,
           ),
           DecoratedBox(
             decoration: BoxDecoration(

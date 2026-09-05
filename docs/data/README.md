@@ -28,18 +28,17 @@ cd C:\workspace\chevere_plan\backend
 python supabase\scripts\06_import_public_sites.py ..\docs\data\colombia_departamentos_municipios_sitios.json
 ```
 
-Fotos de catálogo (Wikidata / Commons / Wikipedia), one-shot, **dry-run por defecto**:
+Fotos de catálogo (carga one-shot): scripts `07`/`08`/`09`, JSON de progreso y el visor viven solo en `supabase/scripts/_photos_review_local/` (**ignorada por git**, no va al repo). Ejemplo:
 
 ```powershell
 cd C:\workspace\chevere_plan\backend
-python supabase\scripts\09_import_catalog_photos_parallel.py
-python supabase\scripts\09_import_catalog_photos_parallel.py --apply
+python supabase\scripts\_photos_review_local\09_import_catalog_photos_parallel.py --skip-sample-check
+python supabase\scripts\_photos_review_local\photos_review.py
+python supabase\scripts\_photos_review_local\09_import_catalog_photos_parallel.py --apply
 ```
 
-Si el sitio tiene **≥1 foto**, la primera es **portada** (`cover_photo_id`). Segunda foto (URL distinta) va a galería. Sin candidato → ilustración. `--apply` usa `_parallel_photos_report.json` (no reconsulta APIs).
+Openverse opcional en `.env` local: `OPENVERSE_CLIENT_ID` / `OPENVERSE_CLIENT_SECRET`. `--apply` inserta solo fotos con **me gusta**; portada = primera liked.
 
-Resets (ver `backend/README.md`):
-
-- `reset_all.ps1` → solo datos de usuario  
-- `reset_all.ps1 -Full` → cero + DIVIPOLA + esta carga masiva  
+- `reset_all.ps1` → solo datos de usuario
+- `reset_all.ps1 -Full` → cero + DIVIPOLA + import de sitios públicos
 

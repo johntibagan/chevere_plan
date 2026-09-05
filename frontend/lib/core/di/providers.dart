@@ -747,6 +747,24 @@ class PlansNotifier extends AsyncNotifier<PagedItems<Plan>> {
     state = await AsyncValue.guard(() => _loadPage0(forceNetwork: force));
   }
 
+  /// Sincroniza un plan editado (p. ej. Hecho en detalle) con la lista y caché.
+  Future<void> upsertPlan(Plan plan) async {
+    final current = state.valueOrNull;
+    if (current == null) return;
+    final i = current.items.indexWhere((p) => p.id == plan.id);
+    if (i < 0) return;
+    final items = List<Plan>.from(current.items)..[i] = plan;
+    final next = current.copyWith(items: items);
+    state = AsyncData(next);
+    final uid = ref.read(supabaseClientProvider).auth.currentUser?.id;
+    if (uid != null) {
+      await ref.read(entityCacheStoreProvider).write(
+            CacheKeys.plansPage0(uid),
+            _encodePagedPlans(next),
+          );
+    }
+  }
+
   Future<void> loadMore() async {
     final current = state.valueOrNull;
     if (current == null || !current.hasMore || current.loadingMore) return;

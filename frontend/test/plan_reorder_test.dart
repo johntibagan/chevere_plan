@@ -88,6 +88,85 @@ void main() {
     expect(changes.first.stopId, '1');
   });
 
+  test('coverStop: pendiente; si todas hechas → última; vacío → null', () {
+    final visited = PlanStop(
+      id: 'a',
+      planId: 'p',
+      siteId: 's1',
+      sortOrder: 0,
+      siteName: 'Done',
+      visitedAt: DateTime.utc(2026, 1, 1),
+    );
+    final next = PlanStop(
+      id: 'b',
+      planId: 'p',
+      siteId: 's2',
+      sortOrder: 1,
+      siteName: 'Next',
+    );
+    final plan = Plan(
+      id: 'p',
+      userId: 'u',
+      title: 'T',
+      locationQuery: '',
+      status: 'active',
+      stops: [visited, next],
+    );
+    expect(plan.coverStop?.siteId, 's2');
+
+    final allDone = Plan(
+      id: 'p',
+      userId: 'u',
+      title: 'T',
+      locationQuery: '',
+      status: 'active',
+      stops: [visited],
+    );
+    expect(allDone.coverStop?.siteId, 's1');
+
+    const empty = Plan(
+      id: 'p',
+      userId: 'u',
+      title: 'T',
+      locationQuery: '',
+      status: 'draft',
+      stops: [],
+    );
+    expect(empty.coverStop, isNull);
+  });
+
+  test('caché de plan conserva visitado para portada', () {
+    final plan = Plan(
+      id: 'p',
+      userId: 'u',
+      title: 'T',
+      locationQuery: '',
+      status: 'active',
+      stops: [
+        PlanStop(
+          id: 'a',
+          planId: 'p',
+          siteId: 's1',
+          sortOrder: 0,
+          siteName: 'Done',
+          visitedAt: DateTime.utc(2026, 1, 1),
+          categoryNames: const ['Gastro'],
+        ),
+        PlanStop(
+          id: 'b',
+          planId: 'p',
+          siteId: 's2',
+          sortOrder: 1,
+          siteName: 'Next',
+          categoryNames: const ['Naturaleza'],
+        ),
+      ],
+    );
+    final decoded = Plan.fromCacheJson(plan.toCacheJson());
+    expect(decoded.coverStop?.siteId, 's2');
+    expect(decoded.coverStop?.categoryNames, const ['Naturaleza']);
+  });
+
   test('reordena 2+ paradas y reescribe sortOrder', () {
     final next = Plan.reorderedStops(
       stops: [_s(0), _s(1), _s(2)],

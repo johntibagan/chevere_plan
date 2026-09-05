@@ -75,6 +75,35 @@ class PlanStop {
       coverStoragePath: coverStoragePath,
     );
   }
+
+  /// Caché de listado (portada + visitado); no hace falta hidratar todo el sitio.
+  Map<String, dynamic> toCacheJson() => {
+        'id': id,
+        'plan_id': planId,
+        'site_id': siteId,
+        'sort_order': sortOrder,
+        'visited_at': visitedAt?.toUtc().toIso8601String(),
+        'category_names': categoryNames,
+        'cover_storage_path': coverStoragePath,
+      };
+
+  factory PlanStop.fromCacheJson(Map<String, dynamic> json) {
+    final cats = json['category_names'];
+    return PlanStop(
+      id: json['id'] as String,
+      planId: (json['plan_id'] as String?) ?? '',
+      siteId: json['site_id'] as String,
+      sortOrder: (json['sort_order'] as num?)?.toInt() ?? 0,
+      siteName: 'Sitio',
+      visitedAt: json['visited_at'] == null
+          ? null
+          : DateTime.tryParse(json['visited_at'].toString()),
+      categoryNames: cats is List
+          ? cats.map((e) => e.toString()).toList(growable: false)
+          : const [],
+      coverStoragePath: json['cover_storage_path'] as String?,
+    );
+  }
 }
 
 class Plan {
@@ -115,6 +144,15 @@ class Plan {
 
   List<PlanStop> get pendingStops =>
       stops.where((s) => !s.isVisited).toList();
+
+  /// Portada: 1.ª parada pendiente; si todas hechas → **última** parada; sin paradas → null (Otros).
+  PlanStop? get coverStop {
+    if (stops.isEmpty) return null;
+    for (final s in stops) {
+      if (!s.isVisited) return s;
+    }
+    return stops.last;
+  }
 
   Plan copyWith({List<PlanStop>? stops}) {
     return Plan(
@@ -209,9 +247,23 @@ class Plan {
         'currency_code': currencyCode,
         'status': status,
         'listed_stop_count': listedStopCount ?? stops.length,
+        'stops': stops.map((s) => s.toCacheJson()).toList(),
       };
 
   factory Plan.fromCacheJson(Map<String, dynamic> json) {
+    final stopsRaw = json['stops'];
+    final stops = <PlanStop>[];
+    if (stopsRaw is List) {
+      for (final raw in stopsRaw) {
+        if (raw is! Map) continue;
+        try {
+          stops.add(
+            PlanStop.fromCacheJson(Map<String, dynamic>.from(raw)),
+          );
+        } catch (_) {}
+      }
+      stops.sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
+    }
     return Plan(
       id: json['id'] as String,
       userId: json['user_id'] as String,
@@ -222,8 +274,8 @@ class Plan {
       maxBudgetAmount: (json['max_budget_amount'] as num?)?.toDouble(),
       currencyCode: json['currency_code'] as String? ?? 'COP',
       status: json['status'] as String? ?? 'active',
-      stops: const [],
-      listedStopCount: (json['listed_stop_count'] as num?)?.toInt() ?? 0,
+      stops: stops,
+      listedStopCount: (json['listed_stop_count'] as num?)?.toInt() ?? stops.length,
     );
   }
 }

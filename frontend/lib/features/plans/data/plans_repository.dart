@@ -60,7 +60,7 @@ class PlansRepository {
   static const _planListSelect =
       'id, user_id, title, location_query, start_lat, start_lng, '
       'max_budget_amount, currency_code, status, '
-      'plan_stops(id, plan_id, site_id, sort_order, '
+      'plan_stops(id, plan_id, site_id, sort_order, visited_at, '
       'sites(name, site_categories(categories(name_i18n)), '
       'cover_photo_id, '
       'site_photos(id, storage_path, external_url, sort_order, created_at)))';
@@ -68,14 +68,14 @@ class PlansRepository {
   static const _planListSelectNoCover =
       'id, user_id, title, location_query, start_lat, start_lng, '
       'max_budget_amount, currency_code, status, '
-      'plan_stops(id, plan_id, site_id, sort_order, '
+      'plan_stops(id, plan_id, site_id, sort_order, visited_at, '
       'sites(name, site_categories(categories(name_i18n)), '
       'site_photos(id, storage_path, external_url, sort_order, created_at)))';
 
   static const _planListSelectLite =
       'id, user_id, title, location_query, start_lat, start_lng, '
       'max_budget_amount, currency_code, status, '
-      'plan_stops(id, plan_id, site_id, sort_order, '
+      'plan_stops(id, plan_id, site_id, sort_order, visited_at, '
       'sites(name, site_categories(categories(name_i18n))))';
 
   Future<List<PlanCandidate>> listCandidates({

@@ -103,7 +103,7 @@ flowchart TD
 
 Tabs: **Info**, **Reseñas**, **Más** (creador, catálogo, fechas, también lo guardaron).
 
-Info: nombre, franja/icono visibilidad, origen, ciudad, pin, Maps (abrir / cómo llegar), categorías, precio, notas, fotos en tira → visor fullscreen (autor, fecha `dd/mmm/aaaa`, ⋮ portada/eliminar/reportar). Staff en **catálogo** (`external_id`): segundo icono **Pegar enlace** (URL de imagen + atribución opcional). Antes de guardar, comprueba que la URL responda con `Content-Type` de imagen (HEAD o GET liviano); si no, toast claro y no inserta. `source=external_link` y columna `external_url`; **pegar enlace no** marca portada sola. Carga masiva del catálogo: si hay ≥1 foto, la **primera es portada**. Si el link no carga: icono de imagen no disponible, sin error feo. Borrar enlace = solo la fila (no Storage). Corazón favorito en header. **Sin** “agregar a plan” ni **compartir ficha**.
+Info: nombre, franja/icono visibilidad, origen, ciudad, pin, Maps (abrir / cómo llegar), categorías, precio, notas, fotos en tira → visor fullscreen (autor, fecha `dd/mmm/aaaa`, ⋮ portada/eliminar/reportar). Staff en **catálogo** (`external_id`): segundo icono **Pegar enlace** (URL de imagen + atribución opcional). Antes de guardar, comprueba que la URL responda con `Content-Type` de imagen (HEAD o GET liviano); si no, toast claro y no inserta. `source=external_link` y columna `external_url`; **pegar enlace no** marca portada sola. Si el sitio tiene **≥1 foto**, la **primera es portada**. Si el link no carga: icono de imagen no disponible, sin error feo. Borrar enlace = solo la fila (no Storage). Corazón favorito en header. **Sin** “agregar a plan” ni **compartir ficha**.
 
 Editar: creador, quien lo tiene como propio en saves, o staff sobre público.
 
@@ -129,7 +129,7 @@ Staff: bandeja de reportes; **Eliminar foto** borra fila + Storage + cierra repo
 ### 6. Planes
 
 1. Crear/editar (**solo dueño**): título (**mín. 3**), zona, tope presupuesto. **Incluir sitios públicos** solo en el buscador del detalle.
-2. Detalle unificado: portada primer sitio; bajo el título **zona — $ presupuesto**. Cuadros **Buscar** | **Paradas** | **Reseñas** (conteo). Deslizar horizontal entre secciones; **Buscar** → foco + teclado; **Paradas** / **Reseñas** → oculta teclado.
+2. Detalle unificado: portada de la **1.ª parada pendiente**; si **todas hechas** → portada del **último** sitio; **sin paradas** → ilustración **Otros**. Bajo el título **zona — $ presupuesto**. Cuadros **Buscar** | **Paradas** | **Reseñas** (conteo). Deslizar horizontal entre secciones; **Buscar** → foco + teclado; **Paradas** / **Reseñas** → oculta teclado.
 3. **Reseñas del plan:** `plan_reviews` (sin rating; fotos como sitio). Solo dueño del plan.
 4. Agregar/quitar/reordenar paradas (local hasta **Guardar**). **Hecho**: UI al toque (A, B, C… solo pendientes); persiste en lote **3 s** tras el último toque. Pie: **Llevar a Maps** + **Listo** (Buscar) o **Guardar** (solo lista u orden).
 5. **Llevar a Maps:** chooser nativo **Maps · Waze · Uber** (Maps → Waze → Uber). Maps = multi-parada; Waze/Uber = 1.ª parada.
@@ -345,7 +345,7 @@ Iconografía: Material Icons. Redes en cards = texto 2 letras (IG/TK/FB/GM).
 
 **Ficha** (`SiteDetailPage`): hero 176; tabs Info / Reseñas / Más; tira fotos (staff/catálogo: cámara + pegar enlace); sin share ni “agregar a plan”.
 
-**Planes lista** (`PlansListPage`): FAB crear; card portada 96 del primer sitio.
+**Planes lista** (`PlansListPage`): FAB crear; card portada 96 (pendiente → último sitio si todo hecho → Otros solo sin paradas).
 
 **Crear plan** (`CreatePlanPage`): título, zona, presupuesto → detalle en **Buscar**.
 
