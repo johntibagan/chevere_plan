@@ -311,10 +311,17 @@ create table if not exists public.plans (
   max_budget_amount numeric(12,2),
   currency_code character(3) default 'COP'::bpchar not null,
   status plan_status default 'active'::plan_status not null,
+  start_date date,
+  end_date date,
   created_at timestamp with time zone default now() not null,
   updated_at timestamp with time zone default now() not null,
   constraint plans_user_id_fkey FOREIGN KEY (user_id) REFERENCES profiles(id) ON DELETE CASCADE,
-  constraint plans_pkey PRIMARY KEY (id)
+  constraint plans_pkey PRIMARY KEY (id),
+  constraint plans_dates_order check (
+    start_date is null
+    or end_date is null
+    or end_date >= start_date
+  )
 );
 
 create table if not exists public.plan_stops (

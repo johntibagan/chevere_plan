@@ -2881,7 +2881,7 @@ abstract class AppLocalizations {
   /// No description provided for @planEditTitleHint.
   ///
   /// In es, this message translates to:
-  /// **'Nombre, zona y presupuesto de este plan.'**
+  /// **'Nombre, zona, presupuesto y fechas de este plan.'**
   String get planEditTitleHint;
 
   /// No description provided for @planEditSaved.
@@ -2961,6 +2961,42 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Zona'**
   String get planStatZone;
+
+  /// No description provided for @planStatDates.
+  ///
+  /// In es, this message translates to:
+  /// **'Fechas'**
+  String get planStatDates;
+
+  /// No description provided for @planDateStart.
+  ///
+  /// In es, this message translates to:
+  /// **'Inicio'**
+  String get planDateStart;
+
+  /// No description provided for @planDateEnd.
+  ///
+  /// In es, this message translates to:
+  /// **'Fin'**
+  String get planDateEnd;
+
+  /// No description provided for @planDatesOptionalHelper.
+  ///
+  /// In es, this message translates to:
+  /// **'Opcional por ahora. Al cerrar el plan serán obligatorias.'**
+  String get planDatesOptionalHelper;
+
+  /// No description provided for @planDatesOrderError.
+  ///
+  /// In es, this message translates to:
+  /// **'La fecha de fin no puede ser antes del inicio.'**
+  String get planDatesOrderError;
+
+  /// No description provided for @planDatePickHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Elegir'**
+  String get planDatePickHint;
 
   /// No description provided for @cardSavedHeart.
   ///

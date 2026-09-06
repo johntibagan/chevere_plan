@@ -48,6 +48,7 @@ class AppColors {
   static Color get coverNature => _palette.coverNature;
   static Color get coverSport => _palette.coverSport;
   static Color get coverScrim => _palette.coverScrim;
+  static Color get coverBottomScrim => _palette.coverBottomScrim;
   static Color get badgeInstagram => _palette.badgeInstagram;
   static Color get badgeTikTok => _palette.badgeTikTok;
   static Color get badgeFacebook => _palette.badgeFacebook;

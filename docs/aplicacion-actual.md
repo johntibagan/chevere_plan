@@ -128,8 +128,8 @@ Staff: bandeja de reportes; **Eliminar foto** borra fila + Storage + cierra repo
 
 ### 6. Planes
 
-1. Crear/editar (**solo dueño**): título (**mín. 3**), zona, tope presupuesto. **Incluir sitios públicos** solo en el buscador del detalle.
-2. Detalle unificado: portada de la **1.ª parada pendiente**; si **todas hechas** → portada del **último** sitio; **sin paradas** → ilustración **Otros**. Bajo el título **zona — $ presupuesto**. Cuadros **Buscar** | **Paradas** | **Reseñas** (conteo). Deslizar horizontal entre secciones; **Buscar** → foco + teclado; **Paradas** / **Reseñas** → oculta teclado.
+1. Crear/editar (**solo dueño**): título (**mín. 3**), zona, tope presupuesto, **fechas inicio/fin opcionales** (en una fila; obligatorias más adelante al cerrar). **Incluir sitios públicos** solo en el buscador del detalle.
+2. Detalle unificado: portada de la **1.ª parada pendiente**; si **todas hechas** → portada del **último** sitio; **sin paradas** → ilustración **Otros**. Bajo el título (igual que cards): **sitios → zona → presupuesto → fechas** (iconos; omite vacío; una fila, scroll horizontal si no cabe, sin wrap ni `|`). Degradado de portada a **negro** (no al fondo del tema) para que el texto blanco se lea en claro/oscuro. Apertura desde lista: pinta el plan en caché al toque; refresco y portadas en segundo plano. Cuadros **Buscar** | **Paradas** | **Reseñas** (conteo). Deslizar horizontal entre secciones; **Buscar** → foco + teclado; **Paradas** / **Reseñas** → oculta teclado.
 3. **Reseñas del plan:** `plan_reviews` (sin rating; fotos como sitio). Solo dueño del plan.
 4. Agregar/quitar/reordenar paradas (local hasta **Guardar**). **Hecho**: UI al toque (A, B, C… solo pendientes); persiste en lote **3 s** tras el último toque. Pie: **Llevar a Maps** + **Listo** (Buscar) o **Guardar** (solo lista u orden).
 5. **Llevar a Maps:** chooser nativo **Maps · Waze · Uber** (Maps → Waze → Uber). Maps = multi-parada; Waze/Uber = 1.ª parada.
@@ -345,9 +345,9 @@ Iconografía: Material Icons. Redes en cards = texto 2 letras (IG/TK/FB/GM).
 
 **Ficha** (`SiteDetailPage`): hero 176; tabs Info / Reseñas / Más; tira fotos (staff/catálogo: cámara + pegar enlace); sin share ni “agregar a plan”.
 
-**Planes lista** (`PlansListPage`): FAB crear; card portada 96 (pendiente → último sitio si todo hecho → Otros solo sin paradas).
+**Planes lista** (`PlansListPage`): FAB crear; card portada 96 (pendiente → último sitio si todo hecho → Otros solo sin paradas). Meta: **sitios → zona → presupuesto → fechas** (igual que ficha). Portada enriquecida en lote si falta path. Tap → detalle con `initialPlan` (sin spinner).
 
-**Crear plan** (`CreatePlanPage`): título (autofocus si vacío al crear), zona, presupuesto → detalle en **Buscar**.
+**Crear plan** (`CreatePlanPage`): título (autofocus si vacío al crear), zona, presupuesto, **fechas inicio/fin opcionales en una fila** → detalle en **Buscar**. Meta lista/ficha: mismos iconos y orden, sin `|`.
 
 **Detalle plan** (`PlanDetailPage`): sin AppBar; hero 176; cuadros **Buscar | Paradas | Reseñas**; swipe horizontal; pie **Llevar a Maps** + Listo/Guardar; timeline A=Mi ubicación, B,C… pendientes.
 

@@ -1,3 +1,5 @@
+import '../../../core/formatters/date_format.dart';
+
 class PlanStop {
   const PlanStop({
     required this.id,
@@ -53,6 +55,8 @@ class PlanStop {
     DateTime? visitedAt,
     bool clearVisited = false,
     double? estimatedPriceAmount,
+    String? coverStoragePath,
+    List<String>? categoryNames,
   }) {
     return PlanStop(
       id: id,
@@ -71,8 +75,8 @@ class PlanStop {
       estimatedPriceAmount:
           estimatedPriceAmount ?? this.estimatedPriceAmount,
       siteEstimatedPriceAmount: siteEstimatedPriceAmount,
-      categoryNames: categoryNames,
-      coverStoragePath: coverStoragePath,
+      categoryNames: categoryNames ?? this.categoryNames,
+      coverStoragePath: coverStoragePath ?? this.coverStoragePath,
     );
   }
 
@@ -118,6 +122,8 @@ class Plan {
     this.startLng,
     this.maxBudgetAmount,
     this.currencyCode = 'COP',
+    this.startDate,
+    this.endDate,
     this.listedStopCount,
   });
 
@@ -129,6 +135,9 @@ class Plan {
   final double? startLng;
   final double? maxBudgetAmount;
   final String currencyCode;
+  /// Día civil del viaje (sin hora); opcional hasta cerrar el plan.
+  final DateTime? startDate;
+  final DateTime? endDate;
   final String status;
   final List<PlanStop> stops;
   /// Cuando el listado usa `plan_stops(count)` en vez de stops hidratados.
@@ -154,7 +163,13 @@ class Plan {
     return stops.last;
   }
 
-  Plan copyWith({List<PlanStop>? stops}) {
+  Plan copyWith({
+    List<PlanStop>? stops,
+    DateTime? startDate,
+    DateTime? endDate,
+    bool clearStartDate = false,
+    bool clearEndDate = false,
+  }) {
     return Plan(
       id: id,
       userId: userId,
@@ -166,6 +181,8 @@ class Plan {
       startLng: startLng,
       maxBudgetAmount: maxBudgetAmount,
       currencyCode: currencyCode,
+      startDate: clearStartDate ? null : (startDate ?? this.startDate),
+      endDate: clearEndDate ? null : (endDate ?? this.endDate),
       listedStopCount: listedStopCount,
     );
   }
@@ -245,6 +262,8 @@ class Plan {
         'start_lng': startLng,
         'max_budget_amount': maxBudgetAmount,
         'currency_code': currencyCode,
+        'start_date': startDate == null ? null : formatDateOnlyIso(startDate!),
+        'end_date': endDate == null ? null : formatDateOnlyIso(endDate!),
         'status': status,
         'listed_stop_count': listedStopCount ?? stops.length,
         'stops': stops.map((s) => s.toCacheJson()).toList(),
@@ -273,6 +292,8 @@ class Plan {
       startLng: (json['start_lng'] as num?)?.toDouble(),
       maxBudgetAmount: (json['max_budget_amount'] as num?)?.toDouble(),
       currencyCode: json['currency_code'] as String? ?? 'COP',
+      startDate: parseDateOnly(json['start_date']),
+      endDate: parseDateOnly(json['end_date']),
       status: json['status'] as String? ?? 'active',
       stops: stops,
       listedStopCount: (json['listed_stop_count'] as num?)?.toInt() ?? stops.length,

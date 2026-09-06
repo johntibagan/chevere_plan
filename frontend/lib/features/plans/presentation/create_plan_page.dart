@@ -6,8 +6,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/cache/cache_ttl.dart';
 import '../../../core/di/providers.dart';
 import '../../../core/testing/widget_keys.dart';
+import '../../../core/formatters/date_format.dart';
 import '../../../core/formatters/money_format.dart';
 import '../../../core/l10n/context_l10n.dart';
+import '../../../core/theme/app_radius.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/theme_rebuild.dart';
 import '../../../core/widgets/app_section_label.dart';
@@ -18,7 +20,7 @@ import '../data/plan_models.dart';
 import '../data/plans_repository.dart';
 import 'plan_detail_page.dart';
 
-/// Crear o editar datos del plan (título, zona, presupuesto).
+/// Crear o editar datos del plan (título, zona, presupuesto, fechas).
 /// Las paradas se arman en [PlanDetailPage].
 class CreatePlanPage extends ConsumerStatefulWidget {
   const CreatePlanPage({
@@ -39,6 +41,8 @@ class _CreatePlanPageState extends ConsumerState<CreatePlanPage> {
   final _zoneCtrl = TextEditingController();
   final _budgetCtrl = TextEditingController();
   final _budgetFocus = FocusNode();
+  DateTime? _startDate;
+  DateTime? _endDate;
   bool _saving = false;
   final FormDirtyTracker _formDirty = FormDirtyTracker();
 
@@ -52,6 +56,7 @@ class _CreatePlanPageState extends ConsumerState<CreatePlanPage> {
     void rebuildOnEdit() {
       if (mounted) setState(() {});
     }
+
     final p = widget.existing;
     if (p != null) {
       final uid = ref.read(supabaseClientProvider).auth.currentUser?.id;
@@ -72,6 +77,8 @@ class _CreatePlanPageState extends ConsumerState<CreatePlanPage> {
             ? budget.round().toString()
             : '$budget';
       }
+      _startDate = p.startDate;
+      _endDate = p.endDate;
     }
     _titleCtrl.addListener(rebuildOnEdit);
     _zoneCtrl.addListener(rebuildOnEdit);
@@ -112,9 +119,9 @@ class _CreatePlanPageState extends ConsumerState<CreatePlanPage> {
       helperMaxLines: 2,
       filled: true,
       fillColor: AppColors.surfaceElevated,
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+      border: OutlineInputBorder(borderRadius: AppRadius.mdAll),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: AppRadius.mdAll,
         borderSide: BorderSide(color: AppColors.border),
       ),
       prefixText: prefixText,
@@ -129,10 +136,54 @@ class _CreatePlanPageState extends ConsumerState<CreatePlanPage> {
     );
   }
 
+  Future<void> _pickDate({required bool isStart}) async {
+    final l10n = context.l10n;
+    final initial = isStart
+        ? (_startDate ?? _endDate ?? DateTime.now())
+        : (_endDate ?? _startDate ?? DateTime.now());
+    final firstDate = DateTime(2020);
+    final lastDate = DateTime(DateTime.now().year + 5);
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initial,
+      firstDate: firstDate,
+      lastDate: lastDate,
+      helpText: isStart ? l10n.planDateStart : l10n.planDateEnd,
+    );
+    if (picked == null || !mounted) return;
+    final day = DateTime(picked.year, picked.month, picked.day);
+    setState(() {
+      if (isStart) {
+        _startDate = day;
+      } else {
+        _endDate = day;
+      }
+    });
+    _formDirty.markDirty();
+  }
+
+  void _clearDate({required bool isStart}) {
+    setState(() {
+      if (isStart) {
+        _startDate = null;
+      } else {
+        _endDate = null;
+      }
+    });
+    _formDirty.markDirty();
+  }
+
   Future<void> _next() async {
+    final l10n = context.l10n;
     final title = _titleCtrl.text.trim();
     if (title.length < 3) {
-      AppToast.show(context, context.l10n.planTitleMinLength, error: true);
+      AppToast.show(context, l10n.planTitleMinLength, error: true);
+      return;
+    }
+    if (_startDate != null &&
+        _endDate != null &&
+        _endDate!.isBefore(_startDate!)) {
+      AppToast.show(context, l10n.planDatesOrderError, error: true);
       return;
     }
     setState(() => _saving = true);
@@ -148,6 +199,8 @@ class _CreatePlanPageState extends ConsumerState<CreatePlanPage> {
           title: title,
           locationQuery: zone,
           maxBudget: budget,
+          startDate: _startDate,
+          endDate: _endDate,
         );
         final uid = ref.read(supabaseClientProvider).auth.currentUser?.id;
         if (uid != null) {
@@ -165,6 +218,8 @@ class _CreatePlanPageState extends ConsumerState<CreatePlanPage> {
         title: title,
         locationQuery: zone,
         maxBudget: budget,
+        startDate: _startDate,
+        endDate: _endDate,
         orderedStops: const <PlanCandidate>[],
       );
       final uid = ref.read(supabaseClientProvider).auth.currentUser?.id;
@@ -180,6 +235,7 @@ class _CreatePlanPageState extends ConsumerState<CreatePlanPage> {
           builder: (_) => PlanDetailPage(
             planId: plan.id,
             repository: widget.repository,
+            initialPlan: plan,
           ),
         ),
       );
@@ -191,6 +247,79 @@ class _CreatePlanPageState extends ConsumerState<CreatePlanPage> {
       if (!context.mounted) return;
       AppToast.show(context, context.l10n.errorProblemToast, error: true);
     }
+  }
+
+  Widget _dateField({
+    required Key key,
+    required String label,
+    required DateTime? value,
+    required VoidCallback onPick,
+    required VoidCallback onClear,
+  }) {
+    final l10n = context.l10n;
+    final text = value == null
+        ? l10n.planDatePickHint
+        : formatDateDmY(value, toLocal: false);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          label,
+          style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                color: AppColors.mutedDark,
+              ),
+        ),
+        const SizedBox(height: 6),
+        Material(
+          color: AppColors.surfaceElevated,
+          shape: RoundedRectangleBorder(
+            borderRadius: AppRadius.mdAll,
+            side: BorderSide(color: AppColors.border),
+          ),
+          child: InkWell(
+            key: key,
+            borderRadius: AppRadius.mdAll,
+            onTap: _saving ? null : onPick,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+              child: Row(
+                children: [
+                  Icon(Icons.event, size: 18, color: AppColors.muted),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      text,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: value == null
+                            ? AppColors.muted
+                            : AppColors.foreground,
+                      ),
+                    ),
+                  ),
+                  if (value != null)
+                    IconButton(
+                      tooltip: l10n.actionClear,
+                      visualDensity: VisualDensity.compact,
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(
+                        minWidth: 32,
+                        minHeight: 32,
+                      ),
+                      icon: Icon(
+                        Icons.cancel_rounded,
+                        size: 20,
+                        color: AppColors.muted,
+                      ),
+                      onPressed: _saving ? null : onClear,
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
   }
 
   @override
@@ -264,6 +393,41 @@ class _CreatePlanPageState extends ConsumerState<CreatePlanPage> {
                     helper: l10n.planCreateBudgetHelper,
                     prefixText: currencyInputPrefix(currencyCode),
                     suffixText: currencyInputSuffix(currencyCode),
+                  ),
+                ),
+                SizedBox(height: 16),
+                AppSectionLabel(text: l10n.planStatDates, bottom: 8),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: _dateField(
+                        key: WidgetKeys.createPlanDateStart,
+                        label: l10n.planDateStart,
+                        value: _startDate,
+                        onPick: () => unawaited(_pickDate(isStart: true)),
+                        onClear: () => _clearDate(isStart: true),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _dateField(
+                        key: WidgetKeys.createPlanDateEnd,
+                        label: l10n.planDateEnd,
+                        value: _endDate,
+                        onPick: () => unawaited(_pickDate(isStart: false)),
+                        onClear: () => _clearDate(isStart: false),
+                      ),
+                    ),
+                  ],
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(top: 6),
+                  child: Text(
+                    l10n.planDatesOptionalHelper,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: AppColors.muted,
+                        ),
                   ),
                 ),
                 SizedBox(height: 24),

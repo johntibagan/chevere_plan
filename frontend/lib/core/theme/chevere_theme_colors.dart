@@ -39,6 +39,7 @@ class ChevereThemeColors extends ThemeExtension<ChevereThemeColors> {
     required this.coverNature,
     required this.coverSport,
     required this.coverScrim,
+    required this.coverBottomScrim,
     required this.badgeInstagram,
     required this.badgeTikTok,
     required this.badgeFacebook,
@@ -83,6 +84,8 @@ class ChevereThemeColors extends ThemeExtension<ChevereThemeColors> {
   final Color coverNature;
   final Color coverSport;
   final Color coverScrim;
+  /// Pie de portada (título/meta sobre foto): negro, no el background del tema.
+  final Color coverBottomScrim;
   final Color badgeInstagram;
   final Color badgeTikTok;
   final Color badgeFacebook;
@@ -126,6 +129,7 @@ class ChevereThemeColors extends ThemeExtension<ChevereThemeColors> {
     coverNature: Color(0xFF1B8F6A),
     coverSport: Color(0xFF3D9B6E),
     coverScrim: Color(0x66000000),
+    coverBottomScrim: Color(0xCC000000),
     badgeInstagram: Color(0xFFE1306C),
     badgeTikTok: Color(0xFF69C9D0),
     badgeFacebook: Color(0xFF1877F2),
@@ -169,7 +173,8 @@ class ChevereThemeColors extends ThemeExtension<ChevereThemeColors> {
     coverLodging: Color(0xFF565EBF),
     coverNature: Color(0xFF177956),
     coverSport: Color(0xFF32805C),
-    coverScrim: Color(0x4D000000),
+    coverScrim: Color(0x66000000),
+    coverBottomScrim: Color(0xE6000000),
     badgeInstagram: Color(0xFFE1306C),
     badgeTikTok: Color(0xFF3FA9B0),
     badgeFacebook: Color(0xFF1877F2),
@@ -221,6 +226,7 @@ class ChevereThemeColors extends ThemeExtension<ChevereThemeColors> {
     Color? coverNature,
     Color? coverSport,
     Color? coverScrim,
+    Color? coverBottomScrim,
     Color? badgeInstagram,
     Color? badgeTikTok,
     Color? badgeFacebook,
@@ -264,6 +270,7 @@ class ChevereThemeColors extends ThemeExtension<ChevereThemeColors> {
       coverNature: coverNature ?? this.coverNature,
       coverSport: coverSport ?? this.coverSport,
       coverScrim: coverScrim ?? this.coverScrim,
+      coverBottomScrim: coverBottomScrim ?? this.coverBottomScrim,
       badgeInstagram: badgeInstagram ?? this.badgeInstagram,
       badgeTikTok: badgeTikTok ?? this.badgeTikTok,
       badgeFacebook: badgeFacebook ?? this.badgeFacebook,
@@ -313,6 +320,7 @@ class ChevereThemeColors extends ThemeExtension<ChevereThemeColors> {
       coverNature: l(coverNature, other.coverNature),
       coverSport: l(coverSport, other.coverSport),
       coverScrim: l(coverScrim, other.coverScrim),
+      coverBottomScrim: l(coverBottomScrim, other.coverBottomScrim),
       badgeInstagram: l(badgeInstagram, other.badgeInstagram),
       badgeTikTok: l(badgeTikTok, other.badgeTikTok),
       badgeFacebook: l(badgeFacebook, other.badgeFacebook),

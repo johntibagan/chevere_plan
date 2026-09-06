@@ -86,6 +86,8 @@ abstract final class WidgetKeys {
   static const createPlanTitle = Key('create_plan_title');
   static const createPlanZone = Key('create_plan_zone');
   static const createPlanBudget = Key('create_plan_budget');
+  static const createPlanDateStart = Key('create_plan_date_start');
+  static const createPlanDateEnd = Key('create_plan_date_end');
   static const createPlanNext = Key('create_plan_next');
 
   static const planBuilder = Key('plan_builder');

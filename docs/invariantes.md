@@ -55,6 +55,8 @@ Cuando la sección **Nombre-Visibilidad** está abierta, Público se muestra **s
 
 **Plan — solo dueño edita (hoy):** crear/editar meta, paradas, reordenar, borrar y marcar visitado solo si `plans.user_id` = usuario logueado. **Hecho** persiste en lote (debounce **3 s**, RPC `set_plan_stops_visited`); **Guardar** en Paradas solo altas/bajas/reorden. RLS `plans_owner_all` en backend. Fase 2 (compartir): reglas abierto/cerrado en [`pendientes.md`](pendientes.md).
 
+**Fechas del plan:** `start_date` / `end_date` opcionales al crear/editar. Al **cerrar** el plan (futuro) serán obligatorias. En la ficha: meta `Zona | presupuesto | Fechas` (omite partes vacías).
+
 ### Layout del formulario
 
 - Crear físico vacío: solo **Ubicación** visible. **Nombre-Visibilidad** (lugar físico + Público en **una** fila, cada uno con icono i) y extras (Detalles, Enlaces, Categorías, Fotos) detrás de **Añadir sección**. Nombre obligatorio; Maps lo rellena y entonces se abre Nombre-Visibilidad.

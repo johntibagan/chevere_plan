@@ -26,9 +26,11 @@ import '../../saves/presentation/open_site_detail.dart';
 import '../../saves/presentation/site_look_cover.dart';
 import '../../search/data/search_models.dart';
 import '../data/maps_export.dart';
+import '../data/plan_cover_enrich.dart';
 import '../data/plan_models.dart';
 import '../data/plans_repository.dart';
 import 'create_plan_page.dart';
+import 'plan_meta_row.dart';
 import 'plan_reviews_tab.dart';
 import 'plan_timeline.dart';
 
@@ -39,10 +41,13 @@ class PlanDetailPage extends ConsumerStatefulWidget {
     super.key,
     required this.planId,
     required this.repository,
+    this.initialPlan,
   });
 
   final String planId;
   final PlansRepository repository;
+  /// Seed de la lista: pinta al toque sin esperar red.
+  final Plan? initialPlan;
 
   @override
   ConsumerState<PlanDetailPage> createState() => _PlanDetailPageState();
@@ -77,7 +82,16 @@ class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
   @override
   void initState() {
     super.initState();
-    _load();
+    final seed = widget.initialPlan;
+    if (seed != null && seed.id == widget.planId) {
+      _plan = seed;
+      _initialStops = List<PlanStop>.from(seed.stops);
+      _loading = false;
+      _panel = seed.stops.isEmpty
+          ? _PlanDetailPanel.search
+          : _PlanDetailPanel.stops;
+    }
+    unawaited(_load());
     _prefetchOrigin();
   }
 
@@ -237,7 +251,10 @@ class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
   }
 
   Future<void> _load() async {
-    setState(() => _loading = true);
+    final hadSeed = _plan != null;
+    if (!hadSeed) {
+      setState(() => _loading = true);
+    }
     try {
       final plan = await widget.repository.fetchById(widget.planId);
       if (!mounted) return;
@@ -247,25 +264,77 @@ class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
       final initialPanel = canEdit && plan.stops.isEmpty
           ? _PlanDetailPanel.search
           : _PlanDetailPanel.stops;
+      // No bloquear en enrich: pintar ya y completar portadas atrás.
       setState(() {
-        _plan = plan;
-        _initialStops = List<PlanStop>.from(plan.stops);
-        _panel = initialPanel;
+        if (!_stopsDirty) {
+          _plan = plan;
+          _initialStops = List<PlanStop>.from(plan.stops);
+        }
+        if (!hadSeed) {
+          _panel = initialPanel;
+        }
         _loading = false;
       });
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
-        _syncPanelPage(initialPanel, animate: false);
-        if (initialPanel == _PlanDetailPanel.search) {
-          _focusSearchField();
+        if (!hadSeed) {
+          _syncPanelPage(initialPanel, animate: false);
+          if (initialPanel == _PlanDetailPanel.search) {
+            _focusSearchField();
+          }
         }
       });
+      unawaited(_enrichCoversInBackground(plan));
       unawaited(_loadReviewCount());
     } catch (e) {
       if (!mounted) return;
       setState(() => _loading = false);
       AppToast.error(context, e, logContext: 'plan_detail');
     }
+  }
+
+  Future<void> _enrichCoversInBackground(Plan fetched) async {
+    final needsEnrich = fetched.stops.any(
+      (s) =>
+          (s.coverStoragePath?.trim().isEmpty ?? true) ||
+          s.categoryNames.isEmpty,
+    );
+    if (!needsEnrich) return;
+
+    final enriched = await enrichPlanCovers(
+      fetched,
+      ref.read(savesRepositoryProvider),
+    );
+    if (!mounted) return;
+    final current = _plan;
+    if (current == null || current.id != enriched.id) return;
+
+    final bySite = <String, PlanStop>{
+      for (final s in enriched.stops) s.siteId: s,
+    };
+    setState(() {
+      _plan = current.copyWith(
+        stops: [
+          for (final s in current.stops)
+            _mergeStopCover(s, bySite[s.siteId]),
+        ],
+      );
+      if (!_stopsDirty) {
+        _initialStops = List<PlanStop>.from(_plan!.stops);
+      }
+    });
+  }
+
+  static PlanStop _mergeStopCover(PlanStop stop, PlanStop? look) {
+    if (look == null) return stop;
+    final path = stop.coverStoragePath?.trim();
+    final hasPath = path != null && path.isNotEmpty;
+    final hasCats = stop.categoryNames.isNotEmpty;
+    if (hasPath && hasCats) return stop;
+    return stop.copyWith(
+      coverStoragePath: hasPath ? stop.coverStoragePath : look.coverStoragePath,
+      categoryNames: hasCats ? stop.categoryNames : look.categoryNames,
+    );
   }
 
   Future<void> _invalidatePlansCache() async {
@@ -943,7 +1012,8 @@ class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
                       siteId: h.siteId,
                       categoryNames: h.categoryNames,
                       coverStoragePath: h.coverStoragePath,
-                      resolveLook: false,
+                      resolveLook:
+                          h.coverStoragePath?.trim().isEmpty ?? true,
                     ),
                   ),
                 ),
@@ -1030,16 +1100,20 @@ class _PlanHero extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final top = MediaQuery.paddingOf(context).top;
+    // Safe area fuera de la caja de contenido: evita overflow del título+meta.
     return SizedBox(
-      height: 176,
+      height: 176 + top,
       child: Stack(
         fit: StackFit.expand,
+        clipBehavior: Clip.hardEdge,
         children: [
           SiteLookCover(
             siteId: plan.coverStop?.siteId,
             categoryNames: plan.coverStop?.categoryNames ?? const [],
             coverStoragePath: plan.coverStop?.coverStoragePath,
-            resolveLook: false,
+            resolveLook: (plan.coverStop?.coverStoragePath?.trim().isEmpty ??
+                true),
           ),
           DecoratedBox(
             decoration: BoxDecoration(
@@ -1048,61 +1122,60 @@ class _PlanHero extends StatelessWidget {
                 end: Alignment.bottomCenter,
                 colors: [
                   AppColors.coverScrim,
-                  Colors.transparent,
-                  AppColors.background,
+                  AppColors.coverBottomScrim.withValues(alpha: 0),
+                  AppColors.coverBottomScrim,
                 ],
                 stops: const [0, 0.4, 1],
               ),
             ),
           ),
-          SafeArea(
-            bottom: false,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(8, 4, 8, 12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      IconButton(
-                        onPressed: onBack,
-                        icon: Icon(Icons.arrow_back),
-                        style: IconButton.styleFrom(
-                          backgroundColor: AppColors.scrim,
-                          foregroundColor: AppColors.onImage,
-                        ),
-                      ),
-                      Spacer(),
-                      IconButton(
-                        key: WidgetKeys.planDetailMore,
-                        onPressed: onMore,
-                        icon: Icon(Icons.more_vert),
-                        style: IconButton.styleFrom(
-                          backgroundColor: AppColors.scrim,
-                          foregroundColor: AppColors.onImage,
-                        ),
-                      ),
-                    ],
-                  ),
-                  Spacer(),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    child: Text(
-                      plan.title,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.onImage,
+          Padding(
+            padding: EdgeInsets.fromLTRB(8, top + 4, 8, 10),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    IconButton(
+                      onPressed: onBack,
+                      icon: Icon(Icons.arrow_back),
+                      style: IconButton.styleFrom(
+                        backgroundColor: AppColors.scrim,
+                        foregroundColor: AppColors.onImage,
                       ),
                     ),
+                    Spacer(),
+                    IconButton(
+                      key: WidgetKeys.planDetailMore,
+                      onPressed: onMore,
+                      icon: Icon(Icons.more_vert),
+                      style: IconButton.styleFrom(
+                        backgroundColor: AppColors.scrim,
+                        foregroundColor: AppColors.onImage,
+                      ),
+                    ),
+                  ],
+                ),
+                Spacer(),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  child: Text(
+                    plan.title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.onImage,
+                    ),
                   ),
-                  if (plan.locationQuery.isNotEmpty ||
-                      plan.maxBudgetAmount != null)
-                    _PlanHeroMeta(plan: plan),
-                ],
-              ),
+                ),
+                if (plan.locationQuery.isNotEmpty ||
+                    plan.maxBudgetAmount != null ||
+                    plan.startDate != null ||
+                    plan.endDate != null)
+                  _PlanHeroMeta(plan: plan),
+              ],
             ),
           ),
         ],
@@ -1118,55 +1191,9 @@ class _PlanHeroMeta extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final zone = plan.locationQuery.trim();
-    final budget = plan.maxBudgetAmount;
-    final budgetText = budget == null
-        ? null
-        : formatMoney(budget, currencyCode: plan.currencyCode);
-    if (zone.isEmpty && budgetText == null) return SizedBox.shrink();
-
     return Padding(
       padding: const EdgeInsets.fromLTRB(8, 4, 8, 0),
-      child: Row(
-        children: [
-          if (zone.isNotEmpty)
-            Flexible(
-              child: Text(
-                zone,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: AppColors.onImage,
-                ),
-              ),
-            ),
-          if (zone.isNotEmpty && budgetText != null)
-            Text(
-              ' - ',
-              style: TextStyle(fontSize: 12, color: AppColors.onImage),
-            ),
-          if (budgetText != null) ...[
-            Icon(
-              Icons.payments_outlined,
-              size: 14,
-              color: AppColors.warning,
-            ),
-            SizedBox(width: 4),
-            Flexible(
-              child: Text(
-                budgetText,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: AppColors.onImage,
-                ),
-              ),
-            ),
-          ],
-        ],
-      ),
+      child: PlanMetaRow(plan: plan),
     );
   }
 }

@@ -17,6 +17,7 @@ import '../../features/auth/data/auth_repository.dart';
 import '../../features/auth/data/profile.dart';
 import '../../features/auth/data/profile_repository.dart';
 import '../../features/moderation/data/moderation_repository.dart';
+import '../../features/plans/data/plan_cover_enrich.dart';
 import '../../features/plans/data/plan_models.dart';
 import '../../features/plans/data/plan_reviews_repository.dart';
 import '../../features/plans/data/plans_repository.dart';
@@ -821,9 +822,14 @@ class PlansNotifier extends AsyncNotifier<PagedItems<Plan>> {
             limit: _pageSize,
             offset: current.items.length,
           );
+      final enriched = await enrichPlansCovers(
+        next,
+        ref.read(savesRepositoryProvider),
+        coverStopsOnly: true,
+      );
       state = AsyncData(
         PagedItems(
-          items: [...current.items, ...next],
+          items: [...current.items, ...enriched],
           hasMore: next.length >= _pageSize,
         ),
       );
@@ -838,18 +844,23 @@ class PlansNotifier extends AsyncNotifier<PagedItems<Plan>> {
       return const PagedItems(items: [], hasMore: false);
     }
     final swr = ref.read(swrLoaderProvider);
-    return swr.load<PagedItems<Plan>>(
+    final page = await swr.load<PagedItems<Plan>>(
       key: CacheKeys.plansPage0(uid),
       ttl: CacheTtl.plans,
       decode: _decodePagedPlans,
       encode: _encodePagedPlans,
       forceNetwork: forceNetwork,
       network: () async {
-        final page = await ref.read(plansRepositoryProvider).listMine(
+        final raw = await ref.read(plansRepositoryProvider).listMine(
               limit: _pageSize,
               offset: 0,
             );
-        return PagedItems(items: page, hasMore: page.length >= _pageSize);
+        final items = await enrichPlansCovers(
+          raw,
+          ref.read(savesRepositoryProvider),
+          coverStopsOnly: true,
+        );
+        return PagedItems(items: items, hasMore: raw.length >= _pageSize);
       },
       onBackgroundRefresh: (pending) {
         if (_refreshing) return;
@@ -863,6 +874,14 @@ class PlansNotifier extends AsyncNotifier<PagedItems<Plan>> {
         );
       },
     );
+    // Caché vieja sin portadas: un lote; si ya vienen, no-op.
+    final enriched = await enrichPlansCovers(
+      page.items,
+      ref.read(savesRepositoryProvider),
+      coverStopsOnly: true,
+    );
+    if (identical(enriched, page.items)) return page;
+    return page.copyWith(items: enriched);
   }
 }
 

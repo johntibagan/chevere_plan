@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/errors/user_facing_error.dart';
+import '../../../core/formatters/date_format.dart';
 import '../../../core/logging/app_log.dart';
 import '../../saves/data/save_models.dart';
 import 'plan_builder.dart';
@@ -29,7 +30,7 @@ class PlansRepository {
 
   static const _planSelect =
       'id, user_id, title, location_query, start_lat, start_lng, '
-      'max_budget_amount, currency_code, status, '
+      'max_budget_amount, currency_code, start_date, end_date, status, '
       'plan_stops(id, plan_id, site_id, sort_order, visited_at, '
       'estimated_price_amount, lat, lng, '
       'sites(name, city, department, google_place_id, use_exact_pin, '
@@ -39,7 +40,7 @@ class PlansRepository {
 
   static const _planSelectNoCover =
       'id, user_id, title, location_query, start_lat, start_lng, '
-      'max_budget_amount, currency_code, status, '
+      'max_budget_amount, currency_code, start_date, end_date, status, '
       'plan_stops(id, plan_id, site_id, sort_order, visited_at, '
       'estimated_price_amount, lat, lng, '
       'sites(name, city, department, google_place_id, use_exact_pin, '
@@ -49,7 +50,7 @@ class PlansRepository {
 
   static const _planSelectLite =
       'id, user_id, title, location_query, start_lat, start_lng, '
-      'max_budget_amount, currency_code, status, '
+      'max_budget_amount, currency_code, start_date, end_date, status, '
       'plan_stops(id, plan_id, site_id, sort_order, visited_at, '
       'estimated_price_amount, lat, lng, '
       'sites(name, city, department, google_place_id, use_exact_pin, '
@@ -59,7 +60,7 @@ class PlansRepository {
   /// Listado liviano (cards): count de paradas sin hidratar cada stop.
   static const _planListSelect =
       'id, user_id, title, location_query, start_lat, start_lng, '
-      'max_budget_amount, currency_code, status, '
+      'max_budget_amount, currency_code, start_date, end_date, status, '
       'plan_stops(id, plan_id, site_id, sort_order, visited_at, '
       'sites(name, site_categories(categories(name_i18n)), '
       'cover_photo_id, '
@@ -67,14 +68,14 @@ class PlansRepository {
 
   static const _planListSelectNoCover =
       'id, user_id, title, location_query, start_lat, start_lng, '
-      'max_budget_amount, currency_code, status, '
+      'max_budget_amount, currency_code, start_date, end_date, status, '
       'plan_stops(id, plan_id, site_id, sort_order, visited_at, '
       'sites(name, site_categories(categories(name_i18n)), '
       'site_photos(id, storage_path, external_url, sort_order, created_at)))';
 
   static const _planListSelectLite =
       'id, user_id, title, location_query, start_lat, start_lng, '
-      'max_budget_amount, currency_code, status, '
+      'max_budget_amount, currency_code, start_date, end_date, status, '
       'plan_stops(id, plan_id, site_id, sort_order, visited_at, '
       'sites(name, site_categories(categories(name_i18n))))';
 
@@ -195,6 +196,8 @@ class PlansRepository {
     double? maxBudget,
     double? startLat,
     double? startLng,
+    DateTime? startDate,
+    DateTime? endDate,
     required List<PlanCandidate> orderedStops,
   }) async {
     final uid = _uid;
@@ -204,6 +207,11 @@ class PlansRepository {
     final trimmedTitle = title.trim();
     if (trimmedTitle.length < 3) {
       throw const AppUserError('Escribe al menos 3 caracteres para el título.');
+    }
+    if (startDate != null &&
+        endDate != null &&
+        endDate.isBefore(DateTime(startDate.year, startDate.month, startDate.day))) {
+      throw const AppUserError('La fecha de fin no puede ser antes del inicio.');
     }
 
     final planRow = await _client
@@ -215,6 +223,8 @@ class PlansRepository {
           'start_lat': startLat,
           'start_lng': startLng,
           'max_budget_amount': maxBudget,
+          'start_date': startDate == null ? null : formatDateOnlyIso(startDate),
+          'end_date': endDate == null ? null : formatDateOnlyIso(endDate),
           'status': orderedStops.isEmpty ? 'draft' : 'active',
         })
         .select()
@@ -471,6 +481,8 @@ class PlansRepository {
     required String title,
     required String locationQuery,
     double? maxBudget,
+    DateTime? startDate,
+    DateTime? endDate,
   }) async {
     final uid = _uid;
     if (uid == null) {
@@ -480,12 +492,19 @@ class PlansRepository {
     if (trimmed.length < 3) {
       throw const AppUserError('Escribe al menos 3 caracteres para el título.');
     }
+    if (startDate != null &&
+        endDate != null &&
+        endDate.isBefore(DateTime(startDate.year, startDate.month, startDate.day))) {
+      throw const AppUserError('La fecha de fin no puede ser antes del inicio.');
+    }
     final rows = await _client
         .from('plans')
         .update({
           'title': trimmed,
           'location_query': locationQuery.trim(),
           'max_budget_amount': maxBudget,
+          'start_date': startDate == null ? null : formatDateOnlyIso(startDate),
+          'end_date': endDate == null ? null : formatDateOnlyIso(endDate),
         })
         .eq('id', planId)
         .eq('user_id', uid)
@@ -611,26 +630,22 @@ class PlansRepository {
                 siteId.isEmpty) {
               continue;
             }
-            final sites = m['sites'];
-            Map<String, dynamic>? siteMap;
-            if (sites is Map) {
-              siteMap = Map<String, dynamic>.from(sites);
-            }
+            final siteMap = joinMap(m['sites']);
             final visited = m['visited_at'];
             final est = m['estimated_price_amount'];
-            final siteEst = siteMap?['estimated_price_amount'];
+            final siteEst = siteMap['estimated_price_amount'];
             stops.add(
               PlanStop(
                 id: id,
                 planId: planId,
                 siteId: siteId,
                 sortOrder: (m['sort_order'] as num?)?.toInt() ?? 0,
-                siteName: (siteMap?['name'] as String?) ?? 'Sitio',
-                city: siteMap?['city'] as String?,
-                department: siteMap?['department'] as String?,
-                googlePlaceId: siteMap?['google_place_id'] as String?,
-                useExactPin: parsePgBool(siteMap?['use_exact_pin']),
-                isCatalogSite: (siteMap?['external_id'] as String?)
+                siteName: (siteMap['name'] as String?) ?? 'Sitio',
+                city: siteMap['city'] as String?,
+                department: siteMap['department'] as String?,
+                googlePlaceId: siteMap['google_place_id'] as String?,
+                useExactPin: parsePgBool(siteMap['use_exact_pin']),
+                isCatalogSite: (siteMap['external_id'] as String?)
                         ?.trim()
                         .isNotEmpty ==
                     true,
@@ -644,11 +659,11 @@ class PlansRepository {
                 siteEstimatedPriceAmount:
                     siteEst == null ? null : (siteEst as num).toDouble(),
                 categoryNames: categoryNamesFromJoin(
-                  siteMap?['site_categories'],
+                  siteMap['site_categories'],
                 ),
                 coverStoragePath: siteCoverStoragePath(
-                  photos: siteMap?['site_photos'],
-                  coverPhotoId: siteMap?['cover_photo_id']?.toString(),
+                  photos: siteMap['site_photos'],
+                  coverPhotoId: siteMap['cover_photo_id']?.toString(),
                 ),
               ),
             );
@@ -676,6 +691,8 @@ class PlansRepository {
       startLng: (json['start_lng'] as num?)?.toDouble(),
       maxBudgetAmount: budget == null ? null : (budget as num).toDouble(),
       currencyCode: (json['currency_code'] as String?) ?? 'COP',
+      startDate: parseDateOnly(json['start_date']),
+      endDate: parseDateOnly(json['end_date']),
       status: json['status'] as String? ?? 'active',
       stops: stops,
       listedStopCount: listedStopCount,

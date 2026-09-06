@@ -365,7 +365,8 @@ class _StopTile extends StatelessWidget {
                           siteId: stop.siteId,
                           categoryNames: stop.categoryNames,
                           coverStoragePath: stop.coverStoragePath,
-                          resolveLook: false,
+                          resolveLook:
+                              stop.coverStoragePath?.trim().isEmpty ?? true,
                         ),
                       ),
                     ),

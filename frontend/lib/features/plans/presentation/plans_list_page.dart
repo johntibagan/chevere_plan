@@ -6,7 +6,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/cache/cache_ttl.dart';
 import '../../../core/di/providers.dart';
 import '../../../core/testing/widget_keys.dart';
-import '../../../core/formatters/money_format.dart';
 import '../../../core/l10n/context_l10n.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/theme_rebuild.dart';
@@ -20,6 +19,7 @@ import '../data/plan_models.dart';
 import '../data/plans_repository.dart';
 import 'create_plan_page.dart';
 import 'plan_detail_page.dart';
+import 'plan_meta_row.dart';
 
 class PlansListPage extends ConsumerStatefulWidget {
   const PlansListPage({super.key, required this.repository});
@@ -62,6 +62,7 @@ class _PlansListPageState extends ConsumerState<PlansListPage> {
         builder: (_) => PlanDetailPage(
           planId: plan.id,
           repository: widget.repository,
+          initialPlan: plan,
         ),
       ),
     );
@@ -209,7 +210,11 @@ class _PlanCard extends StatelessWidget {
                     categoryNames:
                         plan.coverStop?.categoryNames ?? const [],
                     coverStoragePath: plan.coverStop?.coverStoragePath,
-                    resolveLook: false,
+                    // Lote en PlansNotifier; solo fallback si falta path.
+                    resolveLook: (plan.coverStop?.coverStoragePath
+                                ?.trim()
+                                .isEmpty ??
+                            true),
                   ),
                   const SiteCoverScrim(bottomOpacity: 0.8),
                   Positioned(
@@ -240,61 +245,9 @@ class _PlanCard extends StatelessWidget {
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
-              child: Row(
-                children: [
-                  if (plan.locationQuery.isNotEmpty) ...[
-                    Icon(
-                      Icons.place_outlined,
-                      size: 12,
-                      color: AppColors.accent,
-                    ),
-                    SizedBox(width: 4),
-                    Flexible(
-                      child: Text(
-                        plan.locationQuery,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: AppColors.muted,
-                        ),
-                      ),
-                    ),
-                    SizedBox(width: 10),
-                  ],
-                  Icon(
-                    Icons.trending_up_rounded,
-                    size: 12,
-                    color: AppColors.primary,
-                  ),
-                  SizedBox(width: 4),
-                  Text(
-                    l10n.planStopsCount(plan.stopCount),
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: AppColors.muted,
-                    ),
-                  ),
-                  if (plan.maxBudgetAmount != null) ...[
-                    SizedBox(width: 10),
-                    Icon(
-                      Icons.attach_money_rounded,
-                      size: 12,
-                      color: AppColors.success,
-                    ),
-                    SizedBox(width: 2),
-                    Text(
-                      formatMoney(
-                        plan.maxBudgetAmount!,
-                        currencyCode: plan.currencyCode,
-                      ),
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: AppColors.success,
-                      ),
-                    ),
-                  ],
-                ],
+              child: PlanMetaRow(
+                plan: plan,
+                compact: true,
               ),
             ),
           ],

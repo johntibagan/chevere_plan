@@ -1582,7 +1582,8 @@ class AppLocalizationsEs extends AppLocalizations {
   String get planEditTitle => 'Editar plan';
 
   @override
-  String get planEditTitleHint => 'Nombre, zona y presupuesto de este plan.';
+  String get planEditTitleHint =>
+      'Nombre, zona, presupuesto y fechas de este plan.';
 
   @override
   String get planEditSaved => 'Plan actualizado.';
@@ -1631,6 +1632,26 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get planStatZone => 'Zona';
+
+  @override
+  String get planStatDates => 'Fechas';
+
+  @override
+  String get planDateStart => 'Inicio';
+
+  @override
+  String get planDateEnd => 'Fin';
+
+  @override
+  String get planDatesOptionalHelper =>
+      'Opcional por ahora. Al cerrar el plan serán obligatorias.';
+
+  @override
+  String get planDatesOrderError =>
+      'La fecha de fin no puede ser antes del inicio.';
+
+  @override
+  String get planDatePickHint => 'Elegir';
 
   @override
   String get cardSavedHeart => 'En tus guardados';
