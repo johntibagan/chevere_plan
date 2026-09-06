@@ -5,6 +5,7 @@ plugins {
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
     id("com.google.gms.google-services")
+    id("com.google.firebase.firebase-perf")
 }
 
 // Maps SDK: definir en android/local.properties → GOOGLE_MAPS_API_KEY=...
@@ -73,6 +74,10 @@ flutter {
 }
 
 dependencies {
+    // BoM reciente (docs Firebase Perf); alinea firebase-perf nativo con AGP 9.
+    implementation(platform("com.google.firebase:firebase-bom:34.18.0"))
+    implementation("com.google.firebase:firebase-perf")
+
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
     androidTestUtil("androidx.test:orchestrator:1.6.1")
 }

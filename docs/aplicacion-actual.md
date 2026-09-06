@@ -148,7 +148,7 @@ Lista de paradas marcadas visitadas (sitio, plan, fecha). No graba el trayecto G
 
 Geocercas (~100 tope). Notificación tarjeta (portada, nombre, depto–ciudad).
 
-**Populares cerca:** públicos de otros en ~25 km; caché ancla GPS; refetch si &gt;~2 km, &gt;24 h o pull-to-refresh.
+**Populares cerca:** públicos de otros en ~25 km; RPC con `p_limit` 8 (UI muestra 4); caché ancla GPS; refetch si &gt;~2 km, &gt;24 h o pull-to-refresh.
 
 ### 9. Admin y moderación
 

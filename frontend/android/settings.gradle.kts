@@ -24,6 +24,8 @@ plugins {
     id("com.android.application") version "9.0.1" apply false
     id("org.jetbrains.kotlin.android") version "2.3.20" apply false
     id("com.google.gms.google-services") version "4.4.2" apply false
+    // 2.0.2+ = compatible AGP 9 (firebase-android-sdk#7293). Antes 1.4.2 fallaba Transform.
+    id("com.google.firebase.firebase-perf") version "2.0.2" apply false
 }
 
 include(":app")

@@ -12,6 +12,9 @@ abstract final class HomeNearbyPolicies {
 
   static const int take = 4;
 
+  /// `p_limit` del RPC (margen sobre [take] sin pedir el default ~100 del backend).
+  static const int rpcLimit = 8;
+
   /// Aunque no te muevas, refrescar al menos una vez al día.
   static const Duration maxAge = Duration(hours: 24);
 

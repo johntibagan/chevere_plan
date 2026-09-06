@@ -194,11 +194,11 @@ Staff edita público; no ve bitácoras privadas ajenas.
 *(Visión — **no está en el MVP vivo**. Monetización = **Fase 3**. Ver §15.)*
 
 ### 10.1 Niveles de alcance (de menor a mayor precio)
-1. Municipal  
+1. Municipal
 2. Multi-municipal  
-3. Departamental  
+3. Departamental
 4. Multi-departamental  
-5. Nacional  
+5. Nacional
 
 ### 10.2 Referencia de precios de mercado
 *(Sin cambios — calibración futura.)*

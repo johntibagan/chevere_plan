@@ -1010,6 +1010,7 @@ class HomeNearbyNotifier extends AsyncNotifier<HomeNearbySnapshot> {
               lat: pos.lat,
               lng: pos.lng,
               radiusKm: HomeNearbyPolicies.searchRadiusKm,
+              limit: HomeNearbyPolicies.rpcLimit,
             ),
           );
       final snap = HomeNearbySnapshot(
