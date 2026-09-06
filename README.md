@@ -12,4 +12,4 @@ docs/       Comportamiento actual e invariantes
 
 **Reset DB:** [backend/README.md](backend/README.md)
 
-**Docs:** [docs/aplicacion-actual.md](docs/aplicacion-actual.md) · [docs/invariantes.md](docs/invariantes.md)
+**Docs:** [docs/README.md](docs/README.md) (índice) · [docs/aplicacion-actual.md](docs/aplicacion-actual.md) · [docs/invariantes.md](docs/invariantes.md)

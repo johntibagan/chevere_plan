@@ -2,7 +2,7 @@
 
 **Dueño técnico** de cómo se descargan, cachean y muestran fotos (Storage firmado + `external_url`).  
 Producto / invariantes: [`aplicacion-actual.md`](aplicacion-actual.md), [`invariantes.md`](invariantes.md).  
-Contexto de rendimiento (métricas, fases): [`diagnostico_rendimiento.md`](diagnostico_rendimiento.md) — enlaza aquí, no duplicar este detalle.
+Pipeline de fotos de red (Commons thumbs, caché, UA). Comportamiento visible en ficha/cards: [`aplicacion-actual.md`](aplicacion-actual.md).
 
 ---
 

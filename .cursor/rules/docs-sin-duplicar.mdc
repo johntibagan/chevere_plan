@@ -9,9 +9,14 @@ alwaysApply: true
 
 - **Un tema = un archivo dueño.** Si ya está documentado, enlaza; no copies comandos, tablas de env ni pasos en otro `.md`.
 - **Técnico:** lo mínimo indispensable — concreto, sin párrafos de contexto repetido.
-- **Negocio:** `docs/producto.md`, `docs/pendientes.md`, `docs/aplicacion-actual.md`, `docs/invariantes.md` — ahí sí puede haber detalle de producto/comportamiento.
+- **Negocio — dueños:**
+  - App **hoy** → `docs/aplicacion-actual.md`
+  - No romper → `docs/invariantes.md`
+  - Visión / fases → `docs/producto.md` (no spec de lo implementado)
+  - Deuda / Compartir → `docs/pendientes.md`
+- Índice: [`docs/README.md`](docs/README.md).
 
-## Dueños (no repetir en otros sitios)
+## Dueños técnicos (no repetir en otros sitios)
 
 | Tema | Archivo |
 |------|---------|

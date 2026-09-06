@@ -1,15 +1,34 @@
 # Documentación
 
-Solo dos fuentes de producto:
+**Un tema = un archivo dueño.** El resto solo enlaza (regla Cursor `docs-sin-duplicar.mdc`).
 
-| | Documento |
+## Producto (fuente de verdad)
+
+| Tema | Archivo |
 |---|---|
-| **Cómo está la app hoy** (producto + UI; actualizar en el mismo pase) | [aplicacion-actual.md](aplicacion-actual.md) |
-| **Qué no se toca** | [invariantes.md](invariantes.md) |
+| Cómo está la app **hoy** (flujos + UI) | [aplicacion-actual.md](aplicacion-actual.md) |
+| Qué **no** se rompe | [invariantes.md](invariantes.md) |
+| Visión y fases futuras | [producto.md](producto.md) |
+| Deuda + diseño Compartir (Fase 2) | [pendientes.md](pendientes.md) |
 
-Al implementar: código **y** esos docs en el mismo pase (regla Cursor `docs-al-cambiar.mdc`).
+Al cambiar comportamiento: código **y** `aplicacion-actual` / `invariantes` en el mismo pase (`docs-al-cambiar.mdc`).
 
-**Para construir:** [lineamientos-desarrollo-frontend.md](lineamientos-desarrollo-frontend.md) · [setup/](setup/) · [../backend/README.md](../backend/README.md)  
-**Diseño (Figma Make, snapshot):** [`../design/figma-make/`](../design/figma-make/README.md)
+## Cómo construir / operar
 
-**Archivo** (no implementar desde ahí): [producto.md](producto.md) · [adr/](adr/) · [pendientes.md](pendientes.md) · [e2e.md](e2e.md) · [google-maps-setup.md](google-maps-setup.md) · [diagnostico_rendimiento.md](diagnostico_rendimiento.md) · [imagenes-red.md](imagenes-red.md) (pipeline fotos / Commons)
+| Tema | Archivo |
+|---|---|
+| Correr app en local | [../frontend/GETTINGSTAR.md](../frontend/GETTINGSTAR.md) |
+| Setup Flutter / Android (una vez) | [setup/01-flutter-android.md](setup/01-flutter-android.md) |
+| Setup Supabase / Auth Google | [setup/02-supabase.md](setup/02-supabase.md) |
+| Setup Firebase FCM | [setup/03-firebase-fcm.md](setup/03-firebase-fcm.md) |
+| Reset DB / migraciones | [../backend/README.md](../backend/README.md) |
+| Publicar APK beta (PDN) | [../beta-portal/README.md](../beta-portal/README.md) |
+| Lineamientos frontend | [lineamientos-desarrollo-frontend.md](lineamientos-desarrollo-frontend.md) |
+| Google Maps (keys / Places) | [google-maps-setup.md](google-maps-setup.md) |
+| Imágenes de red / Commons | [imagenes-red.md](imagenes-red.md) |
+| E2E Patrol | [e2e.md](e2e.md) |
+| Import catálogo Colombia (JSON) | [data/README.md](data/README.md) |
+| Hallazgos técnicos cortos | [investigaciones-tecnicas.md](investigaciones-tecnicas.md) |
+| Figma Make (snapshot) | [../design/figma-make/](../design/figma-make/README.md) |
+
+Credenciales: comentarios en `frontend/env/*.example` y `backend/.env.example` — no duplicar aquí.

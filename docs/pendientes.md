@@ -9,8 +9,8 @@ No bloquean el uso diario. Al implementar, tacha aquí y ajusta el código / doc
 **Fuente única** de este tema (no duplicar el detalle en otros docs; solo referenciar aquí).  
 **Estado en app hoy:** [`aplicacion-actual.md`](aplicacion-actual.md). Lo de abajo es **diseño acordado**, aún no construido.
 
-**Fase:** **Fase 2 — Compartir** (Monetización = Fase 3, Expansión = Fase 4).  
-**Ahora (Fase 1):** mejoras del MVP. Share no se implementa aún; **diseño de producto cerrado** (abajo).
+**Fase:** **Fase 2 — Compartir** (roadmap: [`producto.md`](producto.md)). Monetización = Fase 3 · Expansión = Fase 4.  
+**MVP (Fase 1):** cerrado en producto vivo — [`aplicacion-actual.md`](aplicacion-actual.md). Share **no** se implementa aún; **diseño de producto cerrado** (abajo).
 
 ### Resumen en lenguaje de la app
 

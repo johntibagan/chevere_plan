@@ -4,9 +4,10 @@
 
 | Tema | Dónde |
 |---|---|
-| Visión / fases | [`producto.md`](producto.md) |
+| Visión / fases futuras | [`producto.md`](producto.md) |
 | Qué no romper | [`invariantes.md`](invariantes.md) |
-| Compartir (abierto/cerrado) | [`pendientes.md`](pendientes.md) → *Compartir sitios y planes* |
+| Deuda / Compartir (Fase 2) | [`pendientes.md`](pendientes.md) |
+| Índice de docs | [`README.md`](README.md) |
 | Figma Make (snapshot) | [`design/figma-make/`](../design/figma-make/README.md) |
 
 **Marca:** Chevere Plan (`com.chevere.plan`). El Make a veces dice “Chebre Plan” — usar **Chevere Plan**.
@@ -183,7 +184,7 @@ DIVIPOLA (deptos/ciudades) en DB + caché larga. Reset `--full`: JSON masivo de 
 - Monetización, eventos reales, fichas de negocio de pago · iOS publicado
 - Búsqueda de **planes** por título (solo sitios)
 
-Visión: [`producto.md`](producto.md). Deuda: [`pendientes.md`](pendientes.md).
+Visión / fases: [`producto.md`](producto.md). Deuda: [`pendientes.md`](pendientes.md).
 
 ### Flujos de extremo a extremo
 
