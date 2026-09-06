@@ -2,6 +2,7 @@ import 'package:flutter/painting.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../di/providers.dart';
+import '../photos/wikimedia_session_widths.dart';
 import '../prefetch/site_prefetch.dart';
 import 'app_image_cache.dart';
 import 'entity_cache_store.dart';
@@ -27,6 +28,10 @@ Future<void> clearSessionCaches({
   try {
     PaintingBinding.instance.imageCache.clear();
     PaintingBinding.instance.imageCache.clearLiveImages();
+  } catch (_) {}
+
+  try {
+    WikimediaSessionWidths.instance.clear();
   } catch (_) {}
 
   try {

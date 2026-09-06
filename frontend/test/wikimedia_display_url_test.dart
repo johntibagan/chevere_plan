@@ -1,4 +1,5 @@
 import 'package:chevere_plan/core/photos/wikimedia_display_url.dart';
+import 'package:chevere_plan/core/photos/wikimedia_session_widths.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -75,4 +76,47 @@ void main() {
     expect(a.displayUrl, motavita);
     expect(a.cacheKey, 'p1@orig');
   });
+
+  group('WikimediaSessionWidths', () {
+    setUp(WikimediaSessionWidths.instance.clear);
+    tearDown(WikimediaSessionWidths.instance.clear);
+
+    test('baseKey prefiere cacheKey', () {
+      expect(
+        WikimediaSessionWidths.baseKey(
+          cacheKey: 'photo-1',
+          sourceUrl: motavita,
+        ),
+        'photo-1',
+      );
+      expect(
+        WikimediaSessionWidths.baseKey(cacheKey: null, sourceUrl: motavita),
+        motavita,
+      );
+    });
+
+    test('remember conserva el ancho mayor; original gana', () {
+      final mem = WikimediaSessionWidths.instance;
+      mem.remember('p1', 500);
+      mem.remember('p1', 800);
+      expect(mem.width('p1'), 800);
+      mem.remember('p1', 640);
+      expect(mem.width('p1'), 800);
+      mem.remember('p1', null);
+      expect(mem.has('p1'), isTrue);
+      expect(mem.width('p1'), isNull);
+    });
+
+    test('startAttemptIndex usa el peldaño conocido en la ladder', () {
+      final mem = WikimediaSessionWidths.instance;
+      mem.remember('p1', 800);
+      final ladder = wikimediaRetryWidths(
+        preferredWidth: 1280,
+        fullScreen: true,
+      );
+      expect(mem.startAttemptIndex('p1', ladder), 3);
+      expect(mem.startAttemptIndex('unknown', ladder), 0);
+    });
+  });
 }
+

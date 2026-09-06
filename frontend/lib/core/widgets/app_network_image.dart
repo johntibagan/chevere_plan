@@ -3,6 +3,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 
 import '../cache/app_image_cache.dart';
 import '../photos/wikimedia_display_url.dart';
+import '../photos/wikimedia_session_widths.dart';
 import '../theme/app_theme.dart';
 
 /// Decode en memoria: un solo eje, tope 2048 px (equipos de gama media).
@@ -24,6 +25,9 @@ enum AppImageQuality {
 /// URLs de Wikimedia Commons se piden como thumb; si fallan, sube de resolución
 /// (o al más grande en pantalla completa) y al final el original.
 /// Al aparecer la foto: fade corto (~180 ms), sin shimmer/blur-hash.
+///
+/// Wikimedia: [WikimediaSessionWidths] recuerda el último ancho OK en la sesión
+/// para no redescubrir la escalera al recrear el widget (tira ↔ visor, swipe).
 class AppNetworkImage extends StatefulWidget {
   const AppNetworkImage({
     super.key,
@@ -71,7 +75,13 @@ class _AppNetworkImageState extends State<AppNetworkImage> {
   static const _fadeOut = Duration(milliseconds: 120);
 
   /// Índice en la escalera de reintentos Wikimedia (0 = preferido).
-  int _wikiAttempt = 0;
+  late int _wikiAttempt;
+
+  @override
+  void initState() {
+    super.initState();
+    _wikiAttempt = _startAttemptFromSession();
+  }
 
   @override
   void didUpdateWidget(covariant AppNetworkImage oldWidget) {
@@ -79,8 +89,34 @@ class _AppNetworkImageState extends State<AppNetworkImage> {
     if (oldWidget.url != widget.url ||
         oldWidget.cacheKey != widget.cacheKey ||
         oldWidget.quality != widget.quality) {
-      _wikiAttempt = 0;
+      _wikiAttempt = _startAttemptFromSession();
     }
+  }
+
+  String get _wikiBase => WikimediaSessionWidths.baseKey(
+        cacheKey: widget.cacheKey,
+        sourceUrl: widget.url,
+      );
+
+  List<int?> _wikiLadder() {
+    final preferred = AppNetworkImage.wikiThumbWidthFor(widget.quality);
+    return wikimediaRetryWidths(
+      preferredWidth: preferred,
+      fullScreen: widget.quality == AppImageQuality.fullScreen,
+    );
+  }
+
+  int _startAttemptFromSession() {
+    if (!isWikimediaUploadUrl(widget.url)) return 0;
+    return WikimediaSessionWidths.instance.startAttemptIndex(
+      _wikiBase,
+      _wikiLadder(),
+    );
+  }
+
+  void _rememberWikiSuccess(int? widthPx) {
+    if (!isWikimediaUploadUrl(widget.url)) return;
+    WikimediaSessionWidths.instance.remember(_wikiBase, widthPx);
   }
 
   int _decodeSide(BuildContext context, double logical, {required int minPx}) {
@@ -149,13 +185,7 @@ class _AppNetworkImageState extends State<AppNetworkImage> {
     }
 
     final wiki = isWikimediaUploadUrl(widget.url);
-    final preferred = AppNetworkImage.wikiThumbWidthFor(widget.quality);
-    final ladder = wiki
-        ? wikimediaRetryWidths(
-            preferredWidth: preferred,
-            fullScreen: widget.quality == AppImageQuality.fullScreen,
-          )
-        : const <int?>[null];
+    final ladder = wiki ? _wikiLadder() : const <int?>[null];
     final attemptIdx =
         wiki ? _wikiAttempt.clamp(0, ladder.length - 1) : 0;
     final widthPx = wiki ? ladder[attemptIdx] : null;
@@ -206,6 +236,10 @@ class _AppNetworkImageState extends State<AppNetworkImage> {
       ),
     );
 
+    final filterQuality = widget.quality == AppImageQuality.standard
+        ? FilterQuality.low
+        : FilterQuality.medium;
+
     final image = CachedNetworkImage(
       imageUrl: displayUrl,
       cacheKey: effectiveKey,
@@ -221,10 +255,22 @@ class _AppNetworkImageState extends State<AppNetworkImage> {
       fadeOutDuration: _fadeOut,
       memCacheWidth: memW,
       memCacheHeight: memH,
-      filterQuality: widget.quality == AppImageQuality.standard
-          ? FilterQuality.low
-          : FilterQuality.medium,
+      filterQuality: filterQuality,
       placeholder: (context, _) => placeholder,
+      imageBuilder: (context, imageProvider) {
+        if (wiki) {
+          _rememberWikiSuccess(widthPx);
+        }
+        return Image(
+          image: imageProvider,
+          width: widget.width,
+          height: widget.height,
+          fit: widget.fit,
+          filterQuality: filterQuality,
+          alignment: Alignment.center,
+          gaplessPlayback: true,
+        );
+      },
       errorWidget: (context, _, _) {
         if (wiki && attemptIdx < ladder.length - 1) {
           _advanceWikiFallback(ladder);

@@ -24,6 +24,7 @@ El rewrite a thumbnail de Wikimedia es **solo cliente**. La fila en DB **no** ca
 | Rol | Path |
 |---|---|
 | Rewrite Commons + escalera de reintentos | `frontend/lib/core/photos/wikimedia_display_url.dart` |
+| Memoria de sesión (ancho OK por foto) | `frontend/lib/core/photos/wikimedia_session_widths.dart` |
 | Widget de pintado + fallback UI | `frontend/lib/core/widgets/app_network_image.dart` |
 | Caché disco + UA HTTP | `frontend/lib/core/cache/app_image_cache.dart` |
 | Prefetch / warmup portadas | `frontend/lib/core/prefetch/site_prefetch.dart` |
@@ -148,7 +149,9 @@ Resultado típico: `[1280, 2560, 1920, 800, 500, null]`.
 Estado `_wikiAttempt` (índice en la ladder).  
 En `errorWidget` de `CachedNetworkImage`: si Commons y `attemptIdx < ladder.length - 1` → `setState` al siguiente en post-frame; se sigue mostrando placeholder. Al agotar → caja de error.
 
-Si cambian `url` / `cacheKey` / `quality` → `_wikiAttempt = 0`.
+Si cambian `url` / `cacheKey` / `quality` → se recalcula el índice inicial (no siempre 0).
+
+**Memoria de sesión (`WikimediaSessionWidths`):** al cargar bien un intento, se guarda `base → ancho OK` (o original). Al montar / recrear el widget (tira, visor, swipe `PageView`), el índice inicial es el peldaño de ese ancho en la ladder de la `quality` actual — evita redescubrir fallos y reutilizar el blob ya en disco (`@wN`). Se limpia en `clearSessionCaches` / logout. No persiste en Hive.
 
 ### 5.6 `cacheKey` por intento (`wikimediaAttempt`)
 
@@ -233,7 +236,8 @@ Errores: silenciados (`catch`).
 
 | Tema | Estado hoy |
 |---|---|
-| Progressive upgrade (pintar 500 → luego 1280 encima) | No: solo fallback por **error** |
+| Progressive upgrade (pintar 500 → luego 1280 encima) | **Pendiente** (Paso 2 del plan parpadeo) |
+| Recordar ancho OK en sesión (evitar redescubrir ladder) | **Hecho** — `WikimediaSessionWidths` + arranque de `_wikiAttempt` (§5.5) |
 | Hosts no-Commons (Flickr, etc.) | Archivo completo; sin ladder |
 | Thumbs / transform en Storage | No; bytes = original subido (lado largo ≤ ~1920 en lineamientos de subida) |
 | Métricas de ladder (cuántos peldaños, 429, latencia) | No instrumentado |
