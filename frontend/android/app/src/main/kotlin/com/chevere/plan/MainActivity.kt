@@ -3,6 +3,8 @@ package com.chevere.plan
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Bundle
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
@@ -16,6 +18,12 @@ class MainActivity : FlutterActivity() {
     private val mapsPackage = "com.google.android.apps.maps"
     private val wazePackage = "com.waze"
     private val uberPackage = "com.ubercab"
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        // API moderna (Android 12+) + backport: evita pantalla negra / flash del template viejo.
+        installSplashScreen()
+        super.onCreate(savedInstanceState)
+    }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)

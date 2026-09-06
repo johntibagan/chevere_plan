@@ -244,7 +244,7 @@ Referencia visual Make: [Guardados app diseño](https://www.figma.com/make/HhANL
 
 | Dato | Hoy |
 |---|---|
-| Plataforma | Android (Flutter, Material 3) |
+| Plataforma | Android (Flutter, Material 3). Splash de arranque: API `Theme.SplashScreen` (`androidx.core:core-splashscreen`) + icono launcher; fondo claro/oscuro alineado al tema. |
 | Navegación raíz | `MaterialApp` + `Navigator`. **Sin GoRouter.** |
 | Sesión | Sin login → `LoginPage`. Con sesión → `HomePage` (4 tabs + FAB). **Arranque (Fase 2 · Pasos 1+3):** JWT local → Home optimista; `Supabase.initialize` en paralelo (no bloquea el primer frame); confirmación en background (revocada → login; red → se mantiene). |
 | Share entrante | Intent → `SavePlacePage` sobre el shell. |
