@@ -214,7 +214,7 @@ flowchart TB
 - Geografía: DIVIPOLA + caché 30/90 d
 - Sitios, saves, planes, reseñas, favoritos: servidor; SWR en cliente. **Inicio:** primer pintado de guardados desde Hive síncrono (`peekSync`) si hay caché usable; la red refresca detrás.
 - Populares cerca: Hive + ancla GPS
-- Fotos: Storage firmado o `external_url` (staff/catálogo). Thumbs Commons + fallback, UA, caché y prefetch: **[`imagenes-red.md`](imagenes-red.md)**. Fade ~180 ms; sin shimmer/blur-hash.
+- Fotos: Storage firmado o `external_url` (staff/catálogo). Thumbs Commons + fallback, UA, caché y prefetch: **[`imagenes-red.md`](imagenes-red.md)**. Fade ~180 ms; Wikimedia puede pintar un thumb menor ya en caché y subir al preferido encima; sin shimmer/blur-hash.
 
 ### Pruebas cerradas (APK)
 

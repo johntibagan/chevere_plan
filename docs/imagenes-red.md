@@ -153,6 +153,15 @@ Si cambian `url` / `cacheKey` / `quality` → se recalcula el índice inicial (n
 
 **Memoria de sesión (`WikimediaSessionWidths`):** al cargar bien un intento, se guarda `base → ancho OK` (o original). Al montar / recrear el widget (tira, visor, swipe `PageView`), el índice inicial es el peldaño de ese ancho en la ladder de la `quality` actual — evita redescubrir fallos y reutilizar el blob ya en disco (`@wN`). Se limpia en `clearSessionCaches` / logout. No persiste en Hive.
 
+**Mejora progresiva (solo Wikimedia, subir calidad):** si la sesión o el disco ya tienen un thumb **menor** que el preferido de la `quality` actual (p. ej. tira `@w800` → visor `@w1280`):
+
+1. Capa baja: pinta ese thumb al toque (sin fade).
+2. Capa alta: pide el preferido (ladder desde 0); fade 180/120 ms al llegar.
+3. Si la alta falla del todo → se queda la baja (sin icono de error encima).
+4. No baja resolución a propósito (visor→tira con sesión ≥ preferido de tira sigue usando el mayor ya OK).
+
+No es progressive JPEG del mismo archivo; son dos `cacheKey` (`@wN` distintos) en un `Stack`.
+
 ### 5.6 `cacheKey` por intento (`wikimediaAttempt`)
 
 | Intento | `cacheKey` efectivo |
@@ -236,7 +245,7 @@ Errores: silenciados (`catch`).
 
 | Tema | Estado hoy |
 |---|---|
-| Progressive upgrade (pintar 500 → luego 1280 encima) | **Pendiente** (Paso 2 del plan parpadeo) |
+| Progressive upgrade (pintar menor → mayor encima) | **Hecho** — `AppNetworkImage` Stack + probe disco (§5.5) |
 | Recordar ancho OK en sesión (evitar redescubrir ladder) | **Hecho** — `WikimediaSessionWidths` + arranque de `_wikiAttempt` (§5.5) |
 | Hosts no-Commons (Flickr, etc.) | Archivo completo; sin ladder |
 | Thumbs / transform en Storage | No; bytes = original subido (lado largo ≤ ~1920 en lineamientos de subida) |
