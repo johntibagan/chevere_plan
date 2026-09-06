@@ -13,6 +13,7 @@ import 'core/cache/session_cache_cleanup.dart';
 import 'core/di/providers.dart';
 import 'core/l10n/app_locale.dart';
 import 'core/l10n/context_l10n.dart';
+import 'core/logging/app_log.dart';
 import 'core/notifications/local_notification_router.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/chevere_theme_colors.dart';
@@ -23,7 +24,10 @@ import 'features/beta/presentation/beta_update_gate.dart';
 final GlobalKey<NavigatorState> appNavigatorKey = GlobalKey<NavigatorState>();
 
 class CheverePlanApp extends ConsumerStatefulWidget {
-  const CheverePlanApp({super.key});
+  const CheverePlanApp({super.key, this.optimisticSession});
+
+  /// Sesión leída del Keystore de este dispositivo antes de confirmar con red.
+  final Session? optimisticSession;
 
   @override
   ConsumerState<CheverePlanApp> createState() => _CheverePlanAppState();
@@ -110,13 +114,18 @@ class _CheverePlanAppState extends ConsumerState<CheverePlanApp> {
           child: child ?? const SizedBox.shrink(),
         );
       },
-      home: const BetaUpdateGate(child: AuthGate()),
+      home: BetaUpdateGate(
+        child: AuthGate(optimisticSession: widget.optimisticSession),
+      ),
     );
   }
 }
 
 class AuthGate extends ConsumerStatefulWidget {
-  const AuthGate({super.key});
+  const AuthGate({super.key, this.optimisticSession});
+
+  /// Sesión local del mismo dispositivo (Keystore). Confirmar en background.
+  final Session? optimisticSession;
 
   @override
   ConsumerState<AuthGate> createState() => _AuthGateState();
@@ -124,6 +133,86 @@ class AuthGate extends ConsumerStatefulWidget {
 
 class _AuthGateState extends ConsumerState<AuthGate> {
   Session? _lastSession;
+  Session? _optimistic;
+  bool _forceLogin = false;
+  bool _confirmStarted = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _optimistic = widget.optimisticSession;
+    if (_optimistic != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        unawaited(_confirmSessionInBackground());
+      });
+    }
+  }
+
+  /// Confirma la sesión optimista con el servidor sin bloquear el primer paint.
+  ///
+  /// - OK / sesión válida → no cambia la UI (ya pintamos Home).
+  /// - [AuthException] explícita (revocada / no refrescable) → login.
+  /// - Red / timeout / retryable → mantener optimista; reintentar más tarde.
+  Future<void> _confirmSessionInBackground({bool isRetry = false}) async {
+    if (_confirmStarted && !isRetry) return;
+    _confirmStarted = true;
+    try {
+      final session = await Supabase.instance.client.auth.getSession();
+      if (!mounted) return;
+      if (session != null) {
+        // Servidor/SDK OK: el stream de auth actualizará; soltar el seed.
+        setState(() => _optimistic = null);
+        return;
+      }
+      // Sin sesión en el cliente tras initialize: no hay JWT usable.
+      if (_optimistic != null) {
+        AppLog.debug(
+          'optimistic session cleared (no current session)',
+          name: 'auth',
+        );
+        setState(() {
+          _forceLogin = true;
+          _optimistic = null;
+        });
+      }
+    } on AuthRetryableFetchException catch (e, st) {
+      AppLog.debug(
+        'optimistic confirm retryable',
+        name: 'auth',
+        error: e,
+        stackTrace: st,
+      );
+      _scheduleConfirmRetry();
+    } on AuthException catch (e, st) {
+      AppLog.debug(
+        'optimistic confirm rejected',
+        name: 'auth',
+        error: e,
+        stackTrace: st,
+      );
+      if (!mounted) return;
+      setState(() {
+        _forceLogin = true;
+        _optimistic = null;
+      });
+      unawaited(Supabase.instance.client.auth.signOut());
+    } catch (e, st) {
+      AppLog.debug(
+        'optimistic confirm network/other',
+        name: 'auth',
+        error: e,
+        stackTrace: st,
+      );
+      _scheduleConfirmRetry();
+    }
+  }
+
+  void _scheduleConfirmRetry() {
+    Future<void>.delayed(const Duration(seconds: 45), () {
+      if (!mounted || _forceLogin || _optimistic == null) return;
+      unawaited(_confirmSessionInBackground(isRetry: true));
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -133,8 +222,16 @@ class _AuthGateState extends ConsumerState<AuthGate> {
     return StreamBuilder<AuthState>(
       stream: authRepository.authStateChanges,
       builder: (context, snapshot) {
-        final session =
+        final event = snapshot.data?.event;
+        if (event == AuthChangeEvent.signedOut) {
+          _optimistic = null;
+          _forceLogin = true;
+        }
+
+        final liveSession =
             snapshot.data?.session ?? authRepository.currentSession;
+        final session = liveSession ??
+            (_forceLogin ? null : _optimistic);
 
         if (_lastSession != null && session == null) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -148,6 +245,7 @@ class _AuthGateState extends ConsumerState<AuthGate> {
         }
         _lastSession = session;
 
+        // Con sesión optimista (mismo dispositivo) no bloquear con spinner.
         if (snapshot.connectionState == ConnectionState.waiting &&
             session == null) {
           return Scaffold(

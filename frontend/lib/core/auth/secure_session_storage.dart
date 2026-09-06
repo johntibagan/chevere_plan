@@ -1,7 +1,11 @@
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+import '../logging/app_log.dart';
 
 /// Sesión JWT en Keystore (Android EncryptedSharedPreferences), no en prefs plano.
 ///
@@ -40,6 +44,38 @@ class SecureSessionStorage extends LocalStorage {
       }
     } catch (_) {
       // Si el Keystore no está listo, supabase fallará al persistir; no filtrar.
+    }
+  }
+
+  /// Lee y parsea la sesión persistida en este dispositivo (sin red).
+  ///
+  /// Solo sirve para pintar UI de forma optimista en el mismo aparato que
+  /// guardó el JWT en Keystore — no es sesión de otro usuario/dispositivo.
+  Future<Session?> peekSession() async {
+    try {
+      await initialize();
+      final raw = await accessToken();
+      return parsePersistedSession(raw);
+    } catch (e, st) {
+      AppLog.debug(
+        'peekSession',
+        name: 'auth',
+        error: e,
+        stackTrace: st,
+      );
+      return null;
+    }
+  }
+
+  /// Parsea el JSON que supabase_flutter guarda (`jsonEncode(session.toJson())`).
+  static Session? parsePersistedSession(String? raw) {
+    if (raw == null || raw.trim().isEmpty) return null;
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is! Map) return null;
+      return Session.fromJson(Map<String, dynamic>.from(decoded));
+    } catch (_) {
+      return null;
     }
   }
 

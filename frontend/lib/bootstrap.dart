@@ -43,6 +43,11 @@ Future<Widget> createRootApp({
     );
   }
 
+  // Mismo storage para peek optimista + SDK (mismo dispositivo / Keystore).
+  final sessionStorage = SecureSessionStorage(supabaseUrl: Env.supabaseUrl);
+  // Peek en paralelo al resto del bootstrap (Keystore, sin red).
+  final optimisticSessionFuture = sessionStorage.peekSession();
+
   // Tema desde disco antes del primer frame (evita flash claro↔oscuro).
   try {
     await AppThemeModeStore.loadBeforeRunApp();
@@ -72,12 +77,13 @@ Future<Widget> createRootApp({
 
   // No usar `Supabase.instance.isInitialized`: acceder a `.instance` exige
   // que ya esté inicializado (assertion en debug).
+  // Paso 1: aún bloquea runApp (Paso 3 lo desbloquea). El peek ya corre en paralelo.
   try {
     await Supabase.initialize(
       url: Env.supabaseUrl,
       publishableKey: Env.supabaseAnonKey,
       authOptions: FlutterAuthClientOptions(
-        localStorage: SecureSessionStorage(supabaseUrl: Env.supabaseUrl),
+        localStorage: sessionStorage,
       ),
     ).timeout(const Duration(seconds: 15));
   } catch (e, st) {
@@ -90,9 +96,21 @@ Future<Widget> createRootApp({
     );
   }
 
+  Session? optimisticSession;
+  try {
+    optimisticSession = await optimisticSessionFuture;
+  } catch (e, st) {
+    AppLog.debug(
+      'optimistic session peek',
+      name: 'bootstrap',
+      error: e,
+      stackTrace: st,
+    );
+  }
+
   return ProviderScope(
     overrides: overrides,
-    child: const CheverePlanApp(),
+    child: CheverePlanApp(optimisticSession: optimisticSession),
   );
 }
 
