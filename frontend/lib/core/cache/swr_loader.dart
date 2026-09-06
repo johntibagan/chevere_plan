@@ -11,6 +11,29 @@ class SwrLoader {
 
   final EntityCacheStore _store;
 
+  /// Snapshot síncrono (memoria → Hive) para el primer pintado.
+  ///
+  /// Respeta [ttl.stale] como techo (misma ventana usable que SWR); no escribe
+  /// ni dispara red. El [load] posterior sigue con la lógica SWR intacta.
+  T? peekSync<T>({
+    required String key,
+    required CacheTtl ttl,
+    required JsonDecoder<T> decode,
+    bool Function(T data)? isUsableCache,
+  }) {
+    final cached = _store.peekSync(key);
+    if (cached == null) return null;
+    try {
+      final data = decode(cached.payload);
+      if (!(isUsableCache?.call(data) ?? true)) return null;
+      final age = DateTime.now().toUtc().difference(cached.fetchedAt);
+      if (age > ttl.stale) return null;
+      return data;
+    } catch (_) {
+      return null;
+    }
+  }
+
   /// Carga [key] respetando [ttl].
   ///
   /// - Si hay caché fresca → la devuelve.

@@ -49,13 +49,17 @@ class EntityCacheStore {
     _ready = true;
   }
 
+  /// Solo capa memoria (vacío tras cold start hasta el primer [read]/[peekSync]).
   CacheRecord? peek(String key) => _memory[key];
 
-  Future<CacheRecord?> read(String key) async {
+  /// Memoria → Hive **síncrono** (el box ya está abierto en bootstrap).
+  ///
+  /// Para pintar el primer frame sin esperar el ciclo async de [read]/SWR.
+  CacheRecord? peekSync(String key) {
     final mem = _memory[key];
     if (mem != null) return mem;
     final box = _box;
-    if (box == null) return null;
+    if (box == null || !_ready) return null;
     try {
       final raw = box.get(key);
       if (raw == null || raw.isEmpty) return null;
@@ -65,7 +69,24 @@ class EntityCacheStore {
       _memory[key] = record;
       return record;
     } catch (_) {
-      // Caché corrupta: borrar clave y seguir a red.
+      return null;
+    }
+  }
+
+  Future<CacheRecord?> read(String key) async {
+    final sync = peekSync(key);
+    if (sync != null) return sync;
+    final box = _box;
+    if (box == null) return null;
+    // peekSync ya intentó disco; si falló por JSON corrupto, limpiar.
+    try {
+      final raw = box.get(key);
+      if (raw == null || raw.isEmpty) return null;
+      // peekSync devolvió null con raw presente → corrupto.
+      await box.delete(key);
+      _memory.remove(key);
+      return null;
+    } catch (_) {
       try {
         await box.delete(key);
       } catch (_) {}

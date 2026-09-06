@@ -71,6 +71,13 @@ class _HomePageState extends ConsumerState<HomePage> {
   void initState() {
     super.initState();
     unawaited(AppPerformance.start(AppPerformance.homeTimeToContent));
+    // Dispara MySavesNotifier.build(); si hay Hive, ya deja AsyncData + lista.
+    final seeded = ref.read(mySavesProvider).valueOrNull;
+    if (seeded != null && seeded.items.isNotEmpty) {
+      _saves = seeded.items;
+      _loading = false;
+      unawaited(AppPerformance.stop(AppPerformance.homeTimeToContent));
+    }
     _bootstrap();
   }
 
@@ -165,6 +172,7 @@ class _HomePageState extends ConsumerState<HomePage> {
         _saves = saves;
         _loading = false;
       });
+      // Si ya se detuvo en initState (peek Hive), stop es no-op de reloj.
       unawaited(AppPerformance.stop(AppPerformance.homeTimeToContent));
       ref.read(sitePrefetchProvider).scheduleVisibleSites(
             saves.map((s) => s.siteId),

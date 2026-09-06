@@ -302,8 +302,23 @@ class MySavesNotifier extends AsyncNotifier<PagedItems<UserSave>> {
   static const _pageSize = PagedItems.defaultPageSize;
 
   @override
-  Future<PagedItems<UserSave>> build() {
+  Future<PagedItems<UserSave>> build() async {
+    final seeded = _peekPage0();
+    if (seeded != null) {
+      // Primer frame con Hive caliente: AsyncData antes del await de SWR/red.
+      state = AsyncData(seeded);
+    }
     return _loadPage0(forceNetwork: false);
+  }
+
+  PagedItems<UserSave>? _peekPage0() {
+    final uid = ref.read(supabaseClientProvider).auth.currentUser?.id;
+    if (uid == null) return null;
+    return ref.read(swrLoaderProvider).peekSync<PagedItems<UserSave>>(
+          key: CacheKeys.mySavesSummary(uid),
+          ttl: CacheTtl.mySaves,
+          decode: _decodePagedSaves,
+        );
   }
 
   Future<void> refresh({bool force = true}) async {
