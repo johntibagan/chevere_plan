@@ -36,6 +36,13 @@ abstract final class AppTypography {
         color: color ?? AppColors.foreground,
       );
 
+  /// Nombre grande en ficha de sitio (24, Jakarta ExtraBold).
+  static TextStyle detailTitle({Color? color}) => GoogleFonts.plusJakartaSans(
+        fontSize: 24,
+        fontWeight: FontWeight.w800,
+        color: color ?? AppColors.foreground,
+      );
+
   /// Valor numérico en stat card (20, Jakarta ExtraBold).
   static TextStyle statValue({Color? color}) => GoogleFonts.plusJakartaSans(
         fontSize: 20,

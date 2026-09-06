@@ -28,11 +28,8 @@ Maps SDK Android = **ilimitado ($0)**.
 GOOGLE_MAPS_API_KEY=la_misma_key
 ```
 
-3. Run:
-
-```bash
-flutter run --dart-define-from-file=env/test.env
-```
+3. Corré la app con `--dart-define-from-file` (comandos en
+   [`frontend/GETTINGSTAR.md`](../frontend/GETTINGSTAR.md)).
 
 ## 3. Anti-fugas (ya en código)
 

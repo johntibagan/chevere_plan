@@ -414,7 +414,10 @@ class SavesRepository {
       throw const AppUserError('Debes iniciar sesión para guardar.');
     }
 
-    final name = input.name.trim().isEmpty ? 'Sin nombre' : input.name.trim();
+    final name = input.name.trim();
+    if (name.isEmpty) {
+      throw const AppUserError('Escribe un nombre para el sitio.');
+    }
     final located = SavePolicies.hasLocation(
       city: input.city,
       addressLine: input.addressLine,
@@ -681,12 +684,14 @@ class SavesRepository {
             bytes,
             fileOptions: FileOptions(upsert: false, contentType: contentType),
           );
-    } on StorageException catch (e) {
-      throw AppUserError(
-        e.message.isNotEmpty
-            ? e.message
-            : 'No se pudo subir la foto. Intenta de nuevo.',
+    } on StorageException catch (e, st) {
+      AppLog.error(
+        'uploadPhotoBytes storage',
+        name: 'saves',
+        error: e,
+        stackTrace: st,
       );
+      throw const AppUserError('No se pudo subir la foto. Intenta de nuevo.');
     } catch (e, st) {
       AppLog.error(
         'uploadPhotoBytes storage',
@@ -727,11 +732,12 @@ class SavesRepository {
           'No puedes añadir fotos a este sitio (solo el creador).',
         );
       }
-      throw AppUserError(
-        e.message.isNotEmpty
-            ? e.message
-            : 'No se pudo guardar la foto. Intenta de nuevo.',
+      AppLog.error(
+        'uploadPhotoBytes insert',
+        name: 'saves',
+        error: e,
       );
+      throw const AppUserError('No se pudo guardar la foto. Intenta de nuevo.');
     }
   }
 
@@ -799,6 +805,15 @@ class SavesRepository {
       }
       throw const AppUserError('No se pudo guardar la foto. Intenta de nuevo.');
     }
+  }
+
+  Future<String?> fetchCoverPhotoId(String siteId) async {
+    final row = await _client
+        .from('sites')
+        .select('cover_photo_id')
+        .eq('id', siteId)
+        .maybeSingle();
+    return row?['cover_photo_id']?.toString();
   }
 
   Future<void> setSiteCoverPhoto({
@@ -954,7 +969,10 @@ class SavesRepository {
       throw const AppUserError('Debes iniciar sesión para guardar.');
     }
 
-    final name = input.name.trim().isEmpty ? 'Sin nombre' : input.name.trim();
+    final name = input.name.trim();
+    if (name.isEmpty) {
+      throw const AppUserError('Escribe un nombre para el sitio.');
+    }
     final located = SavePolicies.hasLocation(
       city: input.city,
       addressLine: input.addressLine,
@@ -1026,7 +1044,10 @@ class SavesRepository {
       throw const AppUserError('Debes iniciar sesión para guardar.');
     }
 
-    final name = input.name.trim().isEmpty ? 'Sin nombre' : input.name.trim();
+    final name = input.name.trim();
+    if (name.isEmpty) {
+      throw const AppUserError('Escribe un nombre para el sitio.');
+    }
     final located = SavePolicies.hasLocation(
       city: input.city,
       addressLine: input.addressLine,

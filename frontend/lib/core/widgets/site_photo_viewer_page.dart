@@ -117,7 +117,7 @@ class _SitePhotoViewerPageState extends State<SitePhotoViewerPage> {
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.light,
       child: Scaffold(
-        backgroundColor: Colors.black,
+        backgroundColor: AppColors.photoViewerBg,
         body: SafeArea(
           child: Stack(
             children: [
@@ -184,7 +184,7 @@ class _SitePhotoViewerPageState extends State<SitePhotoViewerPage> {
                         end: Alignment.bottomCenter,
                         colors: [
                           Colors.transparent,
-                          Colors.black.withValues(alpha: 0.72),
+                          AppColors.photoViewerBg.withValues(alpha: 0.72),
                         ],
                       ),
                     ),

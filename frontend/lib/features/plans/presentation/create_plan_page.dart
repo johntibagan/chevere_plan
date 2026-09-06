@@ -9,6 +9,7 @@ import '../../../core/testing/widget_keys.dart';
 import '../../../core/formatters/money_format.dart';
 import '../../../core/l10n/context_l10n.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/theme/theme_rebuild.dart';
 import '../../../core/widgets/app_section_label.dart';
 import '../../../core/widgets/app_toast.dart';
 import '../../../core/widgets/discard_changes_scope.dart';
@@ -187,11 +188,14 @@ class _CreatePlanPageState extends ConsumerState<CreatePlanPage> {
       setState(() => _saving = false);
       _formDirty.setSuppressed(false);
       AppToast.error(context, e, logContext: 'create_plan_draft');
+      if (!context.mounted) return;
+      AppToast.show(context, context.l10n.errorProblemToast, error: true);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    ref.watchAppThemeMode();
     final l10n = context.l10n;
     final currencyCode =
         widget.existing?.currencyCode ?? kDefaultCurrencyCode;
@@ -218,6 +222,7 @@ class _CreatePlanPageState extends ConsumerState<CreatePlanPage> {
                 TextField(
                   key: WidgetKeys.createPlanTitle,
                   controller: _titleCtrl,
+                  autofocus: !_isEdit && _titleCtrl.text.trim().isEmpty,
                   textCapitalization: TextCapitalization.sentences,
                   textInputAction: TextInputAction.done,
                   onSubmitted: (_) => _submitFromKeyboard(),

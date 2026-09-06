@@ -82,6 +82,8 @@ class PlansRepository {
     required String locationQuery,
     required bool includePublic,
     double? maxBudget,
+    int limit = 100,
+    int offset = 0,
   }) async {
     final rows = await _client.rpc(
       'list_plan_candidates',
@@ -89,6 +91,8 @@ class PlansRepository {
         'p_location_query': locationQuery.trim(),
         'p_include_public': includePublic,
         'p_max_budget': maxBudget,
+        'p_limit': limit,
+        'p_offset': offset,
       },
     );
     return (rows as List<dynamic>)

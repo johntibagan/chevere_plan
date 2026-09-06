@@ -123,6 +123,8 @@ class _PlanReviewEditorPageState extends ConsumerState<PlanReviewEditorPage> {
       setState(() => _saving = false);
       _formDirty.setSuppressed(false);
       AppToast.error(context, e, logContext: 'plan_review_save');
+      if (!context.mounted) return;
+      AppToast.show(context, context.l10n.errorProblemToast, error: true);
     }
   }
 

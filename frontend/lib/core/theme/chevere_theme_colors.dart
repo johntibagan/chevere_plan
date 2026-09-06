@@ -23,6 +23,7 @@ class ChevereThemeColors extends ThemeExtension<ChevereThemeColors> {
     required this.purple,
     required this.requiredMark,
     required this.scrim,
+    required this.photoViewerBg,
     required this.onImage,
     required this.onImageMuted,
     required this.catGastro,
@@ -65,6 +66,8 @@ class ChevereThemeColors extends ThemeExtension<ChevereThemeColors> {
   final Color purple;
   final Color requiredMark;
   final Color scrim;
+  /// Fondo immersivo del visor de fotos (siempre negro).
+  final Color photoViewerBg;
   final Color onImage;
   final Color onImageMuted;
   final Color catGastro;
@@ -107,6 +110,7 @@ class ChevereThemeColors extends ThemeExtension<ChevereThemeColors> {
     purple: Color(0xFF8B7FFF),
     requiredMark: Color(0xFFFF8C00),
     scrim: Color(0x8A000000),
+    photoViewerBg: Color(0xFF000000),
     onImage: Color(0xFFFFFFFF),
     onImageMuted: Color(0x8AFFFFFF),
     catGastro: Color(0xFFFF8C42),
@@ -150,6 +154,7 @@ class ChevereThemeColors extends ThemeExtension<ChevereThemeColors> {
     purple: Color(0xFF6C5CE7),
     requiredMark: Color(0xFFD9720A),
     scrim: Color(0x66000000),
+    photoViewerBg: Color(0xFF000000),
     onImage: Color(0xFFFFFFFF),
     onImageMuted: Color(0x8AFFFFFF),
     catGastro: Color(0xFFE8752F),
@@ -200,6 +205,7 @@ class ChevereThemeColors extends ThemeExtension<ChevereThemeColors> {
     Color? purple,
     Color? requiredMark,
     Color? scrim,
+    Color? photoViewerBg,
     Color? onImage,
     Color? onImageMuted,
     Color? catGastro,
@@ -242,6 +248,7 @@ class ChevereThemeColors extends ThemeExtension<ChevereThemeColors> {
       purple: purple ?? this.purple,
       requiredMark: requiredMark ?? this.requiredMark,
       scrim: scrim ?? this.scrim,
+      photoViewerBg: photoViewerBg ?? this.photoViewerBg,
       onImage: onImage ?? this.onImage,
       onImageMuted: onImageMuted ?? this.onImageMuted,
       catGastro: catGastro ?? this.catGastro,
@@ -290,6 +297,7 @@ class ChevereThemeColors extends ThemeExtension<ChevereThemeColors> {
       purple: l(purple, other.purple),
       requiredMark: l(requiredMark, other.requiredMark),
       scrim: l(scrim, other.scrim),
+      photoViewerBg: l(photoViewerBg, other.photoViewerBg),
       onImage: l(onImage, other.onImage),
       onImageMuted: l(onImageMuted, other.onImageMuted),
       catGastro: l(catGastro, other.catGastro),

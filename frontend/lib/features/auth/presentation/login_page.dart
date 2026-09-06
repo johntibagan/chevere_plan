@@ -71,6 +71,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     } catch (error) {
       if (!mounted) return;
       AppToast.error(context, error, logContext: 'login');
+      if (!context.mounted) return;
+      AppToast.show(context, l10n.errorProblemToast, error: true);
     } finally {
       if (mounted) setState(() => _loading = false);
     }

@@ -2,16 +2,17 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../../../core/di/providers.dart';
 import '../../../core/formatters/date_format.dart';
 import '../../../core/l10n/context_l10n.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/theme/app_typography.dart';
 import '../../../core/theme/theme_rebuild.dart';
 import '../../../core/widgets/app_confirm_dialog.dart';
 import '../../../core/widgets/app_floating_action_layout.dart';
 import '../../../core/widgets/app_network_image.dart';
+import '../../../core/widgets/app_retry_callout.dart';
 import '../../../core/widgets/app_toast.dart';
 import '../../../core/widgets/site_photo_viewer_page.dart';
 import '../data/plan_review_models.dart';
@@ -39,6 +40,7 @@ class PlanReviewsTab extends ConsumerStatefulWidget {
 
 class _PlanReviewsTabState extends ConsumerState<PlanReviewsTab> {
   bool _loading = true;
+  bool _loadError = false;
   List<PlanReview> _reviews = const [];
   final Map<String, String> _urls = {};
   String? _uid;
@@ -52,7 +54,10 @@ class _PlanReviewsTabState extends ConsumerState<PlanReviewsTab> {
   }
 
   Future<void> _load() async {
-    setState(() => _loading = true);
+    setState(() {
+      _loading = true;
+      _loadError = false;
+    });
     try {
       final repo = ref.read(planReviewsRepositoryProvider);
       final list = await repo.listForPlan(widget.planId);
@@ -70,11 +75,15 @@ class _PlanReviewsTabState extends ConsumerState<PlanReviewsTab> {
           ..clear()
           ..addAll(urls);
         _loading = false;
+        _loadError = false;
       });
       widget.onReviewsChanged?.call();
     } catch (e) {
       if (!mounted) return;
-      setState(() => _loading = false);
+      setState(() {
+        _loading = false;
+        _loadError = true;
+      });
       AppToast.error(context, e, logContext: 'plan_reviews_load');
     }
   }
@@ -220,6 +229,9 @@ class _PlanReviewsTabState extends ConsumerState<PlanReviewsTab> {
     if (_loading) {
       return Center(child: CircularProgressIndicator());
     }
+    if (_loadError) {
+      return Center(child: AppRetryCallout(onRetry: _load));
+    }
     final visible = _visible;
 
     return Stack(
@@ -242,11 +254,7 @@ class _PlanReviewsTabState extends ConsumerState<PlanReviewsTab> {
                     _reviews.isEmpty
                         ? l10n.reviewEmpty
                         : l10n.planReviewCount(_reviews.length),
-                    style: GoogleFonts.plusJakartaSans(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 16,
-                      color: AppColors.foreground,
-                    ),
+                    style: AppTypography.cardTitle(),
                   ),
                 ),
                 PopupMenuButton<_PlanReviewSort>(
@@ -387,10 +395,10 @@ class _PlanReviewCard extends StatelessWidget {
                         name,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.plusJakartaSans(
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.foreground,
-                        ),
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.foreground,
+                            ),
                       ),
                       Text(
                         formatDateTimeShort(review.createdAt),

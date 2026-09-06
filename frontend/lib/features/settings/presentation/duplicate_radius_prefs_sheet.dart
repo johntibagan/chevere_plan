@@ -63,6 +63,8 @@ class _DuplicateRadiusPrefsSheetState extends State<_DuplicateRadiusPrefsSheet> 
       if (!mounted) return;
       setState(() => _saving = false);
       AppToast.error(context, e, logContext: 'duplicate_radius_prefs');
+      if (!context.mounted) return;
+      AppToast.show(context, context.l10n.errorProblemToast, error: true);
     }
   }
 

@@ -7,6 +7,7 @@ import '../../../core/cache/cache_ttl.dart';
 import '../../../core/di/providers.dart';
 import '../../../core/distance/distance_unit.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/theme/theme_rebuild.dart';
 import '../../../core/widgets/app_form_card.dart';
 import '../../../core/widgets/app_retry_callout.dart';
 import '../../../core/widgets/app_stat_card.dart';
@@ -397,6 +398,7 @@ class _AdminPageState extends ConsumerState<AdminPage>
 
   @override
   Widget build(BuildContext context) {
+    ref.watchAppThemeMode();
     final l10n = context.l10n;
     return Scaffold(
       key: WidgetKeys.adminPage,

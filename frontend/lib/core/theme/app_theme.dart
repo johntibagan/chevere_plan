@@ -32,6 +32,7 @@ class AppColors {
   static Color get purple => _palette.purple;
   static Color get requiredMark => _palette.requiredMark;
   static Color get scrim => _palette.scrim;
+  static Color get photoViewerBg => _palette.photoViewerBg;
   static Color get onImage => _palette.onImage;
   static Color get onImageMuted => _palette.onImageMuted;
   static Color get catGastro => _palette.catGastro;

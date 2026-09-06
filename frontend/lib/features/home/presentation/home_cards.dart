@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../../../core/di/providers.dart';
 import '../../../core/formatters/distance_format.dart';
@@ -10,6 +9,7 @@ import '../../../core/l10n/context_l10n.dart';
 import '../../../core/prefs/feed_layout.dart';
 import '../../../core/theme/app_radius.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/theme/app_typography.dart';
 import '../../../core/theme/theme_rebuild.dart';
 import '../../../core/testing/widget_keys.dart';
 import '../../../core/widgets/site_cover.dart';
@@ -90,11 +90,7 @@ class HomeSectionHeader extends StatelessWidget {
                     Flexible(
                       child: Text(
                         title,
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.foreground,
-                        ),
+                        style: AppTypography.sectionLabel(),
                       ),
                     ),
                     if (canToggle) ...[

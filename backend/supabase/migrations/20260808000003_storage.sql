@@ -3,6 +3,7 @@
 -- Reseña plan: {user_id}/plan-reviews/{review_id}/…
 -- Lectura: dueño del path, staff, foto de sitio público/propio, o foto de
 -- reseña pública (en sitio visible).
+-- Policies: auth.uid()/is_staff() siempre envueltos en (select …).
 
 insert into storage.buckets (id, name, public)
 values ('site-photos', 'site-photos', false)
@@ -27,8 +28,8 @@ create policy site_photos_storage_select on storage.objects
   using (
     bucket_id = 'site-photos'
     and (
-      (storage.foldername(objects.name))[1] = auth.uid()::text
-      or public.is_staff()
+      (storage.foldername(objects.name))[1] = (select auth.uid())::text
+      or (select public.is_staff())
       or exists (
         select 1
         from public.site_photos sp
@@ -36,8 +37,8 @@ create policy site_photos_storage_select on storage.objects
         where sp.storage_path = objects.name
           and (
             s.is_public
-            or s.created_by = auth.uid()
-            or public.is_staff()
+            or s.created_by = (select auth.uid())
+            or (select public.is_staff())
           )
       )
       or exists (
@@ -47,13 +48,13 @@ create policy site_photos_storage_select on storage.objects
         join public.sites s on s.id = r.site_id
         where rp.storage_path = objects.name
           and (
-            r.user_id = auth.uid()
+            r.user_id = (select auth.uid())
             or (
               r.is_public
               and (
                 s.is_public
-                or s.created_by = auth.uid()
-                or public.is_staff()
+                or s.created_by = (select auth.uid())
+                or (select public.is_staff())
               )
             )
           )
@@ -65,8 +66,8 @@ create policy site_photos_storage_select on storage.objects
         join public.plans p on p.id = r.plan_id
         where rp.storage_path = objects.name
           and (
-            p.user_id = auth.uid()
-            or public.is_staff()
+            p.user_id = (select auth.uid())
+            or (select public.is_staff())
           )
       )
     )
@@ -76,14 +77,14 @@ create policy site_photos_storage_insert on storage.objects
   for insert to authenticated
   with check (
     bucket_id = 'site-photos'
-    and (storage.foldername(objects.name))[1] = auth.uid()::text
+    and (storage.foldername(objects.name))[1] = (select auth.uid())::text
   );
 
 create policy site_photos_storage_update on storage.objects
   for update to authenticated
   using (
     bucket_id = 'site-photos'
-    and (storage.foldername(objects.name))[1] = auth.uid()::text
+    and (storage.foldername(objects.name))[1] = (select auth.uid())::text
   );
 
 create policy site_photos_storage_delete on storage.objects
@@ -91,8 +92,8 @@ create policy site_photos_storage_delete on storage.objects
   using (
     bucket_id = 'site-photos'
     and (
-      (storage.foldername(objects.name))[1] = auth.uid()::text
-      or public.is_staff()
+      (storage.foldername(objects.name))[1] = (select auth.uid())::text
+      or (select public.is_staff())
     )
   );
 
@@ -117,23 +118,23 @@ create policy avatars_storage_insert on storage.objects
   for insert to authenticated
   with check (
     bucket_id = 'avatars'
-    and (storage.foldername(objects.name))[1] = auth.uid()::text
+    and (storage.foldername(objects.name))[1] = (select auth.uid())::text
   );
 
 create policy avatars_storage_update on storage.objects
   for update to authenticated
   using (
     bucket_id = 'avatars'
-    and (storage.foldername(objects.name))[1] = auth.uid()::text
+    and (storage.foldername(objects.name))[1] = (select auth.uid())::text
   )
   with check (
     bucket_id = 'avatars'
-    and (storage.foldername(objects.name))[1] = auth.uid()::text
+    and (storage.foldername(objects.name))[1] = (select auth.uid())::text
   );
 
 create policy avatars_storage_delete on storage.objects
   for delete to authenticated
   using (
     bucket_id = 'avatars'
-    and (storage.foldername(objects.name))[1] = auth.uid()::text
+    and (storage.foldername(objects.name))[1] = (select auth.uid())::text
   );

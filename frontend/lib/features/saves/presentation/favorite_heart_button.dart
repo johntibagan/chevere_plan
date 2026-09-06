@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/di/providers.dart';
 import '../../../core/l10n/context_l10n.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/theme/theme_rebuild.dart';
 import '../../../core/widgets/app_toast.dart';
 import '../../../core/widgets/site_cover.dart';
 
@@ -22,6 +23,7 @@ class FavoriteHeartButton extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    ref.watchAppThemeMode();
     final l10n = context.l10n;
     final isFav = ref.watch(
       favoriteSiteIdsProvider.select(

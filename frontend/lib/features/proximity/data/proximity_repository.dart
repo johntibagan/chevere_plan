@@ -8,10 +8,18 @@ class ProximityRepository {
 
   final SupabaseClient _client;
 
-  Future<List<ProximitySite>> listTargets({required bool includePublic}) async {
+  Future<List<ProximitySite>> listTargets({
+    required bool includePublic,
+    int limit = 100,
+    int offset = 0,
+  }) async {
     final rows = await _client.rpc(
       'list_proximity_sites',
-      params: {'p_include_public': includePublic},
+      params: {
+        'p_include_public': includePublic,
+        'p_limit': limit,
+        'p_offset': offset,
+      },
     );
     final list = (rows as List<dynamic>)
         .map((e) => ProximitySite.fromJson(Map<String, dynamic>.from(e as Map)))

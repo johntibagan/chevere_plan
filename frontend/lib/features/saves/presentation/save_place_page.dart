@@ -18,6 +18,7 @@ import '../../../core/logging/client_debug_log.dart';
 import '../../../core/testing/widget_keys.dart';
 import '../../../core/l10n/context_l10n.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/theme/theme_rebuild.dart';
 import '../../../core/widgets/app_form_card.dart';
 import '../../../core/widgets/app_network_image.dart';
 import '../../../core/widgets/app_retry_callout.dart';
@@ -1447,6 +1448,8 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
       } catch (e) {
         if (!mounted) return;
         AppToast.error(context, e, logContext: 'privacy_blockers');
+        if (!context.mounted) return;
+        AppToast.show(context, context.l10n.errorProblemToast, error: true);
         return;
       }
     }
@@ -1483,6 +1486,8 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
       } catch (e) {
         if (!mounted) return;
         AppToast.error(context, e, logContext: 'dupe_check');
+        if (!context.mounted) return;
+        AppToast.show(context, context.l10n.errorProblemToast, error: true);
         return;
       }
     }
@@ -2528,6 +2533,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
 
   @override
   Widget build(BuildContext context) {
+    ref.watchAppThemeMode();
     final l10n = context.l10n;
     final nameOk = _nameCtrl.text.trim().isNotEmpty;
     final dupeWarning = _possibleDupes.isNotEmpty;

@@ -3,7 +3,6 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -20,6 +19,8 @@ import '../../../core/formatters/distance_format.dart';
 import '../../../core/formatters/money_format.dart';
 import '../../../core/l10n/context_l10n.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/theme/app_typography.dart';
+import '../../../core/theme/theme_rebuild.dart';
 import '../../../core/widgets/app_confirm_dialog.dart';
 import '../../../core/widgets/app_network_image.dart';
 import '../../../core/widgets/draft_needs_map_banner.dart';
@@ -342,13 +343,9 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
 
   Future<String?> _fetchCoverPhotoId() async {
     try {
-      final coverRow = await ref
-          .read(supabaseClientProvider)
-          .from('sites')
-          .select('cover_photo_id')
-          .eq('id', widget.siteId)
-          .maybeSingle();
-      return coverRow?['cover_photo_id']?.toString();
+      return await ref
+          .read(savesRepositoryProvider)
+          .fetchCoverPhotoId(widget.siteId);
     } catch (_) {
       return null;
     }
@@ -569,7 +566,9 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
       AppToast.show(context, context.l10n.photoAdded);
     } catch (e) {
       if (!mounted) return;
-      AppToast.error(context, e);
+      AppToast.error(context, e, logContext: 'site_detail_add_photo');
+      if (!context.mounted) return;
+      AppToast.show(context, context.l10n.errorProblemToast, error: true);
     } finally {
       if (mounted) setState(() => _photosBusy = false);
     }
@@ -710,6 +709,7 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
 
   @override
   Widget build(BuildContext context) {
+    ref.watchAppThemeMode();
     final l10n = context.l10n;
     final ficha = _ficha;
 
@@ -740,11 +740,7 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
                         ficha?.name ?? l10n.siteDetailTitle,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.foreground,
-                        ),
+                        style: AppTypography.cardTitle(),
                       ),
                     ),
                     FavoriteHeartButton(
@@ -968,6 +964,7 @@ class _InfoTab extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    ref.watchAppThemeMode();
     final l10n = context.l10n;
     final distanceUnit = ref.watch(preferredDistanceUnitProvider);
     final location = ficha.locationLine;
@@ -1013,11 +1010,7 @@ class _InfoTab extends ConsumerWidget {
         ],
         Text(
           ficha.name,
-          style: GoogleFonts.plusJakartaSans(
-            fontSize: 24,
-            fontWeight: FontWeight.w800,
-            color: AppColors.foreground,
-          ),
+          style: AppTypography.detailTitle(),
         ),
         SizedBox(height: 8),
         Wrap(
@@ -1259,10 +1252,10 @@ class _TraceabilityTab extends StatelessWidget {
                 Expanded(
                   child: Text(
                     l10n.siteDetailCatalogBadge,
-                    style: GoogleFonts.plusJakartaSans(
-                      color: AppColors.foreground,
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.foreground,
+                        ),
                   ),
                 ),
               ],
@@ -1345,9 +1338,7 @@ class _TraceRow extends StatelessWidget {
         children: [
           Text(
             label,
-            style: GoogleFonts.plusJakartaSans(
-              fontSize: 12,
-              color: AppColors.muted,
+            style: AppTypography.bodySecondary().copyWith(
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -1355,10 +1346,10 @@ class _TraceRow extends StatelessWidget {
             SizedBox(height: 4),
             Text(
               value,
-              style: GoogleFonts.plusJakartaSans(
-                color: AppColors.foreground,
-                fontWeight: FontWeight.w600,
-              ),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.foreground,
+                  ),
             ),
           ],
         ],
@@ -1631,10 +1622,10 @@ class _Section extends StatelessWidget {
             Expanded(
               child: Text(
                 title,
-                style: GoogleFonts.plusJakartaSans(
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.foreground,
-                ),
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.foreground,
+                    ),
               ),
             ),
             ?trailing,

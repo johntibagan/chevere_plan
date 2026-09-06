@@ -486,6 +486,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                       hint: l10n.searchHintPlace,
                       searchTooltip: l10n.actionSearch,
                       clearTooltip: l10n.actionClear,
+                      autofocus: true,
                       onSearch: _searchNow,
                       loading: _loading,
                     ),

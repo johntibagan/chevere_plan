@@ -13,10 +13,12 @@ import '../../../core/errors/user_facing_error.dart';
 import '../../../core/formatters/money_format.dart';
 import '../../../core/l10n/context_l10n.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/theme/theme_rebuild.dart';
 import '../../../core/widgets/app_busy_overlay.dart';
 import '../../../core/widgets/app_confirm_dialog.dart';
 import '../../../core/widgets/app_floating_action_layout.dart';
 import '../../../core/widgets/app_form_card.dart';
+import '../../../core/widgets/app_retry_callout.dart';
 import '../../../core/widgets/app_search_field.dart';
 import '../../../core/widgets/app_toast.dart';
 import '../../../core/widgets/discard_changes_scope.dart';
@@ -495,6 +497,8 @@ class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
       if (!mounted) return;
       setState(() => _saving = false);
       AppToast.error(context, e, logContext: 'plan_detail_save');
+      if (!context.mounted) return;
+      AppToast.show(context, context.l10n.errorProblemToast, error: true);
     }
   }
 
@@ -686,6 +690,7 @@ class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
 
   @override
   Widget build(BuildContext context) {
+    ref.watchAppThemeMode();
     final l10n = context.l10n;
     final plan = _plan;
     final canEdit = _canEditPlan;
@@ -704,7 +709,7 @@ class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
         body: _loading
             ? Center(child: CircularProgressIndicator())
             : plan == null
-                ? Center(child: Text(l10n.actionRetry))
+                ? Center(child: AppRetryCallout(onRetry: _load))
                 : Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [

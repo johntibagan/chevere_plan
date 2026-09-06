@@ -187,8 +187,17 @@ class ModerationRepository {
     }
   }
 
-  Future<List<ContentReport>> listOpenReports() async {
-    final rows = await _client.rpc('list_open_content_reports');
+  Future<List<ContentReport>> listOpenReports({
+    int limit = 200,
+    int offset = 0,
+  }) async {
+    final rows = await _client.rpc(
+      'list_open_content_reports',
+      params: {
+        'p_limit': limit,
+        'p_offset': offset,
+      },
+    );
     return (rows as List<dynamic>)
         .map((e) => ContentReport.fromJson(Map<String, dynamic>.from(e as Map)))
         .toList();

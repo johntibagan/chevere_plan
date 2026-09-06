@@ -176,6 +176,8 @@ class _SiteReviewEditorPageState extends ConsumerState<SiteReviewEditorPage> {
       setState(() => _saving = false);
       _formDirty.setSuppressed(false);
       AppToast.error(context, e, logContext: 'site_review_save');
+      if (!context.mounted) return;
+      AppToast.show(context, context.l10n.errorProblemToast, error: true);
     }
   }
 

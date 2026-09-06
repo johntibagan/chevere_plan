@@ -39,6 +39,5 @@ python supabase\scripts\_photos_review_local\09_import_catalog_photos_parallel.p
 
 Openverse opcional en `.env` local: `OPENVERSE_CLIENT_ID` / `OPENVERSE_CLIENT_SECRET`. `--apply` inserta solo fotos con **me gusta**; portada = primera liked.
 
-- `reset_all.ps1` → solo datos de usuario
-- `reset_all.ps1 -Full` → cero + DIVIPOLA + import de sitios públicos
+Reset DB (default / `-Full`): [`backend/README.md`](../../backend/README.md).
 

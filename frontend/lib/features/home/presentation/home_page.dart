@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/cache/session_cache_cleanup.dart';
@@ -15,6 +14,7 @@ import '../../../core/widgets/app_toast.dart';
 import '../../../core/prefetch/site_prefetch.dart';
 import '../../../core/supabase/supabase_bootstrap.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/theme/app_typography.dart';
 import '../../../core/theme/chevere_theme_scope.dart';
 import '../../../core/theme/theme_rebuild.dart';
 import '../../../core/shell/shell_menu_bridge.dart';
@@ -317,7 +317,17 @@ class _HomePageState extends ConsumerState<HomePage> {
   }
 
   Future<void> _openDistanceUnitPrefs() async {
-    await showDistanceUnitPrefsSheet(context: context);
+    await showDistanceUnitPrefsSheet(
+      context: context,
+      units: ref.read(distanceUnitsProvider).valueOrNull ?? const [],
+      selectedSlug: ref.read(preferredDistanceUnitSlugProvider),
+      onSelect: (slug) =>
+          ref.read(preferredDistanceUnitSlugProvider.notifier).setSlug(slug),
+      onRefresh: () async {
+        await ref.read(distanceUnitsProvider.notifier).refresh();
+        return ref.read(distanceUnitsProvider).valueOrNull ?? const [];
+      },
+    );
   }
 
   void _openAdmin() {
@@ -766,11 +776,7 @@ class _InicioTab extends ConsumerWidget {
                         ),
                         Text(
                           l10n.appTitle,
-                          style: GoogleFonts.plusJakartaSans(
-                            fontSize: 22,
-                            fontWeight: FontWeight.w800,
-                            color: AppColors.foreground,
-                          ),
+                          style: AppTypography.tabTitle(),
                         ),
                       ],
                     ),

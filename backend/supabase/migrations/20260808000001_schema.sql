@@ -769,15 +769,17 @@ CREATE OR REPLACE FUNCTION public.clear_site_location(p_site_id uuid)
  SECURITY DEFINER
  SET search_path TO 'public', 'extensions'
 AS $function$
+declare
+  uid uuid := auth.uid();
 begin
-  if auth.uid() is null then
+  if uid is null then
     raise exception 'not authenticated';
   end if;
 
   update public.sites
   set location = null, updated_at = now()
   where id = p_site_id
-    and (created_by = auth.uid() or public.is_staff());
+    and (created_by = uid or public.is_staff());
 
   update public.plan_stops
   set lat = null, lng = null
@@ -1008,19 +1010,21 @@ CREATE OR REPLACE FUNCTION public.get_site_coords(p_site_id uuid)
  STABLE SECURITY DEFINER
  SET search_path TO 'public', 'extensions'
 AS $function$
+  with me as (select auth.uid() as uid)
   select
     st_y(location::geometry) as lat,
     st_x(location::geometry) as lng
   from public.sites
+  cross join me
   where id = p_site_id
     and location is not null
     and (
-      created_by = auth.uid()
+      created_by = me.uid
       or is_public = true
       or public.is_staff()
       or exists (
         select 1 from public.user_saves us
-        where us.site_id = p_site_id and us.user_id = auth.uid()
+        where us.site_id = p_site_id and us.user_id = me.uid
       )
     );
 $function$;
@@ -1390,12 +1394,19 @@ begin
 end;
 $function$;
 
-CREATE OR REPLACE FUNCTION public.list_my_route_history()
+drop function if exists public.list_my_route_history();
+drop function if exists public.list_my_route_history(integer, integer);
+
+CREATE OR REPLACE FUNCTION public.list_my_route_history(
+  p_limit integer default 200,
+  p_offset integer default 0
+)
  RETURNS TABLE(stop_id uuid, plan_id uuid, plan_title text, site_id uuid, site_name text, city text, visited_at timestamp with time zone)
  LANGUAGE sql
  STABLE SECURITY DEFINER
  SET search_path TO 'public', 'extensions'
 AS $function$
+  with me as (select auth.uid() as uid)
   select
     ps.id as stop_id,
     p.id as plan_id,
@@ -1407,15 +1418,21 @@ AS $function$
   from public.plan_stops ps
   join public.plans p on p.id = ps.plan_id
   join public.sites s on s.id = ps.site_id
-  where p.user_id = auth.uid()
+  cross join me
+  where p.user_id = me.uid
     and ps.visited_at is not null
   order by ps.visited_at desc
-  limit 200;
+  limit greatest(1, least(coalesce(p_limit, 200), 500))
+  offset greatest(0, coalesce(p_offset, 0));
 $function$;
 
 drop function if exists public.list_open_content_reports();
+drop function if exists public.list_open_content_reports(integer, integer);
 
-CREATE OR REPLACE FUNCTION public.list_open_content_reports()
+CREATE OR REPLACE FUNCTION public.list_open_content_reports(
+  p_limit integer default 200,
+  p_offset integer default 0
+)
  RETURNS TABLE(report_id uuid, target_type text, target_id uuid, reason text, status text, created_at timestamp with time zone, reporter_id uuid, reporter_name text, photo_path text, site_name text, snippet text)
  LANGUAGE sql
  STABLE SECURITY DEFINER
@@ -1448,10 +1465,11 @@ AS $function$
   left join public.site_reviews rev
     on r.target_type = 'review' and rev.id = r.target_id
   left join public.sites s_review on s_review.id = rev.site_id
-  where public.is_staff()
+  where (select public.is_staff())
     and r.status = 'open'
   order by r.created_at desc
-  limit 200;
+  limit greatest(1, least(coalesce(p_limit, 200), 500))
+  offset greatest(0, coalesce(p_offset, 0));
 $function$;
 
 CREATE OR REPLACE FUNCTION public.resolve_content_report(p_report_id uuid, p_status text)
@@ -1515,13 +1533,23 @@ begin
 end;
 $function$;
 
-CREATE OR REPLACE FUNCTION public.list_plan_candidates(p_location_query text, p_include_public boolean DEFAULT false, p_max_budget numeric DEFAULT NULL::numeric)
+drop function if exists public.list_plan_candidates(text, boolean, numeric);
+drop function if exists public.list_plan_candidates(text, boolean, numeric, integer, integer);
+
+CREATE OR REPLACE FUNCTION public.list_plan_candidates(
+  p_location_query text,
+  p_include_public boolean default false,
+  p_max_budget numeric default null,
+  p_limit integer default 100,
+  p_offset integer default 0
+)
  RETURNS TABLE(site_id uuid, name text, city text, department text, lat double precision, lng double precision, estimated_price_amount numeric, currency_code character)
  LANGUAGE sql
  STABLE SECURITY DEFINER
  SET search_path TO 'public', 'extensions'
 AS $function$
-  with q as (
+  with me as (select auth.uid() as uid),
+  q as (
     select trim(both from coalesce(p_location_query, '')) as loc
   ),
   own as (
@@ -1537,7 +1565,8 @@ AS $function$
     from public.user_saves us
     join public.sites s on s.id = us.site_id
     cross join q
-    where us.user_id = auth.uid()
+    cross join me
+    where us.user_id = me.uid
       and us.status = 'complete'
       and s.location is not null
       and q.loc <> ''
@@ -1578,12 +1607,24 @@ AS $function$
       )
       and s.id not in (select own.site_id from own)
   )
-  select * from own
-  union all
-  select * from pub;
+  select *
+  from (
+    select * from own
+    union all
+    select * from pub
+  ) u
+  limit greatest(1, least(coalesce(p_limit, 100), 200))
+  offset greatest(0, coalesce(p_offset, 0));
 $function$;
 
-CREATE OR REPLACE FUNCTION public.list_proximity_sites(p_include_public boolean DEFAULT false)
+drop function if exists public.list_proximity_sites(boolean);
+drop function if exists public.list_proximity_sites(boolean, integer, integer);
+
+CREATE OR REPLACE FUNCTION public.list_proximity_sites(
+  p_include_public boolean default false,
+  p_limit integer default 100,
+  p_offset integer default 0
+)
  RETURNS TABLE(
    site_id uuid,
    name text,
@@ -1598,7 +1639,8 @@ CREATE OR REPLACE FUNCTION public.list_proximity_sites(p_include_public boolean 
  STABLE SECURITY DEFINER
  SET search_path TO 'public', 'extensions'
 AS $function$
-  with own_sites as (
+  with me as (select auth.uid() as uid),
+  own_sites as (
     select
       s.id as site_id,
       s.name,
@@ -1610,7 +1652,8 @@ AS $function$
       public.site_cover_storage_path(s.id) as cover_storage_path
     from public.user_saves us
     join public.sites s on s.id = us.site_id
-    where us.user_id = auth.uid()
+    cross join me
+    where us.user_id = me.uid
       and us.status = 'complete'
       and s.location is not null
   ),
@@ -1630,9 +1673,14 @@ AS $function$
       and s.location is not null
       and s.id not in (select own_sites.site_id from own_sites)
   )
-  select * from own_sites
-  union all
-  select * from public_sites;
+  select *
+  from (
+    select * from own_sites
+    union all
+    select * from public_sites
+  ) u
+  limit greatest(1, least(coalesce(p_limit, 100), 200))
+  offset greatest(0, coalesce(p_offset, 0));
 $function$;
 
 CREATE OR REPLACE FUNCTION public.prevent_role_escalation()
@@ -1879,15 +1927,17 @@ CREATE OR REPLACE FUNCTION public.set_site_location(p_site_id uuid, p_lng double
  SECURITY DEFINER
  SET search_path TO 'public', 'extensions'
 AS $function$
+declare
+  uid uuid := auth.uid();
 begin
-  if auth.uid() is null then
+  if uid is null then
     raise exception 'No autenticado';
   end if;
   update public.sites
   set location = st_setsrid(st_makepoint(p_lng, p_lat), 4326)::geography,
       updated_at = now()
   where id = p_site_id
-    and (created_by = auth.uid() or public.is_staff());
+    and (created_by = uid or public.is_staff());
 end;
 $function$;
 
@@ -2488,11 +2538,11 @@ grant execute on function public.is_reserved_username(u text) to anon, authentic
 grant execute on function public.is_staff() to anon, authenticated, service_role;
 grant execute on function public.link_save_to_existing_site(p_save_id uuid, p_existing_site_id uuid) to anon, authenticated, service_role;
 grant execute on function public.set_plan_stops_visited(uuid, jsonb) to anon, authenticated, service_role;
-grant execute on function public.list_my_route_history() to anon, authenticated, service_role;
-grant execute on function public.list_open_content_reports() to anon, authenticated, service_role;
+grant execute on function public.list_my_route_history(integer, integer) to anon, authenticated, service_role;
+grant execute on function public.list_open_content_reports(integer, integer) to anon, authenticated, service_role;
 grant execute on function public.resolve_content_report(uuid, text) to authenticated, service_role;
-grant execute on function public.list_plan_candidates(p_location_query text, p_include_public boolean, p_max_budget numeric) to anon, authenticated, service_role;
-grant execute on function public.list_proximity_sites(p_include_public boolean) to anon, authenticated, service_role;
+grant execute on function public.list_plan_candidates(text, boolean, numeric, integer, integer) to anon, authenticated, service_role;
+grant execute on function public.list_proximity_sites(boolean, integer, integer) to anon, authenticated, service_role;
 grant execute on function public.normalize_username(raw text) to anon, authenticated, service_role;
 grant execute on function public.prevent_role_escalation() to anon, authenticated, service_role;
 grant execute on function public.search_sites(p_query text, p_category_id uuid, p_location_query text, p_lat double precision, p_lng double precision, p_radius_km double precision, p_transport_group text, p_budget_min numeric, p_budget_max numeric, p_include_public boolean, p_category_ids uuid[], p_favorites_only boolean, p_limit integer, p_offset integer) to anon, authenticated, service_role;

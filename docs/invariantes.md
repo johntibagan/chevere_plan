@@ -49,7 +49,7 @@ En el mapa: Confirmar desactivado hasta buscar, tocar, arrastrar o GPS (el centr
 
 Público en lugar físico exige **lat y lng guardados**. El interruptor apagado **no** bloquea Público.
 
-Público es **sección siempre visible**. Sin pin, el interruptor se muestra **desactivado** (no se oculta). No reaparece el diálogo de “¿punto exacto?” al pegar Maps.
+Cuando la sección **Nombre-Visibilidad** está abierta, Público se muestra **siempre** (desactivado sin pin o si no es físico; no se oculta el interruptor). No reaparece el diálogo de “¿punto exacto?” al pegar Maps.
 
 **Llevar a Maps** (plan/sitio): chooser nativo solo **Maps · Waze · Uber** (Maps primero). Uber siempre visible; lat/lng solo con **punto exacto** o sitio de usuario (no centroide catálogo).
 
@@ -57,12 +57,10 @@ Público es **sección siempre visible**. Sin pin, el interruptor se muestra **d
 
 ### Layout del formulario
 
-- Si es **lugar físico**: Ubicación → Nombre (obligatorio; Maps lo rellena) → **Visibilidad** (lugar físico + Público en **una** fila, cada uno con icono i).
-- Si **no** es físico: **sin** sección de mapa/ubicación; banner de tarjeta; Nombre + visibilidad (Público desactivado).
-- Extra detrás de **+**: Detalles, Enlaces, Categorías, Fotos.
-- Al **editar**: misma pantalla; **Ubicación** sin pegar enlace Maps (solo mapa + punto exacto) **solo si es físico**. Conservar `is_physical_place` cargado.
-- Crear: lugar físico **encendido** y privado por defecto (ambos interruptores visibles). Editar: mismas secciones fijas + extras abiertos.
-- Nombre vacío: no guardar (nada de “Sin nombre”).
+- Crear físico vacío: solo **Ubicación** visible. **Nombre-Visibilidad** (lugar físico + Público en **una** fila, cada uno con icono i) y extras (Detalles, Enlaces, Categorías, Fotos) detrás de **Añadir sección**. Nombre obligatorio; Maps lo rellena y entonces se abre Nombre-Visibilidad.
+- Si **no** es físico: **sin** mapa/ubicación; banner de tarjeta; Nombre-Visibilidad detrás de **+** (Público desactivado). Share social: Nombre + Enlaces abiertos.
+- Al **editar**: misma pantalla; **Ubicación** sin pegar enlace Maps (solo mapa + punto exacto) **solo si es físico**. Conservar `is_physical_place` cargado; extras abiertos según lo cargado.
+- Crear: lugar físico **encendido** y privado por defecto. Nombre vacío: no guardar (nada de “Sin nombre”).
 - Ayuda en tooltip (tap), no textos largos bajo los campos.
 
 ### Más invariantes de esta pantalla

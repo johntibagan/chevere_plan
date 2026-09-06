@@ -277,7 +277,7 @@ flowchart TB
   Save --> Cats[CategoryPickerPage fullscreen]
 ```
 
-**Push vs sheet:** galería ficha = tira incrustada; visor fullscreen y listas altas = `Navigator.push` + `Scaffold`. Sheets solo cortos (proximidad, ⋮ plan). Sheet mal montado = oscurece sin contenido → evitar.
+**Push vs sheet:** galería ficha = tira incrustada; visor fullscreen y listas altas = `Navigator.push` + `Scaffold`. Sheets solo cortos (proximidad, unidad de distancia, ⋮ plan) con datos/repos **inyectados** (sin Consumer frágil en el builder). Sheet mal montado = oscurece sin contenido → evitar.
 
 ### Tokens de diseño
 
@@ -339,7 +339,7 @@ Iconografía: Material Icons. Redes en cards = texto 2 letras (IG/TK/FB/GM).
 
 **Inicio:** sin AppBar; secciones plegables (Eventos, Recientes, Populares, Acciones rápidas); dock de atajos fijable sobre nav.
 
-**Explorar** (`SearchPage`): `AppSearchField` + filtros; fila fija `{n} resultados` + Vista bajo chips; paginación 15.
+**Explorar** (`SearchPage`): `AppSearchField` (autofocus al abrir tab) + filtros; fila fija `{n} resultados` + Vista bajo chips; paginación 15.
 
 **Guardar** (`SavePlacePage`): AppBar título; **Guardar** abajo único; mapa / enlace / categorías / anti-dupe grilla.
 
@@ -347,11 +347,11 @@ Iconografía: Material Icons. Redes en cards = texto 2 letras (IG/TK/FB/GM).
 
 **Planes lista** (`PlansListPage`): FAB crear; card portada 96 (pendiente → último sitio si todo hecho → Otros solo sin paradas).
 
-**Crear plan** (`CreatePlanPage`): título, zona, presupuesto → detalle en **Buscar**.
+**Crear plan** (`CreatePlanPage`): título (autofocus si vacío al crear), zona, presupuesto → detalle en **Buscar**.
 
 **Detalle plan** (`PlanDetailPage`): sin AppBar; hero 176; cuadros **Buscar | Paradas | Reseñas**; swipe horizontal; pie **Llevar a Maps** + Listo/Guardar; timeline A=Mi ubicación, B,C… pendientes.
 
-**Rutas** (`MyRoutesPage`): stats cliente + timeline visitados; portada por lote (`loadSiteLooks`), no N+1 por fila.
+**Rutas** (`MyRoutesPage`): stats cliente + timeline visitados; portada por lote (`loadSiteLooks`), no N+1 por fila. Historial vía RPC `list_my_route_history(p_limit, p_offset)` (default 200).
 
 **Admin / mapa / legales:** según código (`AdminPage`, `LocationPickerPage`, etc.).
 

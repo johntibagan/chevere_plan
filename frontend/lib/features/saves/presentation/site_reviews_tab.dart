@@ -3,16 +3,17 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../../../core/di/providers.dart';
 import '../../../core/formatters/date_format.dart';
 import '../../../core/l10n/context_l10n.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/theme/app_typography.dart';
 import '../../../core/theme/theme_rebuild.dart';
 import '../../../core/widgets/app_confirm_dialog.dart';
 import '../../../core/widgets/app_floating_action_layout.dart';
 import '../../../core/widgets/app_network_image.dart';
+import '../../../core/widgets/app_retry_callout.dart';
 import '../../../core/widgets/app_toast.dart';
 import '../../../core/widgets/site_photo_viewer_page.dart';
 import '../data/site_review_models.dart';
@@ -54,6 +55,7 @@ class SiteReviewsTab extends ConsumerStatefulWidget {
 
 class _SiteReviewsTabState extends ConsumerState<SiteReviewsTab> {
   bool _loading = true;
+  bool _loadError = false;
   SiteRatingSummary _summary =
       const SiteRatingSummary(avgRating: 0, reviewCount: 0);
   List<SiteReview> _reviews = const [];
@@ -79,7 +81,10 @@ class _SiteReviewsTabState extends ConsumerState<SiteReviewsTab> {
   }
 
   Future<void> _load() async {
-    setState(() => _loading = true);
+    setState(() {
+      _loading = true;
+      _loadError = false;
+    });
     try {
       final repo = ref.read(siteReviewsRepositoryProvider);
       final summary = await repo.ratingSummary(widget.siteId);
@@ -105,10 +110,14 @@ class _SiteReviewsTabState extends ConsumerState<SiteReviewsTab> {
           ..clear()
           ..addAll(urls);
         _loading = false;
+        _loadError = false;
       });
     } catch (e) {
       if (!mounted) return;
-      setState(() => _loading = false);
+      setState(() {
+        _loading = false;
+        _loadError = true;
+      });
       AppToast.error(context, e, logContext: 'site_reviews_load');
     }
   }
@@ -366,6 +375,9 @@ class _SiteReviewsTabState extends ConsumerState<SiteReviewsTab> {
     if (_loading) {
       return Center(child: CircularProgressIndicator());
     }
+    if (_loadError) {
+      return Center(child: AppRetryCallout(onRetry: _load));
+    }
     final visible = _visible;
 
     return Stack(
@@ -396,11 +408,7 @@ class _SiteReviewsTabState extends ConsumerState<SiteReviewsTab> {
                             _summary.reviewCount,
                           )
                         : l10n.reviewEmpty,
-                    style: GoogleFonts.plusJakartaSans(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 16,
-                      color: AppColors.foreground,
-                    ),
+                    style: AppTypography.cardTitle(),
                   ),
                 ),
                 PopupMenuButton<_ReviewSort>(
@@ -627,10 +635,10 @@ class _ReviewCard extends StatelessWidget {
                             name,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: GoogleFonts.plusJakartaSans(
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.foreground,
-                            ),
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.foreground,
+                                ),
                           ),
                         ),
                         Row(

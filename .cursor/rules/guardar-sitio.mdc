@@ -20,8 +20,8 @@ Antes de cambiar captura de lugares, leer [`docs/invariantes.md`](docs/invariant
 - El interruptor **Punto exacto** va **apagado** por defecto. No borra coords: elige si Maps abre el pin (`lat,lng`) o la ficha del lugar. Encenderlo sin pin abre el mapa.
 - Crear y editar = misma pantalla. DIVIPOLA por id. Pegar enlace Maps **solo al crear** (pestaña Enlace); al **editar**, ubicación = mapa + punto exacto (sin campo de enlace) **si es lugar físico**.
 - Nombre obligatorio (sección propia). No guardar como “Sin nombre”.
-- Crear vacío (físico): Ubicación, Nombre y **Visibilidad** (lugar físico + Público en una fila). Si **no** es físico: **sin** mapa/ubicación; banner de tarjeta; Nombre + visibilidad. El resto detrás de **Añadir sección**. Editar: conservar `is_physical_place`; ubicación solo si físico. Share: también enlaces.
-- Público siempre visible; deshabilitado sin pin en lugar físico o si no es físico. Ayuda con tooltip, no párrafos.
+- Crear físico vacío: solo **Ubicación** a la vista; **Nombre-Visibilidad** (lugar físico + Público en una fila) y el resto van detrás de **Añadir sección**. Si Maps/share rellena nombre, abrir Nombre-Visibilidad. Si **no** es físico: **sin** mapa/ubicación; banner de tarjeta; Nombre-Visibilidad detrás de **+** (salvo share → Nombre + Enlaces). Editar: conservar `is_physical_place`; ubicación solo si físico; sin pegar enlace Maps.
+- Público (en la sección Nombre-Visibilidad): deshabilitado sin pin en lugar físico o si no es físico. Ayuda con tooltip, no párrafos.
 - **Guardar** = un CTA ancho **abajo** (no en el AppBar; no duplicar).
 
 Si el cambio no deja pegar un link de Maps y publicar **sin** abrir el mapa otra vez (en lugares físicos), no está listo.

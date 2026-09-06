@@ -212,6 +212,7 @@ class _CategoryPickerPageState extends State<CategoryPickerPage> {
               controller: _searchCtrl,
               hint: l10n.saveCategoryHint,
               searchTooltip: l10n.actionSearch,
+              autofocus: true,
               onSearch: () => setState(() {}),
               onChanged: (_) => setState(() {}),
             ),

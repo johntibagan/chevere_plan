@@ -14,14 +14,7 @@ Google Cloud → OAuth **Android**, package `com.chevere.plan`.
 
 ## Reset de la base
 
-- Default: borra datos de **usuarios**; conserva DIVIPOLA y catálogo (`external_id`).
-- `-Full`: nuke → migraciones baseline → DIVIPOLA → JSON masivo → root `johnftm.proyectos@gmail.com`.
-
-```powershell
-copy backend\.env.example backend\.env
-powershell -File backend\reset_all.ps1
-```
-
-`-Full`: añade `-Full` al comando. Detalle: [backend/README.md](../../backend/README.md).
+Ver comandos y modos en [`backend/README.md`](../../backend/README.md)
+(default vs `-Full`; copiar `backend/.env.example`).
 
 Tras reset: cierra sesión en la app (caché Hive).
