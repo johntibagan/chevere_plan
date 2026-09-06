@@ -23,6 +23,7 @@ enum AppImageQuality {
 /// renovar la URL firmada no se descargue de nuevo el mismo archivo.
 /// URLs de Wikimedia Commons se piden como thumb; si fallan, sube de resolución
 /// (o al más grande en pantalla completa) y al final el original.
+/// Al aparecer la foto: fade corto (~180 ms), sin shimmer/blur-hash.
 class AppNetworkImage extends StatefulWidget {
   const AppNetworkImage({
     super.key,
@@ -64,6 +65,10 @@ class AppNetworkImage extends StatefulWidget {
 
 class _AppNetworkImageState extends State<AppNetworkImage> {
   static const _maxDecode = 2048;
+
+  /// Fade al mostrar la imagen real (Paso 4 rendimiento).
+  static const _fadeIn = Duration(milliseconds: 180);
+  static const _fadeOut = Duration(milliseconds: 120);
 
   /// Índice en la escalera de reintentos Wikimedia (0 = preferido).
   int _wikiAttempt = 0;
@@ -212,8 +217,8 @@ class _AppNetworkImageState extends State<AppNetworkImage> {
       width: widget.width,
       height: widget.height,
       fit: widget.fit,
-      fadeInDuration: Duration.zero,
-      fadeOutDuration: Duration.zero,
+      fadeInDuration: _fadeIn,
+      fadeOutDuration: _fadeOut,
       memCacheWidth: memW,
       memCacheHeight: memH,
       filterQuality: widget.quality == AppImageQuality.standard
