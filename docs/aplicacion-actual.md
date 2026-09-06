@@ -214,7 +214,7 @@ flowchart TB
 - Geografía: DIVIPOLA + caché 30/90 d
 - Sitios, saves, planes, reseñas, favoritos: servidor; SWR en cliente. **Inicio:** primer pintado de guardados desde Hive síncrono (`peekSync`) si hay caché usable; la red refresca detrás.
 - Populares cerca: Hive + ancla GPS
-- Fotos: Storage (firmadas; firmas en memoria + Hive ~1 h) o URL externa en `site_photos.external_url` (staff, solo catálogo); decode acotado en cards. Guardados recientes (Inicio) pide solo portada (+1 foto respaldo), no toda la galería. Descargas de imagen con User-Agent `CheverePlan/1.0` (Wikimedia/u.a. rechazan el UA por defecto de Dart). URLs de Wikimedia Commons se piden como thumb en el cliente (cards ~500 px, tira ~800, visor ~1280); si un thumb falla, reintenta siguiente resolución (visor: el más grande), luego tamaños típicos ya cacheados y al final el original; la fila en DB sigue con el original. Al aparecer la foto: fade corto (~180 ms) sobre el placeholder / ilustración de categoría (sin shimmer ni blur-hash).
+- Fotos: Storage firmado o `external_url` (staff/catálogo). Thumbs Commons + fallback, UA, caché y prefetch: **[`imagenes-red.md`](imagenes-red.md)**. Fade ~180 ms; sin shimmer/blur-hash.
 
 ### Pruebas cerradas (APK)
 

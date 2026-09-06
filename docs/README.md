@@ -12,4 +12,4 @@ Al implementar: código **y** esos docs en el mismo pase (regla Cursor `docs-al-
 **Para construir:** [lineamientos-desarrollo-frontend.md](lineamientos-desarrollo-frontend.md) · [setup/](setup/) · [../backend/README.md](../backend/README.md)  
 **Diseño (Figma Make, snapshot):** [`../design/figma-make/`](../design/figma-make/README.md)
 
-**Archivo** (no implementar desde ahí): [producto.md](producto.md) · [adr/](adr/) · [pendientes.md](pendientes.md) · [e2e.md](e2e.md) · [google-maps-setup.md](google-maps-setup.md)
+**Archivo** (no implementar desde ahí): [producto.md](producto.md) · [adr/](adr/) · [pendientes.md](pendientes.md) · [e2e.md](e2e.md) · [google-maps-setup.md](google-maps-setup.md) · [diagnostico_rendimiento.md](diagnostico_rendimiento.md) · [imagenes-red.md](imagenes-red.md) (pipeline fotos / Commons)

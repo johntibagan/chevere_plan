@@ -20,6 +20,7 @@ alwaysApply: true
 | Reset DB / backend | `backend/README.md` |
 | E2E Patrol | `docs/e2e.md` |
 | Google Maps keys | `docs/google-maps-setup.md` |
+| Imágenes de red / Commons thumbs | `docs/imagenes-red.md` |
 | Credenciales env | comentarios en `frontend/env/*.example` y `backend/.env.example` |
 
 ## Al cambiar algo
