@@ -27,11 +27,12 @@ class PlanMetaRow extends StatelessWidget {
     final budgetText = budget == null
         ? null
         : formatMoney(budget, currencyCode: plan.currencyCode);
-    final datesText = formatPlanDateRange(plan.startDate, plan.endDate);
+    final dates = planDateRangeParts(plan.startDate, plan.endDate);
     final stopsLabel = l10n.planStopsCount(plan.stopCount);
 
     final fg = compact ? AppColors.muted : AppColors.onImage;
     final moneyColor = AppColors.success;
+    final weekdayColor = AppColors.primary;
     final iconSize = compact ? 12.0 : 14.0;
     final fontSize = compact ? 11.0 : 12.0;
     final gap = compact ? 4.0 : 5.0;
@@ -40,6 +41,12 @@ class PlanMetaRow extends StatelessWidget {
     final moneyStyle = TextStyle(
       fontSize: fontSize,
       color: moneyColor,
+      height: 1.1,
+    );
+    final weekdayStyle = TextStyle(
+      fontSize: fontSize,
+      fontWeight: FontWeight.w800,
+      color: weekdayColor,
       height: 1.1,
     );
 
@@ -67,17 +74,19 @@ class PlanMetaRow extends StatelessWidget {
           gap: gap - 2,
           child: Text(budgetText, softWrap: false, style: moneyStyle),
         ),
-      if (datesText != null)
+      if (dates != null)
         _chunk(
           icon: Icons.event,
           iconColor: fg,
           iconSize: iconSize,
           gap: gap,
-          child: Text(datesText, softWrap: false, style: style),
+          child: _PlanDatesText(
+            parts: dates,
+            dateStyle: style,
+            weekdayStyle: weekdayStyle,
+          ),
         ),
     ];
-
-    if (chunks.isEmpty) return const SizedBox.shrink();
 
     return SizedBox(
       width: double.infinity,
@@ -110,6 +119,43 @@ class PlanMetaRow extends StatelessWidget {
         SizedBox(width: gap),
         child,
       ],
+    );
+  }
+}
+
+class _PlanDatesText extends StatelessWidget {
+  const _PlanDatesText({
+    required this.parts,
+    required this.dateStyle,
+    required this.weekdayStyle,
+  });
+
+  final PlanDateRangeParts parts;
+  final TextStyle dateStyle;
+  final TextStyle weekdayStyle;
+
+  @override
+  Widget build(BuildContext context) {
+    final spans = <InlineSpan>[];
+    void addOne(String abbrev, String date) {
+      if (spans.isNotEmpty) {
+        spans.add(TextSpan(text: ' – ', style: dateStyle));
+      }
+      spans.add(TextSpan(text: abbrev, style: weekdayStyle));
+      spans.add(TextSpan(text: ' $date', style: dateStyle));
+    }
+
+    if (parts.startAbbrev != null && parts.startDate != null) {
+      addOne(parts.startAbbrev!, parts.startDate!);
+    }
+    if (parts.endAbbrev != null && parts.endDate != null) {
+      addOne(parts.endAbbrev!, parts.endDate!);
+    }
+
+    return Text.rich(
+      TextSpan(children: spans),
+      softWrap: false,
+      maxLines: 1,
     );
   }
 }

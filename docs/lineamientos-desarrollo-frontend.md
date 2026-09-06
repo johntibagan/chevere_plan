@@ -53,6 +53,7 @@ Antes de un helper o lista quemada: ¿lo resuelve el SDK o una dependencia **ya*
 | En vez de | Usar |
 |---|---|
 | Lista `ene, feb, ago…` | `DateFormat('dd/MMM/y', 'es')` / `formatDateDmY` |
+| `switch` días `L`/`M`/`MI`… | `weekdayNarrow` / `NARROWWEEKDAYS` (CLDR; mié = `X`) |
 | `padLeft` para armar `yyyyMMdd` | `DateFormat('yyyyMMdd')` / `formatUtcDayCompact` |
 | Haversine a mano (`sin`/`asin`/`6371`) | `Geolocator.distanceBetween` |
 | `checkPermission` + `getCurrentPosition` copiado | `DeviceLocation.tryCurrent` |

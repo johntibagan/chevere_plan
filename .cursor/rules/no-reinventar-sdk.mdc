@@ -6,6 +6,8 @@ globs: frontend/**/*.dart,backend/**/*.{py,sql}
 
 # No reinventar (frontend)
 
+Aplicar al **agregar, eliminar o ajustar** funcionalidad en código.
+
 Si Dart, Flutter o una lib **ya** en `frontend/pubspec.yaml` hace lo mismo, usala. No copies un algoritmo “por si acaso”.
 
 ## Obligatorio

@@ -41,11 +41,42 @@ DateTime? parseDateOnly(Object? raw) {
   return DateTime(parsed.year, parsed.month, parsed.day);
 }
 
-/// Rango de plan: `01/ene/2026 – 05/ene/2026` (uno o ambos).
-String? formatPlanDateRange(DateTime? start, DateTime? end, {String? locale}) {
+/// Abreviatura estrecha del día vía CLDR (`intl`).
+/// `es` → D L M X J V S. Índice NARROWWEEKDAYS = domingo→sábado.
+String weekdayNarrow(DateTime value, {String? locale}) {
+  final loc = locale ?? kAppLocale;
+  final narrow = DateFormat.EEEE(loc).dateSymbols.NARROWWEEKDAYS;
+  return narrow[value.weekday % 7];
+}
+
+/// Partes del rango de plan para UI (abreviatura vs fecha).
+class PlanDateRangeParts {
+  const PlanDateRangeParts({
+    this.startAbbrev,
+    this.startDate,
+    this.endAbbrev,
+    this.endDate,
+  });
+
+  final String? startAbbrev;
+  final String? startDate;
+  final String? endAbbrev;
+  final String? endDate;
+}
+
+PlanDateRangeParts? planDateRangeParts(
+  DateTime? start,
+  DateTime? end, {
+  String? locale,
+}) {
   if (start == null && end == null) return null;
-  final a = start == null ? null : formatDateDmY(start, toLocal: false, locale: locale);
-  final b = end == null ? null : formatDateDmY(end, toLocal: false, locale: locale);
-  if (a != null && b != null) return '$a – $b';
-  return a ?? b;
+  return PlanDateRangeParts(
+    startAbbrev: start == null ? null : weekdayNarrow(start, locale: locale),
+    startDate: start == null
+        ? null
+        : formatDateDmY(start, toLocal: false, locale: locale),
+    endAbbrev: end == null ? null : weekdayNarrow(end, locale: locale),
+    endDate:
+        end == null ? null : formatDateDmY(end, toLocal: false, locale: locale),
+  );
 }

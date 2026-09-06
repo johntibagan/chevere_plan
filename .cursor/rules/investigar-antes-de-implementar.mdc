@@ -5,8 +5,9 @@ alwaysApply: true
 
 # Investigar antes de implementar (método de trabajo)
 
-Aplica a **cualquier** cambio de la app (frontend, backend, docs, infra) — no es
-una regla de UI ni de producto puntual, es cómo se trabaja acá.
+Aplica cuando toques código o docs que **agregan, eliminan o ajustan
+funcionalidad** (frontend, backend, SQL, scripts, infra, etc.). No es una
+regla de UI ni de un dominio puntual.
 
 ## 1. No asumir
 
