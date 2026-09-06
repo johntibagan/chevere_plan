@@ -261,7 +261,12 @@ class _RouteTimelineTile extends StatelessWidget {
                           child: SizedBox(
                             width: 40,
                             height: 40,
-                            child: SiteLookCover(siteId: entry.siteId),
+                            child: SiteLookCover(
+                              siteId: entry.siteId,
+                              categoryNames: entry.categoryNames,
+                              coverStoragePath: entry.coverStoragePath,
+                              resolveLook: false,
+                            ),
                           ),
                         ),
                         SizedBox(width: 10),

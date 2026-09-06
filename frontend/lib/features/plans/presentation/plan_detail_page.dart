@@ -938,6 +938,7 @@ class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
                       siteId: h.siteId,
                       categoryNames: h.categoryNames,
                       coverStoragePath: h.coverStoragePath,
+                      resolveLook: false,
                     ),
                   ),
                 ),
@@ -1033,6 +1034,7 @@ class _PlanHero extends StatelessWidget {
             siteId: plan.coverStop?.siteId,
             categoryNames: plan.coverStop?.categoryNames ?? const [],
             coverStoragePath: plan.coverStop?.coverStoragePath,
+            resolveLook: false,
           ),
           DecoratedBox(
             decoration: BoxDecoration(

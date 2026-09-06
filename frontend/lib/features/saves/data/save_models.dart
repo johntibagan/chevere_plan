@@ -55,6 +55,8 @@ class PossibleDuplicate {
     this.isOwn = false,
     this.isCatalog = false,
     this.isLinked = false,
+    this.coverStoragePath,
+    this.categoryNames = const [],
   });
 
   final String siteId;
@@ -69,13 +71,38 @@ class PossibleDuplicate {
   final bool isOwn;
   final bool isCatalog;
   final bool isLinked;
+  final String? coverStoragePath;
+  final List<String> categoryNames;
 
   /// Reseña pública solo en sitios públicos.
   bool get canReviewPublic => isPublic;
 
+  PossibleDuplicate copyWith({
+    String? coverStoragePath,
+    List<String>? categoryNames,
+  }) {
+    return PossibleDuplicate(
+      siteId: siteId,
+      siteName: siteName,
+      city: city,
+      department: department,
+      addressLine: addressLine,
+      distanceM: distanceM,
+      nameScore: nameScore,
+      contributorCount: contributorCount,
+      isPublic: isPublic,
+      isOwn: isOwn,
+      isCatalog: isCatalog,
+      isLinked: isLinked,
+      coverStoragePath: coverStoragePath ?? this.coverStoragePath,
+      categoryNames: categoryNames ?? this.categoryNames,
+    );
+  }
+
   factory PossibleDuplicate.fromJson(Map<String, dynamic> json) {
     final rawId = json['site_id'] ?? json['id'];
     final siteId = rawId?.toString().trim() ?? '';
+    final cats = json['category_names'];
     return PossibleDuplicate(
       siteId: siteId,
       siteName:
@@ -94,6 +121,10 @@ class PossibleDuplicate {
       isOwn: parsePgBool(json['is_own']),
       isCatalog: parsePgBool(json['is_catalog']),
       isLinked: parsePgBool(json['is_linked']),
+      coverStoragePath: json['cover_storage_path'] as String?,
+      categoryNames: cats is List
+          ? cats.map((e) => '$e').where((e) => e.isNotEmpty).toList()
+          : const [],
     );
   }
 }
@@ -301,6 +332,44 @@ class UserSave {
   final String? coverStoragePath;
 
   bool get isIncomplete => status != SiteStatus.complete;
+
+  UserSave copyWith({
+    String? coverStoragePath,
+    List<String>? categoryNames,
+  }) {
+    return UserSave(
+      id: id,
+      userId: userId,
+      siteId: siteId,
+      status: status,
+      isPublic: isPublic,
+      siteName: siteName,
+      sourceUrl: sourceUrl,
+      sourceNetwork: sourceNetwork,
+      notes: notes,
+      city: city,
+      cityId: cityId,
+      department: department,
+      departmentId: departmentId,
+      addressLine: addressLine,
+      categoryNames: categoryNames ?? this.categoryNames,
+      createdAt: createdAt,
+      isPossibleDuplicate: isPossibleDuplicate,
+      possibleDuplicateOfSiteId: possibleDuplicateOfSiteId,
+      alsoSharedBy: alsoSharedBy,
+      sharedPeople: sharedPeople,
+      createdByPerson: createdByPerson,
+      alsoSharedPeople: alsoSharedPeople,
+      createdByUserId: createdByUserId,
+      siteCreatedAt: siteCreatedAt,
+      siteUpdatedAt: siteUpdatedAt,
+      isCatalogSite: isCatalogSite,
+      isPhysicalPlace: isPhysicalPlace,
+      googlePlaceId: googlePlaceId,
+      useExactPin: useExactPin,
+      coverStoragePath: coverStoragePath ?? this.coverStoragePath,
+    );
+  }
 
   Map<String, dynamic> toCacheJson() => {
     'id': id,

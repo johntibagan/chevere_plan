@@ -103,7 +103,7 @@ flowchart TD
 
 Tabs: **Info**, **Reseñas**, **Más** (creador, catálogo, fechas, también lo guardaron).
 
-Info: nombre, franja/icono visibilidad, origen, ciudad, pin, Maps (abrir / cómo llegar), categorías, precio, notas, fotos en tira → visor fullscreen (autor, fecha `dd/mmm/aaaa`, ⋮ portada/eliminar/reportar). Staff en **catálogo** (`external_id`): segundo icono **Pegar enlace** (URL de imagen + atribución opcional). Antes de guardar, comprueba que la URL responda con `Content-Type` de imagen (HEAD o GET liviano); si no, toast claro y no inserta. `source=external_link` y columna `external_url`; **pegar enlace no** marca portada sola. Si el sitio tiene **≥1 foto**, la **primera es portada**. Si el link no carga: icono de imagen no disponible, sin error feo. Borrar enlace = solo la fila (no Storage). Corazón favorito en header. **Sin** “agregar a plan” ni **compartir ficha**.
+Info: nombre, franja/icono visibilidad, origen, ciudad, pin, Maps (abrir / cómo llegar), categorías, precio, notas, fotos en tira → visor fullscreen (autor, fecha `dd/mmm/aaaa`, ⋮ portada/eliminar/reportar). Al abrir ficha desde un guardado, la portada se siembra con el path/URL que ya tenía la card (`coverStoragePath` o `siteLook` / firma en memoria) para no mostrar spinner vacío. Staff en **catálogo** (`external_id`): segundo icono **Pegar enlace** (URL de imagen + atribución opcional). Antes de guardar, comprueba que la URL responda con `Content-Type` de imagen (HEAD o GET liviano); si no, toast claro y no inserta. `source=external_link` y columna `external_url`; **pegar enlace no** marca portada sola. Si el sitio tiene **≥1 foto**, la **primera es portada**. Si el link no carga: icono de imagen no disponible, sin error feo. Borrar enlace = solo la fila (no Storage). Corazón favorito en header. **Sin** “agregar a plan” ni **compartir ficha**.
 
 Editar: creador, quien lo tiene como propio en saves, o staff sobre público.
 
@@ -351,7 +351,7 @@ Iconografía: Material Icons. Redes en cards = texto 2 letras (IG/TK/FB/GM).
 
 **Detalle plan** (`PlanDetailPage`): sin AppBar; hero 176; cuadros **Buscar | Paradas | Reseñas**; swipe horizontal; pie **Llevar a Maps** + Listo/Guardar; timeline A=Mi ubicación, B,C… pendientes.
 
-**Rutas** (`MyRoutesPage`): stats cliente + timeline visitados.
+**Rutas** (`MyRoutesPage`): stats cliente + timeline visitados; portada por lote (`loadSiteLooks`), no N+1 por fila.
 
 **Admin / mapa / legales:** según código (`AdminPage`, `LocationPickerPage`, etc.).
 

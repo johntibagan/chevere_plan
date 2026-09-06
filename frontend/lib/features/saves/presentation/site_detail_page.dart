@@ -140,7 +140,12 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
     if (widget.initialSave != null) {
       _ficha = SiteFicha.fromSave(widget.initialSave!);
       _loading = false;
-      _seedCoverPhoto(widget.initialSave!.coverStoragePath);
+      // Misma portada que ya pintó la card (path del save o siteLook en memoria).
+      _seedCoverPhoto(_resolveSeedCoverPath(widget.initialSave!.coverStoragePath));
+      if (_photos.isEmpty) {
+        // Evita spinner vacío: la card ya tenía foto vía look aunque el save no traiga path.
+        unawaited(_seedCoverFromLookIfNeeded());
+      }
       WidgetsBinding.instance.addPostFrameCallback((_) {
         unawaited(AppPerformance.stop(AppPerformance.siteDetailTimeToContent));
       });
@@ -156,14 +161,53 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
     _load();
   }
 
+  /// Path de portada: save/hit, o el [siteLookProvider] que la card ya pudo haber cargado.
+  String? _resolveSeedCoverPath(String? fromSeed) {
+    final direct = fromSeed?.trim();
+    if (direct != null && direct.isNotEmpty) return direct;
+    return ref
+        .read(siteLookProvider(widget.siteId))
+        .valueOrNull
+        ?.coverStoragePath
+        ?.trim();
+  }
+
   void _seedCoverPhoto(String? storagePath) {
     final path = storagePath?.trim();
     if (path == null || path.isEmpty) return;
-    final url = SignedUrlCache.instance.get(path);
+    // Memoria → provider que la card ya resolvió (keepAlive) → Hive luego.
+    var url = SignedUrlCache.instance.get(path);
+    url ??= ref.read(coverSignedUrlProvider(path)).valueOrNull;
     _coverStoragePath = path;
     _photos = [SitePhoto(id: path, siteId: widget.siteId, storagePath: path)];
-    if (url != null) _photoUrls[path] = url;
+    if (url != null && url.isNotEmpty) _photoUrls[path] = url;
     _photosLoading = false;
+    if (url == null || url.isEmpty) {
+      unawaited(_hydrateSeededCoverUrl(path));
+    }
+  }
+
+  Future<void> _hydrateSeededCoverUrl(String path) async {
+    try {
+      final cached = await SignedUrlCache.instance.getAsync(path);
+      final url = (cached != null && cached.isNotEmpty)
+          ? cached
+          : await ref.read(moderationRepositoryProvider).signedPhotoUrl(path);
+      if (!mounted || url.isEmpty) return;
+      setState(() => _photoUrls[path] = url);
+    } catch (_) {}
+  }
+
+  Future<void> _seedCoverFromLookIfNeeded() async {
+    if (_photos.isNotEmpty) return;
+    try {
+      final look = await ref.read(siteLookProvider(widget.siteId).future);
+      final path = look.coverStoragePath?.trim();
+      if (path == null || path.isEmpty || !mounted) return;
+      if (_photos.isNotEmpty) return;
+      _seedCoverPhoto(path);
+      if (mounted) setState(() {});
+    } catch (_) {}
   }
 
   Future<void> _loadStaffFlag() async {
@@ -245,6 +289,13 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
       final moderation = ref.read(moderationRepositoryProvider);
       final photosFuture = moderation.listSitePhotos(widget.siteId);
       final coverFuture = _fetchCoverPhotoId();
+      final warmPath = _coverStoragePath?.trim();
+      if (warmPath != null &&
+          warmPath.isNotEmpty &&
+          !_photoUrls.containsKey(warmPath) &&
+          SignedUrlCache.instance.get(warmPath) == null) {
+        unawaited(_hydrateSeededCoverUrl(warmPath));
+      }
       final photos = await photosFuture;
       var coverId = await coverFuture;
       if (coverId != null && !photos.any((p) => p.id == coverId)) {
@@ -1369,15 +1420,11 @@ class _GallerySection extends StatelessWidget {
             )
           : null,
       child: loading && photos.isEmpty
-          ? Padding(
-              padding: EdgeInsets.symmetric(vertical: 24),
-              child: Center(
-                child: SizedBox(
-                  width: 24,
-                  height: 24,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                ),
-              ),
+          ? SizedBox(
+              // Sin CircularProgress: mismos huecos que el placeholder de red
+              // (públicos casi nunca llegan aquí porque ya vienen con seed).
+              height: _PhotoTile.stripHeight,
+              child: ColoredBox(color: AppColors.surfaceElevated),
             )
           : photos.isEmpty
           ? Text(

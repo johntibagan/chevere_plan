@@ -837,13 +837,16 @@ class RoutesNotifier extends AsyncNotifier<List<RouteHistoryEntry>> {
     final uid = ref.read(supabaseClientProvider).auth.currentUser?.id;
     if (uid == null) return const [];
     final swr = ref.read(swrLoaderProvider);
-    return swr.load<List<RouteHistoryEntry>>(
+    final list = await swr.load<List<RouteHistoryEntry>>(
       key: CacheKeys.routesAll(uid),
       ttl: CacheTtl.routes,
       decode: _decodeRoutes,
       encode: _encodeRoutes,
       forceNetwork: forceNetwork,
-      network: () => ref.read(routesRepositoryProvider).listMineAll(),
+      network: () async {
+        final raw = await ref.read(routesRepositoryProvider).listMineAll();
+        return _attachRouteLooks(raw);
+      },
       onBackgroundRefresh: (pending) {
         if (_refreshing) return;
         _refreshing = true;
@@ -856,6 +859,40 @@ class RoutesNotifier extends AsyncNotifier<List<RouteHistoryEntry>> {
         );
       },
     );
+    // Caché anterior sin portadas: un lote; si ya vienen enriquecidas, no-op.
+    return _attachRouteLooks(list);
+  }
+
+  Future<List<RouteHistoryEntry>> _attachRouteLooks(
+    List<RouteHistoryEntry> entries,
+  ) async {
+    if (entries.isEmpty) return entries;
+    final need = entries.any((e) {
+      final path = e.coverStoragePath?.trim();
+      return (path == null || path.isEmpty) && e.categoryNames.isEmpty;
+    });
+    if (!need) return entries;
+    final looks = await ref.read(savesRepositoryProvider).loadSiteLooks(
+          entries.map((e) => e.siteId),
+        );
+    if (looks.isEmpty) return entries;
+    final out = <RouteHistoryEntry>[];
+    for (final e in entries) {
+      final look = looks[e.siteId];
+      if (look == null) {
+        out.add(e);
+        continue;
+      }
+      out.add(
+        e.copyWith(
+          coverStoragePath: look.coverStoragePath ?? e.coverStoragePath,
+          categoryNames: look.categoryNames.isNotEmpty
+              ? look.categoryNames
+              : e.categoryNames,
+        ),
+      );
+    }
+    return out;
   }
 }
 

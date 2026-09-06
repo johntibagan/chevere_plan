@@ -209,6 +209,7 @@ class _PlanCard extends StatelessWidget {
                     categoryNames:
                         plan.coverStop?.categoryNames ?? const [],
                     coverStoragePath: plan.coverStop?.coverStoragePath,
+                    resolveLook: false,
                   ),
                   const SiteCoverScrim(bottomOpacity: 0.8),
                   Positioned(

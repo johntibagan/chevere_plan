@@ -252,7 +252,12 @@ class _SameSitePickerPageState extends State<SameSitePickerPage> {
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
-                    SiteLookCover(siteId: d.siteId),
+                    SiteLookCover(
+                      siteId: d.siteId,
+                      categoryNames: d.categoryNames,
+                      coverStoragePath: d.coverStoragePath,
+                      resolveLook: false,
+                    ),
                     const SiteCoverScrim(),
                     Positioned(
                       left: 0,

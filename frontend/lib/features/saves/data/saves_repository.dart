@@ -63,6 +63,16 @@ class SavesRepository {
       'google_place_id, '
       'site_categories(categories(name_i18n)))';
 
+  static const _siteLookSelect =
+      'id, cover_photo_id, '
+      'site_categories(categories(name_i18n)), '
+      'site_photos(id, storage_path, external_url, sort_order, created_at)';
+
+  static const _siteLookSelectNoCover =
+      'id, '
+      'site_categories(categories(name_i18n)), '
+      'site_photos(id, storage_path, external_url, sort_order, created_at)';
+
   String? get _uid => _client.auth.currentUser?.id;
 
   SiteStatus computeStatus(SaveDraftInput input) {
@@ -125,6 +135,87 @@ class SavesRepository {
         );
       }
     }
+    return _attachMissingCovers(out);
+  }
+
+  /// Un select por lote (no N+1) para portada + categorías.
+  Future<Map<String, SiteLook>> loadSiteLooks(Iterable<String> siteIds) async {
+    final ids = <String>[];
+    final seen = <String>{};
+    for (final raw in siteIds) {
+      final id = raw.trim();
+      if (id.isEmpty || !seen.add(id)) continue;
+      ids.add(id);
+    }
+    if (ids.isEmpty) return const {};
+
+    const chunkSize = 80;
+    final out = <String, SiteLook>{};
+    for (var i = 0; i < ids.length; i += chunkSize) {
+      final end = i + chunkSize > ids.length ? ids.length : i + chunkSize;
+      final chunk = ids.sublist(i, end);
+      List<dynamic> rows;
+      try {
+        rows = await _client
+            .from('sites')
+            .select(_siteLookSelect)
+            .inFilter('id', chunk) as List<dynamic>;
+      } on PostgrestException {
+        try {
+          rows = await _client
+              .from('sites')
+              .select(_siteLookSelectNoCover)
+              .inFilter('id', chunk) as List<dynamic>;
+        } catch (_) {
+          continue;
+        }
+      } catch (_) {
+        continue;
+      }
+      for (final e in rows) {
+        if (e is! Map) continue;
+        final map = Map<String, dynamic>.from(e);
+        final id = map['id']?.toString();
+        if (id == null || id.isEmpty) continue;
+        out[id] = SiteLook.fromSiteMap(map);
+      }
+    }
+    return out;
+  }
+
+  Future<List<UserSave>> _attachMissingCovers(List<UserSave> saves) async {
+    final missing = <String>[
+      for (final s in saves)
+        if ((s.coverStoragePath == null || s.coverStoragePath!.trim().isEmpty) &&
+            s.siteId.trim().isNotEmpty)
+          s.siteId,
+    ];
+    if (missing.isEmpty) return saves;
+    final looks = await loadSiteLooks(missing);
+    if (looks.isEmpty) return saves;
+    final out = <UserSave>[];
+    for (final s in saves) {
+      final look = looks[s.siteId];
+      if (look == null) {
+        out.add(s);
+        continue;
+      }
+      final path = look.coverStoragePath?.trim();
+      final cats = look.categoryNames;
+      if ((path == null || path.isEmpty) && cats.isEmpty) {
+        out.add(s);
+        continue;
+      }
+      out.add(
+        s.copyWith(
+          coverStoragePath:
+              (path != null && path.isNotEmpty) ? path : s.coverStoragePath,
+          categoryNames: s.categoryNames.isEmpty && cats.isNotEmpty
+              ? cats
+              : s.categoryNames,
+        ),
+      );
+    }
     return out;
   }
 
@@ -174,6 +265,31 @@ class SavesRepository {
           stackTrace: st,
         );
       }
+    }
+    return _attachDuplicateLooks(out);
+  }
+
+  Future<List<PossibleDuplicate>> _attachDuplicateLooks(
+    List<PossibleDuplicate> dupes,
+  ) async {
+    if (dupes.isEmpty) return dupes;
+    final looks = await loadSiteLooks(dupes.map((d) => d.siteId));
+    if (looks.isEmpty) return dupes;
+    final out = <PossibleDuplicate>[];
+    for (final d in dupes) {
+      final look = looks[d.siteId];
+      if (look == null) {
+        out.add(d);
+        continue;
+      }
+      out.add(
+        d.copyWith(
+          coverStoragePath: look.coverStoragePath ?? d.coverStoragePath,
+          categoryNames: look.categoryNames.isNotEmpty
+              ? look.categoryNames
+              : d.categoryNames,
+        ),
+      );
     }
     return out;
   }

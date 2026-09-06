@@ -18,6 +18,7 @@ class SiteLookCover extends ConsumerWidget {
     this.coverStoragePath,
     this.imageUrl,
     this.categoryHint,
+    this.resolveLook = true,
   });
 
   final String? siteId;
@@ -26,6 +27,9 @@ class SiteLookCover extends ConsumerWidget {
   final String? imageUrl;
   /// Solo al crear (aún no hay sitio).
   final String? categoryHint;
+
+  /// Si false, no dispara [siteLookProvider] (la lista ya resolvió portada/cats).
+  final bool resolveLook;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -38,7 +42,8 @@ class SiteLookCover extends ConsumerWidget {
 
     final id = siteId?.trim();
     // Si la lista ya trae portada, no pegar red por cada card (Inicio).
-    if (path == null &&
+    if (resolveLook &&
+        path == null &&
         id != null &&
         id.isNotEmpty &&
         (imageUrl == null || imageUrl!.trim().isEmpty)) {
