@@ -327,6 +327,13 @@ class MySavesNotifier extends AsyncNotifier<PagedItems<UserSave>> {
 
   @override
   Future<PagedItems<UserSave>> build() async {
+    // Evitar StateError si Home escucha el provider antes del init diferido.
+    ref.watch(supabaseReadyProvider);
+    await SupabaseBootstrap.ready;
+    if (!SupabaseBootstrap.isReady) {
+      return const PagedItems(items: [], hasMore: false);
+    }
+
     final seeded = _peekPage0();
     if (seeded != null) {
       // Primer frame con Hive caliente: AsyncData antes del await de SWR/red.
@@ -335,8 +342,13 @@ class MySavesNotifier extends AsyncNotifier<PagedItems<UserSave>> {
     return _loadPage0(forceNetwork: false);
   }
 
+  String? _uid() {
+    final auth = ref.read(supabaseClientProvider).auth;
+    return auth.currentUser?.id ?? auth.currentSession?.user.id;
+  }
+
   PagedItems<UserSave>? _peekPage0() {
-    final uid = ref.read(supabaseClientProvider).auth.currentUser?.id;
+    final uid = _uid();
     if (uid == null) return null;
     return peekMySavesSummarySync(ref.read(swrLoaderProvider), uid);
   }
@@ -366,7 +378,7 @@ class MySavesNotifier extends AsyncNotifier<PagedItems<UserSave>> {
   }
 
   Future<PagedItems<UserSave>> _loadPage0({required bool forceNetwork}) async {
-    final uid = ref.read(supabaseClientProvider).auth.currentUser?.id;
+    final uid = _uid();
     if (uid == null) {
       return const PagedItems(items: [], hasMore: false);
     }
@@ -938,14 +950,22 @@ final routesProvider =
 
 class HomeNearbyNotifier extends AsyncNotifier<HomeNearbySnapshot> {
   @override
-  Future<HomeNearbySnapshot> build() => _load(forceNetwork: false);
+  Future<HomeNearbySnapshot> build() async {
+    ref.watch(supabaseReadyProvider);
+    await SupabaseBootstrap.ready;
+    if (!SupabaseBootstrap.isReady) {
+      return const HomeNearbySnapshot(hits: []);
+    }
+    return _load(forceNetwork: false);
+  }
 
   Future<void> refresh({bool force = false}) async {
     state = AsyncData(await _load(forceNetwork: force));
   }
 
   Future<HomeNearbySnapshot> _load({required bool forceNetwork}) async {
-    final uid = ref.read(supabaseClientProvider).auth.currentUser?.id;
+    final auth = ref.read(supabaseClientProvider).auth;
+    final uid = auth.currentUser?.id ?? auth.currentSession?.user.id;
     if (uid == null) {
       return const HomeNearbySnapshot(hits: []);
     }

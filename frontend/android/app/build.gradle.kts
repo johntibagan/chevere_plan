@@ -78,6 +78,9 @@ dependencies {
     implementation(platform("com.google.firebase:firebase-bom:34.18.0"))
     implementation("com.google.firebase:firebase-perf")
 
+    // Android 12+ SplashScreen API + backport (cubre la espera de arranque).
+    implementation("androidx.core:core-splashscreen:1.2.0")
+
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
     androidTestUtil("androidx.test:orchestrator:1.6.1")
 }

@@ -174,6 +174,16 @@ class _HomePageState extends ConsumerState<HomePage> {
         return;
       }
 
+      // Si un listen previo dejó AsyncError (init diferido), forzar rebuild limpio.
+      final savesState = ref.read(mySavesProvider);
+      if (savesState.hasError) {
+        ref.invalidate(mySavesProvider);
+      }
+      final nearbyState = ref.read(homeNearbyProvider);
+      if (nearbyState.hasError) {
+        ref.invalidate(homeNearbyProvider);
+      }
+
       if (forceRefresh) {
         unawaited(ref.read(mySavesProvider.notifier).refresh(force: true));
       }
@@ -185,6 +195,7 @@ class _HomePageState extends ConsumerState<HomePage> {
       setState(() {
         _saves = saves;
         _loading = false;
+        _error = null;
       });
       // Si ya se detuvo en initState (peek Hive), stop es no-op de reloj.
       unawaited(AppPerformance.stop(AppPerformance.homeTimeToContent));
@@ -226,7 +237,10 @@ class _HomePageState extends ConsumerState<HomePage> {
       if (!mounted) return;
       setState(() {
         _loading = false;
-        _error = 'retry';
+        // Conservar peek de Hive: no tapar Inicio con error si ya hay cards.
+        if (_saves.isEmpty) {
+          _error = 'retry';
+        }
       });
       unawaited(AppPerformance.stop(AppPerformance.homeTimeToContent));
       AppToast.error(context, e, logContext: 'home_load');
