@@ -66,7 +66,8 @@ class SitePrefetchCoordinator {
     for (final path in paths) {
       if (_disposed) return;
       try {
-        final cached = SignedUrlCache.instance.get(path);
+        final cached = SignedUrlCache.instance.get(path) ??
+            await SignedUrlCache.instance.getAsync(path);
         final url = cached ?? await moderation.signedPhotoUrl(path);
         await AppImageCacheManager.instance.downloadFile(url, key: path);
       } catch (_) {}

@@ -16,7 +16,9 @@ Future<void> clearSessionCaches({
     await EntityCacheStore.instance.clearAll();
   } catch (_) {}
 
-  SignedUrlCache.instance.clear();
+  try {
+    await SignedUrlCache.instance.clear();
+  } catch (_) {}
 
   try {
     await AppImageCacheManager.instance.emptyCache();

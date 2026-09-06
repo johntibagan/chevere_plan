@@ -1,9 +1,21 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:firebase_performance/firebase_performance.dart';
 
 import '../logging/app_log.dart';
 
 /// Inicialización mínima de FCM (Ciclo 0). Sin topics ni geofencing.
 Future<void> bootstrapFcm() async {
+  try {
+    await FirebasePerformance.instance.setPerformanceCollectionEnabled(true);
+  } catch (e, st) {
+    AppLog.debug(
+      'Firebase Performance no disponible',
+      name: 'perf',
+      error: e,
+      stackTrace: st,
+    );
+  }
+
   final messaging = FirebaseMessaging.instance;
 
   final settings = await messaging.requestPermission(

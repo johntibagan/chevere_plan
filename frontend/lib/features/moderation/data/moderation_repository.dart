@@ -34,7 +34,7 @@ class ModerationRepository {
     String storagePath, {
     int expiresInSeconds = 3600,
   }) async {
-    final cached = SignedUrlCache.instance.get(storagePath);
+    final cached = await SignedUrlCache.instance.getAsync(storagePath);
     if (cached != null) return cached;
 
     if (isExternalPhotoUrl(storagePath)) {
@@ -62,8 +62,14 @@ class ModerationRepository {
   }) async {
     final out = <String, String>{};
     final missing = <({String id, String storagePath})>[];
-    for (final item in items) {
-      final cached = SignedUrlCache.instance.get(item.storagePath);
+    final itemList = items.toList();
+    final cachedList = await Future.wait([
+      for (final item in itemList)
+        SignedUrlCache.instance.getAsync(item.storagePath),
+    ]);
+    for (var i = 0; i < itemList.length; i++) {
+      final item = itemList[i];
+      final cached = cachedList[i];
       if (cached != null) {
         out[item.id] = cached;
       } else if (isExternalPhotoUrl(item.storagePath)) {

@@ -9,6 +9,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/cache/session_cache_cleanup.dart';
 import '../../../core/di/providers.dart';
 import '../../../core/l10n/context_l10n.dart';
+import '../../../core/performance/app_performance.dart';
 import '../../../core/widgets/app_retry_callout.dart';
 import '../../../core/widgets/app_toast.dart';
 import '../../../core/prefetch/site_prefetch.dart';
@@ -69,7 +70,14 @@ class _HomePageState extends ConsumerState<HomePage> {
   @override
   void initState() {
     super.initState();
+    unawaited(AppPerformance.start(AppPerformance.homeTimeToContent));
     _bootstrap();
+  }
+
+  @override
+  void dispose() {
+    unawaited(AppPerformance.stop(AppPerformance.homeTimeToContent));
+    super.dispose();
   }
 
   void _onRootBack() {
@@ -157,6 +165,7 @@ class _HomePageState extends ConsumerState<HomePage> {
         _saves = saves;
         _loading = false;
       });
+      unawaited(AppPerformance.stop(AppPerformance.homeTimeToContent));
       ref.read(sitePrefetchProvider).scheduleVisibleSites(
             saves.map((s) => s.siteId),
           );
@@ -197,6 +206,7 @@ class _HomePageState extends ConsumerState<HomePage> {
         _loading = false;
         _error = 'retry';
       });
+      unawaited(AppPerformance.stop(AppPerformance.homeTimeToContent));
       AppToast.error(context, e, logContext: 'home_load');
     }
   }

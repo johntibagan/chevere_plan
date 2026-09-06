@@ -5,6 +5,7 @@ import 'package:path/path.dart' as p;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../../core/cache/signed_url_cache.dart';
 import '../../../core/errors/user_facing_error.dart';
 import '../../../core/logging/app_log.dart';
 import '../../../core/photos/external_photo_url.dart';
@@ -442,9 +443,17 @@ class SavesRepository {
   Future<String?> signedPhotoUrl(String storagePath) async {
     final p = storagePath.trim();
     if (p.isEmpty) return null;
-    if (isExternalPhotoUrl(p)) return p;
+    if (isExternalPhotoUrl(p)) {
+      SignedUrlCache.instance.put(p, p, ttlSeconds: 3600);
+      return p;
+    }
+    final cached = await SignedUrlCache.instance.getAsync(p);
+    if (cached != null) return cached;
     try {
-      return await _client.storage.from('site-photos').createSignedUrl(p, 3600);
+      final url =
+          await _client.storage.from('site-photos').createSignedUrl(p, 3600);
+      SignedUrlCache.instance.put(p, url, ttlSeconds: 3600);
+      return url;
     } catch (_) {
       return null;
     }

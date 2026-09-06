@@ -8,6 +8,7 @@ import 'package:geolocator/geolocator.dart';
 import '../../../core/cache/cache_ttl.dart';
 import '../../../core/di/providers.dart';
 import '../../../core/l10n/context_l10n.dart';
+import '../../../core/performance/app_performance.dart';
 import '../../../core/prefetch/site_prefetch.dart';
 import '../../../core/prefs/feed_layout.dart';
 import '../../../core/testing/widget_keys.dart';
@@ -195,6 +196,9 @@ class _SearchPageState extends ConsumerState<SearchPage> {
 
   Future<void> _runSearch({bool forceNetwork = false}) async {
     final epoch = ++_searchEpoch;
+    unawaited(
+      AppPerformance.start(AppPerformance.searchTimeToFirstResults),
+    );
     setState(() {
       _loading = true;
       _searched = true;
@@ -242,6 +246,9 @@ class _SearchPageState extends ConsumerState<SearchPage> {
         _offset = SearchPolicies.pageSize;
         _loading = false;
       });
+      unawaited(
+        AppPerformance.stop(AppPerformance.searchTimeToFirstResults),
+      );
       ref.read(sitePrefetchProvider).scheduleVisibleSites(
             page.hits.map((h) => h.siteId),
           );
@@ -251,6 +258,9 @@ class _SearchPageState extends ConsumerState<SearchPage> {
         _loading = false;
         _searchFailed = true;
       });
+      unawaited(
+        AppPerformance.stop(AppPerformance.searchTimeToFirstResults),
+      );
       AppToast.error(context, e, stackTrace: st, logContext: 'search');
     }
   }

@@ -11,6 +11,7 @@ import '../../../core/cache/cache_ttl.dart';
 import '../../../core/cache/search_cache.dart';
 import '../../../core/cache/signed_url_cache.dart';
 import '../../../core/di/providers.dart';
+import '../../../core/performance/app_performance.dart';
 import '../../../core/testing/widget_keys.dart';
 import '../../../core/widgets/app_retry_callout.dart';
 import '../../../core/widgets/app_toast.dart';
@@ -132,6 +133,7 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
   @override
   void initState() {
     super.initState();
+    unawaited(AppPerformance.start(AppPerformance.siteDetailTimeToContent));
     final tabIndex = widget.launch.initialTabIndex.clamp(0, 2);
     _tabs = TabController(length: 3, vsync: this, initialIndex: tabIndex);
     _uid = ref.read(supabaseClientProvider).auth.currentUser?.id;
@@ -139,10 +141,16 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
       _ficha = SiteFicha.fromSave(widget.initialSave!);
       _loading = false;
       _seedCoverPhoto(widget.initialSave!.coverStoragePath);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        unawaited(AppPerformance.stop(AppPerformance.siteDetailTimeToContent));
+      });
     } else if (widget.initialHit != null) {
       _ficha = SiteFicha.fromSearchHit(widget.initialHit!);
       _loading = false;
       _seedCoverPhoto(widget.initialHit!.coverStoragePath);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        unawaited(AppPerformance.stop(AppPerformance.siteDetailTimeToContent));
+      });
     }
     _loadStaffFlag();
     _load();
@@ -183,6 +191,7 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
 
   @override
   void dispose() {
+    unawaited(AppPerformance.stop(AppPerformance.siteDetailTimeToContent));
     _tabs.dispose();
     super.dispose();
   }
@@ -209,11 +218,13 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
         );
         _loading = false;
       });
+      unawaited(AppPerformance.stop(AppPerformance.siteDetailTimeToContent));
       await Future.wait([_loadPhotos(), _loadSocialLinks()]);
     } catch (e) {
       if (!mounted) return;
       if (_ficha != null) {
         setState(() => _loading = false);
+        unawaited(AppPerformance.stop(AppPerformance.siteDetailTimeToContent));
         await Future.wait([_loadPhotos(), _loadSocialLinks()]);
         return;
       }
@@ -221,6 +232,7 @@ class _SiteDetailPageState extends ConsumerState<SiteDetailPage>
         _error = 'retry';
         _loading = false;
       });
+      unawaited(AppPerformance.stop(AppPerformance.siteDetailTimeToContent));
       AppToast.error(context, e, logContext: 'site_detail');
     }
   }

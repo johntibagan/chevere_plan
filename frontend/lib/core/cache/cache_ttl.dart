@@ -74,4 +74,8 @@ abstract final class CacheKeys {
   /// Prefijo para invalidar todas las búsquedas (guardar / favorito).
   static const searchPrefix = 'search:';
   static String homeNearby(String uid) => 'home_nearby_v1:$uid';
+  /// Prefijo Hive de URLs firmadas de Storage.
+  static const signedUrlPrefix = 'signed_url:';
+  static String signedUrl(String storagePath) =>
+      '$signedUrlPrefix${storagePath.trim()}';
 }

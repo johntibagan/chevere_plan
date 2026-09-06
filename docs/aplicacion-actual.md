@@ -214,7 +214,7 @@ flowchart TB
 - Geografía: DIVIPOLA + caché 30/90 d
 - Sitios, saves, planes, reseñas, favoritos: servidor; SWR en cliente
 - Populares cerca: Hive + ancla GPS
-- Fotos: Storage (firmadas) o URL externa en `site_photos.external_url` (staff, solo catálogo); decode acotado en cards
+- Fotos: Storage (firmadas; firmas en memoria + Hive ~1 h) o URL externa en `site_photos.external_url` (staff, solo catálogo); decode acotado en cards
 
 ### Pruebas cerradas (APK)
 
