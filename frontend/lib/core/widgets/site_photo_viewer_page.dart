@@ -124,24 +124,16 @@ class _SitePhotoViewerPageState extends State<SitePhotoViewerPage> {
               PageView.builder(
                 controller: _page,
                 itemCount: total,
+                // Precarga la vecina al deslizar; keep-alive ±1 evita recrear
+                // AppNetworkImage (y el ladder Wikimedia) al volver.
+                allowImplicitScrolling: true,
                 onPageChanged: (i) => setState(() => _index = i),
                 itemBuilder: (context, i) {
                   final photo = widget.photos[i];
-                  final size = MediaQuery.sizeOf(context);
-                  return InteractiveViewer(
-                    minScale: 1,
-                    maxScale: 4,
-                    child: SizedBox(
-                      width: size.width,
-                      height: size.height,
-                      child: AppNetworkImage(
-                        url: photo.url,
-                        cacheKey: photo.cacheKey,
-                        fit: BoxFit.contain,
-                        quality: AppImageQuality.fullScreen,
-                        showLoadingIndicator: true,
-                      ),
-                    ),
+                  return _ViewerPhotoPage(
+                    key: ValueKey(photo.id),
+                    photo: photo,
+                    keepAlive: (i - _index).abs() <= 1,
                   );
                 },
               ),
@@ -247,6 +239,57 @@ class _SitePhotoViewerPageState extends State<SitePhotoViewerPage> {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Página del [PageView]: mantiene vivo el widget (±1 del índice actual).
+class _ViewerPhotoPage extends StatefulWidget {
+  const _ViewerPhotoPage({
+    super.key,
+    required this.photo,
+    required this.keepAlive,
+  });
+
+  final SitePhotoViewItem photo;
+  final bool keepAlive;
+
+  @override
+  State<_ViewerPhotoPage> createState() => _ViewerPhotoPageState();
+}
+
+class _ViewerPhotoPageState extends State<_ViewerPhotoPage>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => widget.keepAlive;
+
+  @override
+  void didUpdateWidget(covariant _ViewerPhotoPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.keepAlive != widget.keepAlive) {
+      updateKeepAlive();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    final size = MediaQuery.sizeOf(context);
+    final photo = widget.photo;
+    return InteractiveViewer(
+      minScale: 1,
+      maxScale: 4,
+      child: SizedBox(
+        width: size.width,
+        height: size.height,
+        child: AppNetworkImage(
+          url: photo.url,
+          cacheKey: photo.cacheKey,
+          fit: BoxFit.contain,
+          quality: AppImageQuality.fullScreen,
+          showLoadingIndicator: true,
         ),
       ),
     );

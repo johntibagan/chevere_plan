@@ -162,6 +162,8 @@ Si cambian `url` / `cacheKey` / `quality` → se recalcula el índice inicial (n
 
 No es progressive JPEG del mismo archivo; son dos `cacheKey` (`@wN` distintos) en un `Stack`.
 
+**Visor `PageView`:** cada foto es `_ViewerPhotoPage` con `AutomaticKeepAliveClientMixin`; se mantiene viva la página actual y las vecinas (`|i − índice| ≤ 1`). `allowImplicitScrolling: true` precarga al deslizar. Evita dispose → recreate de `AppNetworkImage` al ir y volver una página.
+
 ### 5.6 `cacheKey` por intento (`wikimediaAttempt`)
 
 | Intento | `cacheKey` efectivo |
@@ -247,6 +249,7 @@ Errores: silenciados (`catch`).
 |---|---|
 | Progressive upgrade (pintar menor → mayor encima) | **Hecho** — `AppNetworkImage` Stack + probe disco (§5.5) |
 | Recordar ancho OK en sesión (evitar redescubrir ladder) | **Hecho** — `WikimediaSessionWidths` + arranque de `_wikiAttempt` (§5.5) |
+| Keep-alive páginas del visor (`PageView`) | **Hecho** — ±1 + `allowImplicitScrolling` (§5.5) |
 | Hosts no-Commons (Flickr, etc.) | Archivo completo; sin ladder |
 | Thumbs / transform en Storage | No; bytes = original subido (lado largo ≤ ~1920 en lineamientos de subida) |
 | Métricas de ladder (cuántos peldaños, 429, latencia) | No instrumentado |
