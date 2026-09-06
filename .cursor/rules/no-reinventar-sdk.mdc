@@ -1,7 +1,7 @@
 ---
 description: No reinventar Dart, Flutter ni librerías ya en el pubspec
 alwaysApply: true
-globs: frontend/**/*.dart
+globs: frontend/**/*.dart,backend/**/*.{py,sql}
 ---
 
 # No reinventar (frontend)
@@ -22,3 +22,6 @@ Si Dart, Flutter o una lib **ya** en `frontend/pubspec.yaml` hace lo mismo, usal
 Anti-dupe, fuzzy DIVIPOLA, `ShareParser`, `parsePgBool`, embeds PostgREST, caché SWR/Hive, flujo Guardar sitio.
 
 Detalle: [`docs/lineamientos-desarrollo-frontend.md`](docs/lineamientos-desarrollo-frontend.md) §2.2.
+
+## backend
+espejo de la de Dart: no reinventar psycopg, argparse, funciones ya en reset_all.py, etc

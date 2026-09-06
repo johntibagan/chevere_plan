@@ -1,6 +1,7 @@
 ---
 description: Lineamientos frontend Chevere Plan — leerlos antes de tocar frontend/
 alwaysApply: true
+globs: frontend/**/*.dart
 ---
 
 # Frontend — obligatorio antes de tocar código

@@ -1,6 +1,7 @@
 ---
 description: No redundar privacidad (color vs texto) ni señales visuales duplicadas
 alwaysApply: true
+globs: frontend/lib/**/*.dart
 ---
 
 # UI — sin redundancia (privacidad y señales)

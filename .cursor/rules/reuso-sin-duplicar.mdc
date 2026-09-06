@@ -1,6 +1,7 @@
 ---
 description: No duplicar UI ni funciones — extraer widgets/módulos
 alwaysApply: true
+globs: frontend/lib/**/*.dart
 ---
 
 # Reuso — sin duplicar (diseño y funciones)

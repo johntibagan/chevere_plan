@@ -1,0 +1,66 @@
+---
+description: Investigar buenas prácticas oficiales antes de implementar; no asumir; preguntar si algo no queda claro; auditar impacto en cambios compartidos
+alwaysApply: true
+---
+
+# Investigar antes de implementar (método de trabajo)
+
+Aplica a **cualquier** cambio de la app (frontend, backend, docs, infra) — no es
+una regla de UI ni de producto puntual, es cómo se trabaja acá.
+
+## 1. No asumir
+
+Si no estás **seguro** de cómo se comporta hoy una librería, un framework, una
+API (Flutter, Dart, Supabase, Android, un paquete del `pubspec`/`requirements`),
+**no lo inventes ni lo copies de memoria**. Verificalo antes de escribir código:
+documentación oficial del proyecto (flutter.dev, dart.dev, supabase.com/docs,
+developer.android.com) o, si hace falta, un issue/discusión reputada del propio
+repo del framework/librería. Preferí la fuente oficial sobre un blog de
+terceros cuando ambas estén disponibles.
+
+Antes de investigar de cero, revisá si el hallazgo ya está anotado en
+[`docs/investigaciones-tecnicas.md`](docs/investigaciones-tecnicas.md) — si
+sí, usalo sin re-investigar. Si investigaste algo nuevo y no trivial, agregalo
+ahí (una entrada corta: fecha, pregunta, fuente, conclusión) — **no** en este
+archivo de regla, para no inflar lo que se carga en cada conversación.
+
+## 2. Aprovechar lo que ya existe antes de escribir algo nuevo
+
+Antes de un archivo/función/patrón nuevo: ¿Dart, Flutter, Supabase o una
+librería **ya en el proyecto** (`pubspec.yaml` / `requirements`) resuelve esto
+de forma nativa? Ver también `no-reinventar-sdk.mdc` (frontend **y** backend).
+No reinventar por costumbre ni "por si acaso".
+
+## 3. Preguntar cuando algo no está claro
+
+Si una instrucción es ambigua, hay más de un enfoque razonable con
+compensaciones distintas (rendimiento vs. riesgo, alcance chico vs. grande), o
+no estás seguro de qué querés vos exactamente: **parar y preguntar** con
+opciones concretas (2–4, pros/contras en una línea) antes de implementar esa
+parte. Ver `no-decidir-solo-producto.mdc` para el caso específico de
+decisiones de producto/UX — esta regla es la versión general (técnica,
+arquitectura, alcance), esa es la versión de producto.
+
+## 4. Auditar impacto antes de tocar una base compartida
+
+Si un cambio toca un supuesto que **otras partes del código ya dan por
+hecho** (ej. "el cliente de Supabase siempre está listo", "esta función
+siempre corre en el hilo principal"), **antes** de dar el cambio por cerrado:
+listar todo lo que depende de ese supuesto y confirmar que sigue funcionando
+— no solo la parte donde se notó el problema. (Lección real: diferir
+`Supabase.initialize` rompió `mySaves`/`homeNearby` porque no se auditó quién
+más asumía que el cliente ya estaba listo.)
+
+## 5. No forzar coincidencias / no confirmar de más
+
+Si investigaste y **no** hay evidencia clara de la mejor práctica, o el
+resultado de una prueba no alcanza el estándar esperado, decilo explícito
+("no encontré una fuente que confirme esto" / "la tasa fue baja, esto es lo
+que pasó") en vez de forzar una conclusión optimista para cerrar rápido.
+
+## Cierre
+
+Al terminar, si investigaste algo, mencioná brevemente qué fuente/enfoque
+usaste — no hace falta un ensayo, una línea alcanza.
+
+## Investigaciones

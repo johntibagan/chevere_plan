@@ -1,6 +1,7 @@
 ---
 description: UI responsiva — layouts y tarjetas según ancho de pantalla
 alwaysApply: true
+globs: frontend/lib/**/*.dart
 ---
 
 # UI — responsiva (ancho de pantalla)

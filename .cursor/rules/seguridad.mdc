@@ -1,0 +1,58 @@
+---
+description: Seguridad — frontend, backend y repositorio; evitar hackeos, fuga de secretos, forzar permisos
+alwaysApply: true
+---
+
+# Seguridad (Chevere Plan)
+
+Aplica a **cualquier** cambio, no solo a una capa. La regla de fondo: **nunca
+confiar en el cliente para autorizar nada** — el cliente puede mostrarse
+distinto, pero quien decide qué se puede leer/escribir es siempre el backend
+(RLS), nunca solo una validación en Dart.
+
+## Backend / Supabase
+
+1. RLS habilitado en toda tabla con datos de usuario, sin excepción (ver
+   `backend-performance.mdc` para el detalle técnico de cómo escribirla).
+2. La `service_role key` **nunca** viaja al cliente ni a ningún archivo que
+   se empaquete en el APK — solo en scripts/servidor (`backend/`, GitHub
+   Actions con secret cifrado). Si aparece en un `.dart` o en un asset, es un
+   error crítico, parar y avisar.
+3. Ninguna función `SECURITY DEFINER` debe confiar en un `user_id` que venga
+   como parámetro del cliente para decidir permisos — siempre usar
+   `auth.uid()` del lado del servidor para saber quién es el que llama.
+4. Cuenta de Supabase (el dashboard): MFA activado. No compartir credenciales
+   de owner; rotar keys si alguien con acceso deja de estar en el proyecto.
+
+## Frontend / Flutter
+
+1. Ninguna clave/API key/secreto hardcodeado en el código fuente — siempre
+   vía `--dart-define-from-file` / `env/*.env` (ya es el patrón del proyecto;
+   no romperlo agregando una key suelta en un `.dart`).
+2. `flutter_secure_storage` es solo para tokens/claves chicas (ya es el uso
+   actual) — nunca para volcar ahí datos de negocio completos.
+3. Cualquier chequeo de "¿puede hacer esto?" en la UI (ocultar un botón,
+   deshabilitar una acción) es **solo cosmético** — el permiso real lo decide
+   RLS en el backend. No asumir que ocultar un botón en Flutter es suficiente
+   seguridad si la operación sigue siendo posible llamando el RPC directo.
+4. Un build de **release** no debe filtrar información de debug (logs
+   verbosos con datos sensibles, stack traces completos en pantalla — ver
+   `ui-errores-inline.mdc`).
+
+## Repositorio
+
+1. `.env` reales, `service_role key`, credenciales de PDN: **nunca** al repo
+   (ya cubierto por `.gitignore` + los `*.example`; no crear un archivo nuevo
+   con secretos reales "para probar rápido").
+2. Si un secreto se sube a git por error: no basta con borrarlo en el
+   próximo commit — **rotar esa credencial** (ya quedó expuesta en el
+   historial) y avisar al dueño de inmediato.
+3. GitHub Actions: secretos solo como *secrets* cifrados del repo, nunca
+   escritos en el `.yml` del workflow.
+
+## Al dudar
+
+Si algo de esto choca con una instrucción del dueño, o no está claro si un
+dato es "sensible" o no: preguntar antes de exponerlo, no asumir que no pasa
+nada. Ver `investigar-antes-de-implementar.mdc` para el criterio general de
+"no asumir, investigar, preguntar".

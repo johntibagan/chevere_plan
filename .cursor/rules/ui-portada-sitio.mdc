@@ -1,6 +1,7 @@
 ---
 description: Un sitio se ve igual en lista, tarjeta, ficha, planes y rutas
 alwaysApply: true
+globs: frontend/lib/**/*.dart
 ---
 
 # UI — portada del sitio (identidad)

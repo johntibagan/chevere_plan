@@ -1,0 +1,56 @@
+---
+description: Rendimiento y RLS en Postgres/Supabase — no dejarlo todo a cargo del frontend
+globs: backend/**/*.{sql,py}
+alwaysApply: true
+---
+
+# Backend — rendimiento (Chevere Plan)
+
+El backend (Supabase/Postgres) es el corazón de la app: un problema de rendimiento
+ahí afecta a **todos** los usuarios a la vez, no solo a una pantalla. No asumir
+que "ya se ve rápido en la app" significa que el backend está bien — medir con
+`EXPLAIN ANALYZE`, no adivinar.
+
+## Obligatorio al tocar RLS / políticas
+
+1. **Nunca** `auth.uid()` / `is_staff()` (ni ninguna función) sueltos dentro de
+   una política — siempre `(select auth.uid())` / `(select public.is_staff())`.
+   Postgres re-evalúa la función suelta **por cada fila**; envuelta en
+   `select`, la calcula una vez. (Ya se corrigió una vez en todo el esquema —
+   no reintroducir el patrón suelto en políticas nuevas.)
+2. Toda tabla con datos de usuario **tiene** RLS habilitado — sin excepciones,
+   ni siquiera "temporalmente para probar más fácil". Sin RLS, el `anon key`
+   da acceso completo a esa tabla desde cualquier cliente.
+3. Probar cada política como **mínimo 3 roles**: anónimo, usuario dueño de la
+   fila, usuario que NO es dueño (debe dar vacío/denegado). No dar por
+   "correcta" una política sin probarla como el usuario que debe ser
+   rechazado.
+
+## Índices
+
+1. Toda FK que se filtra en una consulta real necesita un índice que la
+   respalde — no asumir que la FK sola ya es rápida (ej. `site_photos.site_id`,
+   `plan_stops.site_id`, `user_saves.site_id`: FKs sin índice propio que
+   causaban tabla completa en consultas reales, ya corregido).
+2. Antes de agregar un índice nuevo: revisar si ya hay uno que lo cubra
+   (mismas columnas líder) — no dejar índices redundantes que solo agregan
+   costo de escritura sin aportar un patrón de consulta distinto.
+3. Con `EXPLAIN ANALYZE` **antes y después** de cualquier índice nuevo — sin
+   esa comparación, no se sabe si ayudó.
+
+## RPCs / funciones
+
+1. Toda función que devuelve listas **acepta parámetros de paginación**
+   (`p_limit` / `p_offset`, o equivalente) — nunca un `LIMIT` fijo escondido
+   que el cliente no controla ni un `select *` que trae de más "por si acaso".
+2. Dentro de una función `SECURITY DEFINER`: capturar `auth.uid()` **una vez**
+   en una variable al inicio, no llamarlo de nuevo en cada subconsulta del
+   cuerpo.
+3. Antes de escribir una función nueva: ¿ya existe una similar que se pueda
+   extender con un parámetro, en vez de duplicar lógica de filtro/orden?
+
+## Al cerrar
+
+Si el cambio toca RLS, índices o una RPC de lista: dejar en el mensaje de
+cierre qué mediste (`EXPLAIN ANALYZE` antes/después) — "debería ir más rápido"
+sin medir no cuenta como cerrado. Ver también `investigar-antes-de-implementar.mdc`.

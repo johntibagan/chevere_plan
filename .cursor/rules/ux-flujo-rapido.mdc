@@ -1,6 +1,7 @@
 ---
 description: Microajustes UX — flujos más rápidos (foco, teclado, clear, menos toques)
 alwaysApply: true
+globs: frontend/lib/**/*.dart
 ---
 
 # UX — flujos rápidos (Chevere Plan)

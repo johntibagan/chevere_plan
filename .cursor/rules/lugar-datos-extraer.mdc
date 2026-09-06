@@ -1,6 +1,7 @@
 ---
 description: Extraer datos de lugar; catálogo DIVIPOLA en DB/caché, no listas quemadas en Dart
 alwaysApply: true
+globs: frontend/lib/**/*.dart
 ---
 
 # Datos de lugar (Chevere Plan)

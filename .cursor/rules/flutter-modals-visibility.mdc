@@ -1,6 +1,7 @@
 ---
 description: Flutter bottom sheets vs páginas — evita UI invisible en tema oscuro
 alwaysApply: true
+globs: frontend/lib/**/*.dart
 ---
 
 # Bottom sheets y pantallas modales (Chevere Plan)

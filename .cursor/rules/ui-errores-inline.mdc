@@ -1,6 +1,7 @@
 ---
 description: Errores en UI — callout en secciones; toast corto si ya hay CTA
 alwaysApply: true
+globs: frontend/lib/**/*.dart
 ---
 
 # Errores en pantalla (Chevere Plan)
