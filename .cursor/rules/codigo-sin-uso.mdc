@@ -1,0 +1,24 @@
+---
+description: Depurar código/docs sin uso tras cambios de funcionalidad; preguntar si hay duda
+alwaysApply: true
+---
+
+# Código sin uso (depurar leftovers)
+
+Aplica al **agregar, eliminar o ajustar** funcionalidad (front, back, SQL,
+scripts, docs de comportamiento, etc.).
+
+## Obligatorio al cerrar el cambio
+
+1. **Revisar leftovers:** ¿quedó código, helpers, imports, exports, tests o
+   docs de comportamiento **sin uso** por este (u otro) ajuste?
+2. **Excepción:** si hay comentario claro de que **se usará más adelante**
+   (intención explícita), se puede dejar.
+3. **Si no hay ese comentario:** quitar/depurar. Si hay duda (¿es API pública?,
+   ¿lo usa otro módulo fuera del grep?, ¿reservado a propósito?) →
+   **preguntar al dueño** antes de borrar.
+
+## Qué no hacer
+
+- Dejar wrappers, formatters o parámetros “por si acaso” sin caller.
+- Inventar un comentario “para después” solo para no limpiar.
