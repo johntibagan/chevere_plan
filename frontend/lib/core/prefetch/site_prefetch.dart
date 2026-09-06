@@ -7,6 +7,8 @@ import '../cache/app_image_cache.dart';
 import '../cache/cache_ttl.dart';
 import '../cache/signed_url_cache.dart';
 import '../di/providers.dart';
+import '../photos/wikimedia_display_url.dart';
+import '../widgets/app_network_image.dart';
 
 /// Prefetch liviano de fichas de sitio (ciclo 4).
 ///
@@ -63,13 +65,21 @@ class SitePrefetchCoordinator {
 
   Future<void> _warmupCovers(List<String> paths) async {
     final moderation = _ref.read(moderationRepositoryProvider);
+    final wikiW = AppNetworkImage.wikiThumbWidthFor(AppImageQuality.standard);
     for (final path in paths) {
       if (_disposed) return;
       try {
         final cached = SignedUrlCache.instance.get(path) ??
             await SignedUrlCache.instance.getAsync(path);
         final url = cached ?? await moderation.signedPhotoUrl(path);
-        await AppImageCacheManager.instance.downloadFile(url, key: path);
+        final displayUrl = wikimediaDisplayUrl(url, widthPx: wikiW);
+        final key = imageCacheKeyForDisplay(
+          cacheKey: path,
+          sourceUrl: url,
+          displayUrl: displayUrl,
+          widthPx: wikiW,
+        );
+        await AppImageCacheManager.instance.downloadFile(displayUrl, key: key);
       } catch (_) {}
     }
   }

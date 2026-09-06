@@ -38,8 +38,19 @@ class SavesRepository {
       'site_photos(id, storage_path, external_url, sort_order, created_at), '
       'site_contributors(user_id, created_at, profiles(username, avatar_url, google_avatar_url, use_google_avatar)))';
 
-  /// Select liviano para Inicio (cards): sin contributors, notes, address, etc.
+  /// Select liviano para Inicio (cards): portada por FK + 1ª foto de respaldo
+  /// (no todas las `site_photos` del sitio).
   static const _saveSelectSummary =
+      'id, user_id, site_id, status, is_public, created_at, '
+      'sites!user_saves_site_id_fkey(name, city, department, address_line, '
+      'is_physical_place, use_exact_pin, '
+      'google_place_id, cover_photo_id, '
+      'site_categories(categories(name_i18n)), '
+      'cover:site_photos!sites_cover_photo_id_fkey(id, storage_path, external_url), '
+      'first_photo:site_photos!site_photos_site_id_fkey(id, storage_path, external_url, sort_order, created_at))';
+
+  /// Misma forma liviana si falla el alias `cover` / `first_photo`.
+  static const _saveSelectSummaryLegacyPhotos =
       'id, user_id, site_id, status, is_public, created_at, '
       'sites!user_saves_site_id_fkey(name, city, department, address_line, '
       'is_physical_place, use_exact_pin, '
@@ -54,7 +65,7 @@ class SavesRepository {
       'is_physical_place, use_exact_pin, '
       'google_place_id, '
       'site_categories(categories(name_i18n)), '
-      'site_photos(id, storage_path, external_url, sort_order, created_at))';
+      'first_photo:site_photos!site_photos_site_id_fkey(id, storage_path, external_url, sort_order, created_at))';
 
   static const _saveSelectSummaryLite =
       'id, user_id, site_id, status, is_public, created_at, '
@@ -98,26 +109,44 @@ class SavesRepository {
     final from = offset < 0 ? 0 : offset;
     final to = from + (limit < 1 ? 20 : limit) - 1;
 
-    Future<List<dynamic>> query(String select) async {
-      final rows = await _client
+    Future<List<dynamic>> query(
+      String select, {
+      bool limitFirstPhoto = false,
+    }) async {
+      var q = _client
           .from('user_saves')
           .select(select)
           .eq('user_id', uid)
-          .order('created_at', ascending: false)
-          .range(from, to);
+          .order('created_at', ascending: false);
+      if (limitFirstPhoto) {
+        q = q
+            .order('sort_order', ascending: true, referencedTable: 'first_photo')
+            .order(
+              'created_at',
+              ascending: true,
+              referencedTable: 'first_photo',
+            )
+            .limit(1, referencedTable: 'first_photo');
+      }
+      final rows = await q.range(from, to);
       return rows as List<dynamic>;
     }
 
     List<dynamic> rows;
     try {
-      rows = await query(_saveSelectSummary);
+      rows = await query(_saveSelectSummary, limitFirstPhoto: true);
     } on PostgrestException catch (e) {
-      AppLog.error('listMineSummary', name: 'saves', error: e);
+      AppLog.error('listMineSummary slim', name: 'saves', error: e);
       try {
-        rows = await query(_saveSelectSummaryNoCover);
+        rows = await query(_saveSelectSummaryLegacyPhotos);
       } on PostgrestException catch (e2) {
-        AppLog.error('listMineSummary noCover', name: 'saves', error: e2);
-        rows = await query(_saveSelectSummaryLite);
+        AppLog.error('listMineSummary legacy', name: 'saves', error: e2);
+        try {
+          rows = await query(_saveSelectSummaryNoCover, limitFirstPhoto: true);
+        } on PostgrestException catch (e3) {
+          AppLog.error('listMineSummary noCover', name: 'saves', error: e3);
+          rows = await query(_saveSelectSummaryLite);
+        }
       }
     }
 

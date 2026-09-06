@@ -545,14 +545,35 @@ class UserSave {
       googlePlaceId: site['google_place_id'] as String?,
       useExactPin: parsePgBool(site['use_exact_pin']),
       coverStoragePath: siteCoverStoragePath(
-        photos: site['site_photos'],
+        photos: site['site_photos'] ?? site['first_photo'],
         coverPhotoId: site['cover_photo_id']?.toString(),
+        coverRow: site['cover'],
       ),
     );
   }
 }
 
-String? siteCoverStoragePath({required Object? photos, String? coverPhotoId}) {
+String? siteCoverStoragePath({
+  required Object? photos,
+  String? coverPhotoId,
+  Object? coverRow,
+}) {
+  if (coverRow is Map) {
+    final ref = photoDisplayRef(
+      storagePath: coverRow['storage_path'] as String?,
+      externalUrl: coverRow['external_url'] as String?,
+    );
+    if (ref != null) return ref;
+  } else if (coverRow is List) {
+    for (final e in coverRow) {
+      if (e is! Map) continue;
+      final ref = photoDisplayRef(
+        storagePath: e['storage_path'] as String?,
+        externalUrl: e['external_url'] as String?,
+      );
+      if (ref != null) return ref;
+    }
+  }
   final id = coverPhotoId?.trim();
   if (id != null && id.isNotEmpty && photos is List) {
     for (final e in photos) {
@@ -569,6 +590,12 @@ String? siteCoverStoragePath({required Object? photos, String? coverPhotoId}) {
 }
 
 String? firstCoverStoragePath(Object? raw) {
+  if (raw is Map) {
+    return photoDisplayRef(
+      storagePath: raw['storage_path'] as String?,
+      externalUrl: raw['external_url'] as String?,
+    );
+  }
   if (raw is! List || raw.isEmpty) return null;
   final rows = <Map<String, dynamic>>[];
   for (final e in raw) {

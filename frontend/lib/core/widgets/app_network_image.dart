@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
 import '../cache/app_image_cache.dart';
+import '../photos/wikimedia_display_url.dart';
 import '../theme/app_theme.dart';
 
 /// Decode en memoria: un solo eje, tope 2048 px (equipos de gama media).
@@ -20,7 +21,9 @@ enum AppImageQuality {
 ///
 /// Usa [cacheKey] estable (p. ej. id de foto / storage_path) para que al
 /// renovar la URL firmada no se descargue de nuevo el mismo archivo.
-class AppNetworkImage extends StatelessWidget {
+/// URLs de Wikimedia Commons se piden como thumb; si fallan, sube de resolución
+/// (o al más grande en pantalla completa) y al final el original.
+class AppNetworkImage extends StatefulWidget {
   const AppNetworkImage({
     super.key,
     required this.url,
@@ -46,11 +49,38 @@ class AppNetworkImage extends StatelessWidget {
   final bool showLoadingIndicator;
   final AppImageQuality quality;
 
+  /// Ancho de thumb Wikimedia según uso en UI (lista permitida del host).
+  static int wikiThumbWidthFor(AppImageQuality quality) {
+    return switch (quality) {
+      AppImageQuality.standard => 500,
+      AppImageQuality.photo => 800,
+      AppImageQuality.fullScreen => 1280,
+    };
+  }
+
+  @override
+  State<AppNetworkImage> createState() => _AppNetworkImageState();
+}
+
+class _AppNetworkImageState extends State<AppNetworkImage> {
   static const _maxDecode = 2048;
+
+  /// Índice en la escalera de reintentos Wikimedia (0 = preferido).
+  int _wikiAttempt = 0;
+
+  @override
+  void didUpdateWidget(covariant AppNetworkImage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.url != widget.url ||
+        oldWidget.cacheKey != widget.cacheKey ||
+        oldWidget.quality != widget.quality) {
+      _wikiAttempt = 0;
+    }
+  }
 
   int _decodeSide(BuildContext context, double logical, {required int minPx}) {
     final dpr = MediaQuery.devicePixelRatioOf(context);
-    final scale = switch (quality) {
+    final scale = switch (widget.quality) {
       AppImageQuality.photo => 2.0,
       AppImageQuality.fullScreen => 1.0,
       AppImageQuality.standard => 1.0,
@@ -64,51 +94,90 @@ class AppNetworkImage extends StatelessWidget {
     return (size.longestSide * dpr).round().clamp(1080, _maxDecode);
   }
 
+  void _advanceWikiFallback(List<int?> ladder) {
+    if (_wikiAttempt >= ladder.length - 1) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      if (_wikiAttempt >= ladder.length - 1) return;
+      setState(() => _wikiAttempt++);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     // Solo un eje de decode: ambos a la vez distorsionan la foto.
     final int? memW;
     final int? memH;
-    if (quality == AppImageQuality.fullScreen) {
+    if (widget.quality == AppImageQuality.fullScreen) {
       memW = _screenLongSide(context);
       memH = null;
-    } else if (fit == BoxFit.cover && width != null && height != null) {
-      // Miniaturas / portadas de card: el lado mayor de la celda (no pantalla).
-      final side = width! > height! ? width! : height!;
+    } else if (widget.fit == BoxFit.cover &&
+        widget.width != null &&
+        widget.height != null) {
+      final side =
+          widget.width! > widget.height! ? widget.width! : widget.height!;
       memW = _decodeSide(context, side, minPx: 32);
       memH = null;
-    } else if (fit == BoxFit.fitHeight && height != null) {
+    } else if (widget.fit == BoxFit.fitHeight && widget.height != null) {
       memW = null;
       memH = _decodeSide(
         context,
-        height!,
-        minPx: quality == AppImageQuality.photo ? 720 : 32,
+        widget.height!,
+        minPx: widget.quality == AppImageQuality.photo ? 720 : 32,
       );
-    } else if (fit == BoxFit.fitWidth && width != null) {
-      memW = _decodeSide(context, width!, minPx: 32);
+    } else if (widget.fit == BoxFit.fitWidth && widget.width != null) {
+      memW = _decodeSide(context, widget.width!, minPx: 32);
       memH = null;
-    } else if (width != null) {
-      memW = _decodeSide(context, width!, minPx: 32);
+    } else if (widget.width != null) {
+      memW = _decodeSide(context, widget.width!, minPx: 32);
       memH = null;
-    } else if (height != null) {
+    } else if (widget.height != null) {
       memW = null;
       memH = _decodeSide(
         context,
-        height!,
-        minPx: quality == AppImageQuality.photo ? 720 : 32,
+        widget.height!,
+        minPx: widget.quality == AppImageQuality.photo ? 720 : 32,
       );
     } else {
       memW = _screenLongSide(context);
       memH = null;
     }
 
-    final placeholderW = width ?? (height != null ? height! * 0.72 : null);
+    final wiki = isWikimediaUploadUrl(widget.url);
+    final preferred = AppNetworkImage.wikiThumbWidthFor(widget.quality);
+    final ladder = wiki
+        ? wikimediaRetryWidths(
+            preferredWidth: preferred,
+            fullScreen: widget.quality == AppImageQuality.fullScreen,
+          )
+        : const <int?>[null];
+    final attemptIdx =
+        wiki ? _wikiAttempt.clamp(0, ladder.length - 1) : 0;
+    final widthPx = wiki ? ladder[attemptIdx] : null;
+
+    late final String displayUrl;
+    late final String? effectiveKey;
+    if (wiki) {
+      final attempt = wikimediaAttempt(
+        sourceUrl: widget.url,
+        cacheKey: widget.cacheKey,
+        widthPx: widthPx,
+      );
+      displayUrl = attempt.displayUrl;
+      effectiveKey = attempt.cacheKey;
+    } else {
+      displayUrl = widget.url;
+      effectiveKey = widget.cacheKey;
+    }
+
+    final placeholderW =
+        widget.width ?? (widget.height != null ? widget.height! * 0.72 : null);
     final placeholder = SizedBox(
       width: placeholderW,
-      height: height,
+      height: widget.height,
       child: ColoredBox(
         color: AppColors.surfaceElevated,
-        child: showLoadingIndicator
+        child: widget.showLoadingIndicator
             ? Center(
                 child: SizedBox(
                   width: 18,
@@ -120,35 +189,47 @@ class AppNetworkImage extends StatelessWidget {
       ),
     );
 
-    final image = CachedNetworkImage(
-      imageUrl: url,
-      cacheKey: cacheKey,
-      cacheManager: AppImageCacheManager.instance,
-      width: width,
-      height: height,
-      fit: fit,
-      fadeInDuration: Duration.zero,
-      fadeOutDuration: Duration.zero,
-      memCacheWidth: memW,
-      memCacheHeight: memH,
-      filterQuality: quality == AppImageQuality.standard
-          ? FilterQuality.low
-          : FilterQuality.medium,
-      placeholder: (context, _) => placeholder,
-      errorWidget: (context, _, _) => SizedBox(
-        width: placeholderW,
-        height: height,
-        child: ColoredBox(
-          color: AppColors.surfaceElevated,
-          child: Icon(
-            Icons.image_not_supported_outlined,
-            color: AppColors.muted,
-          ),
+    final errorBox = SizedBox(
+      width: placeholderW,
+      height: widget.height,
+      child: ColoredBox(
+        color: AppColors.surfaceElevated,
+        child: Icon(
+          Icons.image_not_supported_outlined,
+          color: AppColors.muted,
         ),
       ),
     );
 
-    if (borderRadius == null) return image;
-    return ClipRRect(borderRadius: borderRadius!, child: image);
+    final image = CachedNetworkImage(
+      imageUrl: displayUrl,
+      cacheKey: effectiveKey,
+      cacheManager: AppImageCacheManager.instance,
+      httpHeaders: const {
+        'User-Agent': AppImageCacheManager.userAgent,
+        'Accept': 'image/*,*/*;q=0.8',
+      },
+      width: widget.width,
+      height: widget.height,
+      fit: widget.fit,
+      fadeInDuration: Duration.zero,
+      fadeOutDuration: Duration.zero,
+      memCacheWidth: memW,
+      memCacheHeight: memH,
+      filterQuality: widget.quality == AppImageQuality.standard
+          ? FilterQuality.low
+          : FilterQuality.medium,
+      placeholder: (context, _) => placeholder,
+      errorWidget: (context, _, _) {
+        if (wiki && attemptIdx < ladder.length - 1) {
+          _advanceWikiFallback(ladder);
+          return placeholder;
+        }
+        return errorBox;
+      },
+    );
+
+    if (widget.borderRadius == null) return image;
+    return ClipRRect(borderRadius: widget.borderRadius!, child: image);
   }
 }
