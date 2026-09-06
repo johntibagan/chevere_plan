@@ -14,6 +14,7 @@ import 'core/config/env.dart';
 import 'core/logging/app_log.dart';
 import 'core/notifications/app_local_notifications.dart';
 import 'core/notifications/fcm_bootstrap.dart';
+import 'core/supabase/supabase_bootstrap.dart';
 import 'core/theme/app_theme_mode_store.dart';
 import 'features/proximity/data/proximity_reminder_service.dart';
 import 'features/saves/data/draft_reminder_service.dart';
@@ -75,26 +76,14 @@ Future<Widget> createRootApp({
     initLocalNotifications: initLocalNotifications,
   ));
 
-  // No usar `Supabase.instance.isInitialized`: acceder a `.instance` exige
-  // que ya esté inicializado (assertion en debug).
-  // Paso 1: aún bloquea runApp (Paso 3 lo desbloquea). El peek ya corre en paralelo.
-  try {
-    await Supabase.initialize(
+  // Paso 3: no bloquear runApp — initialize en paralelo al primer frame.
+  unawaited(
+    SupabaseBootstrap.start(
       url: Env.supabaseUrl,
       publishableKey: Env.supabaseAnonKey,
-      authOptions: FlutterAuthClientOptions(
-        localStorage: sessionStorage,
-      ),
-    ).timeout(const Duration(seconds: 15));
-  } catch (e, st) {
-    // Ya inicializado en este proceso (p. ej. test Patrol anterior).
-    AppLog.debug(
-      'Supabase.initialize skipped',
-      name: 'bootstrap',
-      error: e,
-      stackTrace: st,
-    );
-  }
+      localStorage: sessionStorage,
+    ),
+  );
 
   Session? optimisticSession;
   try {

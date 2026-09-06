@@ -15,6 +15,7 @@ import 'core/l10n/app_locale.dart';
 import 'core/l10n/context_l10n.dart';
 import 'core/logging/app_log.dart';
 import 'core/notifications/local_notification_router.dart';
+import 'core/supabase/supabase_bootstrap.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/chevere_theme_colors.dart';
 import 'core/theme/chevere_theme_scope.dart';
@@ -35,6 +36,7 @@ class CheverePlanApp extends ConsumerStatefulWidget {
 
 class _CheverePlanAppState extends ConsumerState<CheverePlanApp> {
   StreamSubscription<List<SharedMediaFile>>? _shareSub;
+  List<SharedMediaFile>? _pendingShare;
 
   @override
   void initState() {
@@ -61,6 +63,24 @@ class _CheverePlanAppState extends ConsumerState<CheverePlanApp> {
 
   void _handleShared(List<SharedMediaFile> files) {
     if (files.isEmpty) return;
+    if (!SupabaseBootstrap.isReady) {
+      _pendingShare = files;
+      unawaited(_flushShareWhenReady());
+      return;
+    }
+    _openShare(files);
+  }
+
+  Future<void> _flushShareWhenReady() async {
+    await SupabaseBootstrap.ready;
+    if (!mounted) return;
+    final files = _pendingShare;
+    _pendingShare = null;
+    if (files == null || !SupabaseBootstrap.isReady) return;
+    _openShare(files);
+  }
+
+  void _openShare(List<SharedMediaFile> files) {
     final texts = files
         .map((f) => f.path)
         .where((p) => p.trim().isNotEmpty)
@@ -77,7 +97,11 @@ class _CheverePlanAppState extends ConsumerState<CheverePlanApp> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final nav = appNavigatorKey.currentState;
       if (nav == null) return;
-      if (Supabase.instance.client.auth.currentSession == null) return;
+      if (!SupabaseBootstrap.isReady) return;
+      if (Supabase.instance.client.auth.currentSession == null &&
+          widget.optimisticSession == null) {
+        return;
+      }
       final savesRepo = ref.read(savesRepositoryProvider);
       nav.push(
         MaterialPageRoute<void>(
@@ -141,11 +165,6 @@ class _AuthGateState extends ConsumerState<AuthGate> {
   void initState() {
     super.initState();
     _optimistic = widget.optimisticSession;
-    if (_optimistic != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        unawaited(_confirmSessionInBackground());
-      });
-    }
   }
 
   /// Confirma la sesión optimista con el servidor sin bloquear el primer paint.
@@ -156,6 +175,12 @@ class _AuthGateState extends ConsumerState<AuthGate> {
   Future<void> _confirmSessionInBackground({bool isRetry = false}) async {
     if (_confirmStarted && !isRetry) return;
     _confirmStarted = true;
+    await SupabaseBootstrap.ready;
+    if (!mounted) return;
+    if (!SupabaseBootstrap.isReady) {
+      _scheduleConfirmRetry();
+      return;
+    }
     try {
       final session = await Supabase.instance.client.auth.getSession();
       if (!mounted) return;
@@ -217,6 +242,27 @@ class _AuthGateState extends ConsumerState<AuthGate> {
   @override
   Widget build(BuildContext context) {
     ref.watchAppThemeMode();
+    // Rebuild when initialize termina (éxito o fallo).
+    ref.watch(supabaseReadyProvider);
+
+    // Antes de cliente listo: pintar Home con sesión de Keystore (sin repos).
+    if (!SupabaseBootstrap.isReady) {
+      if (_optimistic != null && !_forceLogin) {
+        return HomePage(session: _optimistic!);
+      }
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (_optimistic != null && !_confirmStarted) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        unawaited(_confirmSessionInBackground());
+      });
+    }
+
+    // Tras init diferido: repos frescos (evita error cacheado si alguien
+    // tocó el client demasiado pronto en hot-restart).
     final authRepository = ref.watch(authRepositoryProvider);
 
     return StreamBuilder<AuthState>(
@@ -248,7 +294,7 @@ class _AuthGateState extends ConsumerState<AuthGate> {
         // Con sesión optimista (mismo dispositivo) no bloquear con spinner.
         if (snapshot.connectionState == ConnectionState.waiting &&
             session == null) {
-          return Scaffold(
+          return const Scaffold(
             body: Center(child: CircularProgressIndicator()),
           );
         }

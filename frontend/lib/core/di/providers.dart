@@ -45,12 +45,36 @@ import '../cache/search_cache.dart';
 import '../cache/swr_loader.dart';
 import '../distance/distance_unit.dart';
 import '../prefs/feed_layout.dart';
+import '../supabase/supabase_bootstrap.dart';
 import '../theme/app_theme_mode_store.dart';
 
 /// Cliente Supabase compartido (inyectable en tests).
+///
+/// Requiere [SupabaseBootstrap.isReady]; pantallas de arranque deben esperar
+/// [supabaseReadyProvider] o pintar solo con Hive/sesión optimista.
 final supabaseClientProvider = Provider<SupabaseClient>((ref) {
+  // Recrea el client cuando termina el init diferido (evita error cacheado).
+  ref.watch(supabaseReadyProvider);
+  if (!SupabaseBootstrap.isReady) {
+    throw StateError('Supabase client used before initialize completed');
+  }
   return Supabase.instance.client;
 });
+
+/// Completa cuando [SupabaseBootstrap.start] terminó (éxito → [isReady]).
+final supabaseReadyProvider = FutureProvider<void>((ref) async {
+  await SupabaseBootstrap.ready;
+});
+
+/// Peek síncrono de guardados (Inicio) sin tocar el cliente Supabase.
+PagedItems<UserSave>? peekMySavesSummarySync(SwrLoader swr, String uid) {
+  if (uid.isEmpty) return null;
+  return swr.peekSync<PagedItems<UserSave>>(
+    key: CacheKeys.mySavesSummary(uid),
+    ttl: CacheTtl.mySaves,
+    decode: _decodePagedSaves,
+  );
+}
 
 final betaReleaseRepositoryProvider = Provider<BetaReleaseRepository>((ref) {
   return BetaReleaseRepository(client: ref.watch(supabaseClientProvider));
@@ -314,11 +338,7 @@ class MySavesNotifier extends AsyncNotifier<PagedItems<UserSave>> {
   PagedItems<UserSave>? _peekPage0() {
     final uid = ref.read(supabaseClientProvider).auth.currentUser?.id;
     if (uid == null) return null;
-    return ref.read(swrLoaderProvider).peekSync<PagedItems<UserSave>>(
-          key: CacheKeys.mySavesSummary(uid),
-          ttl: CacheTtl.mySaves,
-          decode: _decodePagedSaves,
-        );
+    return peekMySavesSummarySync(ref.read(swrLoaderProvider), uid);
   }
 
   Future<void> refresh({bool force = true}) async {

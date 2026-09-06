@@ -1,5 +1,6 @@
 import 'package:chevere_plan/bootstrap.dart';
 import 'package:chevere_plan/core/config/env.dart';
+import 'package:chevere_plan/core/supabase/supabase_bootstrap.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -26,6 +27,7 @@ Future<void> pumpChevereApp(
     initLocalNotifications: initLocalNotifications,
     overrides: overrides,
   );
+  await SupabaseBootstrap.ensureReady();
   await $.pumpWidgetAndSettle(app);
 }
 

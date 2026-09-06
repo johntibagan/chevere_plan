@@ -246,7 +246,7 @@ Referencia visual Make: [Guardados app diseño](https://www.figma.com/make/HhANL
 |---|---|
 | Plataforma | Android (Flutter, Material 3) |
 | Navegación raíz | `MaterialApp` + `Navigator`. **Sin GoRouter.** |
-| Sesión | Sin login → `LoginPage`. Con sesión → `HomePage` (4 tabs + FAB). **Arranque (Fase 2 · Paso 1):** si este dispositivo ya tiene JWT en Keystore, se pinta Home de forma optimista y se confirma la sesión en segundo plano (revocada → login; fallo de red → se mantiene y se reintenta). |
+| Sesión | Sin login → `LoginPage`. Con sesión → `HomePage` (4 tabs + FAB). **Arranque (Fase 2 · Pasos 1+3):** JWT local → Home optimista; `Supabase.initialize` en paralelo (no bloquea el primer frame); confirmación en background (revocada → login; red → se mantiene). |
 | Share entrante | Intent → `SavePlacePage` sobre el shell. |
 | Share saliente sitio | **No existe** en UI. |
 | Share saliente plan | Clipboard (oculto en UI hoy). |

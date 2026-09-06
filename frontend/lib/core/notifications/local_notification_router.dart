@@ -5,6 +5,7 @@ import '../../app.dart';
 import '../../features/saves/data/saves_repository.dart';
 import '../../features/saves/presentation/open_site_detail.dart';
 import '../../features/saves/presentation/save_place_page.dart';
+import '../supabase/supabase_bootstrap.dart';
 import 'notification_kind.dart';
 
 /// Enruta taps de notificaciones locales (proximidad, borrador, futuros).
@@ -38,6 +39,7 @@ class LocalNotificationRouter {
 
   /// Reintentar tras login / primer frame con navigator listo.
   static void tryOpenPending() {
+    if (!SupabaseBootstrap.isReady) return;
     if (Supabase.instance.client.auth.currentSession == null) return;
     final nav = appNavigatorKey.currentState;
     final ctx = appNavigatorKey.currentContext;

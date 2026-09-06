@@ -9,6 +9,7 @@ import '../../../core/config/env.dart';
 import '../../../core/di/providers.dart';
 import '../../../core/l10n/context_l10n.dart';
 import '../../../core/logging/app_log.dart';
+import '../../../core/supabase/supabase_bootstrap.dart';
 import '../../../core/theme/app_theme.dart';
 import '../domain/beta_release.dart';
 
@@ -76,6 +77,12 @@ class BetaUpdateGate extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     if (!Env.isBetaRelease) return child;
+
+    // No consultar beta_release hasta que el cliente exista (Paso 3).
+    final ready = ref.watch(supabaseReadyProvider);
+    if (!SupabaseBootstrap.isReady && !ready.hasValue) {
+      return child;
+    }
 
     final check = ref.watch(betaUpdateStateProvider);
     return check.when(

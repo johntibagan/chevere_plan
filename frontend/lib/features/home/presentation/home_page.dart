@@ -13,6 +13,7 @@ import '../../../core/performance/app_performance.dart';
 import '../../../core/widgets/app_retry_callout.dart';
 import '../../../core/widgets/app_toast.dart';
 import '../../../core/prefetch/site_prefetch.dart';
+import '../../../core/supabase/supabase_bootstrap.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/chevere_theme_scope.dart';
 import '../../../core/theme/theme_rebuild.dart';
@@ -71,10 +72,13 @@ class _HomePageState extends ConsumerState<HomePage> {
   void initState() {
     super.initState();
     unawaited(AppPerformance.start(AppPerformance.homeTimeToContent));
-    // Dispara MySavesNotifier.build(); si hay Hive, ya deja AsyncData + lista.
-    final seeded = ref.read(mySavesProvider).valueOrNull;
-    if (seeded != null && seeded.items.isNotEmpty) {
-      _saves = seeded.items;
+    // Peek Hive sin cliente Supabase (Paso 3: initialize puede seguir en curso).
+    final peeked = peekMySavesSummarySync(
+      ref.read(swrLoaderProvider),
+      widget.session.user.id,
+    );
+    if (peeked != null && peeked.items.isNotEmpty) {
+      _saves = peeked.items;
       _loading = false;
       unawaited(AppPerformance.stop(AppPerformance.homeTimeToContent));
     }
@@ -148,9 +152,9 @@ class _HomePageState extends ConsumerState<HomePage> {
   }
 
   Future<void> _bootstrap({bool forceRefresh = false}) async {
-    final hasSaves =
-        (ref.read(mySavesProvider).valueOrNull?.items.isNotEmpty ?? false) ||
-            _saves.isNotEmpty;
+    final hasSaves = _saves.isNotEmpty ||
+        (SupabaseBootstrap.isReady &&
+            (ref.read(mySavesProvider).valueOrNull?.items.isNotEmpty ?? false));
     if (!hasSaves) {
       setState(() {
         _loading = true;
@@ -160,6 +164,16 @@ class _HomePageState extends ConsumerState<HomePage> {
       setState(() => _error = null);
     }
     try {
+      await SupabaseBootstrap.ready;
+      if (!mounted) return;
+      if (!SupabaseBootstrap.isReady) {
+        // Sin cliente: conservar peek; no marcar error de red.
+        if (mounted && _saves.isEmpty) {
+          setState(() => _loading = false);
+        }
+        return;
+      }
+
       if (forceRefresh) {
         unawaited(ref.read(mySavesProvider.notifier).refresh(force: true));
       }
