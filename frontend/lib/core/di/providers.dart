@@ -45,6 +45,7 @@ import '../cache/paged_items.dart';
 import '../cache/search_cache.dart';
 import '../cache/swr_loader.dart';
 import '../distance/distance_unit.dart';
+import '../logging/crashlytics_service.dart';
 import '../prefs/feed_layout.dart';
 import '../supabase/supabase_bootstrap.dart';
 import '../theme/app_theme_mode_store.dart';
@@ -65,6 +66,10 @@ final supabaseClientProvider = Provider<SupabaseClient>((ref) {
 /// Completa cuando [SupabaseBootstrap.start] terminó (éxito → [isReady]).
 final supabaseReadyProvider = FutureProvider<void>((ref) async {
   await SupabaseBootstrap.ready;
+});
+
+final crashlyticsServiceProvider = Provider<CrashlyticsService>((ref) {
+  return CrashlyticsService.instance;
 });
 
 /// Peek síncrono de guardados (Inicio) sin tocar el cliente Supabase.

@@ -20,7 +20,7 @@ Al cambiar comportamiento: código **y** `aplicacion-actual` / `invariantes` en 
 | Correr app en local | [../frontend/GETTINGSTAR.md](../frontend/GETTINGSTAR.md) |
 | Setup Flutter / Android (una vez) | [setup/01-flutter-android.md](setup/01-flutter-android.md) |
 | Setup Supabase / Auth Google | [setup/02-supabase.md](setup/02-supabase.md) |
-| Setup Firebase FCM | [setup/03-firebase-fcm.md](setup/03-firebase-fcm.md) |
+| Setup Firebase (Crashlytics + FCM) | [setup/03-firebase-fcm.md](setup/03-firebase-fcm.md) |
 | Reset DB / migraciones | [../backend/README.md](../backend/README.md) |
 | Publicar APK beta (PDN) | [../beta-portal/README.md](../beta-portal/README.md) |
 | Lineamientos frontend | [lineamientos-desarrollo-frontend.md](lineamientos-desarrollo-frontend.md) |

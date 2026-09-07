@@ -81,7 +81,7 @@ Alto riesgo: `save_place_page.dart`, `google_maps_link_importer.dart`, `save_pol
 - Público = verde; privado = morado. Si ya hay borde/franja de color, **no** repetir “Público/Privado”.
 - Corazón = **favorito** del usuario (`site_favorites`), no “es tuyo”. Relleno si está marcado. No crear un `user_saves` ni tocar coords al favoritar.
 - Listas clicables: chevron; fecha si aporta (`dd/mmm/aaaa`, sin hora).
-- Errores en UI: **en el bloque que falló**, **"Error en la app."** y botón/enlace **"Intenta de nuevo"** (reintenta esa carga). Nunca “failed”, SQL, PostgREST, stacks, keys. **No** toasts de error técnico. Detalle en `developer.log`.
+- Errores en UI: **en el bloque que falló**, **"Error en la app."** y botón/enlace **"Intenta de nuevo"** (reintenta esa carga). Nunca “failed”, SQL, PostgREST, stacks, keys. **No** toasts de error técnico. Detalle en `developer.log` / Crashlytics (release).
 - Modales: nada de barrier sin contenido. Fotos del sitio en la ficha, no en sheet.
 - Portada: el **mismo sitio** se ve igual en lista, tarjeta, ficha, planes y rutas (`SiteLookCover`: padre + foto de encabezado). Encabezado = portada elegida (`sites.cover_photo_id`). Si no hay portada, la **primera foto** queda como portada y **no** cambia al añadir más; solo “Usar como portada” en el visor la cambia. Miniaturas = esa misma foto. En visor: autor, fecha (sin hora), ⋮. La tira pequeña no lleva ⋮. Verde/morado de visibilidad se mantiene. Foto por enlace externo (`site_photos.external_url`, staff/catálogo) se renderiza igual que una de Storage; **pegar enlace no escribe** `cover_photo_id`.
 - Carga masiva / visor 09: al aplicar, **solo** fotos con me gusta; portada = la **primera liked** (orden de galería). Marca `applied_at` en el JSON del visor.

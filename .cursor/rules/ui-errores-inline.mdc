@@ -21,4 +21,4 @@ globs: frontend/lib/**/*.dart
 
 ## Detalle técnico
 
-Va a `developer.log` / `AppLog` / `client_debug_logs` (pruebas), nunca a la UI.
+Va a `developer.log` / `AppLog` / **Crashlytics** (release), nunca a la UI.

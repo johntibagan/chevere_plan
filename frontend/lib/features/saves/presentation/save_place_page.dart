@@ -14,7 +14,6 @@ import '../../../core/cache/search_cache.dart';
 import '../../../core/config/env.dart';
 import '../../../core/di/providers.dart';
 import '../../../core/formatters/privacy_block_format.dart';
-import '../../../core/logging/client_debug_log.dart';
 import '../../../core/testing/widget_keys.dart';
 import '../../../core/l10n/context_l10n.dart';
 import '../../../core/theme/app_theme.dart';
@@ -212,6 +211,29 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
     } catch (_) {
       return SavePolicies.defaultDuplicateSearchRadiusM;
     }
+  }
+
+  /// Errores de Guardar sitio → Crashlytics (no fatal) con contexto legible.
+  void _reportSaveError(
+    String context,
+    Object error,
+    StackTrace stackTrace, {
+    String? siteId,
+    String? saveId,
+  }) {
+    final keys = <String, String>{
+      if ((siteId ?? _editSiteId)?.trim().isNotEmpty == true)
+        'site_id': (siteId ?? _editSiteId)!.trim(),
+      if (saveId?.trim().isNotEmpty == true) 'save_id': saveId!.trim(),
+      if (_editSaveId?.trim().isNotEmpty == true)
+        'edit_save_id': _editSaveId!.trim(),
+    };
+    ref.read(crashlyticsServiceProvider).recordNonFatalAsync(
+          error,
+          stackTrace,
+          context: context,
+          keys: keys,
+        );
   }
 
   Future<void> _refreshPossibleDuplicates() async {
@@ -1081,12 +1103,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
       return true;
     } catch (e, st) {
       if (!mounted) return false;
-      ClientDebugLog.reportAsync(
-        context: 'dupe_apply_action',
-        error: e,
-        stackTrace: st,
-        client: ref.read(supabaseClientProvider),
-      );
+      _reportSaveError('dupe_apply_action', e, st, siteId: siteId);
       AppToast.show(context, context.l10n.errorProblemToast, error: true);
       return false;
     }
@@ -1157,12 +1174,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
       if (!mounted) return;
       await _applyCameraPhoto(persisted);
     } catch (e, st) {
-      ClientDebugLog.reportAsync(
-        context: 'save_camera_capture',
-        error: e,
-        stackTrace: st,
-        client: ref.read(supabaseClientProvider),
-      );
+      _reportSaveError('save_camera_capture', e, st);
       if (!mounted) return;
       AppToast.show(
         context,
@@ -1314,12 +1326,7 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
       if (!mounted) return;
       setState(() => _pendingPhotos.add(persisted));
     } catch (e, st) {
-      ClientDebugLog.reportAsync(
-        context: 'save_pick_photo',
-        error: e,
-        stackTrace: st,
-        client: ref.read(supabaseClientProvider),
-      );
+      _reportSaveError('save_pick_photo', e, st);
       if (!mounted) return;
       AppToast.show(
         context,
@@ -1570,11 +1577,11 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
             knownCount += 1;
           } catch (e, st) {
             photoFail = true;
-            ClientDebugLog.reportAsync(
-              context: 'save_photo_upload',
-              error: e,
-              stackTrace: st,
-              client: ref.read(supabaseClientProvider),
+            _reportSaveError(
+              'save_photo_upload',
+              e,
+              st,
+              siteId: resultSiteId,
             );
           }
         }
@@ -1600,11 +1607,11 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
           links: linksToSave,
         );
       } catch (e, st) {
-        ClientDebugLog.reportAsync(
-          context: 'save_social_links',
-          error: e,
-          stackTrace: st,
-          client: ref.read(supabaseClientProvider),
+        _reportSaveError(
+          'save_social_links',
+          e,
+          st,
+          siteId: resultSiteId,
         );
       }
 
@@ -1626,11 +1633,12 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
                 );
           }
         } catch (e, st) {
-          ClientDebugLog.reportAsync(
-            context: 'save_draft_reminder',
-            error: e,
-            stackTrace: st,
-            client: ref.read(supabaseClientProvider),
+          _reportSaveError(
+            'save_draft_reminder',
+            e,
+            st,
+            siteId: resultSiteId,
+            saveId: saved.id,
           );
         }
       }
@@ -1709,11 +1717,11 @@ class _SavePlacePageState extends ConsumerState<SavePlacePage>
         await _showCannotMakePrivate(e.blockers);
         return;
       }
-      ClientDebugLog.reportAsync(
-        context: 'save_place_submit',
-        error: e,
-        stackTrace: st,
-        client: ref.read(supabaseClientProvider),
+      _reportSaveError(
+        'save_place_submit',
+        e,
+        st,
+        siteId: _editSiteId,
       );
       setState(() => _saving = false);
       _formDirty.setSuppressed(false);

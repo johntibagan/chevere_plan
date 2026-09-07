@@ -6,6 +6,7 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
     id("com.google.gms.google-services")
     id("com.google.firebase.firebase-perf")
+    id("com.google.firebase.crashlytics")
 }
 
 // Maps SDK: definir en android/local.properties → GOOGLE_MAPS_API_KEY=...

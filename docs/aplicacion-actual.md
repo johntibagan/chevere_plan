@@ -220,6 +220,7 @@ flowchart TB
 ### Pruebas cerradas (APK)
 
 - Portal: `https://johntibagan.github.io/chevere_plan/` — versión, APK, reportes, Cómo probar (`beta_qa_flows`). PDN: `SUPABASE_URL_PDN` / `SUPABASE_ANON_KEY_PDN`.
+- **Crashes / errores de app:** Firebase Crashlytics (build release/profile). El tester reporta → dueño mira consola Firebase (stack + custom keys) → se pasa a diagnóstico. Setup: [`setup/03-firebase-fcm.md`](setup/03-firebase-fcm.md).
 - **publica** en chat: IDs + versión → flujos en DB.
 - APK en Storage `beta-apks` (PDN); `beta_release` (id=1). `publish_beta_apk.py`.
 - **Actualización obligatoria (APK beta/PDN):** compara `+N` con `beta_release.build`; pantalla bloqueante si hay build mayor. TEST no chequea.

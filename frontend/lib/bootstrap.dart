@@ -12,6 +12,7 @@ import 'core/cache/app_image_cache.dart';
 import 'core/cache/entity_cache_store.dart';
 import 'core/config/env.dart';
 import 'core/logging/app_log.dart';
+import 'core/logging/crashlytics_service.dart';
 import 'core/notifications/app_local_notifications.dart';
 import 'core/notifications/fcm_bootstrap.dart';
 import 'core/supabase/supabase_bootstrap.dart';
@@ -69,14 +70,27 @@ Future<Widget> createRootApp({
     AppLog.error('image cache', name: 'bootstrap', error: e, stackTrace: st);
   }
 
-  // FCM y notificaciones piden permiso: si se espera aquí, el splash nativo
-  // nunca se quita (típico tras borrar datos de la app).
+  // Firebase + Crashlytics antes de runApp (handlers globales). FCM/permisos
+  // siguen en background para no clavar el splash nativo.
+  if (initFirebase) {
+    try {
+      await Firebase.initializeApp().timeout(const Duration(seconds: 8));
+      await CrashlyticsService.installGlobalHandlers();
+    } catch (e, st) {
+      AppLog.error(
+        'Firebase/Crashlytics init',
+        name: 'bootstrap',
+        error: e,
+        stackTrace: st,
+      );
+    }
+  }
+
   unawaited(_initPushAndLocalNotifs(
-    initFirebase: initFirebase,
     initLocalNotifications: initLocalNotifications,
   ));
 
-  // Paso 3: no bloquear runApp — initialize en paralelo al primer frame.
+  // No bloquear runApp — Supabase initialize en paralelo al primer frame.
   unawaited(
     SupabaseBootstrap.start(
       url: Env.supabaseUrl,
@@ -104,13 +118,12 @@ Future<Widget> createRootApp({
 }
 
 Future<void> _initPushAndLocalNotifs({
-  required bool initFirebase,
   required bool initLocalNotifications,
 }) async {
   try {
     await Future<void>(() async {
-      if (initFirebase) {
-        await Firebase.initializeApp();
+      // Firebase ya inicializado en createRootApp (si apply).
+      if (Firebase.apps.isNotEmpty) {
         await bootstrapFcm();
       }
       if (initLocalNotifications) {

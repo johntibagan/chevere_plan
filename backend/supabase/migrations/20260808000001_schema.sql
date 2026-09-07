@@ -379,25 +379,6 @@ create table if not exists public.content_reports (
   constraint content_reports_reporter_id_target_type_target_id_key UNIQUE (reporter_id, target_type, target_id)
 );
 
--- Logs de cliente solo para etapa de pruebas (beta). Nunca se muestran en UI de producto.
-create table if not exists public.client_debug_logs (
-  id uuid default gen_random_uuid() not null,
-  user_id uuid,
-  context text not null,
-  message text not null,
-  error_type text,
-  detail text,
-  status text default 'pending'::text not null,
-  resolved_at timestamp with time zone,
-  created_at timestamp with time zone default now() not null,
-  constraint client_debug_logs_status_check CHECK ((status = ANY (ARRAY['pending'::text, 'resolved'::text]))),
-  constraint client_debug_logs_context_len CHECK ((char_length(context) between 1 and 120)),
-  constraint client_debug_logs_message_len CHECK ((char_length(message) between 1 and 2000)),
-  constraint client_debug_logs_detail_len CHECK (((detail is null) or (char_length(detail) <= 4000))),
-  constraint client_debug_logs_user_id_fkey FOREIGN KEY (user_id) REFERENCES profiles(id) ON DELETE SET NULL,
-  constraint client_debug_logs_pkey PRIMARY KEY (id)
-);
-
 -- Portal de pruebas cerradas: APK publicada, reportes anónimos y flujos de prueba.
 create schema if not exists private;
 
@@ -492,9 +473,6 @@ create index if not exists sites_public_complete_idx ON public.sites USING btree
 create index if not exists site_favorites_site_id_idx ON public.site_favorites USING btree (site_id);
 create index if not exists user_saves_site_id_idx ON public.user_saves USING btree (site_id);
 create unique index if not exists distance_units_one_default_idx ON public.distance_units USING btree ((is_default)) WHERE is_default;
-create index if not exists client_debug_logs_created_at_idx ON public.client_debug_logs USING btree (created_at DESC);
-create index if not exists client_debug_logs_context_idx ON public.client_debug_logs USING btree (context, created_at DESC);
-create index if not exists client_debug_logs_status_created_idx ON public.client_debug_logs USING btree (status, created_at DESC);
 create index if not exists beta_feedback_created_at_idx ON public.beta_feedback USING btree (created_at DESC);
 create index if not exists beta_feedback_priority_idx ON public.beta_feedback USING btree (priority);
 create index if not exists beta_qa_flows_version_idx ON public.beta_qa_flows USING btree (version, ticket_no);
@@ -2137,7 +2115,6 @@ alter table public.beta_qa_flows enable row level security;
 alter table public.beta_release enable row level security;
 alter table public.categories enable row level security;
 alter table public.cities enable row level security;
-alter table public.client_debug_logs enable row level security;
 alter table public.content_reports enable row level security;
 alter table public.countries enable row level security;
 alter table public.departments enable row level security;
@@ -2216,21 +2193,6 @@ create policy cities_select_active_or_staff on public.cities
 drop policy if exists cities_staff_write on public.cities;
 create policy cities_staff_write on public.cities
   for all
-  to authenticated using ((select public.is_staff())) with check ((select public.is_staff()));
-
-drop policy if exists client_debug_logs_insert_own on public.client_debug_logs;
-create policy client_debug_logs_insert_own on public.client_debug_logs
-  for insert
-  to authenticated with check (((user_id is null) or (user_id = (select auth.uid()))) and (status = 'pending') and (resolved_at is null));
-
-drop policy if exists client_debug_logs_select_staff on public.client_debug_logs;
-create policy client_debug_logs_select_staff on public.client_debug_logs
-  for select
-  to authenticated using ((((select public.is_staff()) or (user_id = (select auth.uid())))));
-
-drop policy if exists client_debug_logs_update_staff on public.client_debug_logs;
-create policy client_debug_logs_update_staff on public.client_debug_logs
-  for update
   to authenticated using ((select public.is_staff())) with check ((select public.is_staff()));
 
 drop policy if exists content_reports_insert_own on public.content_reports;
@@ -2590,9 +2552,6 @@ grant all on public.distance_units to service_role;
 
 revoke all on table public.site_favorites from anon;
 grant select, insert, delete on table public.site_favorites to authenticated;
-
-grant select, insert, update on public.client_debug_logs to authenticated;
-grant all on public.client_debug_logs to service_role;
 
 grant select on public.beta_release to anon, authenticated;
 grant select, insert, update, delete on public.beta_feedback to anon, authenticated;

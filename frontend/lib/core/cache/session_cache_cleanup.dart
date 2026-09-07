@@ -2,6 +2,7 @@ import 'package:flutter/painting.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../di/providers.dart';
+import '../logging/crashlytics_service.dart';
 import '../photos/wikimedia_session_widths.dart';
 import '../prefetch/site_prefetch.dart';
 import 'app_image_cache.dart';
@@ -13,6 +14,10 @@ Future<void> clearSessionCaches({
   required void Function(ProviderOrFamily provider) invalidate,
   required T Function<T>(ProviderListenable<T> provider) read,
 }) async {
+  try {
+    await CrashlyticsService.instance.clearUserId();
+  } catch (_) {}
+
   try {
     await EntityCacheStore.instance.clearAll();
   } catch (_) {}

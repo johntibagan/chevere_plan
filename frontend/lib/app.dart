@@ -303,6 +303,11 @@ class _AuthGateState extends ConsumerState<AuthGate> {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             LocalNotificationRouter.tryOpenPending();
             unawaited(ref.read(categoriesProvider.future));
+            unawaited(
+              ref
+                  .read(crashlyticsServiceProvider)
+                  .setUserId(session.user.id),
+            );
           });
           return HomePage(session: session);
         }

@@ -106,7 +106,7 @@ Esta es la sección más crítica del documento. Ninguna funcionalidad nueva se 
 - Solo mensajes de negocio claros (ej. "Máximo 15 fotos por sitio") en el formulario o campo, no como toast de error de red.
 - Ante fallo técnico o de red en **secciones/listas sin CTA propio** (Guardados recientes, Explorar, Planes, ficha, categorías en el form…): en **el mismo bloque**, **"Error en la app."** y **"Intenta de nuevo"**. Tocar reintenta esa carga.
 - Si la pantalla **ya tiene un CTA claro** (p. ej. **Guardar** abajo): **no** callout encima del botón. Toast corto «Se ha presentado un problema.» (`errorProblemToast`); el usuario puede volver a tocar Guardar.
-- El detalle técnico se registra en logs (`AppLog` / `client_debug_logs` en pruebas), nunca en pantalla.
+- El detalle técnico va a **Firebase Crashlytics** (release/profile) y `AppLog` local; nunca a la UI.
 
 ## 6. UX — pantallas intuitivas y formularios rápidos
 
