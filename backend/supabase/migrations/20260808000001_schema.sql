@@ -442,6 +442,45 @@ comment on column public.beta_feedback.in_review is
 comment on column public.beta_feedback.priority is
   'Prioridad (alta|media|baja) o null si el dueño aún no la definió.';
 
+-- Push FCM (cañería; sin gatillos de negocio).
+create table if not exists public.user_fcm_tokens (
+  id uuid default gen_random_uuid() not null,
+  user_id uuid not null,
+  token text not null,
+  platform text,
+  created_at timestamp with time zone default now() not null,
+  updated_at timestamp with time zone default now() not null,
+  constraint user_fcm_tokens_pkey primary key (id),
+  constraint user_fcm_tokens_user_id_fkey foreign key (user_id)
+    references public.profiles (id) on delete cascade,
+  constraint user_fcm_tokens_token_key unique (token),
+  constraint user_fcm_tokens_token_len check (char_length(token) between 20 and 4096),
+  constraint user_fcm_tokens_platform_chk check (
+    platform is null or platform in ('android', 'ios', 'web')
+  )
+);
+
+create table if not exists public.notifications (
+  id uuid default gen_random_uuid() not null,
+  user_id uuid not null,
+  title text,
+  body text not null,
+  data jsonb default '{}'::jsonb not null,
+  created_at timestamp with time zone default now() not null,
+  constraint notifications_pkey primary key (id),
+  constraint notifications_user_id_fkey foreign key (user_id)
+    references public.profiles (id) on delete cascade,
+  constraint notifications_body_len check (char_length(body) between 1 and 2000),
+  constraint notifications_title_len check (
+    title is null or char_length(title) between 1 and 200
+  )
+);
+
+comment on table public.user_fcm_tokens is
+  'Tokens FCM por dispositivo (usuario Supabase Auth). Multi-dispositivo.';
+comment on table public.notifications is
+  'Cola de push: INSERT dispara webhook → Edge Function push → FCM. Sin features de negocio aún.';
+
 -- indexes (sin duplicar PK/UNIQUE de la tabla)
 create index if not exists categories_keywords_gin ON public.categories USING gin (keywords);
 create unique index if not exists categories_root_slug_uidx ON public.categories USING btree (slug) WHERE (parent_id IS NULL);
@@ -476,6 +515,10 @@ create unique index if not exists distance_units_one_default_idx ON public.dista
 create index if not exists beta_feedback_created_at_idx ON public.beta_feedback USING btree (created_at DESC);
 create index if not exists beta_feedback_priority_idx ON public.beta_feedback USING btree (priority);
 create index if not exists beta_qa_flows_version_idx ON public.beta_qa_flows USING btree (version, ticket_no);
+create index if not exists user_fcm_tokens_user_id_idx
+  on public.user_fcm_tokens using btree (user_id);
+create index if not exists notifications_user_id_created_idx
+  on public.notifications using btree (user_id, created_at desc);
 
 -- functions
 -- is_staff va primero: las funciones `language sql` que la llaman se validan
@@ -2113,6 +2156,8 @@ for each row EXECUTE FUNCTION set_updated_at();
 alter table public.beta_feedback enable row level security;
 alter table public.beta_qa_flows enable row level security;
 alter table public.beta_release enable row level security;
+alter table public.user_fcm_tokens enable row level security;
+alter table public.notifications enable row level security;
 alter table public.categories enable row level security;
 alter table public.cities enable row level security;
 alter table public.content_reports enable row level security;
@@ -2174,6 +2219,43 @@ drop policy if exists beta_qa_flows_select on public.beta_qa_flows;
 create policy beta_qa_flows_select on public.beta_qa_flows
   for select
   to anon, authenticated using (true);
+
+drop policy if exists user_fcm_tokens_select_own on public.user_fcm_tokens;
+create policy user_fcm_tokens_select_own on public.user_fcm_tokens
+  for select to authenticated
+  using (user_id = (select auth.uid()));
+
+drop policy if exists user_fcm_tokens_insert_own on public.user_fcm_tokens;
+create policy user_fcm_tokens_insert_own on public.user_fcm_tokens
+  for insert to authenticated
+  with check (user_id = (select auth.uid()));
+
+drop policy if exists user_fcm_tokens_update_own on public.user_fcm_tokens;
+create policy user_fcm_tokens_update_own on public.user_fcm_tokens
+  for update to authenticated
+  using (user_id = (select auth.uid()))
+  with check (user_id = (select auth.uid()));
+
+drop policy if exists user_fcm_tokens_delete_own on public.user_fcm_tokens;
+create policy user_fcm_tokens_delete_own on public.user_fcm_tokens
+  for delete to authenticated
+  using (user_id = (select auth.uid()));
+
+drop policy if exists notifications_select_own_or_staff on public.notifications;
+create policy notifications_select_own_or_staff on public.notifications
+  for select to authenticated
+  using (
+    user_id = (select auth.uid())
+    or (select public.is_staff())
+  );
+
+drop policy if exists notifications_insert_own_or_staff on public.notifications;
+create policy notifications_insert_own_or_staff on public.notifications
+  for insert to authenticated
+  with check (
+    user_id = (select auth.uid())
+    or (select public.is_staff())
+  );
 
 drop policy if exists categories_select_active_or_staff on public.categories;
 create policy categories_select_active_or_staff on public.categories
@@ -2557,6 +2639,13 @@ grant select on public.beta_release to anon, authenticated;
 grant select, insert, update, delete on public.beta_feedback to anon, authenticated;
 grant select on public.beta_qa_flows to anon, authenticated;
 grant all on public.beta_release, public.beta_feedback, public.beta_qa_flows to service_role;
+
+revoke all on table public.user_fcm_tokens from anon;
+revoke all on table public.notifications from anon;
+grant select, insert, update, delete on table public.user_fcm_tokens to authenticated;
+grant select, insert on table public.notifications to authenticated;
+grant all on table public.user_fcm_tokens to service_role;
+grant all on table public.notifications to service_role;
 
 drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created

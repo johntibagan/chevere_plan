@@ -19,6 +19,12 @@ Future<void> clearSessionCaches({
   } catch (_) {}
 
   try {
+    await read(pushNotificationServiceProvider).clearForLogout(
+      read(supabaseClientProvider),
+    );
+  } catch (_) {}
+
+  try {
     await EntityCacheStore.instance.clearAll();
   } catch (_) {}
 

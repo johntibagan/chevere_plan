@@ -308,6 +308,14 @@ class _AuthGateState extends ConsumerState<AuthGate> {
                   .read(crashlyticsServiceProvider)
                   .setUserId(session.user.id),
             );
+            unawaited(() async {
+              try {
+                await ref.read(supabaseReadyProvider.future);
+                await ref
+                    .read(pushNotificationServiceProvider)
+                    .syncForSession(ref.read(supabaseClientProvider));
+              } catch (_) {}
+            }());
           });
           return HomePage(session: session);
         }
