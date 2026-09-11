@@ -30,3 +30,6 @@ node_modules/
 
 # Scratch local: visor + JSON de fotos catálogo (transitorio, no va al repo)
 backend/supabase/scripts/_photos_review_local/
+
+# Docs temporales de trabajo (borrables; el agente los lee en el workspace)
+docs/_tmp/

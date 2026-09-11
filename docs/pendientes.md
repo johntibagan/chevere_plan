@@ -10,7 +10,8 @@ No bloquean el uso diario. Al implementar, tacha aquí y ajusta el código / doc
 **Estado en app hoy:** [`aplicacion-actual.md`](aplicacion-actual.md). Lo de abajo es **diseño acordado**, aún no construido.
 
 **Fase:** **Fase 2 — Compartir** (roadmap: [`producto.md`](producto.md)). Monetización = Fase 3 · Expansión = Fase 4.  
-**MVP (Fase 1):** cerrado en producto vivo — [`aplicacion-actual.md`](aplicacion-actual.md). Share **no** se implementa aún; **diseño de producto cerrado** (abajo).
+**MVP (Fase 1):** cerrado en producto vivo — [`aplicacion-actual.md`](aplicacion-actual.md). Share **no** se implementa aún; **diseño de producto cerrado** (abajo).  
+**Recorte v1 (2026-09-07):** primera entrega = sitios **privados** + planes. Compartir público/catálogo diferido (ver *Fuera de alcance*). Plan de pasos temporal: `docs/_tmp/fase-2-compartir-pasos.md` (gitignored).
 
 ### Resumen en lenguaje de la app
 
@@ -66,10 +67,12 @@ No bloquean el uso diario. Al implementar, tacha aquí y ajusta el código / doc
 
 - Links / deep links / share sheet hacia afuera.
 - Push o tiempo real.
+- Compartir sitios **públicos o de catálogo** (solo sería un aviso; sin acceso nuevo). Posible extra futuro; v1 = solo sitios **privados** (+ planes).
 - Compartir sin cuenta.
 - Reenvío por el invitado.
 - Tarjetas no físicas.
 - Icono de notificaciones en el MVP (Fase 1).
+- **Concurrencia en plan compartido:** sin realtime, dos personas pueden editar/guardar y pisarse sin aviso. Deuda conocida (decisión del dueño); no bug a resolver en esta fase.
 
 ### Nota Fase 1
 
