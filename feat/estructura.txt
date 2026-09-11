@@ -1,0 +1,462 @@
+.
+├── .cursor
+│   ├── rules
+│   │   ├── backend-performance.mdc
+│   │   ├── backend-reset-sql.mdc
+│   │   ├── beta-portal-publica.mdc
+│   │   ├── cierre-accion-manual.mdc
+│   │   ├── codigo-sin-uso.mdc
+│   │   ├── design-tokens-centralizados.mdc
+│   │   ├── docs-al-cambiar.mdc
+│   │   ├── docs-sin-duplicar.mdc
+│   │   ├── flutter-modals-visibility.mdc
+│   │   ├── frontend-lineamientos.mdc
+│   │   ├── guardar-sitio.mdc
+│   │   ├── investigar-antes-de-implementar.mdc
+│   │   ├── lugar-datos-extraer.mdc
+│   │   ├── no-decidir-solo-producto.mdc
+│   │   ├── no-reinventar-sdk.mdc
+│   │   ├── reuso-sin-duplicar.mdc
+│   │   ├── seguridad.mdc
+│   │   ├── ui-errores-inline.mdc
+│   │   ├── ui-portada-sitio.mdc
+│   │   ├── ui-responsive.mdc
+│   │   ├── ui-sin-overflow.mdc
+│   │   ├── ui-sin-redundancia.mdc
+│   │   └── ux-flujo-rapido.mdc
+│   └── settings.json
+├── .github
+│   └── workflows
+│       └── beta-portal-pages.yml
+├── .gitignore
+├── README.md
+├── backend
+│   ├── README.md
+│   ├── reset_all.ps1
+│   ├── reset_all.py
+│   ├── scripts
+│   │   ├── merge_pdn_env.py
+│   │   ├── migrate_test_to_pdn.py
+│   │   └── publish_beta_apk.py
+│   └── supabase
+│       ├── functions
+│       │   └── push
+│       │       └── index.ts
+│       ├── migrations
+│       │   ├── 20260808000001_schema.sql
+│       │   ├── 20260808000002_seed.sql
+│       │   ├── 20260808000003_storage.sql
+│       │   ├── 20260907000001_drop_client_debug_logs.sql
+│       │   └── 20260907010001_fcm_push_plumbing.sql
+│       └── scripts
+│           ├── 00_nuke.sql
+│           ├── 01_wipe_user_data.sql
+│           ├── 05_sync_divipola.py
+│           ├── 05_sync_divipola.sql
+│           └── 06_import_public_sites.py
+├── beta-portal
+│   ├── README.md
+│   └── index.html
+├── design
+│   └── figma-make
+│       ├── CICLOS.md
+│       ├── README.md
+│       └── src
+│           ├── app
+│           │   └── App.tsx
+│           └── styles
+│               └── theme.css
+├── docs
+│   ├── README.md
+│   ├── aplicacion-actual.md
+│   ├── data
+│   │   ├── README.md
+│   │   └── colombia_departamentos_municipios_sitios.json
+│   ├── e2e.md
+│   ├── google-maps-setup.md
+│   ├── imagenes-red.md
+│   ├── invariantes.md
+│   ├── investigaciones-tecnicas.md
+│   ├── lineamientos-desarrollo-frontend.md
+│   ├── pendientes.md
+│   ├── producto.md
+│   └── setup
+│       ├── 01-flutter-android.md
+│       ├── 02-supabase.md
+│       └── 03-firebase-fcm.md
+├── estructura.txt
+├── feat
+│   ├── estrategia_tecnica_arquitectura.md
+│   └── producto_vision_negocio.md
+└── frontend
+    ├── GETTINGSTAR.md
+    ├── README.md
+    ├── analysis_options.yaml
+    ├── android
+    │   ├── app
+    │   │   ├── build.gradle.kts
+    │   │   ├── proguard-rules.pro
+    │   │   └── src
+    │   │       ├── androidTest
+    │   │       │   └── java
+    │   │       │       └── com
+    │   │       │           └── chevere
+    │   │       │               └── plan
+    │   │       │                   └── MainActivityTest.java
+    │   │       ├── debug
+    │   │       │   └── AndroidManifest.xml
+    │   │       ├── main
+    │   │       │   ├── AndroidManifest.xml
+    │   │       │   ├── kotlin
+    │   │       │   │   └── com
+    │   │       │   │       └── chevere
+    │   │       │   │           └── plan
+    │   │       │   │               └── MainActivity.kt
+    │   │       │   └── res
+    │   │       │       ├── drawable
+    │   │       │       │   └── launch_background.xml
+    │   │       │       ├── drawable-v21
+    │   │       │       │   └── launch_background.xml
+    │   │       │       ├── mipmap-hdpi
+    │   │       │       │   └── ic_launcher.png
+    │   │       │       ├── mipmap-mdpi
+    │   │       │       │   └── ic_launcher.png
+    │   │       │       ├── mipmap-xhdpi
+    │   │       │       │   └── ic_launcher.png
+    │   │       │       ├── mipmap-xxhdpi
+    │   │       │       │   └── ic_launcher.png
+    │   │       │       ├── mipmap-xxxhdpi
+    │   │       │       │   └── ic_launcher.png
+    │   │       │       ├── values
+    │   │       │       │   ├── colors.xml
+    │   │       │       │   └── styles.xml
+    │   │       │       ├── values-night
+    │   │       │       │   ├── colors.xml
+    │   │       │       │   └── styles.xml
+    │   │       │       └── xml
+    │   │       │           └── network_security_config.xml
+    │   │       └── profile
+    │   │           └── AndroidManifest.xml
+    │   ├── build.gradle.kts
+    │   ├── gradle
+    │   │   └── wrapper
+    │   │       └── gradle-wrapper.properties
+    │   ├── gradle.properties
+    │   └── settings.gradle.kts
+    ├── env
+    │   ├── e2e.env.example
+    │   ├── pdn.env.example
+    │   └── test.env.example
+    ├── l10n.yaml
+    ├── lib
+    │   ├── app.dart
+    │   ├── bootstrap.dart
+    │   ├── core
+    │   │   ├── app_version.dart
+    │   │   ├── auth
+    │   │   │   └── secure_session_storage.dart
+    │   │   ├── cache
+    │   │   │   ├── app_image_cache.dart
+    │   │   │   ├── cache_ttl.dart
+    │   │   │   ├── entity_cache_store.dart
+    │   │   │   ├── paged_items.dart
+    │   │   │   ├── search_cache.dart
+    │   │   │   ├── session_cache_cleanup.dart
+    │   │   │   ├── signed_url_cache.dart
+    │   │   │   └── swr_loader.dart
+    │   │   ├── config
+    │   │   │   └── env.dart
+    │   │   ├── design
+    │   │   │   └── design_system.dart
+    │   │   ├── di
+    │   │   │   └── providers.dart
+    │   │   ├── distance
+    │   │   │   └── distance_unit.dart
+    │   │   ├── errors
+    │   │   │   ├── result.dart
+    │   │   │   └── user_facing_error.dart
+    │   │   ├── formatters
+    │   │   │   ├── date_format.dart
+    │   │   │   ├── distance_format.dart
+    │   │   │   ├── money_format.dart
+    │   │   │   ├── place_format.dart
+    │   │   │   └── privacy_block_format.dart
+    │   │   ├── l10n
+    │   │   │   ├── app_locale.dart
+    │   │   │   ├── context_l10n.dart
+    │   │   │   └── display_defaults.dart
+    │   │   ├── logging
+    │   │   │   ├── app_log.dart
+    │   │   │   └── crashlytics_service.dart
+    │   │   ├── notifications
+    │   │   │   ├── app_local_notifications.dart
+    │   │   │   ├── app_notification_card.dart
+    │   │   │   ├── fcm_bootstrap.dart
+    │   │   │   ├── local_notification_router.dart
+    │   │   │   ├── notification_cover_cache.dart
+    │   │   │   ├── notification_kind.dart
+    │   │   │   └── push_notification_service.dart
+    │   │   ├── performance
+    │   │   │   └── app_performance.dart
+    │   │   ├── photos
+    │   │   │   ├── external_photo_url.dart
+    │   │   │   ├── wikimedia_display_url.dart
+    │   │   │   └── wikimedia_session_widths.dart
+    │   │   ├── prefetch
+    │   │   │   └── site_prefetch.dart
+    │   │   ├── prefs
+    │   │   │   └── feed_layout.dart
+    │   │   ├── shell
+    │   │   │   └── shell_menu_bridge.dart
+    │   │   ├── supabase
+    │   │   │   └── supabase_bootstrap.dart
+    │   │   ├── testing
+    │   │   │   └── widget_keys.dart
+    │   │   ├── theme
+    │   │   │   ├── app_radius.dart
+    │   │   │   ├── app_theme.dart
+    │   │   │   ├── app_theme_mode_store.dart
+    │   │   │   ├── app_typography.dart
+    │   │   │   ├── chevere_theme_colors.dart
+    │   │   │   ├── chevere_theme_scope.dart
+    │   │   │   ├── google_brand_colors.dart
+    │   │   │   └── theme_rebuild.dart
+    │   │   └── widgets
+    │   │       ├── app_async_body.dart
+    │   │       ├── app_busy_overlay.dart
+    │   │       ├── app_confirm_dialog.dart
+    │   │       ├── app_create_cta_card.dart
+    │   │       ├── app_feed_layout_toggle.dart
+    │   │       ├── app_floating_action_layout.dart
+    │   │       ├── app_form_card.dart
+    │   │       ├── app_list_card.dart
+    │   │       ├── app_menu_avatar_button.dart
+    │   │       ├── app_more_menu_drawer.dart
+    │   │       ├── app_network_image.dart
+    │   │       ├── app_retry_callout.dart
+    │   │       ├── app_search_field.dart
+    │   │       ├── app_section_label.dart
+    │   │       ├── app_segmented_control.dart
+    │   │       ├── app_select_chip.dart
+    │   │       ├── app_stat_card.dart
+    │   │       ├── app_status_pill.dart
+    │   │       ├── app_toast.dart
+    │   │       ├── discard_changes_scope.dart
+    │   │       ├── draft_needs_map_banner.dart
+    │   │       ├── field_action_icon.dart
+    │   │       ├── non_physical_card_banner.dart
+    │   │       ├── site_cover.dart
+    │   │       ├── site_origin_tags.dart
+    │   │       ├── site_photo_overflow_button.dart
+    │   │       ├── site_photo_viewer_page.dart
+    │   │       ├── tab_screen_header.dart
+    │   │       └── visibility_badge.dart
+    │   ├── features
+    │   │   ├── admin
+    │   │   │   ├── data
+    │   │   │   │   ├── admin_models.dart
+    │   │   │   │   └── admin_repository.dart
+    │   │   │   └── presentation
+    │   │   │       └── admin_page.dart
+    │   │   ├── auth
+    │   │   │   ├── data
+    │   │   │   │   ├── auth_repository.dart
+    │   │   │   │   ├── profile.dart
+    │   │   │   │   └── profile_repository.dart
+    │   │   │   ├── domain
+    │   │   │   │   ├── profile_public_display.dart
+    │   │   │   │   └── username_rules.dart
+    │   │   │   └── presentation
+    │   │   │       └── login_page.dart
+    │   │   ├── beta
+    │   │   │   ├── data
+    │   │   │   │   └── beta_release_repository.dart
+    │   │   │   ├── domain
+    │   │   │   │   └── beta_release.dart
+    │   │   │   └── presentation
+    │   │   │       └── beta_update_gate.dart
+    │   │   ├── geo
+    │   │   │   ├── data
+    │   │   │   │   ├── geo_models.dart
+    │   │   │   │   └── geo_repository.dart
+    │   │   │   ├── domain
+    │   │   │   │   ├── geo_fuzzy.dart
+    │   │   │   │   └── geo_models.dart
+    │   │   │   └── presentation
+    │   │   │       └── geo_typeahead_field.dart
+    │   │   ├── home
+    │   │   │   ├── data
+    │   │   │   │   ├── device_location.dart
+    │   │   │   │   └── home_nearby_snapshot.dart
+    │   │   │   ├── domain
+    │   │   │   │   ├── home_nearby_policies.dart
+    │   │   │   │   └── home_sections_open.dart
+    │   │   │   └── presentation
+    │   │   │       ├── cards_list_page.dart
+    │   │   │       ├── home_cards.dart
+    │   │   │       └── home_page.dart
+    │   │   ├── legal
+    │   │   │   ├── legal_texts.dart
+    │   │   │   └── presentation
+    │   │   │       └── legal_document_page.dart
+    │   │   ├── moderation
+    │   │   │   ├── data
+    │   │   │   │   ├── moderation_models.dart
+    │   │   │   │   └── moderation_repository.dart
+    │   │   │   └── presentation
+    │   │   │       └── admin_reports_page.dart
+    │   │   ├── plans
+    │   │   │   ├── data
+    │   │   │   │   ├── maps_export.dart
+    │   │   │   │   ├── plan_builder.dart
+    │   │   │   │   ├── plan_cover_enrich.dart
+    │   │   │   │   ├── plan_hours_policy.dart
+    │   │   │   │   ├── plan_models.dart
+    │   │   │   │   ├── plan_review_models.dart
+    │   │   │   │   ├── plan_reviews_repository.dart
+    │   │   │   │   └── plans_repository.dart
+    │   │   │   └── presentation
+    │   │   │       ├── create_plan_page.dart
+    │   │   │       ├── plan_detail_page.dart
+    │   │   │       ├── plan_meta_row.dart
+    │   │   │       ├── plan_review_editor_page.dart
+    │   │   │       ├── plan_reviews_tab.dart
+    │   │   │       ├── plan_timeline.dart
+    │   │   │       └── plans_list_page.dart
+    │   │   ├── proximity
+    │   │   │   ├── data
+    │   │   │   │   ├── geofence_sync_service.dart
+    │   │   │   │   ├── proximity_models.dart
+    │   │   │   │   ├── proximity_notify_throttle.dart
+    │   │   │   │   ├── proximity_reminder_service.dart
+    │   │   │   │   └── proximity_repository.dart
+    │   │   │   ├── domain
+    │   │   │   │   └── proximity_policies.dart
+    │   │   │   └── presentation
+    │   │   │       └── proximity_prefs_sheet.dart
+    │   │   ├── routes
+    │   │   │   ├── data
+    │   │   │   │   ├── route_models.dart
+    │   │   │   │   └── routes_repository.dart
+    │   │   │   ├── domain
+    │   │   │   │   └── route_stats.dart
+    │   │   │   └── presentation
+    │   │   │       └── my_routes_page.dart
+    │   │   ├── saves
+    │   │   │   ├── data
+    │   │   │   │   ├── bigdatacloud_geocoder.dart
+    │   │   │   │   ├── draft_reminder_service.dart
+    │   │   │   │   ├── external_photo_link.dart
+    │   │   │   │   ├── favorites_repository.dart
+    │   │   │   │   ├── geo_place.dart
+    │   │   │   │   ├── geoapify_geocoder.dart
+    │   │   │   │   ├── geocoder_quota.dart
+    │   │   │   │   ├── google_maps_link_importer.dart
+    │   │   │   │   ├── google_maps_links.dart
+    │   │   │   │   ├── google_places_cache.dart
+    │   │   │   │   ├── google_places_client.dart
+    │   │   │   │   ├── google_places_quota.dart
+    │   │   │   │   ├── link_preview_fetcher.dart
+    │   │   │   │   ├── navigation_apps.dart
+    │   │   │   │   ├── nominatim_geocoder.dart
+    │   │   │   │   ├── place_geocoder.dart
+    │   │   │   │   ├── save_models.dart
+    │   │   │   │   ├── saves_repository.dart
+    │   │   │   │   ├── share_parser.dart
+    │   │   │   │   ├── site_ficha.dart
+    │   │   │   │   ├── site_review_models.dart
+    │   │   │   │   ├── site_reviews_repository.dart
+    │   │   │   │   ├── social_link_models.dart
+    │   │   │   │   └── social_place_extractor.dart
+    │   │   │   ├── domain
+    │   │   │   │   ├── category_suggester.dart
+    │   │   │   │   ├── review_policies.dart
+    │   │   │   │   └── save_policies.dart
+    │   │   │   └── presentation
+    │   │   │       ├── category_picker_sheet.dart
+    │   │   │       ├── favorite_heart_button.dart
+    │   │   │       ├── location_picker_page.dart
+    │   │   │       ├── open_site_detail.dart
+    │   │   │       ├── paste_external_photo_dialog.dart
+    │   │   │       ├── same_site_picker_page.dart
+    │   │   │       ├── save_place_page.dart
+    │   │   │       ├── site_detail_page.dart
+    │   │   │       ├── site_look_cover.dart
+    │   │   │       ├── site_notif_test_section.dart
+    │   │   │       ├── site_review_editor_page.dart
+    │   │   │       ├── site_reviews_tab.dart
+    │   │   │       ├── site_status_l10n.dart
+    │   │   │       └── social_link_preview_card.dart
+    │   │   ├── search
+    │   │   │   ├── data
+    │   │   │   │   ├── explore_radius_store.dart
+    │   │   │   │   ├── search_models.dart
+    │   │   │   │   └── search_repository.dart
+    │   │   │   ├── domain
+    │   │   │   │   └── search_policies.dart
+    │   │   │   └── presentation
+    │   │   │       ├── explore_intent.dart
+    │   │   │       └── search_page.dart
+    │   │   └── settings
+    │   │       └── presentation
+    │   │           ├── distance_unit_prefs_sheet.dart
+    │   │           ├── duplicate_radius_prefs_sheet.dart
+    │   │           └── profile_settings_page.dart
+    │   ├── l10n
+    │   │   ├── app_es.arb
+    │   │   ├── app_localizations.dart
+    │   │   └── app_localizations_es.dart
+    │   └── main.dart
+    ├── patrol_test
+    │   ├── acceptance
+    │   │   ├── p0_patrol_plumbing_test.dart
+    │   │   ├── p0_regla8_test.dart
+    │   │   ├── p0_session_home_test.dart
+    │   │   ├── p0_smoke_test.dart
+    │   │   ├── p1_plans_test.dart
+    │   │   ├── p1_privacy_test.dart
+    │   │   ├── p1_reviews_test.dart
+    │   │   ├── p1_routes_test.dart
+    │   │   ├── p1_saves_test.dart
+    │   │   └── p1_search_test.dart
+    │   ├── helpers
+    │   │   ├── app_harness.dart
+    │   │   ├── critical_harness.dart
+    │   │   └── fakes
+    │   │       └── failing_profile_repository.dart
+    │   └── robots
+    │       └── robots.dart
+    ├── pubspec.lock
+    ├── pubspec.yaml
+    └── test
+        ├── category_suggester_test.dart
+        ├── entity_cache_peek_sync_test.dart
+        ├── external_photo_link_test.dart
+        ├── external_photo_url_test.dart
+        ├── feed_layout_test.dart
+        ├── geo_fuzzy_test.dart
+        ├── google_maps_link_importer_test.dart
+        ├── google_maps_links_test.dart
+        ├── google_places_client_test.dart
+        ├── google_places_find_by_text_test.dart
+        ├── home_nearby_policies_test.dart
+        ├── home_sections_open_test.dart
+        ├── maps_export_test.dart
+        ├── navigation_apps_test.dart
+        ├── place_format_test.dart
+        ├── plan_reorder_test.dart
+        ├── proximity_notify_throttle_test.dart
+        ├── result_test.dart
+        ├── review_policies_test.dart
+        ├── route_stats_test.dart
+        ├── save_policies_test.dart
+        ├── secure_session_storage_test.dart
+        ├── share_parser_test.dart
+        ├── signed_url_cache_test.dart
+        ├── site_cover_path_test.dart
+        ├── site_cover_test.dart
+        ├── social_place_extractor_test.dart
+        ├── widget_test.dart
+        └── wikimedia_display_url_test.dart
+
+126 directories, 333 files
